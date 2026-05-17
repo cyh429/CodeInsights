@@ -6,7 +6,7 @@
 
 更新时间：2026-05-17
 
-当前阶段：阶段 0 冻结基线已完成首轮文本证据，代码实现尚未开始。
+当前阶段：阶段 0 冻结基线已完成并提交，下一步进入阶段 1 Shared Event Contract。
 
 已完成：
 
@@ -21,10 +21,11 @@
 - [x] 已完成本开发进度跟踪清单：[development-checklist.md](./development-checklist.md)
 - [x] 已明确客户端 UI 零可见变化约束。
 - [x] 已提交方案阶段成果：`158d8a64 docs: 完成 Agent 模式重构方案阶段文档`
+- [x] 已完成阶段 0 冻结基线首轮文本证据：[2026-05-17-round-1.md](./baseline-runs/2026-05-17-round-1.md)
+- [x] 已提交阶段 0 成果：`47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线`
 
-未完成：
+未开始：
 
-- [x] 阶段 0 冻结基线已完成首轮文本证据：[2026-05-17-round-1.md](./baseline-runs/2026-05-17-round-1.md)
 - [ ] 阶段 1 Shared Event Contract 尚未开始。
 - [ ] 阶段 2 Event Log 双写尚未开始。
 - [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
@@ -42,6 +43,13 @@
 1. 进入阶段 1 的 Shared Event Contract，继续保持客户端 UI 零可见变化。
 2. 阶段 1 开始前复查阶段 0 缺口，涉及权限、AskUser、Plan Mode、MCP、附件、fork/rewind 或飞书时优先补跑对应基线。
 3. 每阶段完成并通过验证后立即单独提交。
+
+当前已知缺口：
+
+- 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。
+- 当前本地配置没有 workspace MCP server，因此 MCP 可见性只记录了预期和缺口。
+- 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
+- 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
 
 ## 全局硬约束
 
