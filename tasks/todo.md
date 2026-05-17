@@ -1,5 +1,28 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-17 Agent 重构阶段 0：冻结基线计划
+
+- [x] 复习 `tasks/lessons.md`，确认阶段推进、UI 零可见变化和阶段完成即提交纪律。
+- [x] 阅读 `docs/agent-refactor/README.md`、`development-checklist.md`、`next-session-prompt.md` 和 `baseline-checklist.md`。
+- [x] 检查本机 Agent 开发配置目录与现有 session / workspace / channel 基线，不读取或记录敏感密钥。
+- [x] 创建 `docs/agent-refactor/baseline-runs/` 文本证据目录。
+- [x] 按行为基线清单生成首轮基线记录，逐项写明输入、预期 UI、预期存储、预期终态和本轮实跑状态。
+- [x] 固化当前 SDKMessage JSONL、权限、AskUser / Plan Mode、MCP / Skill、旧 session resume / fork / rewind、飞书入口和 Pipeline 旁路的文本证据。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 的阶段 0 状态。
+- [x] 运行 `bun run typecheck` 和 `git diff --check -- docs/agent-refactor tasks/todo.md`。
+- [x] 追加 Review，并用详细中文 commit message 单独提交阶段 0 文档成果。
+
+## 2026-05-17 Agent 重构阶段 0：冻结基线 Review
+
+- 已新增 `docs/agent-refactor/baseline-runs/` 文本证据目录，并写入目录说明和首轮基线记录 `2026-05-17-round-1.md`。
+- 首轮基线记录覆盖 `baseline-checklist.md` 中 17 个场景，每项都写明输入、预期 UI、预期存储、预期终态和本轮实跑状态。
+- 已确认本机开发配置目录为 `~/.rv-insights-dev/`，当前有 1 个 DeepSeek Agent 渠道、1 个默认 workspace、4 条 Agent session metadata、3 个 SDKMessage JSONL transcript。
+- 已用存量 JSONL 固化首条消息、错误恢复样例、WebSearch tool activity、result 终态和旧 session 多轮 resume 行为；未记录 API Key、加密密文或完整大段模型输出。
+- 当前环境缺少实时 Electron 桌面交互、workspace MCP server、飞书配置和若干权限/AskUser 样例；这些场景没有伪造通过，已作为后续触碰相关边界前必须补跑的缺口记录。
+- 已更新 `docs/agent-refactor/development-checklist.md`，标记阶段 0 首轮文本证据完成，并把下一步推进到阶段 1 Shared Event Contract。
+- 本轮没有修改 `apps/`、`packages/`、README 或 AGENTS；客户端 UI 零可见变化。
+- 验证通过：`bun run typecheck`；`git diff --check -- docs/agent-refactor tasks/todo.md`。
+
 ## 2026-05-17 Agent 模式 happyclaw 参考重构方案
 
 - [x] 复习项目 `tasks/lessons.md`，确认本次只生成重构方案文档，不直接改业务代码。

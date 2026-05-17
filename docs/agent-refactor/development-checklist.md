@@ -6,7 +6,7 @@
 
 更新时间：2026-05-17
 
-当前阶段：方案与跟踪体系已完成，代码实现尚未开始。
+当前阶段：阶段 0 冻结基线已完成首轮文本证据，代码实现尚未开始。
 
 已完成：
 
@@ -24,7 +24,7 @@
 
 未完成：
 
-- [ ] 阶段 0 冻结基线尚未开始。
+- [x] 阶段 0 冻结基线已完成首轮文本证据：[2026-05-17-round-1.md](./baseline-runs/2026-05-17-round-1.md)
 - [ ] 阶段 1 Shared Event Contract 尚未开始。
 - [ ] 阶段 2 Event Log 双写尚未开始。
 - [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
@@ -39,10 +39,9 @@
 
 下一步建议：
 
-1. 从阶段 0 开始，只做基线冻结，不改业务逻辑。
-2. 创建 `docs/agent-refactor/baseline-runs/`，按 [行为基线清单](./baseline-checklist.md) 记录当前行为。
-3. 阶段 0 完成并通过验证后立即单独提交。
-4. 再进入阶段 1 的 Shared Event Contract。
+1. 进入阶段 1 的 Shared Event Contract，继续保持客户端 UI 零可见变化。
+2. 阶段 1 开始前复查阶段 0 缺口，涉及权限、AskUser、Plan Mode、MCP、附件、fork/rewind 或飞书时优先补跑对应基线。
+3. 每阶段完成并通过验证后立即单独提交。
 
 ## 全局硬约束
 
@@ -68,30 +67,37 @@
 
 ### 任务
 
-- [ ] 创建 `docs/agent-refactor/baseline-runs/` 文本证据目录。
-- [ ] 按 [行为基线清单](./baseline-checklist.md) 跑完首轮人工基线。
-- [ ] 记录每个基线的 sessionId、workspaceId、权限模式、输入和终态。
-- [ ] 固化当前 SDKMessage JSONL 样例。
-- [ ] 固化当前权限 approve / deny 样例。
-- [ ] 固化当前 AskUser / Plan Mode 样例。
-- [ ] 固化当前 MCP / Skill 可见性样例。
-- [ ] 固化当前旧 session resume / fork / rewind 样例。
-- [ ] 如果触及飞书，固化当前飞书入口和群聊 MCP 样例。
+- [x] 创建 `docs/agent-refactor/baseline-runs/` 文本证据目录。
+- [x] 按 [行为基线清单](./baseline-checklist.md) 跑完首轮人工基线。
+- [x] 记录每个基线的 sessionId、workspaceId、权限模式、输入和终态。
+- [x] 固化当前 SDKMessage JSONL 样例。
+- [x] 固化当前权限 approve / deny 样例。
+- [x] 固化当前 AskUser / Plan Mode 样例。
+- [x] 固化当前 MCP / Skill 可见性样例。
+- [x] 固化当前旧 session resume / fork / rewind 样例。
+- [x] 如果触及飞书，固化当前飞书入口和群聊 MCP 样例。
 
 ### 验收
 
-- [ ] 每个基线都有输入、预期 UI、预期存储、预期终态。
-- [ ] 基线不要求截图，除非后续要证明 UI 零变化。
-- [ ] 没有业务代码变更。
+- [x] 每个基线都有输入、预期 UI、预期存储、预期终态。
+- [x] 基线不要求截图，除非后续要证明 UI 零变化。
+- [x] 没有业务代码变更。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `git diff --check -- docs/agent-refactor tasks/todo.md`
+- [x] `bun run typecheck`
+- [x] `git diff --check -- docs/agent-refactor tasks/todo.md`
 
 ### 回滚
 
-- [ ] 文档阶段，无功能回滚需求。
+- [x] 文档阶段，无功能回滚需求。
+
+### 阶段 0 首轮说明
+
+- 证据文件：`docs/agent-refactor/baseline-runs/2026-05-17-round-1.md`
+- 已确认本机开发配置目录为 `~/.rv-insights-dev/`，当前有 1 个 DeepSeek Agent 渠道、1 个默认 workspace、4 条 Agent session metadata、3 个 SDKMessage JSONL transcript。
+- 已用存量 JSONL 固化首条消息、错误恢复样例、WebSearch tool activity、result 终态和旧 session 多轮 resume 行为。
+- 当前环境缺少实时 Electron 桌面交互、workspace MCP server、飞书配置和若干权限/AskUser 样例；这些场景已记录输入、预期 UI、预期存储、预期终态和待补跑状态，后续触碰相关边界前必须补跑。
 
 ## 阶段 1：Shared Event Contract
 
