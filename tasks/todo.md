@@ -1,5 +1,72 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-17 Agent 模式 happyclaw 参考重构方案
+
+- [x] 复习项目 `tasks/lessons.md`，确认本次只生成重构方案文档，不直接改业务代码。
+- [x] 梳理 RV-Insights 当前 Agent 主链路：IPC、AgentOrchestrator、会话 JSONL、Jotai 全局监听和 UI 展示。
+- [x] 梳理 happyclaw 核心理念：复用 Claude Code CLI 运行时、多渠道路由、容器/宿主机运行时、工作区配置、MCP/Skill/插件。
+- [x] 在 `docs/agent-refactor/` 下生成重构方案 Markdown，覆盖目标架构、模块边界、迁移阶段、数据模型、验证策略和风险。
+- [x] 追加 Review，记录文档范围、依据与残余问题。
+
+## 2026-05-17 Agent 模式 happyclaw 参考重构方案 Review
+
+- 已新增 `docs/agent-refactor/README.md`、`current-state-and-gap.md`、`target-architecture.md`、`migration-plan.md`，形成总览、现状差距、目标架构和阶段迁移路线。
+- 方案明确吸收 happyclaw 的核心原则：Claude Code 原生优先、Runner 边界、shared event contract、runtime materialization、内置 MCP bridge；同时明确不照搬 SaaS 认证/RBAC/计费、IM-first 路由、Docker 默认隔离、SQLite 后台。
+- 文档依据包括 RV-Insights 的 `AgentView`、preload、agent IPC、`agent-service`、`agent-orchestrator`、`ClaudeAgentAdapter`、`agent-session-manager`、`useGlobalAgentListeners`、`agent-atoms`，以及 happyclaw 的 README、`container-runner`、`container/agent-runner`、`im-channel`、`plugin-utils`、`mcp-tools` 等。
+- 本轮未修改业务代码、README 或 AGENTS；仅新增方案文档并更新任务记录。
+- 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
+- 残余问题：方案尚未进入实现拆分，后续正式编码前需要按阶段确认是否先做 shared event contract，避免一次性大改 AgentOrchestrator 和 Renderer。
+
+## 2026-05-17 Agent 模式重构方案深化计划
+
+- [x] 复核 `tasks/lessons.md` 与现有 `docs/agent-refactor/` 文档，确认本轮继续只做方案文档优化。
+- [x] 补充总览文档，明确 happyclaw 理念到 RV-Insights 的取舍、最终交付物和阅读路径。
+- [x] 细化现状差距，按模块标注当前职责、问题症状、重构去向和保留边界。
+- [x] 细化目标架构，补齐事件契约、Runner 输入输出、runtime 目录、权限、MCP bridge、外部渠道和 Pipeline 复用细节。
+- [x] 细化迁移路线，补齐每阶段文件范围、测试策略、回滚点、完成定义和风险缓解。
+- [x] 运行 Markdown 差异检查，在本节追加 Review。
+
+## 2026-05-17 Agent 模式重构方案深化 Review
+
+- 已将 `docs/agent-refactor/` 从方向性方案补成可执行规格：总览补了阅读路径、最终交付物和取舍规则；现状差距补了职责拆分、待迁移模块和当前行为基线；目标架构补了 `AgentRuntimeService`、`AgentRuntimeRunner`、`AgentRuntimeManifest`、事件契约、权限生命周期、MCP bridge 和 Pipeline 复用边界；迁移路线补了 feature flag、文件范围、fixture 类型、兼容规则、回滚点和双写总规则。
+- 本轮重点吸收了 happyclaw 的原则，但把 RV-Insights 必须保留的本地优先、文件存储、保守权限和 Electron UI 体验边界明确写死，避免后续实现时误把 SaaS / IM-first / Docker-first 模型搬进来。
+- 另外把几个最容易在实现期卡住的地方提前定死：`sequence` / `runId` 语义、终态单一来源、旧 session 兼容策略、settings 合并白名单、技能物化模式、外部渠道权限默认策略和新旧 reducer 的对比口径。
+- 本轮仍未改业务代码、README 或 AGENTS；只更新了方案文档和任务记录。
+- 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
+- 后续若进入实现，建议先落 shared event contract，再做进程内 Runner 和 runtime manifest，避免一次性触碰 Orchestrator、Renderer 和工作区目录三条主线。
+
+## 2026-05-17 Agent 模式重构方案二次优化计划
+
+- [x] 复核上轮建议，确认本轮只继续优化方案文档，不改业务代码。
+- [x] 新增 baseline checklist、event contract、runtime manifest、implementation PR 指南四份补充文档。
+- [x] 在迁移路线中补充这些新文档的链接与更清晰的格式。
+- [x] 根据用户要求补充“客户端 UI 零可见变化”硬约束，确保后续实现只改运行时和数据流。
+- [x] 运行 Markdown/diff 检查，并追加 Review。
+
+## 2026-05-17 Agent 模式重构方案二次优化 Review
+
+- 已新增 `baseline-checklist.md`、`event-contract.md`、`runtime-manifest.md`、`implementation-prs.md`，把方案从架构路线进一步补成可验证的实现说明。
+- 已在 `README.md`、`migration-plan.md`、`implementation-prs.md` 写入客户端 UI 零可见变化约束：后续实现不得改布局、样式、文案、入口、按钮行为或交互路径；Renderer 迁移只能替换内部数据来源，最终 view model 必须与旧路径一致。
+- 已修正 `migration-plan.md` 中阶段 2 的字段列表缩进，并补充到新文档的链接。
+- 本轮仍未修改业务代码、README 或 AGENTS；只更新 `docs/agent-refactor/` 和任务记录。
+- 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
+
+## 2026-05-17 Agent 重构开发进度清单计划
+
+- [x] 复核现有 `docs/agent-refactor/` 方案，确认本轮生成长期开发跟踪清单，不改业务代码。
+- [x] 新增详细迭代开发 checklist，覆盖阶段、任务、验收、验证命令、回滚点和 UI 零变化约束。
+- [x] 将 checklist 接入 `docs/agent-refactor/README.md` 索引，便于后续按文档推进。
+- [x] 运行 diff 检查，并追加 Review。
+
+## 2026-05-17 Agent 重构开发进度清单 Review
+
+- 已新增 `docs/agent-refactor/development-checklist.md`，作为后续 Agent 重构迭代的主控进度清单。
+- 清单按 12 个阶段组织：冻结基线、Shared Event Contract、Event Log 双写、In-process Runner、Runtime Manifest 只读解析、Runtime Materializer、新插件系统、内置 MCP Bridge、Renderer 新 reducer、External Channel Adapter、Pipeline 复用 Runner、旧路径清理。
+- 每个阶段都包含任务、验收、验证命令和回滚方式，并反复约束客户端 UI 零可见变化、旧 session 兼容、feature flag / 回滚路径和 `git diff --check`。
+- 已将该清单加入 `docs/agent-refactor/README.md` 索引，后续开发应按该文档逐项更新状态与阶段完成模板。
+- 本轮未修改业务代码、README 或 AGENTS；仅新增/更新方案文档和任务记录。
+- 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
+
 ## 2026-05-17 Agent Mission Header 压缩计划
 
 - [x] 复盘用户截图反馈：红框 Mission Header 信息密度过高，压缩了更重要的消息流与 Command Deck。
