@@ -2,6 +2,48 @@
 
 本清单是后续迭代开发的主控文档。每个阶段完成前都必须更新本文件，并在对应 PR / commit 中说明完成项、验证结果和回滚点。
 
+## 当前开发状态
+
+更新时间：2026-05-17
+
+当前阶段：方案与跟踪体系已完成，代码实现尚未开始。
+
+已完成：
+
+- [x] 已完成 Agent 重构总览文档：[README.md](./README.md)
+- [x] 已完成现状与差距分析：[current-state-and-gap.md](./current-state-and-gap.md)
+- [x] 已完成目标架构设计：[target-architecture.md](./target-architecture.md)
+- [x] 已完成迁移路线：[migration-plan.md](./migration-plan.md)
+- [x] 已完成行为基线清单模板：[baseline-checklist.md](./baseline-checklist.md)
+- [x] 已完成事件契约设计：[event-contract.md](./event-contract.md)
+- [x] 已完成 Runtime Manifest 设计：[runtime-manifest.md](./runtime-manifest.md)
+- [x] 已完成第一批实现 PR 拆分：[implementation-prs.md](./implementation-prs.md)
+- [x] 已完成本开发进度跟踪清单：[development-checklist.md](./development-checklist.md)
+- [x] 已明确客户端 UI 零可见变化约束。
+- [x] 已提交方案阶段成果：`158d8a64 docs: 完成 Agent 模式重构方案阶段文档`
+
+未完成：
+
+- [ ] 阶段 0 冻结基线尚未开始。
+- [ ] 阶段 1 Shared Event Contract 尚未开始。
+- [ ] 阶段 2 Event Log 双写尚未开始。
+- [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
+- [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
+- [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
+- [ ] 阶段 6 插件系统原生化尚未开始。
+- [ ] 阶段 7 内置 MCP Bridge 尚未开始。
+- [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
+- [ ] 阶段 9 External Channel Adapter 尚未开始。
+- [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
+- [ ] 阶段 11 清理旧路径尚未开始。
+
+下一步建议：
+
+1. 从阶段 0 开始，只做基线冻结，不改业务逻辑。
+2. 创建 `docs/agent-refactor/baseline-runs/`，按 [行为基线清单](./baseline-checklist.md) 记录当前行为。
+3. 阶段 0 完成并通过验证后立即单独提交。
+4. 再进入阶段 1 的 Shared Event Contract。
+
 ## 全局硬约束
 
 - [ ] 客户端 UI 零可见变化：不改布局、样式、文案、入口、按钮行为、交互路径。

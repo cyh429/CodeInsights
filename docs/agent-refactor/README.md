@@ -18,6 +18,7 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - [Runtime Manifest](./runtime-manifest.md)
 - [第一批实现 PR 拆分](./implementation-prs.md)
 - [开发进度跟踪清单](./development-checklist.md)
+- [下次启动 Codex 提示词](./next-session-prompt.md)
 
 ## 阅读路径
 
@@ -28,6 +29,7 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 3. 然后读 [目标架构](./target-architecture.md) 与 [迁移路线](./migration-plan.md)，确认模块边界和阶段顺序。
 4. 实现前读 [行为基线清单](./baseline-checklist.md)、[事件契约](./event-contract.md)、[Runtime Manifest](./runtime-manifest.md) 和 [第一批实现 PR 拆分](./implementation-prs.md)，把阶段拆成可验证 PR。
 5. 后续迭代按 [开发进度跟踪清单](./development-checklist.md) 更新状态、验证结果和回滚记录。
+6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续阶段 0。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
 

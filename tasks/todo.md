@@ -67,6 +67,22 @@
 - 本轮未修改业务代码、README 或 AGENTS；仅新增/更新方案文档和任务记录。
 - 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
 
+## 2026-05-17 Agent 重构进度状态交接计划
+
+- [x] 更新 `development-checklist.md` 当前开发状态，明确方案与跟踪体系已完成、代码实现尚未开始。
+- [x] 标注阶段 0-11 均未开始，并明确下一步应从阶段 0 冻结基线开始。
+- [x] 新增下次启动 Codex 的交接提示词文档。
+- [x] 将提示词文档加入 `docs/agent-refactor/README.md` 索引。
+- [x] 运行 diff 检查并提交本阶段文档状态更新。
+
+## 2026-05-17 Agent 重构进度状态交接 Review
+
+- 已更新 `docs/agent-refactor/development-checklist.md` 的当前开发状态：方案与跟踪体系已完成，代码实现尚未开始，阶段 0-11 均未开始。
+- 已明确下一步从“阶段 0：冻结基线”开始，先创建 `baseline-runs/` 并记录当前行为，不改业务代码。
+- 已新增 `docs/agent-refactor/next-session-prompt.md`，提供下次启动 Codex 可直接发送的中文提示词。
+- 已将提示词文档加入 `docs/agent-refactor/README.md` 索引。
+- 验证通过：`git diff --check -- docs/agent-refactor tasks/todo.md`。
+
 ## 2026-05-17 Agent Mission Header 压缩计划
 
 - [x] 复盘用户截图反馈：红框 Mission Header 信息密度过高，压缩了更重要的消息流与 Command Deck。
