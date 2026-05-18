@@ -11,7 +11,7 @@
 - [x] 阶段 5 Runtime Materializer for New Sessions 已完成并提交：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`。
 - [x] 阶段 6 插件系统原生化已完成并提交：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`。
 - [x] 阶段 7 内置 MCP Bridge 已完成并提交：`eb9b9f34 feat(agent): 完成 Agent 重构阶段 7 内置 MCP Bridge`。
-- [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证，待提交。
+- [x] 阶段 8 Renderer 切新 Reducer 已完成并提交：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。

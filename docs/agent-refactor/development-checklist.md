@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证，待提交；下一阶段为阶段 9 External Channel Adapter。
+当前阶段：阶段 8 Renderer 切新 Reducer 已完成实现、验证与提交；下一阶段为阶段 9 External Channel Adapter。
 
 已完成：
 
@@ -43,7 +43,7 @@
 未开始：
 
 - [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证。
-- [x] 阶段 8 成果待提交。
+- [x] 已提交阶段 8 成果：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
