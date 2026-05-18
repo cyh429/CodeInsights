@@ -15,7 +15,24 @@
 - [x] 阶段 9 External Channel Adapter 已完成并提交：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`。
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
-- [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成实现、真实交互补跑和最终验证，等待提交。
+- [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
+- [ ] 阶段 13 Runner v2 默认化证据补齐尚未开始。
+
+## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
+
+- [ ] 复习 `tasks/lessons.md`、阶段 12 证据、Agent 重构 README、development checklist、event contract 和 runtime manifest。
+- [ ] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [ ] 梳理旧 Agent 主循环仍独有能力：自动重试、Watchdog、Teams auto-resume、typed error 持久化、UI `sdk_message` 推送、旧 session resume / transcript 兼容。
+- [ ] 在 `agentRuntimeRunnerV2` feature flag 下补齐自动重试等价测试或明确记录仍不等价原因。
+- [ ] 在 `agentRuntimeRunnerV2` feature flag 下补齐 typed error 持久化和 completion signal 行为测试。
+- [ ] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
+- [ ] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；无法补跑必须记录具体阻塞原因。
+- [ ] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+- [ ] 若有飞书配置，补跑 `agentRuntimeChannelsV2` 飞书入口与群聊 MCP；若仍无配置，继续明确阻塞，不伪造通过。
+- [ ] 判断是否具备默认开启 `agentRuntimeRunnerV2` 条件；不满足时继续保持默认关闭并列出缺口。
+- [ ] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
+- [ ] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+- [ ] 阶段 13 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
 
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 

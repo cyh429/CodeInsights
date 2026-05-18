@@ -29,7 +29,23 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 3. 然后读 [目标架构](./target-architecture.md) 与 [迁移路线](./migration-plan.md)，确认模块边界和阶段顺序。
 4. 实现前读 [行为基线清单](./baseline-checklist.md)、[事件契约](./event-contract.md)、[Runtime Manifest](./runtime-manifest.md) 和 [第一批实现 PR 拆分](./implementation-prs.md)，把阶段拆成可验证 PR。
 5. 后续迭代按 [开发进度跟踪清单](./development-checklist.md) 更新状态、验证结果和回滚记录。
-6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续阶段 0。
+6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续阶段 13。
+
+## 当前进度
+
+- 阶段 0-12 已完成并提交，最新提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
+- 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均保持默认关闭。
+- 阶段 12 已补跑真实 Electron Agent 发送、pending-stop、权限 approve/deny、AskUser、Plan Mode 和 materialized runtime 下 `rv_host` 只读 MCP 可见性。
+- 阶段 12 已修复旧主循环与 Runner v2 在 stop 后 iterator / runner 正常结束时漏写 `run_stopped` 的风险。
+- 下一阶段重点是补齐 Runner v2 默认化证据，而不是 UI 改版或删除旧主循环。
+
+## 仍未完成
+
+- `agentRuntimeRunnerV2` 还缺自动重试、Watchdog、Teams auto-resume、typed error 持久化、UI `sdk_message` 推送、复杂 pending 交互和旧 session resume 的完整等价证据。
+- 真实 Electron 交互仍未完整补跑同会话并发、旧 session resume、附件、additional directory、fork、rewind。
+- Pipeline Runner v2 仍缺真实 Pipeline UI run 证据，human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定需要继续复验。
+- 飞书入口和飞书群聊 MCP 受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
+- Skill / Plugin snapshot 已有聚焦测试，但缺真实 Agent 对话中被模型实际使用的证据。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
 
