@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 6 插件系统原生化已完成实现与验证，待提交；下一阶段为阶段 7 内置 MCP Bridge。
+当前阶段：阶段 6 插件系统原生化已完成实现、验证与提交；下一阶段为阶段 7 内置 MCP Bridge。
 
 已完成：
 
@@ -36,6 +36,7 @@
 - [x] 阶段 5 Runtime Materializer for New Sessions 已完成实现与聚焦验证。
 - [x] 已提交阶段 5 成果：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`
 - [x] 阶段 6 插件系统原生化已完成实现与聚焦验证。
+- [x] 已提交阶段 6 成果：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`
 
 未开始：
 
