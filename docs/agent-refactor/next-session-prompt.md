@@ -5,59 +5,73 @@
 ```text
 请继续 RV-Insights 的 Agent 模式重构工作。
 
-重要上下文：
-- 项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
-- 参考方案目录：docs/agent-refactor/
-- 当前方案阶段已完成并提交：158d8a64 docs: 完成 Agent 模式重构方案阶段文档
-- 阶段 0 冻结基线已完成并提交：47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线
-- 阶段 1 Shared Event Contract 已完成并提交：d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约
-- 阶段 2 Event Log 双写已完成并提交：04f23aa6 feat(agent): 完成 Agent 重构阶段 2 事件日志双写
-- 阶段 0 基线证据：docs/agent-refactor/baseline-runs/2026-05-17-round-1.md
-- 最新进度跟踪文件：docs/agent-refactor/development-checklist.md
-- 当前最新状态：阶段 2 已在旧 Agent 运行路径旁边写入 `{session-id}.events.jsonl`，Renderer 仍走旧路径，Agent 模式对话当前不可见感知。
-- 下一步应从“阶段 3：In-process AgentRuntimeRunner”开始。
+项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
+
+必须先阅读：
+- tasks/lessons.md
+- docs/agent-refactor/README.md
+- docs/agent-refactor/development-checklist.md
+- docs/agent-refactor/event-contract.md
+- docs/agent-refactor/runtime-manifest.md
+- docs/agent-refactor/baseline-runs/2026-05-17-round-1.md
+
+当前已完成并提交：
+- 方案阶段：158d8a64 docs: 完成 Agent 模式重构方案阶段文档
+- 阶段 0：47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线
+- 阶段 1：d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约
+- 阶段 2：04f23aa6 feat(agent): 完成 Agent 重构阶段 2 事件日志双写
+- 阶段 3 交接文档：d7d0ae60 docs(agent): 更新 Agent 重构阶段 3 交接提示
+- 阶段 3：ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner
+- 阶段 4：18a65cd1 feat(agent): 完成 Agent 重构阶段 4 Runtime Manifest 只读解析
+
+当前状态：
+- 阶段 0 已冻结首轮行为基线，但仍缺少实时 Electron 桌面交互证据。
+- 阶段 1 已新增 shared runtime event contract：AgentStreamEnvelope / AgentRuntimeEvent / validator / adapter / replay reducer 测试骨架。
+- 阶段 2 已在旧 Agent 运行路径旁边双写 `{session-id}.events.jsonl`，旧 SDKMessage JSONL 仍是 Renderer / resume 主数据源。
+- 阶段 3 已新增进程内 InProcessAgentRuntimeRunner，抽出 SDK query / stream 边界；Runner 输出 `AsyncIterable<AgentStreamEnvelope>`，通过 callback 处理权限和 AskUser，通过 store interface 写 SDKMessage。
+- 阶段 4 已新增只读 Runtime Manifest Registry，能从旧 workspace 解析 `mcp.json`、`skills/`、`skills-inactive/`、plugin manifest 和 attached directories，生成 source hash / runtime hash / 能力快照，但不会创建 runtime 目录，也不会改变 cwd 或 Renderer 行为。
+- Orchestrator 已接入 `agentRuntimeRunnerV2` feature flag，但默认关闭；真实 Agent 对话仍走旧 Orchestrator 路径，因此客户端 UI 和默认行为没有可见变化。
+- `@rv-insights/shared` 当前为 `0.1.36`；`@rv-insights/electron` 当前为 `0.0.81`。
+
+当前未完成：
+- 阶段 5 Runtime Materializer for New Sessions 尚未开始。
+- 阶段 6 插件系统原生化尚未开始。
+- 阶段 7 内置 MCP Bridge 尚未开始。
+- 阶段 8 Renderer 切新 Reducer 尚未开始。
+- 阶段 9 External Channel Adapter 尚未开始。
+- 阶段 10 Pipeline 复用 Runner 尚未开始。
+- 阶段 11 清理旧路径尚未开始。
+- 阶段 0 真实交互缺口仍保留：并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind、MCP、飞书。
+
+当前工作树注意事项：
+- 可能只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 等噪音文件。
+- 不要把 `.DS_Store`、`improve/` 或无关改动纳入阶段提交。
+
+本次请执行阶段 5：Runtime Materializer for New Sessions。
+
+目标：
+1. 新增 Runtime Materializer，只对新 session 物化 runtime 目录。
+2. 写入 `runtime/.claude/settings.json`、`runtime/mcp.json`、`runtime/CLAUDE.md`、skills 和 plugin snapshot。
+3. 新 session 默认走 `sessions/{session-id}/cwd`，旧 session 保持旧 cwd 和 resume 行为不变。
+4. settings 只覆盖白名单 key，冲突写 `.rv-insights-conflicts.json` 并阻断 run。
+5. 保持客户端 UI 零可见变化。
+
+建议文件范围：
+- apps/electron/src/main/lib/ 可新增 `agent-runtime-materializer.ts` 和聚焦测试。
+- docs/agent-refactor/development-checklist.md 和 tasks/todo.md 需要更新阶段 5 状态。
 
 必须遵守：
 - 客户端 UI 零可见变化，不改布局、样式、文案、入口、按钮行为或交互路径。
-- 不引入本地数据库，不默认 Docker，不照搬 SaaS/IM-first 模型。
+- 不引入本地数据库，不默认 Docker，不照搬 SaaS / IM-first 模型。
 - 不默认 bypass 权限，外部渠道默认保守权限策略。
-- 每阶段只改变一个主边界，阶段完成并通过验证后立即单独提交。
-- 提交只包含该阶段相关文件，不纳入 .DS_Store、improve/ 临时文件或其他无关改动。
-- 开始前先阅读 tasks/lessons.md、docs/agent-refactor/README.md、docs/agent-refactor/development-checklist.md、docs/agent-refactor/event-contract.md、docs/agent-refactor/baseline-runs/2026-05-17-round-1.md。
-- 阶段 0 首轮仍有交互式缺口：并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind、MCP、飞书。阶段 3 会触碰 SDK query / Runner 边界，开始前优先评估并补跑发送、停止、resume、权限、AskUser 相关基线。
-- 当前工作树可能只有 .DS_Store / improve/ 噪音文件，不要纳入提交。
+- 每阶段只改变一个主边界；阶段 5 只做 materializer，不切 Renderer、不启用 Runner v2 默认路径。
+- 每阶段完成并通过验证后立即单独提交。
+- 提交只包含该阶段相关文件。
+- 开发前先在 tasks/todo.md 写阶段 5 checklist；完成后追加 Review。
 
-阶段 1 已完成内容：
-1. packages/shared/src/agent/runtime-events.ts 已新增 AgentStreamEnvelope、AgentRuntimeEvent、AgentRuntimeErrorPayload、AgentEventSource。
-2. 已新增 schema guard / validator、终态识别、旧 AgentEvent / AgentStreamPayload / SDKMessage adapter、event replay reducer 测试骨架。
-3. packages/shared/src/agent/runtime-events.test.ts 已覆盖 text、tool、permission、AskUser、usage、complete、error。
-4. agentRuntimeEventsV2 feature flag 默认 off。
-5. @rv-insights/shared 已升级到 0.1.34。
-6. 旧 AgentEvent、旧 IPC 默认行为、旧 Renderer reducer 和客户端 UI 均未改变。
-
-阶段 2 已完成内容：
-1. apps/electron/src/main/lib/agent-runtime-event-log.ts 已新增 AgentRuntimeEventLogWriter。
-2. 已新增 {session-id}.events.jsonl 旁路写入与读取，SDKMessage 原 JSONL 继续作为 Renderer / resume 主数据源。
-3. 每次 run 已生成独立 runId，sequence 按 run 单调递增，并对 run_completed / run_failed / run_stopped 做终态去重。
-4. 已双写 run_started、sdk_session、assistant/tool、usage_updated、终态事件。
-5. 权限和 AskUser 已记录 requested/resolved。
-6. shadow compare 仅写主进程开发日志，不在 UI 展示。
-7. @rv-insights/shared 已升级到 0.1.35，@rv-insights/electron 已升级到 0.0.79。
-8. 阶段 2 验证通过：bun run typecheck；bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts；git diff --check。
-9. 全量 bun test 仍在 412 pass 后复现既有 Electron named export 问题：Export named 'BrowserWindow' not found in module .../electron/index.js；阶段 2 相关聚焦测试单独通过。
-
-本次请执行阶段 3：In-process AgentRuntimeRunner。
-1. 新增 apps/electron/src/main/lib/agent-runtime-runner.ts。
-2. 新增 agent-runtime-types.ts，定义 AgentRuntimeRunInput、Runner 输出、权限/AskUser callback、store interface。
-3. 新增 agent-sdk-env.ts，迁移 SDK env 构建，但保持 buildSdkEnv 行为不变。
-4. 新增 agent-sdk-message-converter.ts，封装 SDKMessage 到 AgentStreamEnvelope 的转换。
-5. Runner 支持 AgentRuntimeRunInput，并输出 AsyncIterable<AgentStreamEnvelope>。
-6. Runner 通过 callback 请求权限和 AskUser，不直接写 IPC。
-7. Runner 通过 store interface 写 SDKMessage，不直接操作 Renderer。
-8. Orchestrator 通过 agentRuntimeRunnerV2 feature flag 调用 Runner，默认继续旧路径或保持可回滚。
-9. 保留旧 Orchestrator SDK query 路径，Renderer UI 零可见变化。
-10. 补充 Runner mock SDK stream 单元测试，覆盖发送、停止、resume、权限、AskUser 和错误终态。
-11. 验证至少运行 bun run typecheck、Runner / event log / Orchestrator 聚焦测试、git diff --check；如全量 bun test 仍失败，记录既有 Electron mock 问题。
-12. 更新 docs/agent-refactor/development-checklist.md 和 tasks/todo.md。
-13. 阶段完成后用详细中文 commit message 单独提交。
+阶段 5 验证至少包括：
+- bun run typecheck
+- bun test registry / path safety / manifest hash 聚焦测试
+- git diff --check
+- 如运行全量 bun test 仍失败，记录既有 Electron named export 问题，不把它误判为当前阶段回归。
 ```
