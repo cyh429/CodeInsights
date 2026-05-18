@@ -14,7 +14,7 @@ export interface AgentRuntimeManifestSkill {
   id: string
   sourcePath: string
   snapshotPath: string
-  materializeMode: 'readonly-source'
+  materializeMode: 'readonly-source' | 'copy'
   hash: string
   enabled: boolean
 }
@@ -52,6 +52,7 @@ export interface AgentRuntimeManifest {
   claudeMdPath: string
   skillsDir: string
   pluginsDir: string
+  sessionRuntimeManifestPath?: string
   settingsHash: string
   mcpHash: string
   skillsSnapshotHash: string

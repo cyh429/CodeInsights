@@ -691,6 +691,22 @@ export function getAgentSessionWorkspacePath(workspaceSlug: string, sessionId: s
 }
 
 /**
+ * 获取新 session 的 runtime cwd 路径
+ *
+ * 新 session 默认使用 ~/.rv-insights/agent-workspaces/{slug}/sessions/{sessionId}/cwd/
+ */
+export function getAgentSessionRuntimeCwdPath(workspaceSlug: string, sessionId: string): string {
+  return join(getAgentWorkspacePath(workspaceSlug), 'sessions', sessionId, 'cwd')
+}
+
+/**
+ * 获取新 session 的 runtime manifest 路径
+ */
+export function getAgentSessionRuntimeManifestPath(workspaceSlug: string, sessionId: string): string {
+  return join(getAgentWorkspacePath(workspaceSlug), 'sessions', sessionId, 'runtime-manifest.json')
+}
+
+/**
  * 获取 SDK 隔离配置目录路径
  *
  * 用于设置 CLAUDE_CONFIG_DIR 环境变量，让 SDK 读取独立的配置文件，

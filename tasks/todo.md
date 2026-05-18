@@ -18,6 +18,32 @@
 
 下一次开发应从阶段 5 开始：新增 Runtime Materializer for New Sessions，只对新 session 物化 runtime 目录，旧 session 继续保持旧 cwd / resume 行为。保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
 
+## 2026-05-18 Agent 重构阶段 5：Runtime Materializer for New Sessions 计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构文档、事件契约、runtime manifest 设计和阶段 0 基线。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [x] 新增 Runtime Materializer，基于阶段 4 manifest 只对新建 session 物化 `runtime/` 与 `sessions/{session-id}/cwd`。
+- [x] 写入 `runtime/.claude/settings.json`、`runtime/mcp.json`、`runtime/CLAUDE.md`、Skill snapshot、plugin snapshot 和 session `runtime-manifest.json`。
+- [x] 实现 settings 白名单合并：只管理允许 key，白名单 key 冲突时写 `.rv-insights-conflicts.json` 并阻断 run。
+- [x] 在 session 创建与 Orchestrator cwd 选择处接入：存在 session runtime manifest 的新 session 使用 `sessions/{id}/cwd`，旧 session 保持旧 cwd / resume 行为。
+- [x] 补充 materializer / manifest write / settings conflict / path safety / 旧 session cwd 兼容聚焦测试。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行验证并单独提交阶段 5。
+
+## 2026-05-18 Agent 重构阶段 5：Runtime Materializer for New Sessions Review
+
+- 已新增 `agent-runtime-materializer.ts`，负责新 session runtime 物化：`runtime/.claude/settings.json`、`runtime/mcp.json`、`runtime/CLAUDE.md`、`runtime/.claude/skills/*`、`runtime/.claude/plugins/*`、`sessions/{session-id}/cwd/.context` 和 `sessions/{session-id}/runtime-manifest.json`。
+- `createAgentSession()` 现在会在写入 session index 前 materialize runtime；如果 settings 冲突或路径不安全，创建会话会失败，不留下 session metadata。
+- Orchestrator 运行时只在发现 `sessions/{session-id}/runtime-manifest.json` 时切到 `sessions/{session-id}/cwd`；旧 session 没有 manifest，继续使用旧 `agent-workspaces/{slug}/{sessionId}` cwd 和原 resume 逻辑。
+- settings 合并只管理白名单字段；冲突会写入 `runtime/.claude/.rv-insights-conflicts.json` 并通过 preflight error 阻断 run。
+- materialized runtime 判定会校验 manifest 普通文件、sessionId、workspaceSlug、sessionCwd 和 manifest path，避免旧 session 被残留文件误切到新 cwd。
+- materializer 同时写入 runtime settings 与实际 SDK project settings；Orchestrator 对 materialized session 跳过旧 settings 写入 block，避免绕过冲突检查。
+- 路径安全覆盖 runtime 写入目标 symlink 拒绝，Skill / plugin snapshot 均保持在 workspace root 内；fork 复制源 cwd 时会递归跳过任意层级 symlink；additional directories 仍只记录引用，不复制。
+- 本阶段没有改 Renderer、UI 样式、文案、入口或交互路径；没有默认启用 Runner v2。
+- 已将 `@rv-insights/shared` 升到 `0.1.37`，`@rv-insights/electron` 升到 `0.0.82`，并同步 `bun.lock`。
+- 代码审查发现并已修复：manifest 存在性误判、session cwd project settings 覆盖风险、fork 源 cwd symlink 递归复制风险，并补充对应回归测试。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-runtime-materializer.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-session-manager-copy.test.ts`；`bun run typecheck`；`git diff --check`。
+- 本轮未启动 Electron 桌面壳补跑真实新/旧 session；旧 session cwd / resume 兼容以路径 fixture 覆盖，并在开发清单中记录为真实交互缺口。
+
 ## 2026-05-18 Agent 重构阶段 4：Runtime Manifest 只读解析计划
 
 - [x] 复习 `tasks/lessons.md`、Agent 重构阶段文档、事件契约、runtime manifest 设计和阶段 0 基线。

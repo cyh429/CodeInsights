@@ -8,7 +8,7 @@
  * 照搬 conversation-manager.ts 的模式。
  */
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, unlinkSync, rmSync, renameSync, readdirSync, cpSync, copyFileSync } from 'node:fs'
+import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, unlinkSync, rmSync, renameSync, readdirSync, copyFileSync } from 'node:fs'
 import { writeJsonFileAtomic, readJsonFileSafe } from './safe-file'
 import { randomUUID } from 'node:crypto'
 import { join, resolve, dirname } from 'node:path'
@@ -21,8 +21,13 @@ import {
   getAgentWorkspacePath,
   getSdkConfigDir,
 } from './config-paths'
-import { getAgentWorkspace } from './agent-workspace-manager'
+import { ensurePluginManifest, getAgentWorkspace } from './agent-workspace-manager'
 import { buildSearchSnippet, findFirstJsonlMatch } from './jsonl-search'
+import {
+  getMaterializedAgentRuntimeCwd,
+  hasMaterializedAgentRuntime,
+  materializeAgentRuntimeForNewSession,
+} from './agent-runtime-materializer'
 
 // 在模块加载时一次性设置 SDK 配置目录，避免在 forkSession 等异步调用中临时修改/恢复
 // process.env 导致的并发安全问题（异步操作的 await 间隙其他代码可能读到错误值）
@@ -32,6 +37,7 @@ if (!process.env.CLAUDE_CONFIG_DIR) {
 import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope } from '@rv-insights/shared'
 import { getConversationMessages } from './conversation-manager'
 import { clearNanoBananaAgentHistory } from './chat-tools/nano-banana-mcp'
+import { copyTreeWithoutSymlinks } from './agent-session-copy'
 
 /**
  * 会话索引文件格式
@@ -106,44 +112,23 @@ export function createAgentSession(
     updatedAt: now,
   }
 
-  index.sessions.push(meta)
-  writeIndex(index)
-
   // 确保消息目录存在
   getAgentSessionsDir()
 
-  // 若有工作区，创建 session 级别子文件夹并初始化 .claude / .context
+  // 若有工作区，新 session 物化 Claude runtime 目录；旧 session 路径不在这里迁移。
   if (workspaceId) {
     const ws = getAgentWorkspace(workspaceId)
     if (ws) {
-      const sessionDir = getAgentSessionWorkspacePath(ws.slug, meta.id)
-
-      // 初始化 .claude/settings.json（plansDirectory → .context）
-      const claudeDir = join(sessionDir, '.claude')
-      if (!existsSync(claudeDir)) mkdirSync(claudeDir, { recursive: true })
-      const settingsPath = join(claudeDir, 'settings.json')
-      let sdkSettings: Record<string, unknown> = {}
-      try {
-        sdkSettings = JSON.parse(readFileSync(settingsPath, 'utf-8'))
-      } catch { /* 文件不存在或解析失败 */ }
-      let needsWrite = false
-      if (sdkSettings.plansDirectory !== '.context') {
-        sdkSettings.plansDirectory = '.context'
-        needsWrite = true
-      }
-      if (sdkSettings.skipWebFetchPreflight !== true) {
-        sdkSettings.skipWebFetchPreflight = true
-        needsWrite = true
-      }
-      if (needsWrite) {
-        writeFileSync(settingsPath, JSON.stringify(sdkSettings, null, 2))
-      }
-
-      // 初始化 .context/ 目录
-      const contextDir = join(sessionDir, '.context')
-      if (!existsSync(contextDir)) mkdirSync(contextDir, { recursive: true })
+      ensurePluginManifest(ws.slug, ws.name)
+      materializeAgentRuntimeForNewSession({
+        workspace: ws,
+        sessionId: meta.id,
+      })
     }
   }
+
+  index.sessions.push(meta)
+  writeIndex(index)
 
   console.log(`[Agent 会话] 已创建会话: ${meta.title} (${meta.id})`)
   return meta
@@ -564,7 +549,9 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
   if (sourceMeta.workspaceId) {
     const ws = getAgentWorkspace(sourceMeta.workspaceId)
     if (ws) {
-      sourceDir = getAgentSessionWorkspacePath(ws.slug, sessionId)
+      sourceDir = hasMaterializedAgentRuntime(ws.slug, sessionId)
+        ? getMaterializedAgentRuntimeCwd(ws.slug, sessionId)
+        : getAgentSessionWorkspacePath(ws.slug, sessionId)
     }
   }
 
@@ -634,7 +621,9 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
   if (sourceDir && sourceMeta.workspaceId) {
     const ws = getAgentWorkspace(sourceMeta.workspaceId)
     if (ws) {
-      const destCwd = getAgentSessionWorkspacePath(ws.slug, newMeta.id)
+      const destCwd = hasMaterializedAgentRuntime(ws.slug, newMeta.id)
+        ? getMaterializedAgentRuntimeCwd(ws.slug, newMeta.id)
+        : getAgentSessionWorkspacePath(ws.slug, newMeta.id)
       const sourceJsonl = findSdkSessionJsonl(forkResult.sessionId)
       if (sourceJsonl) {
         // SDK 使用简单的字符替换计算 project-hash：path.replace(/[^a-zA-Z0-9]/g, '-')
@@ -658,7 +647,9 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
   if (sourceDir && sourceMeta.workspaceId) {
     const ws = getAgentWorkspace(sourceMeta.workspaceId)
     if (ws) {
-      const destDir = getAgentSessionWorkspacePath(ws.slug, newMeta.id)
+      const destDir = hasMaterializedAgentRuntime(ws.slug, newMeta.id)
+        ? getMaterializedAgentRuntimeCwd(ws.slug, newMeta.id)
+        : getAgentSessionWorkspacePath(ws.slug, newMeta.id)
       if (!existsSync(destDir)) mkdirSync(destDir, { recursive: true })
       try {
         const entries = readdirSync(sourceDir)
@@ -666,7 +657,7 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
           if (entry === '.claude' || entry === '.context' || entry === '.DS_Store' || entry === '.git') continue
           const srcPath = join(sourceDir, entry)
           const destPath = join(destDir, entry)
-          cpSync(srcPath, destPath, { recursive: true })
+          copyTreeWithoutSymlinks(srcPath, destPath)
         }
         const copiedCount = entries.filter(e => e !== '.claude' && e !== '.context' && e !== '.DS_Store' && e !== '.git').length
         console.log(`[Agent 会话] 已复制工作区文件: ${sourceDir} → ${destDir} (${copiedCount} 个条目)`)

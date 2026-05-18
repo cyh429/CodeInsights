@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
+当前阶段：阶段 5 Runtime Materializer for New Sessions 已完成实现，正在收尾验证与提交。
 
 已完成：
 
@@ -36,7 +36,7 @@
 
 未开始：
 
-- [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
+- [x] 阶段 5 Runtime Materializer for New Sessions 已完成实现与聚焦验证。
 - [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
@@ -46,13 +46,13 @@
 
 下一步建议：
 
-1. 下一次开发从阶段 5 Runtime Materializer for New Sessions 开始；新 session 才允许开始写 runtime 目录，旧 session 继续保持旧 cwd。
-2. 阶段 5 开始前复核阶段 0 基线缺口；触碰 materializer / cwd / MCP / Skill 物化边界时，应优先补充旧 workspace、旧 session resume、MCP/Skill 可见性和 symlink traversal fixture。
+1. 下一次开发从阶段 6 插件系统原生化开始；阶段 5 已让新 session 物化 runtime 目录，旧 session 继续保持旧 cwd。
+2. 阶段 6 开始前复核阶段 0 基线缺口；触碰 plugin catalog / plugin command / Runner options 边界时，应优先补充插件可见性、权限和旧 session resume 证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
-- 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 4 只新增只读 manifest 解析，未改变运行路径；人工打开旧 workspace / old session 仍保留为后续补跑缺口。
+- 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 5 已用单元测试覆盖旧 session cwd 不迁移和 Orchestrator 路径判定，但未启动 Electron 桌面壳做真实旧 session resume。
 - 当前本地配置没有 workspace MCP server，因此 MCP 可见性只记录了预期和缺口。
 - 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
@@ -314,37 +314,49 @@
 
 ### 任务
 
-- [ ] 新增 `agent-runtime-materializer.ts`。
-- [ ] 新 session 创建 `sessions/{session-id}/cwd`。
-- [ ] 写入 `runtime/.claude/settings.json`。
-- [ ] 写入 `runtime/mcp.json`。
-- [ ] 写入 `runtime/CLAUDE.md`。
-- [ ] 物化 enabled skills。
-- [ ] 物化 plugins snapshot 打桩或最小实现。
-- [ ] 写入 `runtime-manifest.json`。
-- [ ] settings 只覆盖白名单 key。
-- [ ] 冲突写 `.rv-insights-conflicts.json` 并阻断 run。
-- [ ] materialize 失败发 `runtime_config_invalid`。
+- [x] 新增 `agent-runtime-materializer.ts`。
+- [x] 新 session 创建 `sessions/{session-id}/cwd`。
+- [x] 写入 `runtime/.claude/settings.json`。
+- [x] 写入 `runtime/mcp.json`。
+- [x] 写入 `runtime/CLAUDE.md`。
+- [x] 物化 enabled skills。
+- [x] 物化 plugins snapshot 打桩或最小实现。
+- [x] 写入 `runtime-manifest.json`。
+- [x] settings 只覆盖白名单 key。
+- [x] 冲突写 `.rv-insights-conflicts.json` 并阻断 run。
+- [x] materialize 失败阻断 run，并通过现有 preflight error 通道返回配置错误。
 
 ### 验收
 
-- [ ] 新 session 目录符合 runtime manifest 文档。
-- [ ] 旧 session 仍使用旧 cwd 并可 resume。
-- [ ] MCP/Skill 改动后 hash 变化。
-- [ ] materialize 失败不进入半配置运行。
-- [ ] UI 无可见变化。
+- [x] 新 session 目录符合 runtime manifest 文档。
+- [~] 旧 session 仍使用旧 cwd 并可 resume：已用路径判定和 legacy cwd fixture 覆盖“不迁移旧 cwd”；本轮未启动 Electron 桌面壳补跑真实 resume。
+- [x] MCP/Skill 改动后 hash 变化沿用阶段 4 registry fixture；阶段 5 聚焦验证 materializer 写入 snapshot。
+- [x] materialize 失败不进入半配置运行。
+- [x] UI 无可见变化。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` materializer fixture。
-- [ ] 人工跑新 session 和旧 session。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/main/lib/agent-runtime-materializer.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-session-manager-copy.test.ts`
+- [!] 人工跑新 session 和旧 session：本轮未启动 Electron 桌面壳；旧 session cwd / resume 兼容已用路径 fixture 覆盖，新 session materialize 已用文件落盘 fixture 覆盖。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 关闭 `agentRuntimeMaterializerV2`。
-- [ ] 新 session 回到旧目录策略。
+- [x] 删除 session 创建处的 materialize 调用，并让 Orchestrator 不检测 session runtime manifest，即可回到旧目录策略。
+
+### 阶段 5 完成说明
+
+- 新增 `apps/electron/src/main/lib/agent-runtime-materializer.ts` 与聚焦测试，基于阶段 4 manifest 写入 runtime root、session cwd、session `runtime-manifest.json`、settings、MCP、CLAUDE.md、Skill snapshot 和 plugin snapshot。
+- 新 session 创建时会先 materialize runtime，再写入 session index；materialize 失败不会留下可见 session metadata。
+- Orchestrator 只在检测到 `sessions/{session-id}/runtime-manifest.json` 时切到 `sessions/{session-id}/cwd`，旧 session 没有 manifest 时继续使用旧 `agent-workspaces/{slug}/{sessionId}` cwd 和既有 resume 行为。
+- settings 合并只管理白名单字段；若 `plansDirectory` / `skipWebFetchPreflight` 等 RV 管理字段已有冲突值，会写 `runtime/.claude/.rv-insights-conflicts.json` 并阻断 run。
+- materialized runtime 判定不只看文件存在，会校验 manifest 普通文件、sessionId、workspaceSlug、sessionCwd 和 manifest path，避免旧 session 被残留文件误切到新 cwd。
+- materializer 同时写入 runtime settings 与实际 SDK project settings（`sessions/{session-id}/cwd/.claude/settings.json`），Orchestrator 对 materialized session 跳过旧 settings 写入 block，避免绕过冲突检查。
+- 路径安全延续阶段 4 策略：workspace 内已存在路径段拒绝 symlink，写入目标必须保持在 workspace root 内；runtime 写入目标若是 symlink 会被拒绝。
+- 代码审查发现并已修复：manifest 存在性误判、session cwd project settings 覆盖风险、fork 源 cwd symlink 递归复制风险，并补充对应回归测试。
+- 本阶段未修改 Renderer、UI 样式、文案、入口或交互路径；未默认启用 Runner v2。
+- `@rv-insights/shared` patch 版本从 `0.1.36` 提升到 `0.1.37`；`@rv-insights/electron` patch 版本从 `0.0.81` 提升到 `0.0.82`，并同步 `bun.lock`。
 
 ## 阶段 6：插件系统原生化
 

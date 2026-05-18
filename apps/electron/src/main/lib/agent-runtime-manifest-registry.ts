@@ -33,6 +33,7 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
   const claudeConfigDir = join(runtimeRoot, '.claude')
   const defaultCwd = join(workspaceRoot, 'workspace-files')
   const sessionCwd = input.sessionId ? join(workspaceRoot, 'sessions', input.sessionId, 'cwd') : undefined
+  const sessionRuntimeManifestPath = input.sessionId ? join(workspaceRoot, 'sessions', input.sessionId, 'runtime-manifest.json') : undefined
   const mcpConfigPath = join(runtimeRoot, 'mcp.json')
   const settingsPath = join(claudeConfigDir, 'settings.json')
   const claudeMdPath = join(runtimeRoot, 'CLAUDE.md')
@@ -43,6 +44,7 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
     assertPathInsideWorkspace(workspaceRoot, path)
   }
   if (sessionCwd) assertPathInsideWorkspace(workspaceRoot, sessionCwd)
+  if (sessionRuntimeManifestPath) assertPathInsideWorkspace(workspaceRoot, sessionRuntimeManifestPath)
 
   const legacyMcpPath = join(workspaceRoot, 'mcp.json')
   const legacySkillsDir = join(workspaceRoot, 'skills')
@@ -93,6 +95,7 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
     claudeMdPath,
     skillsDir,
     pluginsDir,
+    ...(sessionRuntimeManifestPath ? { sessionRuntimeManifestPath } : {}),
     settingsHash,
     mcpHash,
     skillsSnapshotHash,
@@ -136,30 +139,30 @@ function readLegacySkills(workspaceRoot: string, sourceDir: string, snapshotRoot
   if (!existsSync(sourceDir)) return []
   assertSafeExistingPath(workspaceRoot, sourceDir)
 
-  return readdirSync(sourceDir, { withFileTypes: true })
-    .filter((entry) => {
-      if (entry.isSymbolicLink()) {
-        throw new Error(`拒绝解析符号链接路径: ${join(sourceDir, entry.name)}`)
-      }
-      return entry.isDirectory()
+  const skills: AgentRuntimeManifestSkill[] = []
+
+  for (const entry of readdirSync(sourceDir, { withFileTypes: true })) {
+    if (entry.isSymbolicLink()) {
+      throw new Error(`拒绝解析符号链接路径: ${join(sourceDir, entry.name)}`)
+    }
+    if (!entry.isDirectory()) continue
+
+    const sourcePath = join(sourceDir, entry.name)
+    const skillMdPath = join(sourcePath, 'SKILL.md')
+    assertSafeExistingPath(workspaceRoot, sourcePath)
+    if (!existsSync(skillMdPath)) continue
+    assertSafeExistingPath(workspaceRoot, skillMdPath)
+    skills.push({
+      id: entry.name,
+      sourcePath,
+      snapshotPath: join(snapshotRoot, entry.name),
+      materializeMode: 'readonly-source',
+      enabled: true,
+      hash: hashDirectory(workspaceRoot, sourcePath),
     })
-    .map((entry) => {
-      const sourcePath = join(sourceDir, entry.name)
-      const skillMdPath = join(sourcePath, 'SKILL.md')
-      assertSafeExistingPath(workspaceRoot, sourcePath)
-      if (!existsSync(skillMdPath)) return null
-      assertSafeExistingPath(workspaceRoot, skillMdPath)
-      return {
-        id: entry.name,
-        sourcePath,
-        snapshotPath: join(snapshotRoot, entry.name),
-        materializeMode: 'readonly-source' as const,
-        enabled: true,
-        hash: hashDirectory(workspaceRoot, sourcePath),
-      }
-    })
-    .filter((entry): entry is AgentRuntimeManifestSkill => entry !== null)
-    .sort((a, b) => a.id.localeCompare(b.id))
+  }
+
+  return skills.sort((a, b) => a.id.localeCompare(b.id))
 }
 
 function readLegacyPlugins(workspaceRoot: string, manifestPath: string, snapshotRoot: string): AgentRuntimeManifest['enabledPlugins'] {

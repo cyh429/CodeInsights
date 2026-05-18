@@ -71,6 +71,12 @@ import {
 } from './agent-runtime-event-log'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
 import { agentRuntimeRunnerV2 } from './agent-runtime-types'
+import {
+  AgentRuntimeMaterializationError,
+  getMaterializedAgentRuntimeCwd,
+  hasMaterializedAgentRuntime,
+  materializeAgentRuntimeForNewSession,
+} from './agent-runtime-materializer'
 
 // ===== 类型定义 =====
 
@@ -627,6 +633,7 @@ export class AgentOrchestrator {
     let agentCwd: string | undefined
     let workspaceSlug: string | undefined
     let workspace: import('@rv-insights/shared').AgentWorkspace | undefined
+    let usesMaterializedRuntime = false
     let runtimeEventLog: AgentRuntimeEventLogWriter | null = null
 
     try {
@@ -678,12 +685,40 @@ export class AgentOrchestrator {
       if (workspaceId) {
         const ws = getAgentWorkspace(workspaceId)
         if (ws) {
-          agentCwd = getAgentSessionWorkspacePath(ws.slug, sessionId)
+          if (hasMaterializedAgentRuntime(ws.slug, sessionId)) {
+            try {
+              ensurePluginManifest(ws.slug, ws.name)
+              const manifest = materializeAgentRuntimeForNewSession({
+                workspace: ws,
+                sessionId,
+              })
+              agentCwd = manifest.sessionCwd ?? getMaterializedAgentRuntimeCwd(ws.slug, sessionId)
+              usesMaterializedRuntime = true
+              console.log(`[Agent 编排] 使用 materialized session cwd: ${agentCwd} (${ws.name}/${sessionId})`)
+            } catch (err) {
+              const details = err instanceof AgentRuntimeMaterializationError && err.conflictsPath
+                ? [`冲突文件: ${err.conflictsPath}`]
+                : undefined
+              reportPreflightError({
+                code: 'invalid_request',
+                title: 'Agent Runtime 配置冲突',
+                message: err instanceof Error ? err.message : 'Runtime 配置物化失败，请检查 workspace runtime 设置。',
+                details,
+                actions: [],
+                canRetry: false,
+              })
+              return
+            }
+          } else {
+            agentCwd = getAgentSessionWorkspacePath(ws.slug, sessionId)
+            console.log(`[Agent 编排] 使用旧 session cwd: ${agentCwd} (${ws.name}/${sessionId})`)
+          }
           workspaceSlug = ws.slug
           workspace = ws
-          console.log(`[Agent 编排] 使用 session 级别 cwd: ${agentCwd} (${ws.name}/${sessionId})`)
 
-          ensurePluginManifest(ws.slug, ws.name)
+          if (!hasMaterializedAgentRuntime(ws.slug, sessionId)) {
+            ensurePluginManifest(ws.slug, ws.name)
+          }
 
           if (existingSdkSessionId) {
             console.log(`[Agent 编排] 将尝试 resume: ${existingSdkSessionId}`)
@@ -698,7 +733,7 @@ export class AgentOrchestrator {
       // forkSourceDir 仅作为备用参考字段保留，不再影响 agentCwd。
 
       // 9.5 确保 SDK 项目设置（plansDirectory → .context）
-      {
+      if (!usesMaterializedRuntime) {
         const claudeSettingsDir = join(agentCwd, '.claude')
         if (!existsSync(claudeSettingsDir)) mkdirSync(claudeSettingsDir, { recursive: true })
         const settingsPath = join(claudeSettingsDir, 'settings.json')
@@ -1686,7 +1721,9 @@ export class AgentOrchestrator {
       const ws = getAgentWorkspace(sessionMeta.workspaceId)
       if (ws) {
         workspaceSlug = ws.slug
-        projectDir = getAgentSessionWorkspacePath(ws.slug, sessionMeta.id)
+        projectDir = hasMaterializedAgentRuntime(ws.slug, sessionMeta.id)
+          ? getMaterializedAgentRuntimeCwd(ws.slug, sessionMeta.id)
+          : getAgentSessionWorkspacePath(ws.slug, sessionMeta.id)
       }
     }
     const userMessageUuid = resolveUserUuidFromSDK(sessionMeta.sdkSessionId, assistantMessageUuid, projectDir, sessionMeta.forkSourceSdkSessionId)
