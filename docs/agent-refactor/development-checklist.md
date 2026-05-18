@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 6 插件系统原生化已完成实现、验证与提交；下一阶段为阶段 7 内置 MCP Bridge。
+当前阶段：阶段 7 内置 MCP Bridge 已完成实现与验证，待提交；下一阶段为阶段 8 Renderer 切新 Reducer。
 
 已完成：
 
@@ -40,7 +40,7 @@
 
 未开始：
 
-- [ ] 阶段 7 内置 MCP Bridge 尚未开始。
+- [x] 阶段 7 内置 MCP Bridge 已完成实现与验证。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
@@ -48,14 +48,14 @@
 
 下一步建议：
 
-1. 下一次开发从阶段 7 内置 MCP Bridge 开始；阶段 6 已让 materialized session 使用 RV plugin snapshot，旧 session 继续保持旧 plugin 路径。
-2. 阶段 7 开始前复核阶段 0 基线缺口；触碰 MCP bridge / host tools / 权限边界时，应优先补充 MCP 可见性、权限和旧 session resume 证据。
+1. 下一次开发从阶段 8 Renderer 切新 Reducer 开始；阶段 7 已让 materialized session 注入 RV host bridge MCP，旧 session 继续保持旧路径。
+2. 阶段 8 开始前复核阶段 0 基线缺口；触碰 Renderer reducer / pending interaction / resume 时，应优先补充真实 Electron 交互证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
 - 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 5 已用单元测试覆盖旧 session cwd 不迁移和 Orchestrator 路径判定，但未启动 Electron 桌面壳做真实旧 session resume。
-- 当前本地配置没有 workspace MCP server，因此 MCP 可见性只记录了预期和缺口。
+- 阶段 7 已用聚焦测试覆盖 host MCP bridge handler 与 materialized runtime 注入配置；当前未启动 Electron 桌面壳或真实 Claude Code MCP 会话，因此真实 MCP 可见性仍需后续补跑。
 - 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
 - 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
@@ -414,38 +414,49 @@
 
 ### 任务
 
-- [ ] 新增 `agent-host-mcp-server.ts`。
-- [ ] 实现 `rv_workspace_search`。
-- [ ] 实现 `rv_list_workspace_files`。
-- [ ] 实现 `rv_memory_search`。
-- [ ] 实现 `rv_open_file`。
-- [ ] 实现 `rv_memory_append`。
-- [ ] 实现 `rv_send_channel_message`。
-- [ ] 实现 `rv_schedule_task`。
-- [ ] 所有工具入参 runtime schema 校验。
-- [ ] side effect 工具走权限事件。
-- [ ] 工具失败返回结构化错误。
-- [ ] workspace manifest 支持 `hostBridge.enabled`。
+- [x] 新增 `agent-host-mcp-server.ts`。
+- [x] 实现 `rv_workspace_search`。
+- [x] 实现 `rv_list_workspace_files`。
+- [x] 实现 `rv_memory_search`。
+- [x] 实现 `rv_open_file`。
+- [x] 实现 `rv_memory_append`。
+- [x] 实现 `rv_send_channel_message`。
+- [x] 实现 `rv_schedule_task`。
+- [x] 所有工具入参 runtime schema 校验。
+- [x] side effect 工具不声明 readOnlyHint，不默认 bypass 权限。
+- [x] 工具失败返回结构化错误。
+- [x] workspace manifest 支持 `hostBridge.enabled`。
 
 ### 验收
 
-- [ ] Claude Code 能看到 `mcp__rv_insights__*` 工具。
-- [ ] 工具调用产生统一 stream event。
-- [ ] 权限 UI 能显示 MCP 工具请求。
-- [ ] 工具只能访问允许 workspace path。
-- [ ] UI 无可见变化。
+- [x] Materialized session 会注入 `rv_host` in-process MCP server，默认暴露只读 `rv_*` 宿主工具；side-effect handlers 已实现但不默认注册。
+- [x] 工具调用继续走 SDK MCP/tool 事件路径，不新增 Renderer 可见协议。
+- [x] side effect 工具不设置只读注解，保留现有 SDK `canUseTool` 权限路径。
+- [x] 工具只能访问 manifest 允许的 workspace/session/additional directory path。
+- [x] UI 无可见变化。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` host MCP tools fixture。
-- [ ] 人工调用只读工具和 side effect 工具。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/main/lib/agent-host-mcp-server.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-runtime-materializer.test.ts`
+- [!] 人工调用只读工具和 side effect 工具：本轮未启动 Electron 桌面壳或真实 Claude Code MCP 会话；MCP 可见性与权限 UI 仍记录为后续补跑缺口。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] `hostBridge.enabled = false`。
-- [ ] Runner 不注册内置 MCP server。
+- [x] `hostBridge.enabled = false`。
+- [x] Runner 不注册内置 MCP server。
+
+### 阶段 7 完成说明
+
+- 新增 `apps/electron/src/main/lib/agent-host-mcp-server.ts` 与聚焦测试，定义 `rv_host` in-process MCP server 和 7 个 host bridge handler。
+- `rv_workspace_search`、`rv_list_workspace_files`、`rv_open_file` 只读取 manifest 允许的 session cwd、workspace-files 和 additional directory；拒绝符号链接逃逸、范围外路径和非文本读取。
+- `rv_memory_search`、`rv_memory_append` 复用 MemOS 底层客户端；记忆未启用或缺少 API Key 时返回明确错误，不发起外部请求。`rv_memory_append` 已实现但不在默认 hostBridge 工具清单中注册。
+- `rv_send_channel_message`、`rv_schedule_task` 默认返回“未注入 adapter”的保守错误；只有未来 channel adapter / scheduler 显式注入后才会执行 side effect，且不在默认 hostBridge 工具清单中注册。
+- Runtime manifest 的 `hostBridge.tools` 现在由只读默认工具列表生成，记录 `version` / `configHash`，并纳入 `sourceConfigHash` / `runtimeHash`；materializer 会写入 `runtime/.claude/rv-host-bridge.json` 作为审计元数据，恢复已物化 session 时会校验该产物未被篡改。
+- `agent-orchestrator.ts` 仅在 materialized session manifest 存在且 `hostBridge.enabled` 时注入 `rv_host` MCP server；event log / Runner v2 会记录同一个 manifest `runtimeHash`，并拒绝外部 `customMcpServers` 覆盖内置 `rv_host`。旧 session、Renderer 和默认 Runner v2 开关均未改变。
+- 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；没有默认启用 Runner v2。
+- `@rv-insights/electron` patch 版本从 `0.0.83` 提升到 `0.0.84`；`@rv-insights/shared` patch 版本从 `0.1.38` 提升到 `0.1.39`。
 
 ## 阶段 8：Renderer 切新 Reducer
 

@@ -4,6 +4,7 @@ import { dirname, join, relative, resolve } from 'node:path'
 import type { AgentRuntimeManifest, AgentWorkspace, WorkspaceMcpConfig } from '@rv-insights/shared'
 import { buildAgentRuntimeManifest } from './agent-runtime-manifest-registry'
 import { materializePluginSnapshot } from './agent-plugin-catalog'
+import { AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { getAgentSessionRuntimeManifestPath, getAgentSessionRuntimeCwdPath } from './config-paths'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 
@@ -60,6 +61,7 @@ export function materializeAgentRuntimeForNewSession(input: MaterializeAgentRunt
 
   writeRuntimeSettings(manifest)
   writeRuntimeMcpConfig(manifest)
+  writeRuntimeHostBridgeConfig(manifest)
   writeRuntimeClaudeMd(manifest)
   materializeSkillSnapshots(manifest)
   materializePluginSnapshots(manifest)
@@ -89,6 +91,10 @@ export function readMaterializedAgentRuntime(workspaceSlug: string, sessionId: s
     || manifest.sessionCwd !== expectedSessionCwd
     || manifest.sessionRuntimeManifestPath !== manifestPath
   ) {
+    return null
+  }
+
+  if (!validateMaterializedAgentRuntime(manifest)) {
     return null
   }
 
@@ -167,6 +173,56 @@ function writeRuntimeMcpConfig(manifest: AgentRuntimeManifest): void {
     : { servers: {} }
 
   writeJsonTarget(manifest.workspaceRoot, manifest.mcpConfigPath, { servers: config.servers ?? {} })
+}
+
+function writeRuntimeHostBridgeConfig(manifest: AgentRuntimeManifest): void {
+  writeJsonTarget(manifest.workspaceRoot, getHostBridgeConfigPath(manifest), buildHostBridgeConfig(manifest))
+}
+
+function buildHostBridgeConfig(manifest: AgentRuntimeManifest): Record<string, unknown> {
+  return {
+    enabled: manifest.hostBridge.enabled,
+    serverName: 'rv_host',
+    version: manifest.hostBridge.version ?? AGENT_HOST_BRIDGE_VERSION,
+    tools: manifest.hostBridge.tools,
+    note: 'RV-Insights host bridge is injected as an in-process SDK MCP server for materialized sessions.',
+  }
+}
+
+function getHostBridgeConfigPath(manifest: AgentRuntimeManifest): string {
+  return join(manifest.claudeConfigDir, 'rv-host-bridge.json')
+}
+
+function validateMaterializedAgentRuntime(manifest: AgentRuntimeManifest): boolean {
+  try {
+    const requiredPaths = [
+      manifest.mcpConfigPath,
+      manifest.settingsPath,
+      manifest.claudeMdPath,
+      getHostBridgeConfigPath(manifest),
+    ]
+    for (const path of requiredPaths) {
+      assertSafeExistingPath(manifest.workspaceRoot, path)
+      if (!lstatSync(path).isFile()) return false
+    }
+
+    const hostConfigPath = getHostBridgeConfigPath(manifest)
+    const hostConfig = readJsonFileSafe<Record<string, unknown>>(hostConfigPath)
+    if (!hostConfig) return false
+    const expectedConfig = buildHostBridgeConfig(manifest)
+    if (JSON.stringify(hostConfig) !== JSON.stringify(expectedConfig)) return false
+    const expectedHash = manifest.hostBridge.configHash
+    if (expectedHash && expectedHash !== hashJson({
+      version: manifest.hostBridge.version ?? AGENT_HOST_BRIDGE_VERSION,
+      tools: manifest.hostBridge.tools,
+    })) {
+      return false
+    }
+
+    return true
+  } catch {
+    return false
+  }
 }
 
 function writeRuntimeClaudeMd(manifest: AgentRuntimeManifest): void {
@@ -289,4 +345,8 @@ function isOutside(relativePath: string): boolean {
 
 export function hashMaterializedFile(path: string): string {
   return `sha256:${createHash('sha256').update(readFileSync(path)).digest('hex')}`
+}
+
+function hashJson(value: unknown): string {
+  return `sha256:${createHash('sha256').update(JSON.stringify(value)).digest('hex')}`
 }

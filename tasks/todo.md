@@ -10,13 +10,37 @@
 - [x] 阶段 5 交接提示词已更新并提交：`410d8945 docs(agent): 更新阶段 5 交接提示词`。
 - [x] 阶段 5 Runtime Materializer for New Sessions 已完成并提交：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`。
 - [x] 阶段 6 插件系统原生化已完成并提交：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`。
-- [ ] 阶段 7 内置 MCP Bridge 尚未开始。
+- [x] 阶段 7 内置 MCP Bridge 已完成实现与验证。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
 
-下一次开发应从阶段 7 开始：内置 MCP Bridge。阶段 6 已让 materialized session 使用 RV plugin snapshot，旧 session 继续保持旧 plugin 路径。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
+下一次开发应从阶段 8 开始：Renderer 切新 Reducer。阶段 7 已让 materialized session 注入 RV host bridge MCP，旧 session 继续保持旧路径。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
+
+## 2026-05-18 Agent 重构阶段 7：内置 MCP Bridge 计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest 和阶段 0 基线。
+- [x] 检查现有 runtime manifest registry / materializer / orchestrator 接入点，确认阶段 7 只新增 host bridge 能力，不切 Renderer、不默认启用 Runner v2。
+- [x] 新增 `agent-host-mcp-server.ts`，定义内置 host bridge tool manifest 与保守 tool handler 边界。
+- [x] 实现 `rv_workspace_search`、`rv_list_workspace_files`、`rv_open_file`，限定 workspace/session/additional directory 可读范围，避免越权路径访问。
+- [x] 实现 `rv_memory_search`、`rv_memory_append`，复用现有 memory service 或本地 JSON 存储能力，写入行为保持可审计。
+- [x] 实现 `rv_send_channel_message`、`rv_schedule_task` 的保守默认策略，缺少真实外部渠道/调度器时返回明确不可用结果，不默认绕过权限或伪造发送。
+- [x] 将 host bridge 能力写入 runtime manifest / materializer，并暴露为 materialized workspace runtime 的 MCP server 配置。
+- [x] 补充 host MCP bridge / tool handlers 聚焦测试，覆盖路径安全、只读搜索、memory append、不可用 channel/task 行为和 manifest/materializer 输出。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行 `bun run typecheck`、聚焦测试、`git diff --check`，并单独提交阶段 7。
+
+## 2026-05-18 Agent 重构阶段 7：内置 MCP Bridge Review
+
+- 已新增 `apps/electron/src/main/lib/agent-host-mcp-server.ts`，实现 `rv_host` in-process MCP server，以及 `rv_workspace_search`、`rv_list_workspace_files`、`rv_memory_search`、`rv_open_file`、`rv_memory_append`、`rv_send_channel_message`、`rv_schedule_task` handlers；默认 hostBridge 只注册只读工具。
+- 文件类工具只读取 manifest 允许的 session cwd、workspace-files 和 additional directory，拒绝范围外路径、符号链接逃逸、非文本文件和过大文件。
+- 记忆工具复用 `getMemoryConfig()`、`searchMemory()`、`addMemory()`、`formatSearchResult()`；未启用记忆或缺少 API Key 时返回明确错误。
+- channel 发送与任务调度工具默认保守返回不可用，只有未来显式注入 adapter 后才执行 side effect，且不在默认 hostBridge 工具清单中注册；没有默认 bypass 权限。
+- `agent-runtime-manifest-registry.ts` 现在用只读默认工具列表生成 manifest，记录 `version` / `configHash`，并把 `hostBridge` 纳入 source/runtime hash；`agent-runtime-materializer.ts` 写入 `runtime/.claude/rv-host-bridge.json` 作为运行时审计元数据，恢复已物化 session 时会校验该产物未被篡改。
+- `agent-orchestrator.ts` 仅对 materialized session 注入 `rv_host` MCP server；event log / Runner v2 会记录同一个 manifest `runtimeHash`，并拒绝外部 `customMcpServers` 覆盖内置 `rv_host`。旧 session、Renderer、布局、文案、交互路径和 `agentRuntimeRunnerV2` 默认关闭状态均未改变。
+- 已将 `@rv-insights/electron` 升到 `0.0.84`、`@rv-insights/shared` 升到 `0.1.39`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-host-mcp-server.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-runtime-materializer.test.ts`；`git diff --check`。
+- 本轮未启动 Electron 桌面壳或真实 Claude Code MCP 会话，因此真实 MCP 可见性、只读工具/side effect 工具的人工调用和权限 UI 仍记录为后续补跑缺口。
 
 ## 2026-05-18 Agent 重构阶段 6：插件系统原生化计划
 

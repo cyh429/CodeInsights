@@ -7,6 +7,7 @@ import {
   AgentRuntimeMaterializationError,
   hasMaterializedAgentRuntime,
   materializeAgentRuntimeForNewSession,
+  readMaterializedAgentRuntime,
 } from './agent-runtime-materializer'
 
 let tempDir = ''
@@ -52,6 +53,7 @@ describe('materializeAgentRuntimeForNewSession', () => {
     expect(manifest.sessionCwd).toBe(join(workspaceRoot, 'sessions', 'session-1', 'cwd'))
     expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'settings.json'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', 'mcp.json'))).toBe(true)
+    expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', 'CLAUDE.md'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'skills', 'review-skill', 'SKILL.md'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default', 'plugin.json'))).toBe(true)
@@ -80,6 +82,17 @@ describe('materializeAgentRuntimeForNewSession', () => {
           enabled: true,
         },
       },
+    })
+    expect(JSON.parse(readFileSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'), 'utf-8'))).toMatchObject({
+      enabled: true,
+      serverName: 'rv_host',
+      version: expect.any(String),
+      tools: [
+        'rv_workspace_search',
+        'rv_list_workspace_files',
+        'rv_memory_search',
+        'rv_open_file',
+      ],
     })
   })
 
@@ -181,6 +194,28 @@ describe('materializeAgentRuntimeForNewSession', () => {
     symlinkSync(outsideManifest, join(workspaceRoot, 'sessions', 'legacy-session', 'runtime-manifest.json'))
 
     expect(hasMaterializedAgentRuntime('manifest-check', 'legacy-session', tempDir)).toBe(false)
+  })
+
+  test('恢复已物化 runtime 时校验 host bridge 产物未被篡改', () => {
+    const workspace = createWorkspace('tamper')
+    const workspaceRoot = createWorkspaceFiles(workspace.slug)
+
+    materializeAgentRuntimeForNewSession({
+      workspace,
+      sessionId: 'session-1',
+      workspacesRoot: tempDir,
+    })
+
+    expect(readMaterializedAgentRuntime('tamper', 'session-1', tempDir)).not.toBeNull()
+
+    writeFileSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'), JSON.stringify({
+      enabled: true,
+      serverName: 'rv_host',
+      version: 'tampered',
+      tools: ['rv_workspace_search'],
+    }, null, 2))
+
+    expect(readMaterializedAgentRuntime('tamper', 'session-1', tempDir)).toBeNull()
   })
 })
 

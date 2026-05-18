@@ -79,6 +79,7 @@ import {
   readMaterializedAgentRuntime,
 } from './agent-runtime-materializer'
 import { expandDmiSlashCommand } from './agent-plugin-catalog'
+import { AGENT_HOST_MCP_SERVER_NAME, createAgentHostMcpServer } from './agent-host-mcp-server'
 
 // ===== 类型定义 =====
 
@@ -371,6 +372,25 @@ export class AgentOrchestrator {
       await injectNanoBananaMcpServer(sdk, mcpServers, sessionId, agentCwd)
     } catch (err) {
       console.error(`[Agent 编排] 注入 Nano Banana MCP 失败:`, err)
+    }
+  }
+
+  private async injectHostBridgeTools(
+    sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
+    mcpServers: Record<string, Record<string, unknown>>,
+    manifest: import('@rv-insights/shared').AgentRuntimeManifest | undefined,
+  ): Promise<void> {
+    if (!manifest?.hostBridge.enabled) return
+    if (mcpServers[AGENT_HOST_MCP_SERVER_NAME]) {
+      console.warn(`[Agent 编排] MCP server 名称冲突，跳过内置 host bridge: ${AGENT_HOST_MCP_SERVER_NAME}`)
+      return
+    }
+
+    try {
+      mcpServers[AGENT_HOST_MCP_SERVER_NAME] = await createAgentHostMcpServer(sdk, { manifest })
+      console.log(`[Agent 编排] 已注入 RV host bridge MCP (${manifest.hostBridge.tools.length} tools)`)
+    } catch (err) {
+      console.error('[Agent 编排] 注入 RV host bridge MCP 失败:', err)
     }
   }
 
@@ -779,9 +799,13 @@ export class AgentOrchestrator {
       const mcpServers = this.buildMcpServers(workspaceSlug)
       await this.injectMemoryTools(sdk, mcpServers)
       await this.injectNanoBananaTools(sdk, mcpServers, sessionId, agentCwd)
+      await this.injectHostBridgeTools(sdk, mcpServers, materializedRuntimeManifest)
 
       // 合并外部注入的自定义 MCP 服务器（如飞书群聊工具）
       if (customMcpServers) {
+        if (customMcpServers[AGENT_HOST_MCP_SERVER_NAME]) {
+          throw new Error(`自定义 MCP 不能覆盖内置 host bridge: ${AGENT_HOST_MCP_SERVER_NAME}`)
+        }
         Object.assign(mcpServers, customMcpServers)
         console.log(`[Agent 编排] 已合并 ${Object.keys(customMcpServers).length} 个自定义 MCP 服务器`)
       }
@@ -856,6 +880,7 @@ export class AgentOrchestrator {
         cwd: agentCwd ?? homedir(),
         permissionMode: initialPermissionMode,
         resumeFrom: existingSdkSessionId,
+        runtimeHash: materializedRuntimeManifest?.runtimeHash,
       })
 
       // 始终创建 auto 权限回调（运行中可能切换到 auto）
@@ -1044,6 +1069,7 @@ export class AgentOrchestrator {
           runtimeEventLog,
           callbacks,
           streamStartedAt,
+          runtimeHash: materializedRuntimeManifest?.runtimeHash,
         })
         return
       }
@@ -1644,6 +1670,7 @@ export class AgentOrchestrator {
     runtimeEventLog: AgentRuntimeEventLogWriter | null
     callbacks: SessionCallbacks
     streamStartedAt: number
+    runtimeHash?: string
   }): Promise<void> {
     console.log(`[Agent 编排] agentRuntimeRunnerV2 已启用，切换到 InProcessAgentRuntimeRunner`)
     const runner = new InProcessAgentRuntimeRunner({
@@ -1662,7 +1689,7 @@ export class AgentOrchestrator {
       queryOptions: input.queryOptions,
       resumeFrom: input.resumeFrom,
       channelModelId: input.channelModelId,
-      runtimeHash: 'in-process-runner-v2',
+      runtimeHash: input.runtimeHash ?? 'in-process-runner-v2',
     })) {
       input.runtimeEventLog?.appendRuntimeEvent(envelope.source, envelope.event)
     }

@@ -64,6 +64,8 @@ export interface AgentRuntimeManifestAdditionalDirectory {
 export interface AgentRuntimeManifestHostBridge {
   enabled: boolean
   tools: string[]
+  version?: string
+  configHash?: string
 }
 
 export interface AgentRuntimeManifest {

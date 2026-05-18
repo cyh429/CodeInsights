@@ -9,6 +9,7 @@ import type {
   WorkspaceMcpConfig,
 } from '@rv-insights/shared'
 import { buildWorkspacePluginSnapshots } from './agent-plugin-catalog'
+import { AGENT_HOST_BRIDGE_READONLY_TOOLS, AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { getAgentWorkspacesDir } from './config-paths'
 
 export const AGENT_RUNTIME_MATERIALIZER_VERSION = '2026-05-18.1'
@@ -73,17 +74,28 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
     enabled,
     sourceType,
   })))
+  const hostBridge = {
+    enabled: true,
+    tools: [...AGENT_HOST_BRIDGE_READONLY_TOOLS],
+    version: AGENT_HOST_BRIDGE_VERSION,
+    configHash: hashJson({
+      version: AGENT_HOST_BRIDGE_VERSION,
+      tools: AGENT_HOST_BRIDGE_READONLY_TOOLS,
+    }),
+  }
   const sourceConfigHash = hashJson({
     mcpHash,
     skillsSnapshotHash,
     inactiveSkillsSourceHash,
     pluginsSnapshotHash,
     additionalDirectories,
+    hostBridge,
   })
   const runtimeHash = hashJson({
     materializerVersion: AGENT_RUNTIME_MATERIALIZER_VERSION,
     settingsHash,
     sourceConfigHash,
+    hostBridge: hostBridge.configHash,
   })
 
   return {
@@ -112,10 +124,7 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
     enabledSkills,
     enabledPlugins,
     additionalDirectories,
-    hostBridge: {
-      enabled: true,
-      tools: ['rv_workspace_search', 'rv_memory_search', 'rv_open_file'],
-    },
+    hostBridge,
     createdAt: new Date(input.workspace.createdAt).toISOString(),
     updatedAt: new Date(input.workspace.updatedAt).toISOString(),
     generatedAt,

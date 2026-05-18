@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync } from 'node
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { AgentWorkspace } from '@rv-insights/shared'
+import { AGENT_HOST_BRIDGE_READONLY_TOOLS, AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { buildAgentRuntimeManifest } from './agent-runtime-manifest-registry'
 
 let tempDir = ''
@@ -88,6 +89,12 @@ describe('buildAgentRuntimeManifest', () => {
       sourceType: 'legacy-workspace',
     }])
     expect(manifest.additionalDirectories).toEqual([{ path: '/Users/zq/Desktop/reference', mode: 'read' }])
+    expect(manifest.hostBridge).toEqual({
+      enabled: true,
+      tools: [...AGENT_HOST_BRIDGE_READONLY_TOOLS],
+      version: AGENT_HOST_BRIDGE_VERSION,
+      configHash: expect.stringMatching(/^sha256:/),
+    })
     expect(manifest.sourceConfigHash).toMatch(/^sha256:/)
     expect(manifest.runtimeHash).toMatch(/^sha256:/)
   })
