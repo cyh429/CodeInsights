@@ -4,9 +4,9 @@
 
 ## 当前开发状态
 
-更新时间：2026-05-17
+更新时间：2026-05-18
 
-当前阶段：阶段 0 冻结基线已完成并提交，下一步进入阶段 1 Shared Event Contract。
+当前阶段：阶段 1 Shared Event Contract 已完成实现，等待阶段提交。
 
 已完成：
 
@@ -24,9 +24,12 @@
 - [x] 已完成阶段 0 冻结基线首轮文本证据：[2026-05-17-round-1.md](./baseline-runs/2026-05-17-round-1.md)
 - [x] 已提交阶段 0 成果：`47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线`
 
+已完成：
+
+- [x] 阶段 1 Shared Event Contract 已完成实现与聚焦验证。
+
 未开始：
 
-- [ ] 阶段 1 Shared Event Contract 尚未开始。
 - [ ] 阶段 2 Event Log 双写尚未开始。
 - [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
 - [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
@@ -40,8 +43,8 @@
 
 下一步建议：
 
-1. 进入阶段 1 的 Shared Event Contract，继续保持客户端 UI 零可见变化。
-2. 阶段 1 开始前复查阶段 0 缺口，涉及权限、AskUser、Plan Mode、MCP、附件、fork/rewind 或飞书时优先补跑对应基线。
+1. 完成阶段 1 的 Shared Event Contract 验证并单独提交。
+2. 阶段 2 开始前继续保持客户端 UI 零可见变化，并按触碰边界补跑阶段 0 缺口。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -113,34 +116,37 @@
 
 ### 任务
 
-- [ ] 在 `packages/shared/src/agent/` 新增 `AgentStreamEnvelope`。
-- [ ] 新增 `AgentRuntimeEvent` union。
-- [ ] 新增 `AgentRuntimeErrorPayload`。
-- [ ] 新增 `AgentEventSource`。
-- [ ] 新增事件 schema guard / validator。
-- [ ] 新增 SDKMessage fixture。
-- [ ] 新增 AgentStreamEnvelope fixture。
-- [ ] 新增旧 payload 到新 envelope 的 adapter。
-- [ ] 新增 event replay reducer 测试骨架。
-- [ ] 引入 `agentRuntimeEventsV2` feature flag，默认 off。
+- [x] 在 `packages/shared/src/agent/` 新增 `AgentStreamEnvelope`。
+- [x] 新增 `AgentRuntimeEvent` union。
+- [x] 新增 `AgentRuntimeErrorPayload`。
+- [x] 新增 `AgentEventSource`。
+- [x] 新增事件 schema guard / validator。
+- [x] 新增 SDKMessage fixture。
+- [x] 新增 AgentStreamEnvelope fixture。
+- [x] 新增旧 payload 到新 envelope 的 adapter。
+- [x] 新增 event replay reducer 测试骨架。
+- [x] 引入 `agentRuntimeEventsV2` feature flag，默认 off。
 
 ### 验收
 
-- [ ] 类型导出稳定，旧 `AgentEvent` 未删除。
-- [ ] 不改变 IPC 主协议默认行为。
-- [ ] 不改变 Renderer 可见 UI。
-- [ ] 事件 fixture 覆盖 text、tool、permission、AskUser、usage、complete、error。
+- [x] 类型导出稳定，旧 `AgentEvent` 未删除。
+- [x] 不改变 IPC 主协议默认行为。
+- [x] 不改变 Renderer 可见 UI。
+- [x] 事件 fixture 覆盖 text、tool、permission、AskUser、usage、complete、error。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` 覆盖 shared event fixture。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test packages/shared/src/agent/runtime-events.test.ts`
+- [x] `bun test packages/shared/src/agent/runtime-events.test.ts packages/shared/src/utils/pipeline-state.test.ts packages/shared/src/utils/capabilities-diff.test.ts`
+- [x] `bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`
+- [!] `bun test` 全量在 412 pass 后出现一次 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`。单独重跑该失败文件通过，且本阶段只修改 shared contract。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 关闭 `agentRuntimeEventsV2`。
-- [ ] 保留旧 `AgentEvent` 和旧 reducer。
+- [x] 关闭 `agentRuntimeEventsV2`。
+- [x] 保留旧 `AgentEvent` 和旧 reducer。
 
 ## 阶段 2：Event Log 双写
 

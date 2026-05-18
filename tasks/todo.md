@@ -1,5 +1,29 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-18 Agent 重构阶段 1：Shared Event Contract 计划
+
+- [x] 复习阶段 0 基线、事件契约和开发清单，确认本阶段只新增 shared event contract，不改变 Agent 运行行为。
+- [x] 在 `packages/shared/src/agent/` 新增 `AgentStreamEnvelope`、`AgentRuntimeEvent`、`AgentRuntimeErrorPayload`、`AgentEventSource` 类型。
+- [x] 新增事件 schema guard / validator，覆盖 envelope 基础字段、事件 union 和终态互斥所需的单事件校验。
+- [x] 新增旧 `AgentEvent` / `AgentStreamPayload` 到新 envelope 的 adapter，保留旧类型和旧 IPC 默认行为。
+- [x] 新增 SDKMessage fixture 与 AgentStreamEnvelope fixture，覆盖 text、tool、permission、AskUser、usage、complete、error。
+- [x] 新增 event replay reducer 测试骨架，先验证 sequence 幂等、文本累计、工具状态、pending interaction、usage 和 terminal status 的基础行为。
+- [x] 引入 `agentRuntimeEventsV2` feature flag，默认 off，仅作为后续阶段回滚开关。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 阶段 1 状态与验证记录。
+- [x] 运行 `bun run typecheck`、`bun test` shared event fixture、`git diff --check`。
+- [x] 追加 Review，并单独提交阶段 1 成果。
+
+## 2026-05-18 Agent 重构阶段 1：Shared Event Contract Review
+
+- 已在 `packages/shared/src/agent/runtime-events.ts` 新增 `AgentStreamEnvelope`、`AgentRuntimeEvent`、`AgentRuntimeErrorPayload`、`AgentEventSource`、默认关闭的 `agentRuntimeEventsV2` feature flag。
+- 已新增 envelope 创建、schema guard / validator、终态识别、旧 `AgentEvent` / `AgentStreamPayload` / `SDKMessage` 到 runtime event 的 adapter，以及只用于测试和后续 reducer 对齐的 replay reducer 骨架。
+- 已新增 `packages/shared/src/agent/runtime-events.test.ts`，fixture 覆盖 text、tool、permission、AskUser、usage、complete、error，并验证 sequence 幂等回放。
+- 已通过 `packages/shared/src/agent/index.ts` 和 package root 导出新契约，同时保留旧 `AgentEvent`、旧 `AgentStreamPayload`、旧 renderer reducer 和 IPC 默认行为。
+- 已将 `@rv-insights/shared` patch 版本从 `0.1.33` 提升到 `0.1.34`，同步更新 `bun.lock`。
+- 本阶段没有修改 `apps/electron` 运行路径、Renderer UI、布局、样式、文案、入口、按钮行为或交互路径。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts packages/shared/src/utils/pipeline-state.test.ts packages/shared/src/utils/capabilities-diff.test.ts`；`bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
+- 全量 `bun test` 曾在 412 pass 后出现一次 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；单独重跑该失败文件通过，本阶段 shared contract 改动未触碰该路径。
+
 ## 2026-05-17 Agent 重构阶段 0：冻结基线计划
 
 - [x] 复习 `tasks/lessons.md`，确认阶段推进、UI 零可见变化和阶段完成即提交纪律。
