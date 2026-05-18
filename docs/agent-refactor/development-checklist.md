@@ -30,10 +30,12 @@
 - [x] 已提交阶段 3 交接提示词更新：`d7d0ae60 docs(agent): 更新 Agent 重构阶段 3 交接提示`
 - [x] 阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证。
 - [x] 已提交阶段 3 成果：`ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner`
+- [x] 阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
+- [x] 已提交阶段 4 成果：`18a65cd1 feat(agent): 完成 Agent 重构阶段 4 Runtime Manifest 只读解析`
+- [x] 已提交阶段 5 交接提示词更新：`410d8945 docs(agent): 更新阶段 5 交接提示词`
 
 未开始：
 
-- [x] 阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
 - [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
 - [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
@@ -44,7 +46,7 @@
 
 下一步建议：
 
-1. 阶段 4 完成后进入阶段 5 Runtime Materializer for New Sessions；新 session 才允许开始写 runtime 目录，旧 session 继续保持旧 cwd。
+1. 下一次开发从阶段 5 Runtime Materializer for New Sessions 开始；新 session 才允许开始写 runtime 目录，旧 session 继续保持旧 cwd。
 2. 阶段 5 开始前复核阶段 0 基线缺口；触碰 materializer / cwd / MCP / Skill 物化边界时，应优先补充旧 workspace、旧 session resume、MCP/Skill 可见性和 symlink traversal fixture。
 3. 每阶段完成并通过验证后立即单独提交。
 

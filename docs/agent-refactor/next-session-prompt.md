@@ -23,6 +23,7 @@
 - 阶段 3 交接文档：d7d0ae60 docs(agent): 更新 Agent 重构阶段 3 交接提示
 - 阶段 3：ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner
 - 阶段 4：18a65cd1 feat(agent): 完成 Agent 重构阶段 4 Runtime Manifest 只读解析
+- 阶段 5 交接文档：410d8945 docs(agent): 更新阶段 5 交接提示词
 
 当前状态：
 - 阶段 0 已冻结首轮行为基线，但仍缺少实时 Electron 桌面交互证据。
@@ -71,7 +72,8 @@
 
 阶段 5 验证至少包括：
 - bun run typecheck
-- bun test registry / path safety / manifest hash 聚焦测试
+- bun test materializer / manifest write / settings conflict / path safety 聚焦测试
+- 旧 session cwd / resume 兼容测试或明确记录未补跑原因
 - git diff --check
 - 如运行全量 bun test 仍失败，记录既有 Electron named export 问题，不把它误判为当前阶段回归。
 ```
