@@ -19,7 +19,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta } from '@rv-insights/shared'
-import { SAFE_TOOLS } from '@rv-insights/shared'
+import { SAFE_TOOLS, isAgentRuntimeTerminalEvent } from '@rv-insights/shared'
 import type { PermissionRequest, RVInsightsPermissionMode, AskUserRequest, ExitPlanModeRequest } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { isPromptTooLongError, friendlyErrorMessage, mapSDKErrorToTypedError, extractErrorDetails, shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
@@ -1377,6 +1377,25 @@ export class AgentOrchestrator {
             break
           }
 
+          // 用户中止后，SDK iterator 可能是正常结束而不是抛出 abort 错误。
+          // 这里必须在“正常完成”之前补写停止终态，避免 event log/replay 缺少 run_stopped。
+          if (!this.activeSessions.has(sessionId)) {
+            const wasStoppedByUser = this.stoppedBySessions.delete(sessionId)
+            console.log(`[Agent 编排] 会话 ${sessionId} 已被用户中止（iterator 正常结束）`)
+            this.persistSDKMessages(sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+            accumulatedMessages.length = 0
+            runtimeEventLog?.completeIfMissing({ type: 'run_stopped', reason: 'user_abort', stoppedBy: wasStoppedByUser ? 'user' : 'system' })
+            runtimeEventLog?.shadowCompare('user_abort_iterator_done')
+            try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
+            sendCompletionSignal({
+              callbacks,
+              messages: () => getAgentSessionMessages(sessionId),
+              startedAt: streamStartedAt,
+              options: { stoppedByUser: wasStoppedByUser },
+            })
+            return
+          }
+
           // 正常完成 — 如果之前有重试，发送 retry_cleared
           if (attempt > 1) {
             this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'retry', status: 'cleared' } })
@@ -1691,7 +1710,25 @@ export class AgentOrchestrator {
       channelModelId: input.channelModelId,
       runtimeHash: input.runtimeHash ?? 'in-process-runner-v2',
     })) {
+      if (!this.activeSessions.has(input.sessionId) && isAgentRuntimeTerminalEvent(envelope.event)) {
+        continue
+      }
       input.runtimeEventLog?.appendRuntimeEvent(envelope.source, envelope.event)
+    }
+
+    if (!this.activeSessions.has(input.sessionId)) {
+      const wasStoppedByUser = this.stoppedBySessions.delete(input.sessionId)
+      console.log(`[Agent 编排] 会话 ${input.sessionId} 已被用户中止（runner v2 正常结束）`)
+      input.runtimeEventLog?.completeIfMissing({ type: 'run_stopped', reason: 'user_abort', stoppedBy: wasStoppedByUser ? 'user' : 'system' })
+      input.runtimeEventLog?.shadowCompare('runner_v2_user_abort_done')
+      try { updateAgentSessionMeta(input.sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
+      sendCompletionSignal({
+        callbacks: input.callbacks,
+        messages: () => getAgentSessionMessages(input.sessionId),
+        startedAt: input.streamStartedAt,
+        options: { stoppedByUser: wasStoppedByUser },
+      })
+      return
     }
 
     input.runtimeEventLog?.shadowCompare('runner_v2_completed')
@@ -1709,10 +1746,12 @@ export class AgentOrchestrator {
    * 再调用 adapter.abort() 中止底层 SDK 进程。
    */
   stop(sessionId: string): void {
-    this.activeSessions.delete(sessionId)
+    const wasActive = this.activeSessions.delete(sessionId)
     this.sessionPermissionModes.delete(sessionId)
     this.sessionPermissionDispatchers.delete(sessionId)
-    this.stoppedBySessions.add(sessionId)
+    if (wasActive) {
+      this.stoppedBySessions.add(sessionId)
+    }
     this.queuedMessageUuids.delete(sessionId)
     this.adapter.abort(sessionId)
     console.log(`[Agent 编排] 已中止会话: ${sessionId}`)

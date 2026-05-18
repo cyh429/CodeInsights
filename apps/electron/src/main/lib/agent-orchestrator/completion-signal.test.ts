@@ -27,6 +27,7 @@ mock.module('electron', () => ({
 
 const { AgentEventBus } = await import('../agent-event-bus')
 const { AgentOrchestrator } = await import('../agent-orchestrator')
+const { agentRuntimeRunnerV2 } = await import('../agent-runtime-types')
 const {
   createAgentSession,
   getAgentSessionSDKMessages,
@@ -63,6 +64,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  agentRuntimeRunnerV2.enabled = false
   if (currentConfigDir) {
     rmSync(currentConfigDir, { recursive: true, force: true })
   }
@@ -328,6 +330,78 @@ describe('AgentOrchestrator completion signal', () => {
       startedAt: 5_005,
     })
     expect(recorder.completes[0]?.persistedTypes).toEqual(['user'])
+  })
+
+  test('用户中止后 iterator 正常结束时也会补写 run_stopped', async () => {
+    const input = createRunnableInput(5_015)
+    let resolveStop: (() => void) | undefined
+    const stopPromise = new Promise<void>((resolve) => {
+      resolveStop = resolve
+    })
+    const harness = createAdapterHarness(async function* () {
+      yield assistantTextMessage('先输出一点内容')
+      await stopPromise
+    })
+    const orchestrator = new AgentOrchestrator(harness.adapter, new AgentEventBus())
+    const recorder = createRecorder(input.sessionId)
+
+    const runPromise = orchestrator.sendMessage(input, recorder.callbacks)
+
+    await Promise.resolve()
+    await Promise.resolve()
+    orchestrator.stop(input.sessionId)
+    resolveStop?.()
+    await runPromise
+
+    expect(recorder.errors).toEqual([])
+    expect(recorder.completes).toHaveLength(1)
+    expect(recorder.completes[0]?.opts).toEqual({
+      stoppedByUser: true,
+      startedAt: 5_015,
+    })
+    expect(recorder.completes[0]?.persistedTypes).toEqual(['user', 'assistant'])
+    expect(getAgentSessionRuntimeEvents(input.sessionId).map((event) => event.event.type)).toEqual([
+      'run_started',
+      'assistant_message',
+      'run_stopped',
+    ])
+  })
+
+  test('Runner v2 用户中止后正常结束时也会补写 run_stopped', async () => {
+    agentRuntimeRunnerV2.enabled = true
+    const input = createRunnableInput(5_025)
+    let resolveStop: (() => void) | undefined
+    const stopPromise = new Promise<void>((resolve) => {
+      resolveStop = resolve
+    })
+    const harness = createAdapterHarness(async function* () {
+      yield assistantTextMessage('runner v2 先输出一点内容')
+      await stopPromise
+    })
+    const orchestrator = new AgentOrchestrator(harness.adapter, new AgentEventBus())
+    const recorder = createRecorder(input.sessionId)
+
+    const runPromise = orchestrator.sendMessage(input, recorder.callbacks)
+
+    await Promise.resolve()
+    await Promise.resolve()
+    orchestrator.stop(input.sessionId)
+    resolveStop?.()
+    await runPromise
+
+    expect(recorder.errors).toEqual([])
+    expect(recorder.completes).toHaveLength(1)
+    expect(recorder.completes[0]?.opts).toEqual({
+      stoppedByUser: true,
+      startedAt: 5_025,
+    })
+    expect(recorder.completes[0]?.persistedTypes).toEqual(['user', 'assistant'])
+    expect(getAgentSessionRuntimeEvents(input.sessionId).map((event) => event.event.type)).toEqual([
+      'run_started',
+      'run_started',
+      'assistant_message',
+      'run_stopped',
+    ])
   })
 
   test('catch 不可重试错误只完成一次，并在完成前持久化错误消息', async () => {

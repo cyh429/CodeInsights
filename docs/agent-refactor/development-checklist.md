@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 11 清理旧路径已完成并提交；下一阶段建议为阶段 12 真实交互补跑与 Runner v2 默认化准备。
+当前阶段：阶段 12 真实交互补跑与 Runner v2 默认化准备已完成，等待阶段提交。
 
 已完成：
 
@@ -49,7 +49,7 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
 - [x] 阶段 11 清理旧路径已完成并提交。
-- [ ] 阶段 12 真实交互补跑与 Runner v2 默认化准备尚未开始。
+- [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成真实交互补跑和最终验证，等待提交。
 
 下一步建议：
 
@@ -654,41 +654,41 @@
 
 - [x] 阶段 1-11 均已完成并保留回滚点。
 - [x] 客户端 UI 零可见变化约束仍有效。
-- [ ] 可启动 Electron 桌面壳，并有可用 Agent 兼容渠道/API Key。
-- [ ] 如要验证飞书入口，需要本机存在有效 `~/.rv-insights/feishu.json` 或明确记录缺失原因。
+- [x] 可启动 Electron 桌面壳，并有可用 Agent 兼容渠道/API Key。
+- [!] 如要验证飞书入口，需要本机存在有效 `~/.rv-insights/feishu.json` 或明确记录缺失原因；本机正式和 dev 配置目录均缺少飞书配置。
 
 ### 任务
 
-- [ ] 补跑 Agent 发送、停止、同会话并发、旧 session resume。
-- [ ] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
-- [ ] 补跑附件、additional directory、fork、rewind。
-- [ ] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
-- [ ] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性。
-- [ ] 补跑飞书入口和飞书群聊 MCP；若本机缺少配置，明确记录为阻塞，不伪造通过。
-- [ ] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常。
-- [ ] 评估 `agentRuntimeRunnerV2` 开启后的缺口：UI `sdk_message` 推送、自动重试、Watchdog、Teams auto-resume、typed error 持久化是否已等价。
-- [ ] 评估 `agentRuntimePipelineRunnerV2` 与 `agentRuntimeChannelsV2` 是否具备默认开启条件。
-- [ ] 更新 `docs/agent-refactor/baseline-runs/` 新一轮真实交互证据、`development-checklist.md` 和 `tasks/todo.md`。
+- [~] 补跑 Agent 发送、停止、同会话并发、旧 session resume；已补跑发送和 pending-stop，旧 session resume 仍依赖存量 JSONL，未重新发送。
+- [x] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
+- [!] 补跑附件、additional directory、fork、rewind；本轮未完整跑模型闭环，继续保留为后续缺口。
+- [x] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
+- [!] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性；本轮仅通过 materialized runtime 日志确认 host bridge 和 runtime cwd，未单独证明 Skill / Plugin snapshot 被模型使用。
+- [!] 补跑飞书入口和飞书群聊 MCP；本机缺少飞书配置，明确阻塞，不伪造通过。
+- [!] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常；本轮未启动新 Pipeline 真实任务，继续依赖聚焦测试。
+- [~] 评估 `agentRuntimeRunnerV2` 开启后的缺口：真实最小发送通过，但自动重试、Watchdog、Teams auto-resume、typed error 持久化仍未证明等价。
+- [~] 评估 `agentRuntimePipelineRunnerV2` 与 `agentRuntimeChannelsV2` 是否具备默认开启条件；两者均暂不具备默认开启条件。
+- [x] 更新 `docs/agent-refactor/baseline-runs/` 新一轮真实交互证据、`development-checklist.md` 和 `tasks/todo.md`。
 
 ### 验收
 
-- [ ] 每个补跑场景都有 sessionId/workspaceId/channelId、输入、终态、存储证据和 UI 行为记录。
-- [ ] 未补跑场景必须有具体阻塞原因。
-- [ ] 不默认 bypass 权限，不降低 patch-work Git 写入防护。
-- [ ] 若准备默认开启任一 feature flag，必须有聚焦测试和真实交互证据同时支持。
+- [~] 每个补跑场景都有 sessionId/workspaceId/channelId、输入、终态、存储证据和 UI 行为记录；已补跑场景见 `baseline-runs/2026-05-18-stage-12.md`。
+- [x] 未补跑场景必须有具体阻塞原因。
+- [x] 不默认 bypass 权限，不降低 patch-work Git 写入防护。
+- [x] 若准备默认开启任一 feature flag，必须有聚焦测试和真实交互证据同时支持；本阶段不默认开启任何 feature flag。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] Agent / Runtime / Event Log / Renderer atoms 聚焦测试。
-- [ ] Pipeline node runner 聚焦测试。
-- [ ] Electron 桌面壳真实交互补跑。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] Agent / Runtime / Event Log / Renderer atoms 聚焦测试。
+- [x] Pipeline node runner 聚焦测试。
+- [x] Electron 桌面壳真实交互补跑。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 保持可关闭。
-- [ ] 旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 读取继续作为回滚路径，直到真实交互证据证明可以删除。
+- [x] `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 保持可关闭。
+- [x] 旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 读取继续作为回滚路径，直到真实交互证据证明可以删除。
 
 ## 每阶段完成模板
 

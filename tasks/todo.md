@@ -15,25 +15,44 @@
 - [x] 阶段 9 External Channel Adapter 已完成并提交：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`。
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
-- [ ] 阶段 12 真实交互补跑与 Runner v2 默认化准备尚未开始。
+- [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成实现、真实交互补跑和最终验证，等待提交。
 
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 
-- [ ] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 0 baseline 和阶段 11 Review。
-- [ ] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
-- [ ] 启动 Electron 桌面壳，确认可用 Agent 兼容渠道/API Key；若无法启动或缺少渠道，明确记录阻塞。
-- [ ] 补跑 Agent 发送、停止、同会话并发、旧 session resume。
-- [ ] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
-- [ ] 补跑附件、additional directory、fork、rewind。
-- [ ] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
-- [ ] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性。
-- [ ] 补跑飞书入口和飞书群聊 MCP；若本机缺少 `~/.rv-insights/feishu.json`，明确记录缺失原因，不伪造通过。
-- [ ] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常。
-- [ ] 开启 feature flag 做对照评估：`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 是否具备默认开启条件。
-- [ ] 若发现 Runner v2 缺口，优先记录并补测试，不直接删除旧 Agent 主循环。
-- [ ] 更新 `docs/agent-refactor/baseline-runs/` 新一轮证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
-- [ ] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、`git diff --check`。
-- [ ] 阶段 12 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 0 baseline 和阶段 11 Review。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [x] 启动 Electron 桌面壳，确认可用 Agent 兼容渠道/API Key；若无法启动或缺少渠道，明确记录阻塞。
+- [~] 补跑 Agent 发送、停止、同会话并发、旧 session resume；已补跑发送和 pending-stop，同会话并发/旧 session resume 未完整重跑。
+- [x] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
+- [!] 补跑附件、additional directory、fork、rewind；本轮未完整跑模型闭环，继续记录为后续缺口。
+- [x] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
+- [!] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性；本轮未单独证明 Skill / Plugin snapshot 被模型实际使用。
+- [!] 补跑飞书入口和飞书群聊 MCP；本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`，明确阻塞，不伪造通过。
+- [!] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常；本轮未启动新 Pipeline 真实任务，继续依赖聚焦测试。
+- [x] 开启 feature flag 做对照评估：`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 是否具备默认开启条件。
+- [x] 若发现 Runner v2 缺口，优先记录并补测试，不直接删除旧 Agent 主循环。
+- [x] 更新 `docs/agent-refactor/baseline-runs/` 新一轮证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、`git diff --check`。
+- [x] 阶段 12 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
+
+## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备 Review
+
+- 已新增真实交互证据：`docs/agent-refactor/baseline-runs/2026-05-18-stage-12.md`。
+- Electron 桌面壳通过 Vite + `bunx electron . --remote-debugging-port=9333` 启动成功，主进程 runtime init / IPC / workspace watcher 正常；通过 CDP 调用 preload API 补跑真实交互。
+- 默认旧 Agent 主循环发送成功：`c098927b-114c-4f74-8c75-ee7f258b9a27` 写入 SDK JSONL 和 events JSONL，终态 `completed`。
+- 权限 approve / deny 已补跑：`d16ec854-899d-4993-bca4-d78585d368bb` 批准写入成功，`6a317c0b-132e-4ed4-8686-9b9e2fd4fab0` 显式拒绝后 result `permission_denials` 非空。
+- AskUser 已补跑：`14ace8a5-b218-435f-9be5-fcec8fe673f9` 触发 `AskUserQuestion`，pending askUsers 可恢复，回答后写入 resolved；后续触发 MCP 权限后已 stop 清理 pending。
+- Plan Mode 已补跑：`674ab67a-c2ab-40c8-9e7a-8315e21e9489` 触发 `ExitPlanMode` pending 和 `plan_mode_entered`，已用 deny 清理并恢复 workspace permission mode 为 `auto`。
+- materialized runtime 的 `rv_host` MCP 真实可见：权限队列中出现 `mcp__rv_host__rv_list_workspace_files`，events JSONL 写入 `tool_started` / `permission_requested`。
+- 发现并修复 pending-stop 缺口：旧主循环在 SDK iterator 因 stop 正常结束时未写 `run_stopped`；已在正常完成前检查 stopped session 并补写终态，同时避免 inactive session stop 留下 stale `stoppedBySessions`。
+- 代码审查后追加修复 Runner v2 同类缺口：`runWithRuntimeRunnerV2()` 在 runner 正常结束后也会复验 active session，被 stop 时补写 `run_stopped` 并发送 `stoppedByUser` completion。
+- 修复后真实复验：`2b0bc1d5-e914-4194-86ed-d4f473fc28d1` pending 权限 stop 后 events JSONL sequence 7 写入 `run_stopped(reason=user_abort, stoppedBy=user)`，pending 清空。
+- Runner v2 真实最小发送通过：`03281fb6-648b-438b-8616-370a3a2140a8` 在 `RV_AGENT_RUNTIME_RUNNER_V2=1` 下完成，日志确认切到 `InProcessAgentRuntimeRunner`。
+- 不默认开启 feature flag：`agentRuntimeRunnerV2` 缺少自动重试、Watchdog、Teams auto-resume、typed error 持久化等完整等价证据；Pipeline Runner v2 缺真实 Pipeline UI run；Channels v2 缺飞书配置。
+- 飞书真实入口阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在，未伪造通过。
+- 未完整补跑：附件、additional directory、fork、rewind、最小 Pipeline 真实 UI run、Skill / Plugin snapshot 实际模型使用；均已记录为后续缺口。
+- 已将 `@rv-insights/electron` 升到 `0.0.89`；本轮 `bun.lock` 无 diff。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（37 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
 
 ## 2026-05-18 Agent 重构阶段 11：清理旧路径计划
 
