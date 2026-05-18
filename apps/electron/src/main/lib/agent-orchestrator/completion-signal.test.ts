@@ -398,10 +398,34 @@ describe('AgentOrchestrator completion signal', () => {
     expect(recorder.completes[0]?.persistedTypes).toEqual(['user', 'assistant'])
     expect(getAgentSessionRuntimeEvents(input.sessionId).map((event) => event.event.type)).toEqual([
       'run_started',
-      'run_started',
       'assistant_message',
       'run_stopped',
     ])
+  })
+
+  test('Runner v2 会继续向 UI 推送 sdk_message payload', async () => {
+    agentRuntimeRunnerV2.enabled = true
+    const input = createRunnableInput(5_035)
+    const harness = createAdapterHarness(async function* () {
+      yield assistantTextMessage('runner v2 UI 可见内容')
+      yield resultMessage('success')
+    })
+    const eventBus = new AgentEventBus()
+    const sdkPayloadTypes: string[] = []
+    eventBus.on((sessionId, payload) => {
+      if (sessionId === input.sessionId && payload.kind === 'sdk_message') {
+        sdkPayloadTypes.push(payload.message.type)
+      }
+    })
+    const orchestrator = new AgentOrchestrator(harness.adapter, eventBus)
+    const recorder = createRecorder(input.sessionId)
+
+    await orchestrator.sendMessage(input, recorder.callbacks)
+
+    expect(recorder.errors).toEqual([])
+    expect(recorder.completes).toHaveLength(1)
+    expect(sdkPayloadTypes).toEqual(['assistant', 'result'])
+    expect(recorder.completes[0]?.persistedTypes).toEqual(['user', 'assistant', 'result'])
   })
 
   test('catch 不可重试错误只完成一次，并在完成前持久化错误消息', async () => {

@@ -16,23 +16,32 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- [ ] 阶段 13 Runner v2 默认化证据补齐尚未开始。
+- [~] 阶段 13 Runner v2 默认化证据补齐进行中。
 
 ## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
 
-- [ ] 复习 `tasks/lessons.md`、阶段 12 证据、Agent 重构 README、development checklist、event contract 和 runtime manifest。
-- [ ] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
-- [ ] 梳理旧 Agent 主循环仍独有能力：自动重试、Watchdog、Teams auto-resume、typed error 持久化、UI `sdk_message` 推送、旧 session resume / transcript 兼容。
-- [ ] 在 `agentRuntimeRunnerV2` feature flag 下补齐自动重试等价测试或明确记录仍不等价原因。
-- [ ] 在 `agentRuntimeRunnerV2` feature flag 下补齐 typed error 持久化和 completion signal 行为测试。
-- [ ] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
-- [ ] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；无法补跑必须记录具体阻塞原因。
-- [ ] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+- [x] 复习 `tasks/lessons.md`、阶段 12 证据、Agent 重构 README、development checklist、event contract 和 runtime manifest。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [x] 梳理旧 Agent 主循环仍独有能力：自动重试、Watchdog、Teams auto-resume、typed error 持久化、UI `sdk_message` 推送、旧 session resume / transcript 兼容。
+- [x] 在 `agentRuntimeRunnerV2` feature flag 下补齐自动重试等价测试或明确记录仍不等价原因。
+- [x] 在 `agentRuntimeRunnerV2` feature flag 下补齐 typed error 持久化和 completion signal 行为测试。
+- [~] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
+- [!] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；当前真实脚本多次超时，需改为更小粒度脚本或单场景补跑。
+- [!] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定；本轮未进入。
 - [ ] 若有飞书配置，补跑 `agentRuntimeChannelsV2` 飞书入口与群聊 MCP；若仍无配置，继续明确阻塞，不伪造通过。
-- [ ] 判断是否具备默认开启 `agentRuntimeRunnerV2` 条件；不满足时继续保持默认关闭并列出缺口。
-- [ ] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
-- [ ] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+- [~] 判断是否具备默认开启 `agentRuntimeRunnerV2` 条件；目前仅部分证据补齐，仍不能默认开启。
+- [~] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
+- [~] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
 - [ ] 阶段 13 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
+
+## 2026-05-18 Agent 重构阶段 13：当前 Review
+
+- Runner v2 已补齐的代码侧证据：自动重试、typed error 持久化、`sdk_message` UI 推送、stop 终态加固与重复 `run_started/sdk_session` 去重。
+- 已完成验证：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`；`git diff --check`。
+- 真实 Electron 交互已补到发送与停止；权限 approve / deny、AskUser、Plan Mode 在本轮脚本中卡在会话/响应编排上，未形成可提交证据。
+- 旧 session resume、同会话并发、附件、additional directory、fork、rewind、最小 Pipeline 真实 UI run 仍未完成。
+- 当前仍不能默认开启 `agentRuntimeRunnerV2`；缺口主要在真实交互覆盖，不在 typecheck 或聚焦单测。
+- 已将 `@rv-insights/electron` 升到 `0.0.90`，并同步 `bun.lock` workspace 版本元数据。
 
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 

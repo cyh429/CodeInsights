@@ -1697,6 +1697,9 @@ export class AgentOrchestrator {
       store: {
         appendMessages: (sessionId, messages) => appendSDKMessages(sessionId, messages),
       },
+      onSdkMessage: (sessionId, message) => {
+        this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
+      },
     })
 
     for await (const envelope of runner.run({
@@ -1711,6 +1714,9 @@ export class AgentOrchestrator {
       runtimeHash: input.runtimeHash ?? 'in-process-runner-v2',
     })) {
       if (!this.activeSessions.has(input.sessionId) && isAgentRuntimeTerminalEvent(envelope.event)) {
+        continue
+      }
+      if (envelope.event.type === 'run_started' || envelope.event.type === 'sdk_session') {
         continue
       }
       input.runtimeEventLog?.appendRuntimeEvent(envelope.source, envelope.event)

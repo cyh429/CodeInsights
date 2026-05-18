@@ -9,6 +9,7 @@ const baseTime = '2026-05-18T00:00:00.000Z'
 describe('InProcessAgentRuntimeRunner', () => {
   test('发送消息时输出 run_started、SDK envelopes 并通过 store 写 SDKMessage', async () => {
     const stored: SDKMessage[] = []
+    const emitted: SDKMessage[] = []
     const runner = new InProcessAgentRuntimeRunner({
       createRunId: () => 'run-send',
       now: () => baseTime,
@@ -20,6 +21,9 @@ describe('InProcessAgentRuntimeRunner', () => {
         appendMessages: (_sessionId, messages) => {
           stored.push(...messages)
         },
+      },
+      onSdkMessage: (_sessionId, message) => {
+        emitted.push(message)
       },
     })
 
@@ -33,6 +37,7 @@ describe('InProcessAgentRuntimeRunner', () => {
     ])
     expect(envelopes.map((envelope) => envelope.sequence)).toEqual([0, 1, 2, 3])
     expect(stored.map((message) => message.type)).toEqual(['assistant', 'result'])
+    expect(emitted.map((message) => message.type)).toEqual(['assistant', 'result'])
   })
 
   test('resume 时输出 sdk_session 并保留 resumeFrom', async () => {
@@ -122,8 +127,9 @@ describe('InProcessAgentRuntimeRunner', () => {
     expect(envelopes.map((envelope) => envelope.event.type)).toContain('ask_user_resolved')
   })
 
-  test('SDK stream 抛错时输出 run_failed 并保存已累积消息', async () => {
+  test('SDK stream 抛错时输出 run_failed 并保存已累积消息和错误消息', async () => {
     const stored: SDKMessage[] = []
+    const emitted: SDKMessage[] = []
     const runner = new InProcessAgentRuntimeRunner({
       createRunId: () => 'run-error',
       now: () => baseTime,
@@ -136,6 +142,9 @@ describe('InProcessAgentRuntimeRunner', () => {
           stored.push(...messages)
         },
       },
+      onSdkMessage: (_sessionId, message) => {
+        emitted.push(message)
+      },
     })
 
     const envelopes = await collect(runner.run(createRunInput({ sessionId: 'session-error' })))
@@ -143,7 +152,70 @@ describe('InProcessAgentRuntimeRunner', () => {
       type: 'run_failed',
       error: { message: '上游失败' },
     })
+    expect(stored.map((message) => message.type)).toEqual(['assistant', 'assistant'])
+    expect((stored[1] as { _errorCode?: string } | undefined)?._errorCode).toBe('unknown_error')
+    expect(emitted.map((message) => message.type)).toEqual(['assistant', 'assistant'])
+  })
+
+  test('可重试 catch 错误会沿用同一 runId 重试并在成功后清理 retry 状态', async () => {
+    const stored: SDKMessage[] = []
+    let calls = 0
+    const runner = new InProcessAgentRuntimeRunner({
+      createRunId: () => 'run-retry',
+      now: () => baseTime,
+      retryDelayMs: () => 0,
+      query: async function* () {
+        calls += 1
+        if (calls === 1) throw new Error('ECONNRESET')
+        yield assistantTextMessage('重试后成功')
+        yield resultMessage({ sessionId: 'sdk-retry' })
+      },
+      store: {
+        appendMessages: (_sessionId, messages) => {
+          stored.push(...messages)
+        },
+      },
+    })
+
+    const envelopes = await collect(runner.run(createRunInput({ sessionId: 'session-retry' })))
+
+    expect(calls).toBe(2)
+    expect(envelopes.map((envelope) => envelope.runId).every((runId) => runId === 'run-retry')).toBe(true)
+    expect(envelopes.map((envelope) => envelope.event.type)).toEqual([
+      'run_started',
+      'retry_scheduled',
+      'retry_attempt',
+      'assistant_message',
+      'usage_updated',
+      'run_completed',
+      'retry_cleared',
+    ])
+    expect(stored.map((message) => message.type)).toEqual(['assistant', 'result'])
+  })
+
+  test('不可重试 assistant typed error 会持久化 typed error SDKMessage', async () => {
+    const stored: SDKMessage[] = []
+    const runner = new InProcessAgentRuntimeRunner({
+      createRunId: () => 'run-typed-error',
+      now: () => baseTime,
+      query: async function* () {
+        yield assistantErrorMessage('authentication_failed', 'API key 无效')
+      },
+      store: {
+        appendMessages: (_sessionId, messages) => {
+          stored.push(...messages)
+        },
+      },
+    })
+
+    const envelopes = await collect(runner.run(createRunInput({ sessionId: 'session-typed-error' })))
+
+    expect(lastEvent(envelopes)).toMatchObject({
+      type: 'run_failed',
+      error: { code: 'invalid_api_key', retryable: true },
+    })
     expect(stored.map((message) => message.type)).toEqual(['assistant'])
+    expect((stored[0] as { _errorCode?: string } | undefined)?._errorCode).toBe('invalid_api_key')
   })
 })
 
@@ -182,6 +254,18 @@ function assistantTextMessage(text: string): SDKMessage {
     },
     parent_tool_use_id: null,
     uuid: `assistant-${text}`,
+  } as SDKMessage
+}
+
+function assistantErrorMessage(errorType: string, message: string): SDKMessage {
+  return {
+    type: 'assistant',
+    message: {
+      role: 'assistant',
+      content: [{ type: 'text', text: message }],
+    },
+    parent_tool_use_id: null,
+    error: { errorType, message },
   } as SDKMessage
 }
 

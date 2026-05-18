@@ -1,15 +1,24 @@
 import { randomUUID } from 'node:crypto'
-import type { AgentRuntimeEvent, AgentStreamEnvelope, SDKMessage } from '@rv-insights/shared'
+import type { AgentRuntimeEvent, AgentStreamEnvelope, SDKAssistantMessage, SDKMessage } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
-import { shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
+import { extractErrorDetails, friendlyErrorMessage, isPromptTooLongError, mapSDKErrorToTypedError, shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
 import type { PermissionResult } from './agent-permission-service'
 import { createRuntimeEnvelope, convertSdkMessageToRuntimeEnvelopes } from './agent-sdk-message-converter'
 import { prepareSdkMessageForAccumulation, prepareSdkMessagesForPersistence } from './agent-orchestrator/sdk-message-persistence'
+import { isAutoRetryableCatchError, isAutoRetryableTypedError } from './agent-orchestrator/retryable-error-classifier'
+import {
+  createCatchErrorSDKMessage,
+  createRetryExhaustedSDKMessage,
+  createTypedErrorSDKMessage,
+} from './agent-orchestrator/agent-error-message'
 import type {
   AgentRuntimeRunInput,
   AgentRuntimeRunner,
   AgentRuntimeRunnerDeps,
 } from './agent-runtime-types'
+
+const MAX_AUTO_RETRIES = 8
+const RETRY_MAX_DELAY_MS = 10_000
 
 interface SideEnvelopeQueue {
   push(envelope: AgentStreamEnvelope): void
@@ -27,6 +36,8 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
     const accumulatedMessages: SDKMessage[] = []
     const queryStartedAt = Date.now()
     const sideQueue = createSideEnvelopeQueue()
+    let lastRetryableError: string | undefined
+    let retrySucceeded = false
 
     const nextSequence = (): number => {
       const sequence = nextSequenceValue
@@ -73,7 +84,42 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
     })
 
     try {
-      for await (const rawMessage of this.deps.query(queryOptions)) {
+      for (let attempt = 1; attempt <= MAX_AUTO_RETRIES + 1; attempt += 1) {
+        if (attempt > 1) {
+          const delayMs = this.deps.retryDelayMs?.(attempt - 1) ?? getRetryDelayMs(attempt - 1)
+          const retryReason = lastRetryableError ?? '未知错误'
+          const scheduledEnvelope = makeEnvelope({
+            type: 'retry_scheduled',
+            attempt: attempt - 1,
+            maxAttempts: MAX_AUTO_RETRIES,
+            reason: retryReason,
+            delayMs,
+          }, 'runtime_service')
+          if (scheduledEnvelope) yield scheduledEnvelope
+          const attemptEnvelope = makeEnvelope({
+            type: 'retry_attempt',
+            attemptData: {
+              attempt: attempt - 1,
+              timestamp: Date.now(),
+              reason: retryReason,
+              errorMessage: retryReason,
+              delaySeconds: delayMs / 1000,
+            },
+          }, 'runtime_service')
+          if (attemptEnvelope) yield attemptEnvelope
+          await timerWithAbort(delayMs, input.abortSignal)
+          if (input.abortSignal?.aborted) {
+            const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
+            if (stoppedEnvelope) yield stoppedEnvelope
+            return
+          }
+        }
+
+        let shouldRetry = false
+        let shouldStopForRetryExhausted = false
+
+        try {
+          for await (const rawMessage of this.deps.query(queryOptions)) {
         for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
         if (input.abortSignal?.aborted) {
           const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
@@ -82,6 +128,38 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
         }
 
         const message = prepareSdkMessageForAccumulation(rawMessage, { channelModelId: input.channelModelId }) ?? rawMessage
+        const typedErrorResult = this.classifyAssistantTypedError(message, attempt)
+        if (typedErrorResult?.kind === 'retry') {
+          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+          lastRetryableError = typedErrorResult.reason
+          shouldRetry = true
+          break
+        }
+        if (typedErrorResult?.kind === 'retry_exhausted') {
+          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+          shouldStopForRetryExhausted = true
+          break
+        }
+        if (typedErrorResult?.kind === 'fatal') {
+          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+          const errorMessage = createTypedErrorSDKMessage(typedErrorResult.error)
+          await this.persistAndEmit(input.sessionId, [errorMessage])
+          const failedEnvelope = makeEnvelope({
+            type: 'run_failed',
+            error: {
+              code: typedErrorResult.error.code,
+              title: typedErrorResult.error.title,
+              message: typedErrorResult.error.message,
+              retryable: typedErrorResult.error.canRetry,
+              details: typedErrorResult.error.details,
+              originalError: typedErrorResult.error.originalError,
+            },
+            recoverable: typedErrorResult.error.canRetry,
+          }, 'runtime_service')
+          if (failedEnvelope) yield failedEnvelope
+          return
+        }
+
         if (message.type === 'assistant' || message.type === 'user' || message.type === 'result' || message.type === 'system') {
           const accumulationMessage = prepareSdkMessageForAccumulation(message, { channelModelId: input.channelModelId })
           if (accumulationMessage) accumulatedMessages.push(accumulationMessage)
@@ -101,6 +179,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
         })
 
         for (const envelope of envelopes) yield envelope
+        this.emitSdkMessage(input.sessionId, message)
 
         if (message.type === 'result') {
           await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
@@ -109,6 +188,9 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
           }
         }
       }
+
+          if (shouldRetry) continue
+          if (shouldStopForRetryExhausted) break
 
       await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
       for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
@@ -127,15 +209,72 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
         }, 'runtime_service')
         if (completeEnvelope) yield completeEnvelope
       }
+          if (attempt > 1) {
+            const retryClearedEnvelope = makeEnvelope({ type: 'retry_cleared' }, 'runtime_service')
+            if (retryClearedEnvelope) yield retryClearedEnvelope
+          }
+          retrySucceeded = true
+          break
+        } catch (error) {
+          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          const isRetryable = isAutoRetryableCatchError(null, errorMessage, '')
+          if (isRetryable && attempt <= MAX_AUTO_RETRIES) {
+            lastRetryableError = errorMessage || '未知错误'
+            continue
+          }
+          if (isRetryable && attempt > MAX_AUTO_RETRIES && lastRetryableError) {
+            break
+          }
+          throw error
+        }
+      }
+
+      if (!retrySucceeded && lastRetryableError && !terminalWritten) {
+        const failedAttemptEnvelope = makeEnvelope({
+          type: 'retry_failed',
+          attemptData: {
+            attempt: MAX_AUTO_RETRIES,
+            timestamp: Date.now(),
+            reason: lastRetryableError,
+            errorMessage: `重试 ${MAX_AUTO_RETRIES} 次后仍然失败`,
+            delaySeconds: 0,
+          },
+        }, 'runtime_service')
+        if (failedAttemptEnvelope) yield failedAttemptEnvelope
+        const retryErrorMessage = createRetryExhaustedSDKMessage({
+          maxAttempts: MAX_AUTO_RETRIES,
+          lastRetryableError,
+        })
+        await this.persistAndEmit(input.sessionId, [retryErrorMessage])
+        const failedEnvelope = makeEnvelope({
+          type: 'run_failed',
+          error: {
+            code: 'retry_exhausted',
+            title: 'Agent 重试失败',
+            message: `重试 ${MAX_AUTO_RETRIES} 次后仍然失败: ${lastRetryableError}`,
+            retryable: true,
+          },
+          recoverable: true,
+        }, 'runtime_service')
+        if (failedEnvelope) yield failedEnvelope
+      }
     } catch (error) {
       await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
       for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      const isPromptTooLong = isPromptTooLongError(errorMessage, error instanceof Error ? (error.stack ?? error.message) : String(error))
+      const sdkErrorMessage = createCatchErrorSDKMessage({
+        userFacingError: friendlyErrorMessage(errorMessage),
+        isPromptTooLong,
+      })
+      await this.persistAndEmit(input.sessionId, [sdkErrorMessage])
       const failedEnvelope = makeEnvelope({
         type: 'run_failed',
         error: {
-          code: 'runtime_error',
+          code: isPromptTooLong ? 'prompt_too_long' : 'runtime_error',
           title: 'Agent 运行失败',
-          message: error instanceof Error ? error.message : String(error),
+          message: friendlyErrorMessage(errorMessage),
           retryable: false,
         },
         recoverable: false,
@@ -225,6 +364,59 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
     if (toPersist.length === 0) return
     await this.deps.store.appendMessages(sessionId, toPersist)
   }
+
+  private async persistAndEmit(sessionId: string, messages: SDKMessage[]): Promise<void> {
+    await this.deps.store.appendMessages(sessionId, messages)
+    for (const message of messages) this.emitSdkMessage(sessionId, message)
+  }
+
+  private emitSdkMessage(sessionId: string, message: SDKMessage): void {
+    this.deps.onSdkMessage?.(sessionId, message)
+  }
+
+  private classifyAssistantTypedError(
+    message: SDKMessage,
+    attempt: number,
+  ):
+    | { kind: 'retry'; reason: string }
+    | { kind: 'retry_exhausted' }
+    | { kind: 'fatal'; error: ReturnType<typeof mapSDKErrorToTypedError> }
+    | null {
+    if (message.type !== 'assistant') return null
+    const assistantMessage = message as SDKAssistantMessage
+    if (!assistantMessage.error) return null
+
+    const { detailedMessage, originalError } = extractErrorDetails(assistantMessage as unknown as Parameters<typeof extractErrorDetails>[0])
+    let errorCode = assistantMessage.error.errorType || 'unknown_error'
+    if (isPromptTooLongError(detailedMessage, originalError)) {
+      errorCode = 'prompt_too_long'
+    }
+    const typedError = mapSDKErrorToTypedError(errorCode, friendlyErrorMessage(detailedMessage), originalError)
+    if (isAutoRetryableTypedError(typedError) && attempt <= MAX_AUTO_RETRIES) {
+      return {
+        kind: 'retry',
+        reason: typedError.title ? `${typedError.title}: ${typedError.message}` : typedError.message,
+      }
+    }
+    if (isAutoRetryableTypedError(typedError) && attempt > MAX_AUTO_RETRIES) {
+      return { kind: 'retry_exhausted' }
+    }
+    return { kind: 'fatal', error: typedError }
+  }
+}
+
+function getRetryDelayMs(attempt: number): number {
+  const base = Math.min(1000 * Math.pow(2, attempt - 1), RETRY_MAX_DELAY_MS)
+  const jitter = base * (Math.random() * 0.4 - 0.2)
+  return Math.max(0, Math.round(base + jitter))
+}
+
+function timerWithAbort(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (signal?.aborted) { resolve(); return }
+    const tid = setTimeout(resolve, ms)
+    signal?.addEventListener('abort', () => { clearTimeout(tid); resolve() }, { once: true })
+  })
 }
 
 function createSideEnvelopeQueue(): SideEnvelopeQueue {

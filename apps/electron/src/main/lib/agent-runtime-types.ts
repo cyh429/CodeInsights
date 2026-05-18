@@ -90,6 +90,8 @@ export interface AgentRuntimeRunnerDeps {
   interactions?: AgentRuntimeInteractionCallbacks
   now?: () => string
   createRunId?: () => string
+  retryDelayMs?: (attempt: number) => number
+  onSdkMessage?: (sessionId: string, message: SDKMessage) => void
 }
 
 export interface AgentRuntimeRunner {
