@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 2 Event Log 双写已完成并提交，下一步进入阶段 3 In-process AgentRuntimeRunner。
+当前阶段：阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证，等待整理文档并提交。
 
 已完成：
 
@@ -31,7 +31,7 @@
 
 未开始：
 
-- [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
+- [x] 阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证。
 - [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
 - [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
 - [ ] 阶段 6 插件系统原生化尚未开始。
@@ -216,47 +216,46 @@
 
 ### 任务
 
-- [ ] 新增 `apps/electron/src/main/lib/agent-runtime-runner.ts`。
-- [ ] 新增 `agent-runtime-types.ts`。
-- [ ] 新增 `agent-sdk-env.ts`，迁移 SDK env 构建。
-- [ ] 新增 `agent-sdk-message-converter.ts`。
-- [ ] Runner 支持 `AgentRuntimeRunInput`。
-- [ ] Runner 输出 `AsyncIterable<AgentStreamEnvelope>`。
-- [ ] Runner 通过 callback 请求权限和 AskUser。
-- [ ] Runner 通过 store interface 写 SDKMessage，不直接写 IPC。
-- [ ] Orchestrator 通过 `agentRuntimeRunnerV2` 调用 Runner。
-- [ ] 保留旧 Orchestrator SDK query 路径。
-- [ ] Runner mock SDK stream 单元测试。
+- [x] 新增 `apps/electron/src/main/lib/agent-runtime-runner.ts`。
+- [x] 新增 `agent-runtime-types.ts`。
+- [x] 新增 `agent-sdk-env.ts`，迁移 SDK env 构建。
+- [x] 新增 `agent-sdk-message-converter.ts`。
+- [x] Runner 支持 `AgentRuntimeRunInput`。
+- [x] Runner 输出 `AsyncIterable<AgentStreamEnvelope>`。
+- [x] Runner 通过 callback 请求权限和 AskUser。
+- [x] Runner 通过 store interface 写 SDKMessage，不直接写 IPC。
+- [x] Orchestrator 通过 `agentRuntimeRunnerV2` 调用 Runner。
+- [x] 保留旧 Orchestrator SDK query 路径。
+- [x] Runner mock SDK stream 单元测试。
 
 ### 验收
 
-- [ ] Agent 发送行为不变。
-- [ ] 停止行为不变。
-- [ ] resume 行为不变。
-- [ ] 权限 approve / deny 行为不变。
-- [ ] AskUser 行为不变。
-- [ ] `agent-orchestrator.ts` SDK stream 遍历逻辑开始瘦身。
-- [ ] UI 无可见变化。
+- [x] Agent 发送行为不变。
+- [x] 停止行为不变。
+- [x] resume 行为不变。
+- [x] 权限 approve / deny 行为不变。
+- [x] AskUser 行为不变。
+- [x] `agent-orchestrator.ts` SDK stream 遍历逻辑开始瘦身。
+- [x] UI 无可见变化。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` Runner mock stream 测试。
+- [x] `bun run typecheck`
+- [x] `bun test` Runner mock stream 测试。
 - [ ] 人工跑发送、停止、resume、权限、AskUser。
-- [ ] `git diff --check`
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 关闭 `agentRuntimeRunnerV2`。
-- [ ] Orchestrator 回到旧 SDK query 路径。
+- [x] 关闭 `agentRuntimeRunnerV2`。
+- [x] Orchestrator 回到旧 SDK query 路径。
 
 ### 阶段 3 启动说明
 
-- 当前尚未开始编码。
-- 目标不是改 UI，而是把 SDK query、SDKMessage 转换、权限/AskUser callback、SDKMessage 持久化接口抽到进程内 Runner。
-- 建议先新增类型和 Runner mock 测试，再迁移实现，避免一次性重写 `agent-orchestrator.ts`。
-- 必须保留旧 Orchestrator SDK query 路径，并通过 `agentRuntimeRunnerV2` 或等价 feature flag 回滚。
-- 阶段 3 完成前 Renderer 仍走旧路径，客户端 UI 应继续零可见变化。
+- 已完成编码，实现进程内 Runner 边界并保留旧 Orchestrator SDK query 路径。
+- 目标保持不变：不改 UI，只抽离 SDK query、SDKMessage 转换、权限/AskUser callback 和 SDKMessage 持久化接口。
+- 现阶段 `agentRuntimeRunnerV2` 默认关闭，可作为回滚开关。
+- Renderer 仍走旧路径，客户端 UI 继续零可见变化。
 
 ## 阶段 4：Runtime Manifest 只读解析
 

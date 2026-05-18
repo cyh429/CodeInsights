@@ -40,7 +40,7 @@ import { askUserService } from './agent-ask-user-service'
 import { exitPlanService } from './agent-exit-plan-service'
 import { getMemoryConfig } from './memory-service'
 import { searchMemory, addMemory, formatSearchResult } from './memos-client'
-import { buildSdkEnv, resolveSDKCliPath } from './agent-orchestrator/sdk-environment'
+import { buildSdkEnv, resolveSDKCliPath } from './agent-sdk-env'
 import { isAutoRetryableCatchError, isAutoRetryableTypedError } from './agent-orchestrator/retryable-error-classifier'
 import { createSessionNotFoundRecoveryPatch, isSessionNotFoundError } from './agent-orchestrator/session-recovery'
 import { TeamsCoordinator } from './agent-orchestrator/teams-coordinator'
@@ -69,6 +69,8 @@ import {
   startAgentRuntimeEventLogRun,
   type AgentRuntimeEventLogWriter,
 } from './agent-runtime-event-log'
+import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
+import { agentRuntimeRunnerV2 } from './agent-runtime-types'
 
 // ===== 类型定义 =====
 
@@ -969,6 +971,23 @@ export class AgentOrchestrator {
 
       console.log(`[Agent 编排] 开始通过 Adapter 遍历事件流...`)
 
+      if (agentRuntimeRunnerV2.enabled) {
+        await this.runWithRuntimeRunnerV2({
+          sessionId,
+          prompt: finalPrompt,
+          model: modelId || DEFAULT_MODEL_ID,
+          cwd: agentCwd ?? homedir(),
+          permissionMode: initialPermissionMode,
+          queryOptions,
+          resumeFrom: existingSdkSessionId,
+          channelModelId: modelId,
+          runtimeEventLog,
+          callbacks,
+          streamStartedAt,
+        })
+        return
+      }
+
       // 14. 遍历 Adapter 产出的 AgentEvent 流（含自动重试 + Watchdog 死锁检测）
       let lastRetryableError: string | undefined
       let retrySucceeded = false
@@ -1551,6 +1570,49 @@ export class AgentOrchestrator {
       runtimeEventLog?.shadowCompare('finally')
       finishAgentRuntimeEventLogRun(sessionId, runtimeEventLog)
     }
+  }
+
+  private async runWithRuntimeRunnerV2(input: {
+    sessionId: string
+    prompt: string
+    model: string
+    cwd: string
+    permissionMode: RVInsightsPermissionMode
+    queryOptions: ClaudeAgentQueryOptions
+    resumeFrom?: string
+    channelModelId?: string
+    runtimeEventLog: AgentRuntimeEventLogWriter | null
+    callbacks: SessionCallbacks
+    streamStartedAt: number
+  }): Promise<void> {
+    console.log(`[Agent 编排] agentRuntimeRunnerV2 已启用，切换到 InProcessAgentRuntimeRunner`)
+    const runner = new InProcessAgentRuntimeRunner({
+      query: (options) => this.adapter.query(options),
+      store: {
+        appendMessages: (sessionId, messages) => appendSDKMessages(sessionId, messages),
+      },
+    })
+
+    for await (const envelope of runner.run({
+      sessionId: input.sessionId,
+      prompt: input.prompt,
+      model: input.model,
+      cwd: input.cwd,
+      permissionMode: input.permissionMode,
+      queryOptions: input.queryOptions,
+      resumeFrom: input.resumeFrom,
+      channelModelId: input.channelModelId,
+      runtimeHash: 'in-process-runner-v2',
+    })) {
+      input.runtimeEventLog?.appendRuntimeEvent(envelope.source, envelope.event)
+    }
+
+    input.runtimeEventLog?.shadowCompare('runner_v2_completed')
+    sendCompletionSignal({
+      callbacks: input.callbacks,
+      messages: () => getAgentSessionMessages(input.sessionId),
+      startedAt: input.streamStartedAt,
+    })
   }
 
   /**

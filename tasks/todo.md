@@ -2,14 +2,26 @@
 
 ## 2026-05-18 Agent 重构阶段 3：In-process AgentRuntimeRunner 下一步计划
 
-- [ ] 先复习 `tasks/lessons.md`、`docs/agent-refactor/development-checklist.md`、`event-contract.md` 和阶段 0 基线。
-- [ ] 新增 `agent-runtime-types.ts`，定义 Runner 输入、输出、store interface、权限/AskUser callback。
-- [ ] 新增 `agent-runtime-runner.ts`，把 SDK query 封装为进程内 Runner，输出 `AsyncIterable<AgentStreamEnvelope>`。
-- [ ] 新增 `agent-sdk-env.ts` 与 `agent-sdk-message-converter.ts`，迁移 env 构建和 SDKMessage 转换边界。
-- [ ] 用 `agentRuntimeRunnerV2` feature flag 接入 Orchestrator，保留旧 SDK query 路径作为回滚。
-- [ ] 补充 Runner mock SDK stream 测试，覆盖发送、停止、resume、权限、AskUser、错误终态。
-- [ ] 保持 Renderer 旧路径和客户端 UI 零可见变化。
-- [ ] 完成后更新 `docs/agent-refactor/development-checklist.md` 和本文件 Review，并单独提交阶段 3。
+- [x] 先复习 `tasks/lessons.md`、`docs/agent-refactor/development-checklist.md`、`event-contract.md` 和阶段 0 基线。
+- [x] 新增 `agent-runtime-types.ts`，定义 Runner 输入、输出、store interface、权限/AskUser callback。
+- [x] 新增 `agent-runtime-runner.ts`，把 SDK query 封装为进程内 Runner，输出 `AsyncIterable<AgentStreamEnvelope>`。
+- [x] 新增 `agent-sdk-env.ts` 与 `agent-sdk-message-converter.ts`，迁移 env 构建和 SDKMessage 转换边界。
+- [x] 用 `agentRuntimeRunnerV2` feature flag 接入 Orchestrator，保留旧 SDK query 路径作为回滚。
+- [x] 补充 Runner mock SDK stream 测试，覆盖发送、停止、resume、权限、AskUser、错误终态。
+- [x] 保持 Renderer 旧路径和客户端 UI 零可见变化。
+- [x] 完成后更新 `docs/agent-refactor/development-checklist.md` 和本文件 Review，并单独提交阶段 3。
+
+## 2026-05-18 Agent 重构阶段 3：In-process AgentRuntimeRunner Review
+
+- 已新增 `apps/electron/src/main/lib/agent-runtime-types.ts`，定义 `AgentRuntimeRunInput`、`AgentRuntimeRunner`、SDKMessage store interface、权限/AskUser callback，以及默认关闭的 `agentRuntimeRunnerV2` feature flag。
+- 已新增 `agent-runtime-runner.ts`，进程内 Runner 负责调用注入的 SDK query、遍历 stream、输出 `AsyncIterable<AgentStreamEnvelope>`、通过 store interface 持久化 SDKMessage，不直接写 IPC 或 Renderer。
+- 已新增 `agent-sdk-message-converter.ts`，集中把 SDKMessage 转换为 runtime envelope；已新增 `agent-sdk-env.ts`，把 SDK env / binary 解析边界从 Orchestrator 调整到稳定入口，同时保留旧子模块实现。
+- Orchestrator 已在 `queryOptions` 构造后接入 Runner v2 分支；`agentRuntimeRunnerV2` 默认关闭，旧 SDK query / retry / Watchdog / Teams / Renderer 流式路径继续作为默认运行路径和回滚路径。
+- Runner mock SDK stream 测试覆盖发送、停止、resume、权限、AskUser 和错误终态。
+- 本阶段未修改 Renderer、UI 样式、文案、入口或交互路径；客户端 UI 零可见变化。
+- `@rv-insights/electron` patch 版本从 `0.0.79` 提升到 `0.0.80`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`。
+- 当前未启动 Electron 桌面壳补跑真实 UI 交互；阶段 3 行为由 Runner mock 和 Orchestrator 既有 completion-signal 测试覆盖，阶段 0 的真实交互缺口仍保留。
 
 ## 2026-05-18 Agent 重构阶段 2：Event Log 双写计划
 
