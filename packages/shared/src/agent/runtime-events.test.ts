@@ -4,6 +4,7 @@ import type { AgentEvent, AgentStreamPayload, RVInsightsEvent, SDKMessage } from
 import {
   adaptAgentEventToRuntimeEvent,
   adaptAgentStreamPayloadToRuntimeEvents,
+  adaptRVInsightsEventToRuntimeEvent,
   agentRuntimeEventsV2,
   createAgentStreamEnvelope,
   isAgentStreamEnvelope,
@@ -66,12 +67,18 @@ const envelopeFixture: AgentStreamEnvelope[] = [
   envelope(2, { type: 'assistant_delta', messageId: 'msg-1', delta: '好' }),
   envelope(3, { type: 'tool_started', toolCallId: 'tool-1', name: 'Read', inputSummary: '{"file_path":"/tmp/a.txt"}', riskLevel: 'safe' }),
   envelope(4, { type: 'tool_completed', toolCallId: 'tool-1', status: 'success', outputSummary: '文件内容' }),
-  envelope(5, { type: 'permission_requested', requestId: 'permission-1', toolName: 'Write', riskLevel: 'dangerous', inputSummary: '写入文件', scopeOptions: ['once', 'session'] }),
+  envelope(5, { type: 'permission_requested', requestId: 'permission-1', toolName: 'Write', riskLevel: 'dangerous', inputSummary: '写入文件', scopeOptions: ['once', 'session'], request: { requestId: 'permission-1', sessionId, toolName: 'Write', toolInput: { file_path: '/tmp/a.txt' }, description: '写入文件', dangerLevel: 'dangerous' } }),
   envelope(6, { type: 'permission_resolved', requestId: 'permission-1', decision: 'allowed', decidedBy: 'user', scope: 'once' }),
-  envelope(7, { type: 'ask_user_requested', requestId: 'ask-1', prompt: '选择方案', options: ['A', 'B'] }),
+  envelope(7, { type: 'ask_user_requested', requestId: 'ask-1', prompt: '选择方案', options: ['A', 'B'], request: { requestId: 'ask-1', sessionId, questions: [{ question: '选择方案', options: [{ label: 'A' }, { label: 'B' }] }], toolInput: {} } }),
   envelope(8, { type: 'ask_user_resolved', requestId: 'ask-1', response: 'A', answeredBy: 'user' }),
-  envelope(9, { type: 'usage_updated', usage: { inputTokens: 10, outputTokens: 4, cacheReadTokens: 2, costUsd: 0.001 } }),
-  envelope(10, { type: 'run_completed', resultSubtype: 'success', terminalReason: 'completed', usage: { inputTokens: 10, outputTokens: 4 }, sdkSessionId: 'sdk-session-1' }),
+  envelope(9, { type: 'plan_mode_entered', requestId: 'plan-1', reason: '计划审批', request: { requestId: 'plan-1', sessionId, toolInput: {}, allowedPrompts: [] } }),
+  envelope(10, { type: 'retry_scheduled', attempt: 1, maxAttempts: 3, reason: 'retrying', delayMs: 1000 }),
+  envelope(11, { type: 'retry_attempt', attemptData: { attempt: 1, timestamp: 1, reason: 'retrying', errorMessage: 'a', delaySeconds: 1 } }),
+  envelope(12, { type: 'retry_cleared' }),
+  envelope(13, { type: 'retry_failed', attemptData: { attempt: 2, timestamp: 2, reason: 'failed', errorMessage: 'b', delaySeconds: 2 } }),
+  envelope(14, { type: 'plan_mode_exited', requestId: 'plan-1', decision: 'approved', summary: '批准' }),
+  envelope(15, { type: 'usage_updated', usage: { inputTokens: 10, outputTokens: 4, cacheReadTokens: 2, costUsd: 0.001 } }),
+  envelope(16, { type: 'run_completed', resultSubtype: 'success', terminalReason: 'completed', usage: { inputTokens: 10, outputTokens: 4 }, sdkSessionId: 'sdk-session-1' }),
 ]
 
 describe('Agent runtime event contract', () => {
@@ -134,6 +141,22 @@ describe('Agent runtime event contract', () => {
     expect(runtimeTypes).toEqual(['permission_requested', 'ask_user_requested'])
   })
 
+  test('adapts legacy retry lifecycle events', () => {
+    const retryEvents: RVInsightsEvent[] = [
+      { type: 'retry', status: 'starting', attempt: 1, maxAttempts: 3, delaySeconds: 2, reason: 'network' },
+      { type: 'retry', status: 'attempt', attemptData: { attempt: 1, timestamp: 1, reason: 'network', errorMessage: 'a', delaySeconds: 2 } },
+      { type: 'retry', status: 'cleared' },
+      { type: 'retry', status: 'failed', attemptData: { attempt: 2, timestamp: 2, reason: 'network', errorMessage: 'b', delaySeconds: 0 } },
+    ]
+
+    expect(retryEvents.flatMap(adaptRVInsightsEventToRuntimeEvent).map((event) => event.type)).toEqual([
+      'retry_scheduled',
+      'retry_attempt',
+      'retry_cleared',
+      'retry_failed',
+    ])
+  })
+
   test('adapts legacy AgentEvent usage, complete and error directly', () => {
     const legacyEvents: AgentEvent[] = [
       { type: 'usage_update', usage: { inputTokens: 10, outputTokens: 4 } },
@@ -149,10 +172,44 @@ describe('Agent runtime event contract', () => {
     expect(state.textByMessageId['msg-1']).toBe('你好')
     expect(state.tools['tool-1']).toEqual({ name: 'Read', status: 'success', outputSummary: '文件内容' })
     expect(state.pendingPermissionRequestIds).toEqual([])
+    expect(state.pendingPermissionRequests).toEqual([])
     expect(state.pendingAskUserRequestIds).toEqual([])
+    expect(state.pendingAskUserRequests).toEqual([])
+    expect(state.pendingExitPlanRequestIds).toEqual([])
+    expect(state.pendingExitPlanRequests).toEqual([])
+    expect(state.planModeActive).toBe(false)
+    expect(state.appliedSequences).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
     expect(state.usage).toEqual({ inputTokens: 10, outputTokens: 4, cacheReadTokens: 2, costUsd: 0.001 })
     expect(state.terminal?.type).toBe('run_completed')
-    expect(state.appliedSequences).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+  })
+
+  test('replays unresolved pending interactions with original requests', () => {
+    const state = replayAgentStreamEnvelopes(envelopeFixture.slice(0, 10))
+    expect(state.pendingPermissionRequestIds).toEqual([])
+    expect(state.pendingAskUserRequestIds).toEqual([])
+    expect(state.pendingExitPlanRequestIds).toEqual(['plan-1'])
+    expect(state.pendingExitPlanRequests[0]?.requestId).toBe('plan-1')
+
+    const pendingState = replayAgentStreamEnvelopes([
+      envelopeFixture[5]!,
+      envelopeFixture[7]!,
+      envelopeFixture[9]!,
+    ])
+    expect(pendingState.pendingPermissionRequests[0]?.toolName).toBe('Write')
+    expect(pendingState.pendingAskUserRequests[0]?.questions[0]?.question).toBe('选择方案')
+    expect(pendingState.pendingExitPlanRequests[0]?.requestId).toBe('plan-1')
+    expect(pendingState.planModeActive).toBe(false)
+  })
+
+  test('supports retry lifecycle events', () => {
+    const state = replayAgentStreamEnvelopes([
+      envelope(0, { type: 'retry_scheduled', attempt: 1, maxAttempts: 3, reason: 'retrying', delayMs: 1000 }),
+      envelope(1, { type: 'retry_attempt', attemptData: { attempt: 1, timestamp: 1, reason: 'retrying', errorMessage: 'a', delaySeconds: 1 } }),
+      envelope(2, { type: 'retry_cleared' }),
+      envelope(3, { type: 'retry_failed', attemptData: { attempt: 2, timestamp: 2, reason: 'failed', errorMessage: 'b', delaySeconds: 2 } }),
+    ])
+    expect(state.terminal).toBeUndefined()
+    expect(state.appliedSequences).toEqual([0, 1, 2, 3])
   })
 
   test('adapts legacy text and tool events directly', () => {

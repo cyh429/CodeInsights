@@ -10,13 +10,36 @@
 - [x] 阶段 5 交接提示词已更新并提交：`410d8945 docs(agent): 更新阶段 5 交接提示词`。
 - [x] 阶段 5 Runtime Materializer for New Sessions 已完成并提交：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`。
 - [x] 阶段 6 插件系统原生化已完成并提交：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`。
-- [x] 阶段 7 内置 MCP Bridge 已完成实现与验证。
-- [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
+- [x] 阶段 7 内置 MCP Bridge 已完成并提交：`eb9b9f34 feat(agent): 完成 Agent 重构阶段 7 内置 MCP Bridge`。
+- [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证，待提交。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
 
-下一次开发应从阶段 8 开始：Renderer 切新 Reducer。阶段 7 已让 materialized session 注入 RV host bridge MCP，旧 session 继续保持旧路径。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
+## 2026-05-18 Agent 重构阶段 8：Renderer 切新 Reducer 计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest 和阶段 0 基线。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，`development-checklist.md` / `next-session-prompt.md` / `tasks/todo.md` 已有阶段 7 状态同步改动。
+- [x] 梳理 `useGlobalAgentListeners` 与 `agent-atoms.ts` 的旧 `AgentEvent` 应用路径，确认阶段 8 只切 Renderer reducer/event source，不改 UI 组件、布局、样式、文案或交互。
+- [x] 新增或补强 `AgentStreamEnvelope` 到 Renderer view model 的 reducer/helper，保持 `SDKMessageRenderer` transcript/debug 兼容路径。
+- [x] 在 `useGlobalAgentListeners` 中接入受 feature flag 控制的新 envelope 应用路径，旧 payload / 旧 session / 旧 SDKMessage JSONL 继续兼容。
+- [x] 恢复 pending permission、AskUser 与 plan mode 状态时优先使用 event log/envelope，可用旧数据源兜底。
+- [x] 保留短期 shadow compare，新旧 view model 差异只写开发日志，不在 UI 展示。
+- [x] 补充 event replay / Renderer view model 对比聚焦测试，覆盖 assistant text、tool timeline、pending permission、AskUser、plan mode、usage、running/terminal status。
+- [ ] 尽量补跑阶段 0 关键真实交互：发送、停止、权限 approve/deny、AskUser、Plan Mode、旧 session resume；无法补跑时记录原因。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行 `bun run typecheck`、聚焦测试、`git diff --check`，并单独提交阶段 8。
+
+## 2026-05-18 Agent 重构阶段 8：Renderer 切新 Reducer Review
+
+- 已在 `agent-atoms.ts` 新增 runtime envelope reducer helper，继续输出原有 `AgentStreamState`，因此 Agent UI 组件、布局、样式、文案和按钮行为不变。
+- `useGlobalAgentListeners` 现在优先把 stream payload 适配为 `AgentStreamEnvelope` 并应用新 reducer；旧 `payloadToLegacyEvents()` 保留给副作用、transcript/debug 兼容和回滚。
+- `AgentRuntimeReplayState` 现在保留原始 permission / AskUser / ExitPlanMode request，可从 event log/envelope 恢复 pending 横幅状态；Plan Mode active 状态也进入 replay。
+- 短期 shadow compare 仅写 `console.debug`，不在 UI 展示。
+- 已将 `@rv-insights/shared` 升到 `0.1.40`，`@rv-insights/electron` 升到 `0.0.85`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts`；`git diff --check`。
+- 本轮未启动 Electron 桌面壳补跑真实交互，因此发送、停止、权限 approve/deny、AskUser、Plan Mode、旧 session resume 仍按阶段 0 缺口继续保留。
+
+下一次开发应从阶段 9 开始：External Channel Adapter。阶段 8 已让 Renderer 主路径优先消费 runtime envelope，旧 transcript/debug 兼容路径继续保留。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
 
 ## 2026-05-18 Agent 重构阶段 7：内置 MCP Bridge 计划
 

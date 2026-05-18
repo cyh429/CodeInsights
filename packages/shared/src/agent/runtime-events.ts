@@ -4,9 +4,11 @@ import type {
   AgentStreamPayload,
   AskUserRequest,
   DangerLevel,
+  ExitPlanModeRequest,
   PermissionRequest,
   RVInsightsEvent,
   RVInsightsPermissionMode,
+  RetryAttempt,
   SDKAssistantMessage,
   SDKResultMessage,
   SDKSystemMessage,
@@ -59,14 +61,17 @@ export type AgentRuntimeEvent =
   | { type: 'tool_started'; toolCallId: string; name: string; inputSummary: string; riskLevel: AgentRuntimeRiskLevel; parentToolUseId?: string }
   | { type: 'tool_progress'; toolCallId: string; message: string; progress?: number }
   | { type: 'tool_completed'; toolCallId: string; status: 'success' | 'error' | 'denied' | 'stopped'; outputSummary: string }
-  | { type: 'permission_requested'; requestId: string; toolName: string; riskLevel: AgentRuntimeRiskLevel; inputSummary: string; scopeOptions: string[] }
+  | { type: 'permission_requested'; requestId: string; toolName: string; riskLevel: AgentRuntimeRiskLevel; inputSummary: string; scopeOptions: string[]; request?: PermissionRequest }
   | { type: 'permission_resolved'; requestId: string; decision: 'allowed' | 'denied'; decidedBy: 'user' | 'policy'; scope?: string }
-  | { type: 'ask_user_requested'; requestId: string; prompt: string; options?: string[] }
+  | { type: 'ask_user_requested'; requestId: string; prompt: string; options?: string[]; request?: AskUserRequest }
   | { type: 'ask_user_resolved'; requestId: string; response: string; answeredBy: 'user' | 'system' }
-  | { type: 'plan_mode_entered'; requestId?: string; reason?: string }
-  | { type: 'plan_mode_exited'; decision: 'approved' | 'denied' | 'feedback' | 'cancelled'; summary?: string }
+  | { type: 'plan_mode_entered'; requestId?: string; reason?: string; request?: ExitPlanModeRequest }
+  | { type: 'plan_mode_exited'; requestId?: string; decision: 'approved' | 'denied' | 'feedback' | 'cancelled'; summary?: string }
   | { type: 'usage_updated'; usage: AgentRuntimeUsagePayload }
-  | { type: 'retry_scheduled'; attempt: number; reason: string; delayMs: number }
+  | { type: 'retry_scheduled'; attempt: number; maxAttempts: number; reason: string; delayMs: number }
+  | { type: 'retry_attempt'; attemptData: RetryAttempt }
+  | { type: 'retry_cleared' }
+  | { type: 'retry_failed'; attemptData: RetryAttempt }
   | { type: 'compact_started' }
   | { type: 'compact_completed' }
   | { type: 'prompt_suggestion'; suggestion: string }
@@ -199,8 +204,15 @@ export function validateAgentRuntimeEvent(event: AgentRuntimeEvent): string[] {
       break
     case 'retry_scheduled':
       if (!Number.isInteger(event.attempt) || event.attempt < 1) errors.push('retry_scheduled.attempt 必须大于 0')
+      if (!Number.isInteger(event.maxAttempts) || event.maxAttempts < event.attempt) errors.push('retry_scheduled.maxAttempts 必须不小于 attempt')
       requireString(errors, event.reason, 'retry_scheduled.reason')
       if (!Number.isFinite(event.delayMs) || event.delayMs < 0) errors.push('retry_scheduled.delayMs 必须是非负数')
+      break
+    case 'retry_attempt':
+    case 'retry_failed':
+      if (!isRecord(event.attemptData)) errors.push(`${event.type}.attemptData 必须是对象`)
+      break
+    case 'retry_cleared':
       break
     case 'compact_started':
     case 'compact_completed':
@@ -259,9 +271,9 @@ export function adaptAgentEventToRuntimeEvent(event: AgentEvent): AgentRuntimeEv
     case 'ask_user_resolved':
       return [{ type: 'ask_user_resolved', requestId: event.requestId, response: '', answeredBy: 'user' }]
     case 'exit_plan_mode_request':
-      return [{ type: 'plan_mode_entered', requestId: event.request.requestId, reason: summarizeRecord(event.request.toolInput) }]
+      return [{ type: 'plan_mode_entered', requestId: event.request.requestId, reason: summarizeRecord(event.request.toolInput), request: event.request }]
     case 'exit_plan_mode_resolved':
-      return [{ type: 'plan_mode_exited', decision: 'approved' }]
+      return [{ type: 'plan_mode_exited', requestId: event.requestId, decision: 'approved' }]
     case 'enter_plan_mode':
       return [{ type: 'plan_mode_entered', reason: event.sessionId }]
     case 'usage_update':
@@ -273,7 +285,13 @@ export function adaptAgentEventToRuntimeEvent(event: AgentEvent): AgentRuntimeEv
     case 'error':
       return [{ type: 'run_failed', error: { code: 'unknown_error', title: 'Agent 运行失败', message: event.message, retryable: false }, recoverable: false }]
     case 'retrying':
-      return [{ type: 'retry_scheduled', attempt: event.attempt, reason: event.reason, delayMs: event.delaySeconds * 1000 }]
+      return [{ type: 'retry_scheduled', attempt: event.attempt, maxAttempts: event.maxAttempts, reason: event.reason, delayMs: event.delaySeconds * 1000 }]
+    case 'retry_attempt':
+      return [{ type: 'retry_attempt', attemptData: event.attemptData }]
+    case 'retry_cleared':
+      return [{ type: 'retry_cleared' }]
+    case 'retry_failed':
+      return [{ type: 'retry_failed', attemptData: event.finalAttempt }]
     case 'compacting':
       return [{ type: 'compact_started' }]
     case 'compact_complete':
@@ -352,14 +370,19 @@ export function adaptRVInsightsEventToRuntimeEvent(event: RVInsightsEvent): Agen
     case 'ask_user_resolved':
       return [{ type: 'ask_user_resolved', requestId: event.requestId, response: '', answeredBy: 'user' }]
     case 'exit_plan_mode_request':
-      return [{ type: 'plan_mode_entered', requestId: event.request.requestId, reason: summarizeRecord(event.request.toolInput) }]
+      return [{ type: 'plan_mode_entered', requestId: event.request.requestId, reason: summarizeRecord(event.request.toolInput), request: event.request }]
     case 'exit_plan_mode_resolved':
-      return [{ type: 'plan_mode_exited', decision: 'approved' }]
+      return [{ type: 'plan_mode_exited', requestId: event.requestId, decision: 'approved' }]
     case 'enter_plan_mode':
       return [{ type: 'plan_mode_entered', reason: event.sessionId }]
     case 'retry':
-      if (event.status !== 'attempt' || !event.attempt || !event.reason) return []
-      return [{ type: 'retry_scheduled', attempt: event.attempt, reason: event.reason, delayMs: (event.delaySeconds ?? 0) * 1000 }]
+      if (event.status === 'starting' && event.attempt != null) {
+        return [{ type: 'retry_scheduled', attempt: event.attempt, maxAttempts: event.maxAttempts ?? event.attempt, reason: event.reason ?? '', delayMs: (event.delaySeconds ?? 0) * 1000 }]
+      }
+      if (event.status === 'attempt' && event.attemptData) return [{ type: 'retry_attempt', attemptData: event.attemptData }]
+      if (event.status === 'cleared') return [{ type: 'retry_cleared' }]
+      if (event.status === 'failed' && event.attemptData) return [{ type: 'retry_failed', attemptData: event.attemptData }]
+      return []
     case 'model_resolved':
       return []
     case 'waiting_resume':
@@ -376,7 +399,12 @@ export interface AgentRuntimeReplayState {
   textByMessageId: Record<string, string>
   tools: Record<string, { name: string; status: 'running' | 'success' | 'error' | 'denied' | 'stopped'; outputSummary?: string }>
   pendingPermissionRequestIds: string[]
+  pendingPermissionRequests: PermissionRequest[]
   pendingAskUserRequestIds: string[]
+  pendingAskUserRequests: AskUserRequest[]
+  pendingExitPlanRequestIds: string[]
+  pendingExitPlanRequests: ExitPlanModeRequest[]
+  planModeActive: boolean
   usage?: AgentRuntimeUsagePayload
   terminal?: AgentRuntimeEvent
 }
@@ -387,7 +415,12 @@ export function createInitialAgentRuntimeReplayState(): AgentRuntimeReplayState 
     textByMessageId: {},
     tools: {},
     pendingPermissionRequestIds: [],
+    pendingPermissionRequests: [],
     pendingAskUserRequestIds: [],
+    pendingAskUserRequests: [],
+    pendingExitPlanRequestIds: [],
+    pendingExitPlanRequests: [],
+    planModeActive: false,
   }
 }
 
@@ -406,7 +439,12 @@ export function applyAgentStreamEnvelope(state: AgentRuntimeReplayState, envelop
     textByMessageId: { ...state.textByMessageId },
     tools: { ...state.tools },
     pendingPermissionRequestIds: [...state.pendingPermissionRequestIds],
+    pendingPermissionRequests: [...state.pendingPermissionRequests],
     pendingAskUserRequestIds: [...state.pendingAskUserRequestIds],
+    pendingAskUserRequests: [...state.pendingAskUserRequests],
+    pendingExitPlanRequestIds: [...state.pendingExitPlanRequestIds],
+    pendingExitPlanRequests: [...state.pendingExitPlanRequests],
+    planModeActive: state.planModeActive,
   }
   const event = envelope.event
   if (event.type === 'assistant_delta') {
@@ -420,12 +458,35 @@ export function applyAgentStreamEnvelope(state: AgentRuntimeReplayState, envelop
     next.tools[event.toolCallId] = { ...existing, status: event.status, outputSummary: event.outputSummary }
   } else if (event.type === 'permission_requested') {
     next.pendingPermissionRequestIds = addUnique(next.pendingPermissionRequestIds, event.requestId)
+    if (event.request && !next.pendingPermissionRequests.some((request) => request.requestId === event.request?.requestId)) {
+      next.pendingPermissionRequests = [...next.pendingPermissionRequests, event.request]
+    }
   } else if (event.type === 'permission_resolved') {
     next.pendingPermissionRequestIds = next.pendingPermissionRequestIds.filter((id) => id !== event.requestId)
+    next.pendingPermissionRequests = next.pendingPermissionRequests.filter((request) => request.requestId !== event.requestId)
   } else if (event.type === 'ask_user_requested') {
     next.pendingAskUserRequestIds = addUnique(next.pendingAskUserRequestIds, event.requestId)
+    if (event.request && !next.pendingAskUserRequests.some((request) => request.requestId === event.request?.requestId)) {
+      next.pendingAskUserRequests = [...next.pendingAskUserRequests, event.request]
+    }
   } else if (event.type === 'ask_user_resolved') {
     next.pendingAskUserRequestIds = next.pendingAskUserRequestIds.filter((id) => id !== event.requestId)
+    next.pendingAskUserRequests = next.pendingAskUserRequests.filter((request) => request.requestId !== event.requestId)
+  } else if (event.type === 'plan_mode_entered') {
+    if (event.request) {
+      next.pendingExitPlanRequestIds = addUnique(next.pendingExitPlanRequestIds, event.request.requestId)
+      if (!next.pendingExitPlanRequests.some((request) => request.requestId === event.request?.requestId)) {
+        next.pendingExitPlanRequests = [...next.pendingExitPlanRequests, event.request]
+      }
+    } else {
+      next.planModeActive = true
+    }
+  } else if (event.type === 'plan_mode_exited') {
+    next.planModeActive = false
+    if (event.requestId) {
+      next.pendingExitPlanRequestIds = next.pendingExitPlanRequestIds.filter((id) => id !== event.requestId)
+      next.pendingExitPlanRequests = next.pendingExitPlanRequests.filter((request) => request.requestId !== event.requestId)
+    }
   } else if (event.type === 'usage_updated') {
     next.usage = event.usage
   } else if (isAgentRuntimeTerminalEvent(event)) {
@@ -442,6 +503,7 @@ function adaptPermissionRequest(request: PermissionRequest): AgentRuntimeEvent {
     riskLevel: request.dangerLevel,
     inputSummary: request.sdkDescription ?? request.description,
     scopeOptions: ['once', 'session'],
+    request,
   }
 }
 
@@ -451,6 +513,7 @@ function adaptAskUserRequest(request: AskUserRequest): AgentRuntimeEvent {
     requestId: request.requestId,
     prompt: request.questions.map((question) => question.question).join('\n'),
     options: request.questions.flatMap((question) => question.options.map((option) => option.label)),
+    request,
   }
 }
 

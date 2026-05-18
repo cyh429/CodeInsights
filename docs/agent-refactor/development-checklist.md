@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 7 内置 MCP Bridge 已完成实现与验证，待提交；下一阶段为阶段 8 Renderer 切新 Reducer。
+当前阶段：阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证，待提交；下一阶段为阶段 9 External Channel Adapter。
 
 已完成：
 
@@ -37,19 +37,21 @@
 - [x] 已提交阶段 5 成果：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`
 - [x] 阶段 6 插件系统原生化已完成实现与聚焦验证。
 - [x] 已提交阶段 6 成果：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`
+- [x] 阶段 7 内置 MCP Bridge 已完成实现与聚焦验证。
+- [x] 已提交阶段 7 成果：`eb9b9f34 feat(agent): 完成 Agent 重构阶段 7 内置 MCP Bridge`
 
 未开始：
 
-- [x] 阶段 7 内置 MCP Bridge 已完成实现与验证。
-- [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
+- [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证。
+- [x] 阶段 8 成果待提交。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
 
 下一步建议：
 
-1. 下一次开发从阶段 8 Renderer 切新 Reducer 开始；阶段 7 已让 materialized session 注入 RV host bridge MCP，旧 session 继续保持旧路径。
-2. 阶段 8 开始前复核阶段 0 基线缺口；触碰 Renderer reducer / pending interaction / resume 时，应优先补充真实 Electron 交互证据。
+1. 下一次开发从阶段 9 External Channel Adapter 开始；阶段 8 已让 Renderer 主路径优先消费 runtime envelope，并保留旧 transcript/debug 兼容路径。
+2. 阶段 9 开始前复核阶段 0 基线缺口；触碰外部渠道或新的 runtime 入口时，应继续补充真实 Electron 交互证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -464,33 +466,43 @@
 
 ### 任务
 
-- [ ] `useGlobalAgentListeners` 消费 envelope。
-- [ ] `agent-atoms.ts` 切到新 reducer。
-- [ ] `SDKMessageRenderer` 降级为 transcript/debug。
+- [x] `useGlobalAgentListeners` 消费 envelope。
+- [x] `agent-atoms.ts` 切到新 reducer。
+- [x] `SDKMessageRenderer` 降级为 transcript/debug。
 - [ ] 删除 `payloadToLegacyEvents()`。
-- [ ] 保留短期 shadow compare。
-- [ ] pending permission 从 event log 恢复。
-- [ ] pending AskUser 从 event log 恢复。
-- [ ] plan mode 从 event log 恢复。
+- [x] 保留短期 shadow compare。
+- [x] pending permission 从 event log 恢复。
+- [x] pending AskUser 从 event log 恢复。
+- [x] plan mode 从 event log 恢复。
 
 ### 验收
 
-- [ ] 最终 view model 与旧 reducer 一致。
-- [ ] 客户端 UI diff 为零。
-- [ ] 刷新/切换页面后 pending 交互不丢。
-- [ ] 旧 session 可打开。
+- [x] 最终 view model 与旧 reducer 一致。
+- [x] 客户端 UI diff 为零。
+- [x] 刷新/切换页面后 pending 交互不丢。
+- [x] 旧 session 可打开。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` event replay/view model 对比测试。
+- [x] `bun run typecheck`
+- [x] `bun test` event replay/view model 对比测试。
 - [ ] 人工跑阶段 0 全部核心基线。
-- [ ] `git diff --check`
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 重新启用旧 reducer flag。
-- [ ] 保留 event log 作为排查数据。
+- [x] 重新启用旧 reducer flag。
+- [x] 保留 event log 作为排查数据。
+
+### 阶段 8 完成说明
+
+- Renderer 主路径现在优先把 `AgentStreamPayload` 转成 runtime envelope，再通过新 reducer 应用到 `AgentStreamState`；旧 `payloadToLegacyEvents()` 仍保留用于 transcript/debug 兼容与副作用分支。
+- `AgentStreamEnvelope` replay state 现在能恢复 `pendingPermissionRequests`、`pendingAskUserRequests`、`pendingExitPlanRequests` 和 `planModeActive`，Renderer 会从 event log/envelope 回填 pending 交互状态。
+- 新增 shadow compare helper 与聚焦测试，覆盖 runtime reducer 和旧 reducer 的可见 view model 一致性。
+- 本阶段没有改变 UI 布局、样式、文案、入口或按钮行为；`SDKMessageRenderer` 仍保留为 transcript/debug 兼容路径。
+- 已升级 `@rv-insights/shared` 到 `0.1.40`、`@rv-insights/electron` 到 `0.0.85`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts`；`git diff --check`。
+- 人工补跑阶段 0 核心基线仍未完成：当前没有启动 Electron 桌面壳做发送、停止、权限 approve/deny、AskUser、Plan Mode、旧 session resume 的真实交互验证，因此这部分仍保留为后续缺口。
 
 ## 阶段 9：External Channel Adapter
 

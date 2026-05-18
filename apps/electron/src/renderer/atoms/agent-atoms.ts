@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
-import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, RVInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, RVInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage, AgentStreamEnvelope, AgentRuntimeEvent, AgentRuntimeUsagePayload } from '@rv-insights/shared'
 
 /** 活动状态 */
 export type ActivityStatus = 'pending' | 'running' | 'completed' | 'error' | 'backgrounded'
@@ -820,6 +820,193 @@ export function applyAgentEvent(
 
     default:
       return prev
+  }
+}
+
+/**
+ * 将 runtime envelope 应用到现有 AgentStreamState。
+ *
+ * 该 helper 是阶段 8 的 Renderer 主 reducer 入口：UI view model 仍复用
+ * 旧 `AgentStreamState`，因此不会改变任何可见布局、文案或交互。
+ */
+export function applyAgentStreamEnvelopeToState(
+  prev: AgentStreamState,
+  envelope: AgentStreamEnvelope,
+): AgentStreamState {
+  const legacyEvents = runtimeEventToAgentEvents(envelope.event)
+  if (legacyEvents.length === 0) return prev
+  return legacyEvents.reduce(applyAgentEvent, prev)
+}
+
+export interface AgentStreamStateShadowSnapshot {
+  running: boolean
+  content: string
+  toolActivities: Array<{
+    toolUseId: string
+    toolName: string
+    done: boolean
+    isError?: boolean
+    result?: string
+  }>
+  inputTokens?: number
+  outputTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
+  costUsd?: number
+  retrying?: AgentStreamState['retrying']
+  isCompacting?: boolean
+  compactInFlight?: boolean
+  waitingResume?: boolean
+  contextWindow?: number
+  teammates: Array<{
+    taskId: string
+    status: TeammateStatus
+    description: string
+    currentToolName?: string
+    summary?: string
+  }>
+}
+
+export function createAgentStreamStateShadowSnapshot(state: AgentStreamState): AgentStreamStateShadowSnapshot {
+  return {
+    running: state.running,
+    content: state.content,
+    toolActivities: state.toolActivities.map((activity) => ({
+      toolUseId: activity.toolUseId,
+      toolName: activity.toolName,
+      done: activity.done,
+      isError: activity.isError,
+      result: activity.result,
+    })),
+    inputTokens: state.inputTokens,
+    outputTokens: state.outputTokens,
+    cacheReadTokens: state.cacheReadTokens,
+    cacheCreationTokens: state.cacheCreationTokens,
+    costUsd: state.costUsd,
+    retrying: state.retrying,
+    isCompacting: state.isCompacting,
+    compactInFlight: state.compactInFlight,
+    waitingResume: state.waitingResume,
+    contextWindow: state.contextWindow,
+    teammates: state.teammates.map((teammate) => ({
+      taskId: teammate.taskId,
+      status: teammate.status,
+      description: teammate.description,
+      currentToolName: teammate.currentToolName,
+      summary: teammate.summary,
+    })),
+  }
+}
+
+function runtimeEventToAgentEvents(event: AgentRuntimeEvent): AgentEvent[] {
+  switch (event.type) {
+    case 'assistant_delta':
+      return [{ type: 'text_delta', text: event.delta, turnId: event.messageId, parentToolUseId: event.parentToolUseId }]
+    case 'assistant_message':
+      return [{
+        type: 'text_complete',
+        text: event.contentBlocks.map(extractTextFromRuntimeBlock).join(''),
+        turnId: event.messageId,
+        isIntermediate: false,
+        parentToolUseId: event.parentToolUseId,
+      }]
+    case 'tool_started':
+      return [{
+        type: 'tool_start',
+        toolUseId: event.toolCallId,
+        toolName: event.name,
+        input: parseRuntimeInputSummary(event.inputSummary),
+        parentToolUseId: event.parentToolUseId,
+      }]
+    case 'tool_progress':
+      return [{ type: 'task_progress', toolUseId: event.toolCallId, description: event.message }]
+    case 'tool_completed':
+      return [{
+        type: 'tool_result',
+        toolUseId: event.toolCallId,
+        result: event.outputSummary,
+        isError: event.status !== 'success',
+      }]
+    case 'usage_updated':
+      return [{ type: 'usage_update', usage: normalizeRuntimeUsage(event.usage) }]
+    case 'retry_scheduled':
+      return [{ type: 'retrying', attempt: event.attempt, maxAttempts: event.maxAttempts, delaySeconds: Math.round(event.delayMs / 1000), reason: event.reason }]
+    case 'retry_attempt':
+      return [{ type: 'retry_attempt', attemptData: event.attemptData }]
+    case 'retry_cleared':
+      return [{ type: 'retry_cleared' }]
+    case 'retry_failed':
+      return [{ type: 'retry_failed', finalAttempt: event.attemptData }]
+    case 'compact_started':
+      return [{ type: 'compacting' }]
+    case 'compact_completed':
+      return [{ type: 'compact_complete' }]
+    case 'prompt_suggestion':
+      return [{ type: 'prompt_suggestion', suggestion: event.suggestion }]
+    case 'agent_task_started':
+      return [{ type: 'task_started', taskId: event.taskId, description: event.description, toolUseId: event.toolCallId }]
+    case 'agent_task_progress':
+      return [{ type: 'task_progress', taskId: event.taskId, toolUseId: event.taskId, description: event.message, usage: event.usage ? { totalTokens: event.usage.inputTokens ?? 0, toolUses: 0, durationMs: 0 } : undefined }]
+    case 'agent_task_completed':
+      return [{ type: 'task_notification', taskId: event.taskId, status: event.status, summary: event.summary }]
+    case 'run_completed':
+      return [{ type: 'complete', stopReason: event.terminalReason ?? 'completed', usage: normalizeRuntimeUsage(event.usage) }]
+    case 'run_failed':
+      return [{
+        type: 'typed_error',
+        error: {
+          code: 'unknown_error',
+          title: event.error.title,
+          message: event.error.message,
+          actions: [],
+          details: event.error.details,
+          canRetry: event.error.retryable,
+          originalError: event.error.originalError,
+        },
+      }]
+    case 'run_stopped':
+      return [{ type: 'complete', stopReason: event.reason }]
+    default:
+      return []
+  }
+}
+
+function parseRuntimeInputSummary(summary: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(summary)
+    if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>
+    }
+  } catch {
+    // 摘要可能是人类可读文本，保留为 description 供旧 UI 展示。
+  }
+  return summary ? { description: summary } : {}
+}
+
+function extractTextFromRuntimeBlock(block: unknown): string {
+  if (typeof block === 'string') return block
+  if (typeof block === 'object' && block !== null && 'text' in block) {
+    const text = (block as { text?: unknown }).text
+    return typeof text === 'string' ? text : ''
+  }
+  return ''
+}
+
+function normalizeRuntimeUsage(usage: AgentRuntimeUsagePayload): {
+  inputTokens: number
+  outputTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
+  costUsd?: number
+  contextWindow?: number
+} {
+  return {
+    inputTokens: typeof usage.inputTokens === 'number' ? usage.inputTokens : 0,
+    outputTokens: usage.outputTokens,
+    cacheReadTokens: usage.cacheReadTokens,
+    cacheCreationTokens: usage.cacheCreationTokens,
+    costUsd: usage.costUsd,
+    contextWindow: usage.contextWindow,
   }
 }
 

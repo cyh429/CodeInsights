@@ -35,6 +35,8 @@ import {
   currentAgentWorkspaceIdAtom,
   unviewedCompletedSessionIdsAtom,
   workingDoneSessionIdsAtom,
+  applyAgentStreamEnvelopeToState,
+  createAgentStreamStateShadowSnapshot,
 } from '@/atoms/agent-atoms'
 import {
   notificationsEnabledAtom,
@@ -48,10 +50,12 @@ import { createAgentSessionRefreshController } from './agent-session-refresh-con
 import type { AgentStreamState } from '@/atoms/agent-atoms'
 import type { NotificationSoundType } from '@/types/settings'
 import { toast } from 'sonner'
-import type { AgentSessionMeta, AgentStreamEvent, AgentStreamCompletePayload, AgentEvent, AgentStreamPayload, SDKAssistantMessage, SDKUserMessage, SDKSystemMessage, SDKContentBlock, SDKUserContentBlock } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentStreamEvent, AgentStreamCompletePayload, AgentEvent, AgentStreamPayload, SDKAssistantMessage, SDKUserMessage, SDKSystemMessage, SDKContentBlock, SDKUserContentBlock, AgentStreamEnvelope, AgentRuntimeEvent } from '@rv-insights/shared'
+import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope, replayAgentStreamEnvelopes, type AgentRuntimeReplayState } from '@rv-insights/shared'
 
 /** 触发右侧文件浏览器自动定位的写入类工具集合 */
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Update'])
+const ENABLE_RUNTIME_ENVELOPE_REDUCER = true
 
 // ============================================================================
 // Phase 1 临时兼容层：将 AgentStreamPayload 转换为旧 AgentEvent
@@ -277,6 +281,13 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
   }
 }
 
+function resolveRuntimeSource(payload: AgentStreamPayload, event: AgentRuntimeEvent): AgentStreamEnvelope['source'] {
+  if (payload.kind === 'sdk_message') return 'claude_sdk'
+  if (event.type.startsWith('permission_')) return 'permission_service'
+  if (event.type.startsWith('ask_user_')) return 'ask_user_service'
+  return 'rv_insights'
+}
+
 export function useGlobalAgentListeners(): void {
   const store = useStore()
 
@@ -360,6 +371,90 @@ export function useGlobalAgentListeners(): void {
       },
     })
 
+    const runtimeEnvelopeSequences = new Map<string, number>()
+    const runtimeEnvelopeRuns = new Map<string, string>()
+    const runtimeEnvelopeSnapshots = new Map<string, AgentRuntimeReplayState>()
+    const runtimeEnvelopeBySession = new Map<string, AgentStreamEnvelope[]>()
+
+    const appendRuntimeEnvelope = (sessionId: string, payload: AgentStreamPayload, event: AgentRuntimeEvent): AgentStreamEnvelope => {
+      const runId = runtimeEnvelopeRuns.get(sessionId) ?? `renderer-shadow:${sessionId}`
+      runtimeEnvelopeRuns.set(sessionId, runId)
+      const nextSequence = runtimeEnvelopeSequences.get(sessionId) ?? 0
+      runtimeEnvelopeSequences.set(sessionId, nextSequence + 1)
+      return createAgentStreamEnvelope({
+        sessionId,
+        runId,
+        sequence: nextSequence,
+        source: resolveRuntimeSource(payload, event),
+        event,
+      })
+    }
+
+    const recordRuntimeEnvelopes = (sessionId: string, payload: AgentStreamPayload): AgentStreamEnvelope[] => {
+      if (payload.kind === 'sdk_message' && (payload.message as Record<string, unknown>).isReplay) {
+        return []
+      }
+      const runtimeEvents = adaptAgentStreamPayloadToRuntimeEvents(payload)
+      if (runtimeEvents.length === 0) return []
+      const envelopes = runtimeEvents.map((event) => appendRuntimeEnvelope(sessionId, payload, event))
+      const current = runtimeEnvelopeBySession.get(sessionId) ?? []
+      const nextEnvelopes = [...current, ...envelopes]
+      runtimeEnvelopeBySession.set(sessionId, nextEnvelopes)
+      runtimeEnvelopeSnapshots.set(sessionId, replayAgentStreamEnvelopes(nextEnvelopes))
+      return envelopes
+    }
+
+    const syncPendingRequestsFromReplay = (sessionId: string): void => {
+      const replayState = runtimeEnvelopeSnapshots.get(sessionId)
+      if (!replayState) return
+
+      store.set(allPendingPermissionRequestsAtom, (prev) => {
+        if (replayState.pendingPermissionRequestIds.length > 0 && replayState.pendingPermissionRequests.length === 0) {
+          console.warn('[Agent Runtime] pending permission 缺少完整 request，保留现有 UI 队列', {
+            sessionId,
+            requestIds: replayState.pendingPermissionRequestIds,
+          })
+          return prev
+        }
+        const map = new Map(prev)
+        if (replayState.pendingPermissionRequests.length === 0) map.delete(sessionId)
+        else map.set(sessionId, replayState.pendingPermissionRequests)
+        return map
+      })
+      store.set(allPendingAskUserRequestsAtom, (prev) => {
+        if (replayState.pendingAskUserRequestIds.length > 0 && replayState.pendingAskUserRequests.length === 0) {
+          console.warn('[Agent Runtime] pending AskUser 缺少完整 request，保留现有 UI 队列', {
+            sessionId,
+            requestIds: replayState.pendingAskUserRequestIds,
+          })
+          return prev
+        }
+        const map = new Map(prev)
+        if (replayState.pendingAskUserRequests.length === 0) map.delete(sessionId)
+        else map.set(sessionId, replayState.pendingAskUserRequests)
+        return map
+      })
+      store.set(allPendingExitPlanRequestsAtom, (prev) => {
+        if (replayState.pendingExitPlanRequestIds.length > 0 && replayState.pendingExitPlanRequests.length === 0) {
+          console.warn('[Agent Runtime] pending ExitPlanMode 缺少完整 request，保留现有 UI 队列', {
+            sessionId,
+            requestIds: replayState.pendingExitPlanRequestIds,
+          })
+          return prev
+        }
+        const map = new Map(prev)
+        if (replayState.pendingExitPlanRequests.length === 0) map.delete(sessionId)
+        else map.set(sessionId, replayState.pendingExitPlanRequests)
+        return map
+      })
+      store.set(agentPlanModeSessionsAtom, (prev) => {
+        const next = new Set(prev)
+        if (replayState.planModeActive) next.add(sessionId)
+        else next.delete(sessionId)
+        return next
+      })
+    }
+
     // ===== 0. 初始化：从持久化 meta 恢复 stoppedByUser 状态 =====
     window.electronAPI
       .listAgentSessions()
@@ -414,7 +509,7 @@ export function useGlobalAgentListeners(): void {
           }
         }
 
-        // Phase 1 兼容：将新 AgentStreamPayload 转换为旧 AgentEvent[]
+        const runtimeEnvelopes = ENABLE_RUNTIME_ENVELOPE_REDUCER ? recordRuntimeEnvelopes(sessionId, payload) : []
         const legacyEvents = payloadToLegacyEvents(payload)
 
         for (const event of legacyEvents) {
@@ -431,8 +526,8 @@ export function useGlobalAgentListeners(): void {
             }
           }
 
-          // 更新流式状态（prompt_suggestion 不影响流式状态，跳过以避免在 session 结束后用默认值 running:true 重新激活）
-          if (event.type !== 'prompt_suggestion') {
+          // 旧 reducer 仅保留副作用分支；流式状态由 runtime envelope reducer 统一驱动
+          if (!ENABLE_RUNTIME_ENVELOPE_REDUCER && event.type !== 'prompt_suggestion') {
             store.set(agentStreamingStatesAtom, (prev) => {
               const current: AgentStreamState = prev.get(sessionId) ?? {
                 running: true,
@@ -611,6 +706,48 @@ export function useGlobalAgentListeners(): void {
               return next
             })
           }
+        }
+
+        if (ENABLE_RUNTIME_ENVELOPE_REDUCER && runtimeEnvelopes.length > 0) {
+          store.set(agentStreamingStatesAtom, (prev) => {
+            const baseState = prev.get(sessionId) ?? {
+              running: true,
+              content: '',
+              toolActivities: [],
+              teammates: [],
+              model: undefined,
+              startedAt: undefined,
+            }
+            let currentState: AgentStreamState = baseState
+            let legacyProjectedState: AgentStreamState = baseState
+
+            for (const envelope of runtimeEnvelopes) {
+              currentState = applyAgentStreamEnvelopeToState(currentState, envelope)
+            }
+            for (const event of legacyEvents) {
+              if (event.type !== 'prompt_suggestion') {
+                legacyProjectedState = applyAgentEvent(legacyProjectedState, event)
+              }
+            }
+
+            if (currentState === baseState) return prev
+            const next = new Map(prev)
+            next.set(sessionId, currentState)
+
+            const runtimeSnapshot = createAgentStreamStateShadowSnapshot(currentState)
+            const legacySnapshot = createAgentStreamStateShadowSnapshot(legacyProjectedState)
+            if (JSON.stringify(runtimeSnapshot) !== JSON.stringify(legacySnapshot)) {
+              console.debug('[Agent Runtime] renderer shadow compare 差异', {
+                sessionId,
+                legacy: legacySnapshot,
+                runtime: runtimeSnapshot,
+              })
+            }
+
+            return next
+          })
+
+          syncPendingRequestsFromReplay(sessionId)
         }
       }
     )
