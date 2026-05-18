@@ -8,7 +8,7 @@
 - [x] 阶段 3 In-process AgentRuntimeRunner 已完成并提交：`ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner`。
 - [x] 阶段 4 Runtime Manifest 只读解析已完成并提交：`18a65cd1 feat(agent): 完成 Agent 重构阶段 4 Runtime Manifest 只读解析`。
 - [x] 阶段 5 交接提示词已更新并提交：`410d8945 docs(agent): 更新阶段 5 交接提示词`。
-- [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
+- [x] 阶段 5 Runtime Materializer for New Sessions 已完成并提交：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`。
 - [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
@@ -16,7 +16,7 @@
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
 
-下一次开发应从阶段 5 开始：新增 Runtime Materializer for New Sessions，只对新 session 物化 runtime 目录，旧 session 继续保持旧 cwd / resume 行为。保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
+下一次开发应从阶段 6 开始：插件系统原生化。阶段 5 已让新 session 物化 runtime 目录，旧 session 继续保持旧 cwd / resume 行为。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
 
 ## 2026-05-18 Agent 重构阶段 5：Runtime Materializer for New Sessions 计划
 

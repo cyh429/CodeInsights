@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 5 Runtime Materializer for New Sessions 已完成实现，正在收尾验证与提交。
+当前阶段：阶段 5 Runtime Materializer for New Sessions 已完成实现、验证与提交；下一阶段为阶段 6 插件系统原生化。
 
 已完成：
 
@@ -33,10 +33,11 @@
 - [x] 阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
 - [x] 已提交阶段 4 成果：`18a65cd1 feat(agent): 完成 Agent 重构阶段 4 Runtime Manifest 只读解析`
 - [x] 已提交阶段 5 交接提示词更新：`410d8945 docs(agent): 更新阶段 5 交接提示词`
+- [x] 阶段 5 Runtime Materializer for New Sessions 已完成实现与聚焦验证。
+- [x] 已提交阶段 5 成果：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`
 
 未开始：
 
-- [x] 阶段 5 Runtime Materializer for New Sessions 已完成实现与聚焦验证。
 - [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
