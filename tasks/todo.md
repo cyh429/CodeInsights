@@ -12,9 +12,34 @@
 - [x] 阶段 6 插件系统原生化已完成并提交：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`。
 - [x] 阶段 7 内置 MCP Bridge 已完成并提交：`eb9b9f34 feat(agent): 完成 Agent 重构阶段 7 内置 MCP Bridge`。
 - [x] 阶段 8 Renderer 切新 Reducer 已完成并提交：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`。
-- [x] 阶段 9 External Channel Adapter 已完成实现与验证。
-- [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
+- [x] 阶段 9 External Channel Adapter 已完成并提交：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`。
+- [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [ ] 阶段 11 清理旧路径尚未开始。
+
+## 2026-05-18 Agent 重构阶段 10：Pipeline 复用 Runner 计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest 和阶段 0 基线。
+- [x] 检查当前工作树，确认 `.DS_Store`、`improve/` 与已有文档改动为无关噪音，不纳入阶段提交。
+- [x] 梳理 `pipeline-node-runner.ts` 与 `agent-runtime-runner.ts` 的 SDK env / SDK query / event contract 重复边界。
+- [x] 为 `AgentRuntimeRunInput` 增加 pipeline metadata，能区分 pipeline `nodeId`、pipeline session 和 run context，不破坏 Agent 路径。
+- [x] 增加 `agentRuntimePipelineRunnerV2` feature flag，默认关闭，保留旧 `pipeline-node-runner.ts` 路径可快速回滚。
+- [x] 迁移 Pipeline 节点的 SDK env / SDK query 重复逻辑到 Runner 复用路径。
+- [x] 保留 Pipeline 独立状态管理、LangGraph checkpoint、human gate、结构化输出 schema、patch-work 写入防护和现有 UI 行为。
+- [x] 不把 Pipeline 结构化输出强塞进通用 Agent UI；Pipeline 只消费自身节点结果。
+- [x] 补充 Pipeline / Runner 聚焦测试，覆盖 metadata 透传、结构化输出解析、runtime 失败映射和 delta/message 去重。
+- [!] 尽量人工跑一个最小 Pipeline；本轮未启动 Electron 桌面壳，缺少真实渠道/API 交互上下文，无法证明真实最小 Pipeline。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行 `bun run typecheck`、聚焦测试、`git diff --check`，并单独提交阶段 10。
+
+## 2026-05-18 Agent 重构阶段 10：Pipeline 复用 Runner Review
+
+- 已为 `AgentRuntimeRunInput` 增加可选判别联合 metadata；Pipeline 传入 `origin: "pipeline"`、pipeline session、nodeId、nodeRunId、version 和 reviewIteration，Agent 路径不传 metadata。
+- `ClaudePipelineNodeRunner` 新增 `agentRuntimePipelineRunnerV2` feature flag，默认关闭；开启后 Claude Pipeline 节点通过 `InProcessAgentRuntimeRunner` 执行 SDK query，关闭时仍走旧 adapter query 路径。
+- `pipeline-node-runner.ts` 复用 `agent-sdk-env` 的 `buildSdkEnv()` / `resolveSDKCliPath()`，移除本地重复 SDK env / CLI path 实现。
+- Pipeline 的 checkpoint、human gate、PipelineStreamEvent、结构化 schema、patch-work 文档写入、tester 证据保守判定和 v2 read-only 工具策略保持独立，未进入通用 Agent UI。
+- 修复代码审查指出的 runtime delta 与完整 assistant message 重复合并风险；默认 Runner 延迟动态加载，只在 feature flag 开启路径创建。
+- 已将 `@rv-insights/electron` 升到 `0.0.87`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
+- 人工验证缺口：本轮未启动 Electron 桌面壳补跑真实最小 Pipeline；真实渠道/API 与 Pipeline UI 交互仍保留为后续可用环境验证项。
 
 ## 2026-05-18 Agent 重构阶段 9：External Channel Adapter 计划
 

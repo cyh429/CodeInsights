@@ -1,7 +1,5 @@
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
-import { normalizeAnthropicBaseUrlForSdk } from '@rv-insights/core'
 import type {
+  AgentStreamEnvelope,
   JsonSchemaOutputFormat,
   PatchWorkFileKind,
   PatchWorkFileRef,
@@ -22,7 +20,6 @@ import type {
   PipelineStageOutput,
   PipelineStageOutputMap,
   PipelineStreamEvent,
-  ProviderType,
   RVInsightsPermissionMode,
   SDKAssistantMessage,
   SDKContentBlock,
@@ -32,7 +29,6 @@ import {
   isAgentCompatibleProvider,
 } from '@rv-insights/shared'
 import type { CanUseToolOptions, PermissionResult } from './agent-permission-service'
-import { getEffectiveProxyUrl } from './proxy-settings-service'
 import { getChannelById, decryptApiKey } from './channel-manager'
 import {
   ensurePluginManifest,
@@ -44,12 +40,16 @@ import {
 import {
   getAgentSessionWorkspacePath,
   getAgentWorkspacePath,
-  getSdkConfigDir,
 } from './config-paths'
 import {
   ClaudeAgentAdapter,
   type ClaudeAgentQueryOptions,
 } from './adapters/claude-agent-adapter'
+import { buildSdkEnv, resolveSDKCliPath } from './agent-sdk-env'
+import type {
+  AgentRuntimeRunMetadata,
+  AgentRuntimeRunner,
+} from './agent-runtime-types'
 import { getContributionTaskByPipelineSessionId } from './contribution-task-service'
 import {
   clearPatchWorkFilesByKind,
@@ -64,13 +64,16 @@ import {
 } from './pipeline-git-submission-service'
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6'
-const DEFAULT_ANTHROPIC_URL = 'https://api.anthropic.com'
 const V2_READ_ONLY_DISALLOWED_TOOLS = [
   'Write',
   'Edit',
   'MultiEdit',
   'NotebookEdit',
 ] as const
+
+export const agentRuntimePipelineRunnerV2 = {
+  enabled: process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 === '1',
+}
 
 export interface PipelineNodeExecutionContext {
   sessionId: string
@@ -124,100 +127,13 @@ export interface ClaudePipelineNodeRunnerOptions {
   channelId?: string
   workspaceId?: string
   onEvent?: (event: PipelineStreamEvent) => void
+  runtimeRunner?: AgentRuntimeRunner
 }
 
 interface ResolvedWorkspaceContext {
   slug?: string
   name?: string
   cwd?: string
-}
-
-function resolveSDKCliPath(): string {
-  const subpkg = `claude-agent-sdk-${process.platform}-${process.arch}`
-  const binaryName = process.platform === 'win32' ? 'claude.exe' : 'claude'
-  let binaryPath: string | null = null
-
-  try {
-    const cjsRequire = createRequire(import.meta.url)
-    const sdkEntryPath = cjsRequire.resolve('@anthropic-ai/claude-agent-sdk')
-    const anthropicDir = dirname(dirname(sdkEntryPath))
-    binaryPath = join(anthropicDir, subpkg, binaryName)
-  } catch {
-    binaryPath = null
-  }
-
-  if (!binaryPath) {
-    binaryPath = join(process.cwd(), 'node_modules', '@anthropic-ai', subpkg, binaryName)
-  }
-
-  try {
-    const cjsRequire = createRequire(import.meta.url)
-    const electronApp = cjsRequire('electron').app as { isPackaged?: boolean }
-    if (electronApp?.isPackaged && binaryPath.includes('.asar')) {
-      binaryPath = binaryPath.replace(/\.asar([/\\])/, '.asar.unpacked$1')
-    }
-  } catch {
-    // test / 非 Electron 环境忽略
-  }
-
-  return binaryPath
-}
-
-async function buildSdkEnv(
-  apiKey: string,
-  baseUrl: string | undefined,
-  provider: ProviderType,
-): Promise<Record<string, string | undefined>> {
-  const cleanEnv: Record<string, string | undefined> = {}
-  for (const [key, value] of Object.entries(process.env)) {
-    if (!key.startsWith('ANTHROPIC_')) {
-      cleanEnv[key] = value
-    }
-  }
-
-  const sdkEnv: Record<string, string | undefined> = {
-    ...cleanEnv,
-    CLAUDE_CODE_MAX_OUTPUT_TOKENS: '64000',
-    CLAUDE_CODE_ENABLE_TASKS: 'true',
-    CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS: '1',
-    CLAUDE_CONFIG_DIR: getSdkConfigDir(),
-  }
-
-  if (provider === 'kimi-coding') {
-    sdkEnv.ANTHROPIC_AUTH_TOKEN = apiKey
-    sdkEnv.ANTHROPIC_CUSTOM_HEADERS = 'User-Agent: KimiCLI/1.3'
-  } else {
-    sdkEnv.ANTHROPIC_API_KEY = apiKey
-  }
-
-  if (baseUrl && baseUrl !== DEFAULT_ANTHROPIC_URL) {
-    sdkEnv.ANTHROPIC_BASE_URL = normalizeAnthropicBaseUrlForSdk(baseUrl)
-  }
-
-  const proxyUrl = await getEffectiveProxyUrl()
-  if (proxyUrl) {
-    sdkEnv.HTTPS_PROXY = proxyUrl
-    sdkEnv.HTTP_PROXY = proxyUrl
-  }
-
-  if (process.platform === 'win32') {
-    try {
-      const runtimeModule = await import('./runtime-init')
-      const runtimeStatus = runtimeModule.getRuntimeStatus()
-      const shellStatus = runtimeStatus?.shell
-      if (shellStatus?.gitBash?.available && shellStatus.gitBash.path) {
-        sdkEnv.CLAUDE_CODE_SHELL = shellStatus.gitBash.path
-        sdkEnv.CLAUDE_BASH_NO_LOGIN = '1'
-      } else if (shellStatus?.wsl?.available) {
-        sdkEnv.CLAUDE_CODE_SHELL = 'wsl'
-        sdkEnv.CLAUDE_BASH_NO_LOGIN = '1'
-      }
-    } catch {
-      // 非 Electron / test 环境不要求 Shell 检测
-    }
-  }
-
-  return sdkEnv
 }
 
 function buildMcpServers(workspaceSlug?: string): Record<string, Record<string, unknown>> {
@@ -2327,6 +2243,7 @@ export function buildPipelineNodeToolPermissionOptions(
 
 export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
   private adapter = new ClaudeAgentAdapter()
+  private runtimeRunner?: AgentRuntimeRunner
   private readonly channelId?: string
   private readonly workspaceId?: string
   private readonly onEvent?: (event: PipelineStreamEvent) => void
@@ -2335,6 +2252,7 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
     this.channelId = options.channelId
     this.workspaceId = options.workspaceId
     this.onEvent = options.onEvent
+    this.runtimeRunner = options.runtimeRunner
   }
 
   abort(sessionId: string): void {
@@ -2366,7 +2284,11 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
       : 'auto'
     const prompts = buildPipelineNodePrompts(node, context, workspace.name)
     const model = resolveModel(channelId)
-    const env = await buildSdkEnv(apiKey, channel.baseUrl, channel.provider)
+    const env = await buildSdkEnv({
+      apiKey,
+      baseUrl: channel.baseUrl,
+      provider: channel.provider,
+    })
     const mcpServers = buildMcpServers(workspace.slug)
     const additionalDirectories = workspace.slug
       ? getWorkspaceAttachedDirectories(workspace.slug)
@@ -2419,28 +2341,9 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
     let combinedOutput = ''
 
     try {
-      for await (const message of this.adapter.query(queryOptions)) {
-        if (message.type === 'assistant') {
-          const text = extractAssistantText(message as SDKAssistantMessage)
-          if (!text) continue
-          const delta = (combinedOutput ? '\n' : '') + text
-          combinedOutput += delta
-          this.onEvent?.({
-            type: 'text_delta',
-            node,
-            delta,
-            createdAt: Date.now(),
-          })
-          continue
-        }
-
-        if (message.type === 'result' && message.subtype !== 'success') {
-          const errors = Array.isArray(message.errors)
-            ? message.errors.map((item) => String(item))
-            : []
-          throw new Error(errors.join('\n') || `Claude 节点执行失败: ${message.subtype}`)
-        }
-      }
+      combinedOutput = agentRuntimePipelineRunnerV2.enabled
+        ? await this.runNodeWithRuntimeRunner(node, context, queryOptions, model, workspace.cwd, permissionMode)
+        : await this.runNodeWithLegacyAdapter(node, context, queryOptions)
     } finally {
       signal?.removeEventListener('abort', handleAbort)
     }
@@ -2463,5 +2366,145 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
     })
 
     return result
+  }
+
+  private async runNodeWithLegacyAdapter(
+    node: PipelineNodeKind,
+    context: PipelineNodeExecutionContext,
+    queryOptions: ClaudeAgentQueryOptions,
+  ): Promise<string> {
+    let combinedOutput = ''
+
+    for await (const message of this.adapter.query(queryOptions)) {
+      if (message.type === 'assistant') {
+        const text = extractAssistantText(message as SDKAssistantMessage)
+        if (!text) continue
+        const delta = (combinedOutput ? '\n' : '') + text
+        combinedOutput += delta
+        this.emitTextDelta(node, delta)
+        continue
+      }
+
+      if (message.type === 'result' && message.subtype !== 'success') {
+        const errors = Array.isArray(message.errors)
+          ? message.errors.map((item) => String(item))
+          : []
+        throw new Error(errors.join('\n') || `Claude 节点执行失败: ${message.subtype}`)
+      }
+    }
+
+    if (context.signal?.aborted) {
+      throw new Error('Pipeline 节点执行已中止')
+    }
+
+    return combinedOutput
+  }
+
+  private async runNodeWithRuntimeRunner(
+    node: PipelineNodeKind,
+    context: PipelineNodeExecutionContext,
+    queryOptions: ClaudeAgentQueryOptions,
+    model: string,
+    cwd: string | undefined,
+    permissionMode: RVInsightsPermissionMode,
+  ): Promise<string> {
+    let combinedOutput = ''
+    const metadata: AgentRuntimeRunMetadata = {
+      origin: 'pipeline',
+      pipeline: {
+        pipelineSessionId: context.sessionId,
+        nodeId: node,
+        nodeRunId: `${context.sessionId}:${node}:${context.reviewIteration}`,
+        version: context.version,
+        reviewIteration: context.reviewIteration,
+      },
+    }
+
+    const runtimeRunner = await this.getRuntimeRunner()
+    const textAccumulator = createPipelineRuntimeTextAccumulator((delta) => {
+      combinedOutput += delta
+      this.emitTextDelta(node, delta)
+    })
+
+    for await (const envelope of runtimeRunner.run({
+      sessionId: context.sessionId,
+      prompt: queryOptions.prompt,
+      model,
+      cwd: cwd ?? process.cwd(),
+      permissionMode,
+      queryOptions,
+      runtimeHash: 'pipeline-node-runner',
+      metadata,
+      abortSignal: context.signal,
+    })) {
+      if (context.signal?.aborted) {
+        throw new Error('Pipeline 节点执行已中止')
+      }
+      textAccumulator.apply(envelope)
+
+      if (envelope.event.type === 'run_failed') {
+        throw new Error(envelope.event.error.message || envelope.event.error.title || 'Claude 节点执行失败')
+      }
+      if (envelope.event.type === 'run_stopped') {
+        throw new Error('Pipeline 节点执行已中止')
+      }
+    }
+
+    return combinedOutput
+  }
+
+  private async getRuntimeRunner(): Promise<AgentRuntimeRunner> {
+    if (this.runtimeRunner) return this.runtimeRunner
+    const { InProcessAgentRuntimeRunner } = await import('./agent-runtime-runner')
+    this.runtimeRunner = new InProcessAgentRuntimeRunner({
+      query: (queryOptions) => this.adapter.query(queryOptions),
+      store: {
+        appendMessages: () => undefined,
+      },
+    })
+    return this.runtimeRunner
+  }
+
+  private emitTextDelta(node: PipelineNodeKind, delta: string): void {
+    this.onEvent?.({
+      type: 'text_delta',
+      node,
+      delta,
+      createdAt: Date.now(),
+    })
+  }
+}
+
+function createPipelineRuntimeTextAccumulator(onDelta: (delta: string) => void): {
+  apply: (envelope: AgentStreamEnvelope) => void
+} {
+  const streamedMessageIds = new Set<string>()
+  let hasOutput = false
+
+  return {
+    apply: (envelope) => {
+      if (envelope.event.type === 'assistant_delta') {
+        streamedMessageIds.add(envelope.event.messageId)
+        onDelta(envelope.event.delta)
+        hasOutput = true
+        return
+      }
+
+      if (envelope.event.type !== 'assistant_message') return
+      if (streamedMessageIds.has(envelope.event.messageId)) return
+
+      const text = envelope.event.contentBlocks
+        .filter((block): block is { type: 'text'; text: string } =>
+          Boolean(block)
+          && typeof block === 'object'
+          && (block as { type?: unknown }).type === 'text'
+          && typeof (block as { text?: unknown }).text === 'string')
+        .map((block) => block.text)
+        .join('\n')
+      if (text) {
+        onDelta(hasOutput ? `\n${text}` : text)
+        hasOutput = true
+      }
+    },
   }
 }

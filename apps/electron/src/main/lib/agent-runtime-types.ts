@@ -11,6 +11,18 @@ export const agentRuntimeRunnerV2 = {
   enabled: process.env.RV_AGENT_RUNTIME_RUNNER_V2 === '1',
 }
 
+export interface AgentRuntimePipelineMetadata {
+  pipelineSessionId: string
+  nodeId: string
+  nodeRunId?: string
+  version?: number
+  reviewIteration?: number
+}
+
+export type AgentRuntimeRunMetadata =
+  | { origin: 'agent'; pipeline?: never }
+  | { origin: 'pipeline'; pipeline: AgentRuntimePipelineMetadata }
+
 export interface AgentRuntimeRunInput {
   sessionId: string
   prompt: string
@@ -21,6 +33,7 @@ export interface AgentRuntimeRunInput {
   resumeFrom?: string
   runtimeHash?: string
   channelModelId?: string
+  metadata?: AgentRuntimeRunMetadata
   abortSignal?: AbortSignal
 }
 

@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 9 External Channel Adapter 已完成实现与验证；下一阶段为阶段 10 Pipeline 复用 Runner。
+当前阶段：阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证；下一阶段为阶段 11 清理旧路径。
 
 已完成：
 
@@ -45,13 +45,15 @@
 - [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证。
 - [x] 已提交阶段 8 成果：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`
 - [x] 阶段 9 External Channel Adapter 已完成实现与验证。
-- [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
+- [x] 已提交阶段 9 成果：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`
+- [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
+- [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
 - [ ] 阶段 11 清理旧路径尚未开始。
 
 下一步建议：
 
-1. 下一次开发从阶段 10 Pipeline 复用 Runner 开始；阶段 9 已新增 External Channel Adapter 边界与飞书最小接入层，并通过 feature flag 保留旧路径。
-2. 阶段 10 开始前复核阶段 0 基线缺口；触碰 Pipeline runner 入口时，应继续补充真实 Electron 交互证据。
+1. 下一次开发从阶段 11 清理旧路径开始；阶段 10 已让 Pipeline Claude 节点可在 feature flag 下复用 AgentRuntimeRunner。
+2. 阶段 11 开始前复核阶段 0 基线缺口；触碰旧路径删除时，应继续补充真实 Electron 交互证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -558,34 +560,47 @@
 
 ### 任务
 
-- [ ] 为 Runner 输入增加 pipeline metadata。
-- [ ] `AgentEventSource` 支持 `channelType: "pipeline"`。
-- [ ] Pipeline nodeId 写入 event source。
-- [ ] 保留 Pipeline LangGraph checkpoint。
-- [ ] 保留 Pipeline human gate。
-- [ ] 迁移 `pipeline-node-runner.ts` 的 SDK env 逻辑。
-- [ ] 迁移 Pipeline 节点权限策略。
-- [ ] 保留 patch-work 写入防护。
-- [ ] 结构化输出 schema 不进入通用 Agent UI。
+- [x] 为 Runner 输入增加 pipeline metadata。
+- [x] 不修改 `AgentEventSource` 枚举；Pipeline 上下文只放在 Runner input metadata，避免破坏 runtime event contract。
+- [x] Pipeline nodeId 写入 Runner input metadata。
+- [x] 保留 Pipeline LangGraph checkpoint。
+- [x] 保留 Pipeline human gate。
+- [x] 迁移 `pipeline-node-runner.ts` 的 SDK env / SDK CLI 解析逻辑到共享 `agent-sdk-env`。
+- [x] 保留 Pipeline 节点权限策略，v2 explorer / planner 继续强制 read-only。
+- [x] 保留 patch-work 写入防护。
+- [x] 结构化输出 schema 不进入通用 Agent UI。
 
 ### 验收
 
-- [ ] Agent 与 Pipeline Claude 执行入口统一。
-- [ ] Pipeline UI 无变化。
-- [ ] Pipeline checkpoint / gate 行为不变。
-- [ ] Patch-work 防护不回退。
+- [x] Agent 与 Pipeline Claude 执行入口可通过 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 统一到 AgentRuntimeRunner。
+- [x] Pipeline UI 无变化。
+- [x] Pipeline checkpoint / gate 行为不变。
+- [x] Patch-work 防护不回退。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] Pipeline 相关测试。
-- [ ] 人工跑一个最小 Pipeline。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] Pipeline / Runner 聚焦测试。
+- [!] 人工跑一个最小 Pipeline：本轮未启动 Electron 桌面壳，缺少真实渠道/API 交互上下文，无法证明真实最小 Pipeline；已用 mock RuntimeRunner 覆盖 Claude 节点执行、metadata、结构化输出和失败映射。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 关闭 `pipelineUsesAgentRunner`。
-- [ ] Pipeline 回到旧 `pipeline-node-runner.ts`。
+- [x] 关闭 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2`。
+- [x] Pipeline 回到旧 `pipeline-node-runner.ts` adapter query 路径。
+
+### 阶段 10 完成说明
+
+- `AgentRuntimeRunInput` 新增可选判别联合 `metadata`，Pipeline run 传入 `origin: "pipeline"`、`pipelineSessionId`、`nodeId`、`nodeRunId`、`version` 和 `reviewIteration`；Agent 路径不传 metadata，事件 envelope schema 未改变。
+- `ClaudePipelineNodeRunner` 新增 `agentRuntimePipelineRunnerV2` feature flag，默认关闭；关闭时继续使用旧 `ClaudeAgentAdapter.query()` 路径，开启时通过 `InProcessAgentRuntimeRunner` 执行 SDK query。
+- `pipeline-node-runner.ts` 移除了本地重复的 SDK env / CLI path 构建，复用 `agent-sdk-env` 中的 `buildSdkEnv()` 和 `resolveSDKCliPath()`。
+- Pipeline 的 LangGraph checkpoint、human gate、PipelineStreamEvent、结构化 JSON schema、patch-work 文档写入、tester 证据保守判定、read-only 工具防护和现有 UI 行为均保持在 Pipeline 边界内。
+- Runtime event 到 Pipeline 输出的合并按 messageId 处理，避免 `assistant_delta` 与完整 `assistant_message` 重复追加导致结构化 JSON 污染。
+- 默认 RuntimeRunner 采用延迟动态加载，只在 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 路径需要时创建。
+- `@rv-insights/electron` patch 版本从 `0.0.86` 提升到 `0.0.87`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
+- 代码审查发现的 delta / complete 重复合并、metadata 判别约束和默认 Runner 懒加载问题已修复，并补充回归测试。
+- 本轮未启动 Electron 桌面壳补跑真实最小 Pipeline；真实 Pipeline / 渠道交互仍记录为后续可用环境验证缺口。
 
 ## 阶段 11：清理旧路径
 

@@ -16,8 +16,21 @@ mock.module('electron', () => ({
   },
 }))
 
+mock.module('./channel-manager', () => ({
+  getChannelById: (channelId: string) => ({
+    id: channelId,
+    name: '测试 Claude 渠道',
+    provider: 'anthropic',
+    baseUrl: 'https://api.anthropic.com',
+    models: [{ id: 'claude-test-model', name: 'Claude Test', enabled: true }],
+  }),
+  decryptApiKey: () => 'test-api-key',
+}))
+
 const {
+  ClaudePipelineNodeRunner,
   PipelineStructuredOutputError,
+  agentRuntimePipelineRunnerV2,
   buildNodeExecutionResult,
   buildPipelineNodeToolPermissionOptions,
   buildPipelineNodePrompts,
@@ -97,6 +110,234 @@ describe('pipeline-node-runner', () => {
     expect(prompts.userPrompt).toContain('请补充回归测试')
     expect(prompts.userPrompt).toContain('按三步实现')
     expect(prompts.userPrompt).not.toContain('完整计划正文不应进入 compact prompt')
+  })
+
+  test('Pipeline runtime runner v2 透传 pipeline metadata 并保持 Pipeline 结构化结果', async () => {
+    const originalFlag = agentRuntimePipelineRunnerV2.enabled
+    agentRuntimePipelineRunnerV2.enabled = true
+    const runInputs: Array<import('./agent-runtime-types').AgentRuntimeRunInput> = []
+    const events: Array<{ type: string; delta?: string }> = []
+    const runtimeRunner: import('./agent-runtime-types').AgentRuntimeRunner = {
+      async *run(input) {
+        runInputs.push(input)
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-1',
+          sequence: 0,
+          createdAt: new Date().toISOString(),
+          source: 'runtime_service',
+          event: {
+            type: 'run_started',
+            model: input.model,
+            cwd: input.cwd,
+            permissionMode: input.permissionMode,
+            runtimeHash: input.runtimeHash ?? 'missing',
+          },
+        }
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-1',
+          sequence: 1,
+          createdAt: new Date().toISOString(),
+          source: 'claude_sdk',
+          event: {
+            type: 'assistant_message',
+            messageId: 'assistant-1',
+            contentBlocks: [{
+              type: 'text',
+              text: JSON.stringify({
+                summary: '已完成探索',
+                findings: ['复用 AgentRuntimeRunner'],
+                keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
+                nextSteps: ['继续 planner'],
+              }),
+            }],
+            status: 'complete',
+          },
+        }
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-1',
+          sequence: 2,
+          createdAt: new Date().toISOString(),
+          source: 'claude_sdk',
+          event: {
+            type: 'run_completed',
+            resultSubtype: 'success',
+            terminalReason: 'completed',
+            usage: {},
+          },
+        }
+      },
+    }
+    try {
+      const runner = new ClaudePipelineNodeRunner({
+        channelId: 'channel-1',
+        runtimeRunner,
+        onEvent: (event) => {
+          if (event.type === 'text_delta') events.push(event)
+        },
+      })
+
+      const result = await runner.runNode('explorer', {
+        sessionId: 'pipeline-session-1',
+        userInput: '探索 Runner 复用',
+        currentNode: 'explorer',
+        version: 2,
+        reviewIteration: 3,
+      })
+
+      expect(result.summary).toBe('已完成探索')
+      expect(result.stageOutput).toMatchObject({
+        node: 'explorer',
+        findings: ['复用 AgentRuntimeRunner'],
+      })
+      expect(events).toHaveLength(1)
+      expect(runInputs).toHaveLength(1)
+      expect(runInputs[0]!.metadata).toEqual({
+        origin: 'pipeline',
+        pipeline: {
+          pipelineSessionId: 'pipeline-session-1',
+          nodeId: 'explorer',
+          nodeRunId: 'pipeline-session-1:explorer:3',
+          version: 2,
+          reviewIteration: 3,
+        },
+      })
+      expect(runInputs[0]!.queryOptions.outputFormat).toMatchObject({
+        type: 'json_schema',
+        name: 'pipeline_explorer_artifact',
+      })
+      expect(runInputs[0]!.queryOptions.persistSession).toBe(false)
+    } finally {
+      agentRuntimePipelineRunnerV2.enabled = originalFlag
+    }
+  })
+
+  test('Pipeline runtime runner v2 避免 delta 与完整 assistant_message 重复合并', async () => {
+    const originalFlag = agentRuntimePipelineRunnerV2.enabled
+    agentRuntimePipelineRunnerV2.enabled = true
+    const events: Array<{ type: string; delta?: string }> = []
+    const jsonText = JSON.stringify({
+      summary: '流式探索完成',
+      findings: ['delta 已累计'],
+      keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
+      nextSteps: ['避免 complete 重复追加'],
+    })
+    const runtimeRunner: import('./agent-runtime-types').AgentRuntimeRunner = {
+      async *run(input) {
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-delta',
+          sequence: 0,
+          createdAt: new Date().toISOString(),
+          source: 'claude_sdk',
+          event: {
+            type: 'assistant_delta',
+            messageId: 'assistant-streamed',
+            delta: jsonText,
+          },
+        }
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-delta',
+          sequence: 1,
+          createdAt: new Date().toISOString(),
+          source: 'claude_sdk',
+          event: {
+            type: 'assistant_message',
+            messageId: 'assistant-streamed',
+            contentBlocks: [{ type: 'text', text: jsonText }],
+            status: 'complete',
+          },
+        }
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-delta',
+          sequence: 2,
+          createdAt: new Date().toISOString(),
+          source: 'claude_sdk',
+          event: {
+            type: 'run_completed',
+            resultSubtype: 'success',
+            terminalReason: 'completed',
+            usage: {},
+          },
+        }
+      },
+    }
+    try {
+      const runner = new ClaudePipelineNodeRunner({
+        channelId: 'channel-1',
+        runtimeRunner,
+        onEvent: (event) => {
+          if (event.type === 'text_delta') events.push(event)
+        },
+      })
+
+      const result = await runner.runNode('explorer', {
+        sessionId: 'pipeline-session-delta',
+        userInput: '探索流式合并',
+        currentNode: 'explorer',
+        version: 2,
+        reviewIteration: 0,
+      })
+
+      expect(result.output).toBe(jsonText)
+      expect(result.summary).toBe('流式探索完成')
+      expect(events.map((event) => event.delta).join('')).toBe(jsonText)
+    } finally {
+      agentRuntimePipelineRunnerV2.enabled = originalFlag
+    }
+  })
+
+  test('Pipeline runtime runner v2 映射 run_failed 为节点执行失败', async () => {
+    const originalFlag = agentRuntimePipelineRunnerV2.enabled
+    agentRuntimePipelineRunnerV2.enabled = true
+    const runtimeRunner: import('./agent-runtime-types').AgentRuntimeRunner = {
+      async *run(input) {
+        yield {
+          schemaVersion: 1,
+          sessionId: input.sessionId,
+          runId: 'pipeline-run-failed',
+          sequence: 0,
+          createdAt: new Date().toISOString(),
+          source: 'runtime_service',
+          event: {
+            type: 'run_failed',
+            error: {
+              code: 'runtime_error',
+              title: 'Pipeline 节点失败',
+              message: 'mock runner failed',
+              retryable: false,
+            },
+            recoverable: false,
+          },
+        }
+      },
+    }
+    try {
+      const runner = new ClaudePipelineNodeRunner({
+        channelId: 'channel-1',
+        runtimeRunner,
+      })
+
+      await expect(runner.runNode('explorer', {
+        sessionId: 'pipeline-session-failed',
+        userInput: '触发失败',
+        currentNode: 'explorer',
+        version: 2,
+        reviewIteration: 0,
+      })).rejects.toThrow('mock runner failed')
+    } finally {
+      agentRuntimePipelineRunnerV2.enabled = originalFlag
+    }
   })
 
   test('reviewer 非 JSON 输出会抛出结构化输出错误', () => {
