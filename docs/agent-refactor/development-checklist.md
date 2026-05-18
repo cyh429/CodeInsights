@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 1 Shared Event Contract 已完成实现，等待阶段提交。
+当前阶段：阶段 2 Event Log 双写已完成实现与聚焦验证，等待阶段提交。
 
 已完成：
 
@@ -23,14 +23,12 @@
 - [x] 已提交方案阶段成果：`158d8a64 docs: 完成 Agent 模式重构方案阶段文档`
 - [x] 已完成阶段 0 冻结基线首轮文本证据：[2026-05-17-round-1.md](./baseline-runs/2026-05-17-round-1.md)
 - [x] 已提交阶段 0 成果：`47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线`
-
-已完成：
-
 - [x] 阶段 1 Shared Event Contract 已完成实现与聚焦验证。
+- [x] 已提交阶段 1 成果：`d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约`
+- [x] 阶段 2 Event Log 双写已完成实现与聚焦验证。
 
 未开始：
 
-- [ ] 阶段 2 Event Log 双写尚未开始。
 - [ ] 阶段 3 In-process AgentRuntimeRunner 尚未开始。
 - [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
 - [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
@@ -43,8 +41,8 @@
 
 下一步建议：
 
-1. 完成阶段 1 的 Shared Event Contract 验证并单独提交。
-2. 阶段 2 开始前继续保持客户端 UI 零可见变化，并按触碰边界补跑阶段 0 缺口。
+1. 阶段 2 完成并提交后，进入阶段 3 In-process AgentRuntimeRunner。
+2. 阶段 3 会抽出 SDK query 边界，开始前继续保持 Renderer 旧路径和 UI 零可见变化。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -56,7 +54,7 @@
 
 ## 全局硬约束
 
-- [ ] 客户端 UI 零可见变化：不改布局、样式、文案、入口、按钮行为、交互路径。
+- [x] 客户端 UI 零可见变化：不改布局、样式、文案、入口、按钮行为、交互路径。
 - [ ] 不引入本地数据库，继续使用 JSON / JSONL / 配置文件。
 - [ ] 不默认引入 Docker 或 SaaS 多用户模型。
 - [ ] 不默认绕过权限；外部渠道默认不使用 `bypassPermissions`。
@@ -148,41 +146,67 @@
 - [x] 关闭 `agentRuntimeEventsV2`。
 - [x] 保留旧 `AgentEvent` 和旧 reducer。
 
+### 阶段 1 完成说明
+
+- 提交：`d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约`
+- 新增文件：`packages/shared/src/agent/runtime-events.ts`、`packages/shared/src/agent/runtime-events.test.ts`
+- 已新增 `AgentStreamEnvelope`、`AgentRuntimeEvent`、`AgentRuntimeErrorPayload`、`AgentEventSource`、默认关闭的 `agentRuntimeEventsV2` feature flag。
+- 已新增 envelope 创建、schema guard / validator、终态识别、旧 `AgentEvent` / `AgentStreamPayload` / `SDKMessage` 到 runtime event 的 adapter，以及 event replay reducer 测试骨架。
+- 已通过 `packages/shared/src/agent/index.ts` 和 `packages/shared/src/index.ts` 导出新契约；旧 `AgentEvent`、旧 `AgentStreamPayload`、旧 IPC 默认行为和旧 Renderer reducer 均保留。
+- `@rv-insights/shared` patch 版本已从 `0.1.33` 提升到 `0.1.34`。
+- 本阶段没有修改 `apps/electron` 运行路径、Renderer UI、布局、样式、文案、入口、按钮行为或交互路径。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts packages/shared/src/utils/pipeline-state.test.ts packages/shared/src/utils/capabilities-diff.test.ts`；`bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
+- 全量 `bun test` 曾在 412 pass 后出现一次 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；单独重跑该失败文件通过，本阶段 shared contract 改动未触碰该路径。
+
 ## 阶段 2：Event Log 双写
 
 目标：在旧运行路径旁边写入新事件日志，UI 仍走旧路径。
 
 ### 任务
 
-- [ ] 新增 `{session-id}.events.jsonl` 写入路径。
-- [ ] 新增 runId 生成策略。
-- [ ] 新增 per-run sequence 分配。
-- [ ] 实现终态去重。
-- [ ] Runtime Service / Orchestrator 写 envelope event log。
-- [ ] SDKMessage 继续写原 JSONL。
-- [ ] 新旧 reducer shadow compare，只写开发日志。
-- [ ] 缺口 sequence 检测和补读策略打桩。
+- [x] 新增 `{session-id}.events.jsonl` 写入路径。
+- [x] 新增 runId 生成策略。
+- [x] 新增 per-run sequence 分配。
+- [x] 实现终态去重。
+- [x] Runtime Service / Orchestrator 写 envelope event log。
+- [x] SDKMessage 继续写原 JSONL。
+- [x] 新旧 reducer shadow compare，只写开发日志。
+- [x] 缺口 sequence 检测和补读策略打桩。
 
 ### 验收
 
-- [ ] 发送消息生成完整 event log。
-- [ ] 停止消息生成单一 `run_stopped`。
-- [ ] 权限 approve / deny 生成 requested / resolved。
-- [ ] AskUser 生成 requested / resolved。
-- [ ] 重复终态不会写入。
-- [ ] UI 无可见变化。
+- [x] 发送消息生成完整 event log。
+- [x] 停止消息生成单一 `run_stopped`。
+- [x] 权限 approve / deny 生成 requested / resolved。
+- [x] AskUser 生成 requested / resolved。
+- [x] 重复终态不会写入。
+- [x] UI 无可见变化。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` event log/replay 相关测试。
-- [ ] 人工跑阶段 0 的关键基线：发送、停止、权限、AskUser。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`
+- [!] 人工跑阶段 0 的关键基线：发送、停止、权限、AskUser。当前本轮未启动 Electron 桌面壳；已用 Orchestrator mock 覆盖发送、停止、终态，event log 单测覆盖权限和 AskUser requested/resolved，真实 UI 交互仍保留为后续补跑缺口。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 停止写 events JSONL。
-- [ ] 旧 SDKMessage JSONL 继续作为唯一数据源。
+- [x] 停止写 events JSONL。
+- [x] 旧 SDKMessage JSONL 继续作为唯一数据源。
+
+### 阶段 2 完成说明
+
+- 新增文件：`apps/electron/src/main/lib/agent-runtime-event-log.ts`、`apps/electron/src/main/lib/agent-runtime-event-log.test.ts`
+- 新增 `{session-id}.events.jsonl` 旁路写入与读取 API；原 `{session-id}.jsonl` SDKMessage transcript 继续保留并作为 Renderer / resume 主数据源。
+- 新增 `AgentRuntimeEventLogWriter`，每次 run 生成独立 `runId`，按 run 分配单调 `sequence`，并对 `run_completed` / `run_failed` / `run_stopped` 做终态去重。
+- 旧 Orchestrator 路径已双写 `run_started`、`sdk_session`、assistant/tool、`usage_updated`、`run_completed` / `run_failed` / `run_stopped`。
+- 权限与 AskUser 生命周期已记录 requested/resolved；resolved 只在 IPC handler 旁路写 events JSONL，原 Renderer `STREAM_EVENT` 行为保持不变。
+- shadow compare 仅写主进程开发日志，当前检测 per-run sequence 缺口和内存/落盘 replay 终态差异，不在 UI 展示。
+- `@rv-insights/shared` patch 版本从 `0.1.34` 提升到 `0.1.35`；`@rv-insights/electron` patch 版本从 `0.0.78` 提升到 `0.0.79`。
+- 本阶段没有修改 Renderer、布局、样式、文案、入口、按钮行为或交互路径；客户端 UI 零可见变化。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
+- [!] 全量 `bun test` 仍在 412 pass 后复现既有 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；本阶段相关聚焦测试单独运行通过。
+- 当前未启动 Electron 桌面壳补跑阶段 0 真实交互基线；发送/停止由 Orchestrator 测试覆盖，权限/AskUser 由 event log 单测覆盖，真实 UI 交互仍记录为后续补跑缺口。
 
 ## 阶段 3：In-process AgentRuntimeRunner
 

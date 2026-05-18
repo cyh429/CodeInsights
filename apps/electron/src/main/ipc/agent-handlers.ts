@@ -57,6 +57,7 @@ import {
 import { permissionService } from '../lib/agent-permission-service'
 import { askUserService } from '../lib/agent-ask-user-service'
 import { exitPlanService } from '../lib/agent-exit-plan-service'
+import { appendAskUserResolvedRuntimeEvent, appendPermissionResolvedRuntimeEvent } from '../lib/agent-runtime-event-log'
 import { getAgentTeamData, readAgentOutputFile } from '../lib/agent-team-reader'
 import {
   getAgentSessionWorkspacePath,
@@ -463,6 +464,7 @@ export function registerAgentIpcHandlers(): void {
 
       // 发送 permission_resolved 事件给渲染进程
       if (sessionId) {
+        appendPermissionResolvedRuntimeEvent(sessionId, requestId, behavior)
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
           payload: { kind: 'rv_insights_event', event: { type: 'permission_resolved', requestId, behavior } },
@@ -529,6 +531,7 @@ export function registerAgentIpcHandlers(): void {
       const sessionId = askUserService.respondToAskUser(requestId, answers)
 
       if (sessionId) {
+        appendAskUserResolvedRuntimeEvent(sessionId, requestId, answers)
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
           payload: { kind: 'rv_insights_event', event: { type: 'ask_user_resolved', requestId } },

@@ -249,6 +249,16 @@ export function getAgentSessionMessagesPath(id: string): string {
 }
 
 /**
+ * 获取指定 Agent 会话的 runtime event log 文件路径
+ *
+ * @param id 会话 ID
+ * @returns ~/.rv-insights/agent-sessions/{id}.events.jsonl
+ */
+export function getAgentSessionEventsPath(id: string): string {
+  return join(getAgentSessionsDir(), `${id}.events.jsonl`)
+}
+
+/**
  * 获取 Pipeline 会话索引文件路径
  *
  * @returns ~/.rv-insights/pipeline-sessions.json

@@ -64,6 +64,11 @@ import {
   createQueuedUserMessageInput,
 } from './agent-orchestrator/queued-message'
 import { sendCompletionSignal } from './agent-orchestrator/completion-signal'
+import {
+  finishAgentRuntimeEventLogRun,
+  startAgentRuntimeEventLogRun,
+  type AgentRuntimeEventLogWriter,
+} from './agent-runtime-event-log'
 
 // ===== 类型定义 =====
 
@@ -620,6 +625,7 @@ export class AgentOrchestrator {
     let agentCwd: string | undefined
     let workspaceSlug: string | undefined
     let workspace: import('@rv-insights/shared').AgentWorkspace | undefined
+    let runtimeEventLog: AgentRuntimeEventLogWriter | null = null
 
     try {
       // 8. 动态导入 SDK
@@ -786,14 +792,24 @@ export class AgentOrchestrator {
       const getPermissionMode = (): RVInsightsPermissionMode =>
         this.sessionPermissionModes.get(sessionId) ?? initialPermissionMode
 
+      runtimeEventLog = startAgentRuntimeEventLogRun({
+        sessionId,
+        model: modelId || DEFAULT_MODEL_ID,
+        cwd: agentCwd ?? homedir(),
+        permissionMode: initialPermissionMode,
+        resumeFrom: existingSdkSessionId,
+      })
+
       // 始终创建 auto 权限回调（运行中可能切换到 auto）
       const autoCanUseTool = permissionService.createCanUseTool(
         sessionId,
         (request: PermissionRequest) => {
+          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'permission_request', request } })
           this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'permission_request', request } })
         },
         (sid, toolInput, signal, sendAskUser) => askUserService.handleAskUserQuestion(sid, toolInput, signal, sendAskUser),
         (request: AskUserRequest) => {
+          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
           this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
         },
       )
@@ -812,6 +828,7 @@ export class AgentOrchestrator {
           })
         },
         emitEnterPlanMode: () => {
+          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'enter_plan_mode', sessionId } })
           this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'enter_plan_mode', sessionId } })
         },
         autoCanUseTool,
@@ -820,6 +837,7 @@ export class AgentOrchestrator {
           toolInput,
           signal,
           (request: AskUserRequest) => {
+            runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
             this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
           },
         ),
@@ -828,6 +846,7 @@ export class AgentOrchestrator {
           toolInput,
           signal,
           (request: ExitPlanModeRequest) => {
+            runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'exit_plan_mode_request', request } })
             this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'exit_plan_mode_request', request } })
           },
         ),
@@ -917,6 +936,7 @@ export class AgentOrchestrator {
         },
         onSessionId: (sdkSessionId: string) => {
           teamsCoordinator.setCapturedSdkSessionId(sdkSessionId)
+          runtimeEventLog?.appendRuntimeEvent('claude_sdk', { type: 'sdk_session', sdkSessionId, resumeFrom: existingSdkSessionId })
           if (sdkSessionId !== existingSdkSessionId) {
             try {
               updateAgentSessionMeta(sessionId, { sdkSessionId })
@@ -1132,6 +1152,20 @@ export class AgentOrchestrator {
 
                 const errorSDKMsg = createTypedErrorSDKMessage(typedError)
                 appendSDKMessages(sessionId, [errorSDKMsg])
+                runtimeEventLog?.appendSDKMessage(errorSDKMsg)
+                runtimeEventLog?.completeIfMissing({
+                  type: 'run_failed',
+                  error: {
+                    code: typedError.code,
+                    title: typedError.title,
+                    message: typedError.message,
+                    retryable: typedError.canRetry,
+                    details: typedError.details,
+                    originalError: typedError.originalError,
+                  },
+                  recoverable: typedError.canRetry,
+                })
+                runtimeEventLog?.shadowCompare('typed_error')
                 console.log(`[Agent 编排] 已保存 TypedError 消息: ${typedError.code} - ${typedError.title}`)
 
                 // 如果之前有重试记录，发送 retry_failed
@@ -1163,6 +1197,8 @@ export class AgentOrchestrator {
               accumulatedMessages.push(messageForAccumulation)
               msg = messageForAccumulation
             }
+
+            runtimeEventLog?.appendSDKMessage(msg)
 
             // Turn 结束时：持久化累积消息
             if (msg.type === 'result') {
@@ -1323,6 +1359,7 @@ export class AgentOrchestrator {
             startedAt: streamStartedAt,
             options: { resultSubtype: capturedResultSubtype },
           })
+          runtimeEventLog?.shadowCompare('completed')
 
           break  // 成功完成，退出重试循环
 
@@ -1341,6 +1378,8 @@ export class AgentOrchestrator {
             const wasStoppedByUser = this.stoppedBySessions.delete(sessionId)
             console.log(`[Agent 编排] 会话 ${sessionId} 已被用户中止`)
             this.persistSDKMessages(sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+            runtimeEventLog?.completeIfMissing({ type: 'run_stopped', reason: 'user_abort', stoppedBy: wasStoppedByUser ? 'user' : 'system' })
+            runtimeEventLog?.shadowCompare('user_abort')
             // 持久化中断状态到会话 meta
             try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
             sendCompletionSignal({
@@ -1416,6 +1455,18 @@ export class AgentOrchestrator {
 
             const errMsg = createCatchErrorSDKMessage({ userFacingError, isPromptTooLong })
             appendSDKMessages(sessionId, [errMsg])
+            runtimeEventLog?.appendSDKMessage(errMsg)
+            runtimeEventLog?.completeIfMissing({
+              type: 'run_failed',
+              error: {
+                code: isPromptTooLong ? 'prompt_too_long' : 'runtime_error',
+                title: 'Agent 运行失败',
+                message: userFacingError,
+                retryable: false,
+              },
+              recoverable: false,
+            })
+            runtimeEventLog?.shadowCompare('catch_error')
             console.log(`[Agent 编排] 已保存错误消息到 JSONL`)
           } catch (saveError) {
             console.error('[Agent 编排] 保存错误消息失败:', saveError)
@@ -1465,6 +1516,18 @@ export class AgentOrchestrator {
           lastRetryableError,
         })
         appendSDKMessages(sessionId, [retryErrorSDKMsg])
+        runtimeEventLog?.appendSDKMessage(retryErrorSDKMsg)
+        runtimeEventLog?.completeIfMissing({
+          type: 'run_failed',
+          error: {
+            code: 'retry_exhausted',
+            title: 'Agent 重试失败',
+            message: `重试 ${MAX_AUTO_RETRIES} 次后仍然失败: ${lastRetryableError}`,
+            retryable: true,
+          },
+          recoverable: true,
+        })
+        runtimeEventLog?.shadowCompare('retry_exhausted')
 
         sendCompletionSignal({
           callbacks,
@@ -1485,6 +1548,8 @@ export class AgentOrchestrator {
       permissionService.clearSessionPending(sessionId)
       askUserService.clearSessionPending(sessionId)
       exitPlanService.clearSessionPending(sessionId)
+      runtimeEventLog?.shadowCompare('finally')
+      finishAgentRuntimeEventLogRun(sessionId, runtimeEventLog)
     }
   }
 

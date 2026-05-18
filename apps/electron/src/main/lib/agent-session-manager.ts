@@ -16,6 +16,7 @@ import {
   getAgentSessionsIndexPath,
   getAgentSessionsDir,
   getAgentSessionMessagesPath,
+  getAgentSessionEventsPath,
   getAgentSessionWorkspacePath,
   getAgentWorkspacePath,
   getSdkConfigDir,
@@ -28,7 +29,7 @@ import { buildSearchSnippet, findFirstJsonlMatch } from './jsonl-search'
 if (!process.env.CLAUDE_CONFIG_DIR) {
   process.env.CLAUDE_CONFIG_DIR = getSdkConfigDir()
 }
-import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope } from '@rv-insights/shared'
 import { getConversationMessages } from './conversation-manager'
 import { clearNanoBananaAgentHistory } from './chat-tools/nano-banana-mcp'
 
@@ -209,6 +210,45 @@ export function appendSDKMessages(id: string, messages: SDKMessage[]): void {
   } catch (error) {
     console.error(`[Agent 会话] 追加 SDKMessage 失败 (${id}):`, error)
     throw new Error('追加 SDKMessage 失败')
+  }
+}
+
+/**
+ * 追加 Agent runtime envelope 到旁路 events JSONL 文件。
+ *
+ * 这是阶段 2 双写路径；旧 SDKMessage JSONL 仍是当前 Renderer 与 resume 的主数据源。
+ */
+export function appendAgentRuntimeEvents(id: string, envelopes: AgentStreamEnvelope[]): void {
+  if (envelopes.length === 0) return
+
+  const filePath = getAgentSessionEventsPath(id)
+
+  try {
+    const lines = envelopes.map((envelope) => JSON.stringify(envelope)).join('\n') + '\n'
+    appendFileSync(filePath, lines, 'utf-8')
+  } catch (error) {
+    console.error(`[Agent 会话] 追加 runtime events 失败 (${id}):`, error)
+    throw new Error('追加 Agent runtime events 失败')
+  }
+}
+
+/**
+ * 读取 Agent runtime events（阶段 2 shadow replay / 后续 Renderer 切换使用）。
+ */
+export function getAgentSessionRuntimeEvents(id: string): AgentStreamEnvelope[] {
+  const filePath = getAgentSessionEventsPath(id)
+
+  if (!existsSync(filePath)) {
+    return []
+  }
+
+  try {
+    const raw = readFileSync(filePath, 'utf-8')
+    const lines = raw.split('\n').filter((line) => line.trim())
+    return lines.map((line) => JSON.parse(line) as AgentStreamEnvelope)
+  } catch (error) {
+    console.error(`[Agent 会话] 读取 runtime events 失败 (${id}):`, error)
+    return []
   }
 }
 

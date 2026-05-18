@@ -1,5 +1,28 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-18 Agent 重构阶段 2：Event Log 双写计划
+
+- [x] 复习阶段 0/1 文档与现有 Agent Orchestrator、会话持久化、权限和 AskUser 路径，确认 UI 零可见变化边界。
+- [x] 在会话持久化层新增 `{session-id}.events.jsonl` 旁路读写能力，原 SDKMessage JSONL 保持不变。
+- [x] 新增 Agent runtime event log writer，负责 runId、per-run sequence、终态去重、schema 校验和开发日志。
+- [x] 在旧 Agent 运行路径中双写 `AgentStreamEnvelope`：`run_started`、`sdk_session`、assistant/tool、usage、终态事件。
+- [x] 在权限与 AskUser 生命周期中记录 requested/resolved，不改变现有 pending queue 与 UI 行为。
+- [x] 新增新旧 reducer shadow compare 的开发日志打桩，保证差异只进主进程日志、不显示到 Renderer。
+- [x] 补充 event log / replay 聚焦测试，覆盖终态去重、sequence、权限和 AskUser。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行验证并单独提交阶段 2。
+
+## 2026-05-18 Agent 重构阶段 2：Event Log 双写 Review
+
+- 已新增 `apps/electron/src/main/lib/agent-runtime-event-log.ts`，在旧 Orchestrator 旁边写入 `{session-id}.events.jsonl`，原 SDKMessage `{session-id}.jsonl` 继续保留。
+- 每次 run 生成独立 `runId`，同一 run 内 `sequence` 单调递增，并对 `run_completed` / `run_failed` / `run_stopped` 做终态去重。
+- 已双写 `run_started`、`sdk_session`、assistant/tool、`usage_updated`、终态事件；权限和 AskUser 的 requested/resolved 已进入 events JSONL。
+- shadow compare 当前只写主进程开发日志，检测 sequence 缺口和 replay 终态差异，不向 Renderer 暴露任何调试状态。
+- 本阶段未修改 Renderer、UI 样式、文案、入口或交互路径；`STREAM_EVENT` 旧 payload 继续按原路径送到 UI。
+- 已将 `@rv-insights/shared` 升到 `0.1.35`，`@rv-insights/electron` 升到 `0.0.79`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
+- 全量 `bun test` 仍在 412 pass 后复现既有 Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；本阶段相关聚焦测试单独运行通过。
+- 本轮未启动 Electron 桌面壳做阶段 0 真实交互补跑；发送/停止通过 Orchestrator 测试覆盖，权限/AskUser 通过 event log 单测覆盖，真实 UI 交互仍作为后续缺口记录。
+
 ## 2026-05-18 Agent 重构阶段 1：Shared Event Contract 计划
 
 - [x] 复习阶段 0 基线、事件契约和开发清单，确认本阶段只新增 shared event contract，不改变 Agent 运行行为。

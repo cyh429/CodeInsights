@@ -30,6 +30,7 @@ const { AgentOrchestrator } = await import('../agent-orchestrator')
 const {
   createAgentSession,
   getAgentSessionSDKMessages,
+  getAgentSessionRuntimeEvents,
   updateAgentSessionMeta,
 } = await import('../agent-session-manager')
 const { createAgentWorkspace } = await import('../agent-workspace-manager')
@@ -256,6 +257,12 @@ describe('AgentOrchestrator completion signal', () => {
       resultSubtype: 'error_max_turns',
     })
     expect(recorder.completes[0]?.persistedTypes).toEqual(['user', 'assistant', 'result'])
+    expect(getAgentSessionRuntimeEvents(input.sessionId).map((event) => event.event.type)).toEqual([
+      'run_started',
+      'assistant_message',
+      'usage_updated',
+      'run_failed',
+    ])
   })
 
   test('assistant TypedError 不可重试时持久化错误消息后完成', async () => {

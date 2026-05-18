@@ -100,6 +100,7 @@ describe('Agent runtime event contract', () => {
       'assistant_message',
       'tool_started',
       'tool_completed',
+      'usage_updated',
       'run_completed',
     ])
   })

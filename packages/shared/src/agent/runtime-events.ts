@@ -325,8 +325,9 @@ export function adaptSDKMessageToRuntimeEvents(message: SDKMessage): AgentRuntim
       cacheCreationTokens: message.usage.cache_creation_input_tokens,
       costUsd: message.total_cost_usd,
     })
-    if (message.subtype === 'success') return [{ type: 'run_completed', resultSubtype: message.subtype, terminalReason: 'completed', usage, sdkSessionId: message.session_id }]
-    return [{ type: 'run_failed', error: { code: message.subtype, title: 'Agent 运行失败', message: message.errors?.join('\n') ?? message.subtype, retryable: false }, recoverable: false }]
+    const usageEvent: AgentRuntimeEvent = { type: 'usage_updated', usage }
+    if (message.subtype === 'success') return [usageEvent, { type: 'run_completed', resultSubtype: message.subtype, terminalReason: 'completed', usage, sdkSessionId: message.session_id }]
+    return [usageEvent, { type: 'run_failed', error: { code: message.subtype, title: 'Agent 运行失败', message: message.errors?.join('\n') ?? message.subtype, retryable: false }, recoverable: false }]
   }
   if (isSDKSystemMessage(message) && message.subtype === 'init' && typeof message.session_id === 'string') {
     return [{ type: 'sdk_session', sdkSessionId: message.session_id }]
