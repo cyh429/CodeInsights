@@ -12,9 +12,35 @@
 - [x] 阶段 6 插件系统原生化已完成并提交：`05f3c9e9 feat(agent): 完成 Agent 重构阶段 6 插件系统原生化`。
 - [x] 阶段 7 内置 MCP Bridge 已完成并提交：`eb9b9f34 feat(agent): 完成 Agent 重构阶段 7 内置 MCP Bridge`。
 - [x] 阶段 8 Renderer 切新 Reducer 已完成并提交：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`。
-- [ ] 阶段 9 External Channel Adapter 尚未开始。
+- [x] 阶段 9 External Channel Adapter 已完成实现与验证。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
+
+## 2026-05-18 Agent 重构阶段 9：External Channel Adapter 计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest 和阶段 0 基线。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [x] 梳理现有 `agent-service` / `agent-orchestrator` / `feishu-bridge` 入口，确认阶段 9 只新增 External Channel Adapter，不做 Pipeline 复用、不清理旧路径。
+- [x] 新增 `AgentChannel` / channel adapter 抽象，入口统一消费 `AgentStreamEnvelope`，不直接解析 SDKMessage 内部结构。
+- [x] 新增 Electron channel adapter，保持桌面 UI 当前 `AgentStreamEnvelope` 消费路径和可见行为不变。
+- [x] 新增 Feishu channel adapter 或最小接入层，复用同一 runtime runner / event contract；飞书输出采用 assistant delta 节流、run completed 最终 Markdown 拼接、权限请求默认 queue_to_desktop。
+- [x] 定义 channel session binding store，使用本地 JSON / JSONL，不引入数据库。
+- [x] 支持 channel-scoped MCP overlay 作为 run overlay，不写入 workspace manifest。
+- [x] 用 `agentRuntimeChannelsV2` feature flag 保留旧 Feishu bridge 回滚路径，客户端 UI 零可见变化。
+- [x] 补充 channel adapter / binding store / Feishu adapter fixture 聚焦测试。
+- [!] 尽量人工补跑 Electron Agent 发送与飞书入口；当前未启动 Electron 桌面壳，且本机不存在 `~/.rv-insights/feishu.json`，无法补跑真实飞书入口。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行 `bun run typecheck`、聚焦测试、`git diff --check`，并单独提交阶段 9。
+
+## 2026-05-18 Agent 重构阶段 9：External Channel Adapter Review
+
+- 已新增 `agent-channel.ts`，定义 `AgentChannel`、`AgentChannelRunContext`、`agentRuntimeChannelsV2` feature flag 和 `ElectronAgentChannel`；桌面端仍发送原有 IPC payload，Renderer 消费路径、UI 布局、样式、文案和交互不变。
+- 已新增 `agent-channel-binding-store.ts`，使用 `~/.rv-insights/agent-channel-bindings.json` 与 `agent-channel-bindings.events.jsonl` 保存 channel session binding 和审计事件，不引入数据库。
+- 已新增 `feishu-channel-adapter.ts`，只消费 `AgentStreamEnvelope`：assistant delta 节流输出，`run_completed` 拼接最终 Markdown，`permission_requested` 默认 `queue_to_desktop`，不自动 approve、不默认 bypass。
+- `feishu-bridge.ts` 保留旧 bridge 路径；只有 `RV_AGENT_RUNTIME_CHANNELS_V2=1` 时才切到 Feishu channel adapter。群聊 `feishu_chat` MCP 仍作为 `customMcpServers` run overlay 传入，不写 workspace manifest。
+- 飞书绑定创建、切换、设置页更新、加载与移除会同步写入 channel binding store；旧 `feishu-bindings-{botId}.json` 仍保留给现有 UI 和回滚路径。
+- 已将 `@rv-insights/electron` 升到 `0.0.86`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-channel-binding-store.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
+- 人工验证缺口：本轮未启动 Electron 桌面壳补跑真实 Agent 发送；本机不存在 `~/.rv-insights/feishu.json`，无法补跑真实飞书入口和权限 pending。未伪造通过，继续记录为后续可用环境验证项。
 
 ## 2026-05-18 Agent 重构阶段 8：Renderer 切新 Reducer 计划
 

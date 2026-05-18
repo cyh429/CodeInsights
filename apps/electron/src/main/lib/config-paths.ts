@@ -670,6 +670,24 @@ export function getFeishuBotBindingsPath(botId: string): string {
 }
 
 /**
+ * 获取外部 Agent Channel 绑定索引路径
+ *
+ * @returns ~/.rv-insights/agent-channel-bindings.json
+ */
+export function getAgentChannelBindingsPath(): string {
+  return join(getConfigDir(), 'agent-channel-bindings.json')
+}
+
+/**
+ * 获取外部 Agent Channel 绑定事件日志路径
+ *
+ * @returns ~/.rv-insights/agent-channel-bindings.events.jsonl
+ */
+export function getAgentChannelBindingEventsPath(): string {
+  return join(getConfigDir(), 'agent-channel-bindings.events.jsonl')
+}
+
+/**
  * 获取指定 Agent 会话的工作路径
  *
  * 在工作区目录下创建以 sessionId 命名的子文件夹，

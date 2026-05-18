@@ -11,6 +11,8 @@
 
 import { BrowserWindow } from 'electron'
 import type {
+  AgentRuntimeEvent,
+  AgentStreamEnvelope,
   AgentStreamPayload,
   AgentSendInput,
   FeishuBridgeState,
@@ -66,6 +68,10 @@ import {
   isFeishuOpenIdMentioned,
   listFeishuMentionTargets,
 } from './feishu-mentions'
+import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope } from '@rv-insights/shared'
+import { agentRuntimeChannelsV2 } from './agent-channel'
+import { agentChannelBindingStore } from './agent-channel-binding-store'
+import { FeishuChannelAdapter } from './feishu-channel-adapter'
 
 // ===== 类型定义 =====
 
@@ -119,6 +125,10 @@ class FeishuBridge {
   private sessionToChat = new Map<string, string>()
   /** sessionId → 文本累积缓冲 */
   private sessionBuffers = new Map<string, SessionBuffer>()
+  /** sessionId → 飞书 channel adapter（阶段 9 v2 路径） */
+  private feishuChannels = new Map<string, FeishuChannelAdapter>()
+  /** sessionId → runtime envelope 回放状态（阶段 9 v2 路径） */
+  private runtimeEnvelopeState = new Map<string, { runId: string; sequence: number }>()
   /** sessionId → 通知模式 */
   private sessionNotifyModes = new Map<string, FeishuNotifyMode>()
   /** 默认通知目标 chatId（最后一个与 Bot 交互的飞书聊天） */
@@ -302,6 +312,7 @@ class FeishuBridge {
           }
           this.chatBindings.set(b.chatId, b)
           this.sessionToChat.set(b.sessionId, b.chatId)
+          this.persistChannelBinding(b)
         }
       }
       if (this.chatBindings.size > 0) {
@@ -311,6 +322,64 @@ class FeishuBridge {
     } catch (error) {
       console.error('[飞书 Bridge] 加载绑定失败:', error)
     }
+  }
+
+  private persistChannelBinding(binding: FeishuChatBinding): void {
+    agentChannelBindingStore.upsert({
+      channelType: 'feishu',
+      channelId: binding.botId,
+      targetId: binding.chatId,
+      sessionId: binding.sessionId,
+      workspaceId: binding.workspaceId,
+      modelId: binding.modelId,
+      mode: binding.mode,
+      metadata: {
+        chatType: binding.chatType ?? '',
+        groupName: binding.groupName ?? '',
+        userId: binding.userId,
+      },
+    })
+  }
+
+  private createFeishuRuntimeChannel(binding: FeishuChatBinding, startedAt?: number): FeishuChannelAdapter {
+    const adapter = new FeishuChannelAdapter({
+      botId: this.botConfig.id,
+      callbacks: {
+        sendAssistantDelta: async (chatId, text) => {
+          const prefix = this.resolveContextPrefix(chatId)
+          await this.sendMessage(chatId, `${prefix}${text}`)
+        },
+        sendFinalMarkdown: async (chatId, markdown, summary) => {
+          const result: FormattedAgentResult = {
+            text: markdown,
+            toolSummaries: summary.toolNames.map((name) => ({ toolName: name, count: 1, hasError: false })),
+            duration: summary.durationMs / 1000,
+          }
+          await this.sendAgentReply(chatId, result)
+        },
+        queuePermissionToDesktop: async (_sessionId, _requestId, toolName) => {
+          const chatId = this.sessionToChat.get(binding.sessionId)
+          if (!chatId) return
+          const prefix = this.resolveContextPrefix(chatId)
+          await this.sendMessage(chatId, `${prefix}需要在 RV-Insights 桌面端处理权限请求：${toolName}`)
+        },
+        sendError: async (chatId, message) => {
+          const prefix = this.resolveContextPrefix(chatId)
+          await this.sendCardMessage(chatId, buildErrorCard(`${prefix}${message}`))
+        },
+      },
+    })
+    adapter.bindSession({
+      channelType: 'feishu',
+      channelId: this.botConfig.id,
+      sessionId: binding.sessionId,
+      targetId: binding.chatId,
+      startedAt,
+      metadata: {
+        permissionStrategy: 'queue_to_desktop',
+      },
+    })
+    return adapter
   }
 
   /** 持久化聊天绑定到磁盘 */
@@ -350,6 +419,7 @@ class FeishuBridge {
     }
 
     this.saveBindings()
+    this.persistChannelBinding(binding)
     return { ...binding }
   }
 
@@ -362,6 +432,10 @@ class FeishuBridge {
     this.chatBindings.delete(chatId)
     this.updateStatus({ activeBindings: this.chatBindings.size })
     this.saveBindings()
+    const persisted = agentChannelBindingStore.findByTarget('feishu', binding.botId, binding.chatId)
+    if (persisted) {
+      agentChannelBindingStore.remove(persisted.id)
+    }
     return true
   }
 
@@ -776,6 +850,7 @@ class FeishuBridge {
     this.sessionToChat.set(session.id, chatId)
     this.updateStatus({ activeBindings: this.chatBindings.size })
     this.saveBindings()
+    this.persistChannelBinding(binding)
 
     // 通知渲染进程刷新会话列表（复用 TITLE_UPDATED 通道触发列表刷新）
     const windows = BrowserWindow.getAllWindows()
@@ -795,6 +870,8 @@ class FeishuBridge {
     const binding = this.chatBindings.get(chatId)
     if (binding) {
       binding.mode = mode
+      this.saveBindings()
+      this.persistChannelBinding(binding)
       const modeLabel = mode === 'agent' ? 'Agent' : 'Chat'
       await this.sendMessage(chatId, `已切换到 ${modeLabel} 模式`)
     } else {
@@ -901,6 +978,7 @@ class FeishuBridge {
     this.sessionToChat.set(match.id, chatId)
     this.updateStatus({ activeBindings: this.chatBindings.size })
     this.saveBindings()
+    this.persistChannelBinding(binding)
 
     await this.sendMessage(chatId, `✅ 已切换到会话: ${match.title} (${match.id.slice(0, 8)})`)
   }
@@ -1107,12 +1185,18 @@ class FeishuBridge {
       ? `<attached_files>\n${attachedRefs.join('\n')}\n</attached_files>\n\n`
       : ''
 
-    // 初始化缓冲
-    this.sessionBuffers.set(binding.sessionId, {
-      text: '',
-      toolSummaries: new Map(),
-      startedAt: Date.now(),
-    })
+    // 初始化输出缓冲。v2 channel 只消费 runtime envelope；旧路径继续使用 SDKMessage 缓冲。
+    const startedAt = Date.now()
+    if (agentRuntimeChannelsV2.enabled) {
+      this.feishuChannels.set(binding.sessionId, this.createFeishuRuntimeChannel(binding, startedAt))
+      this.runtimeEnvelopeState.delete(binding.sessionId)
+    } else {
+      this.sessionBuffers.set(binding.sessionId, {
+        text: '',
+        toolSummaries: new Map(),
+        startedAt,
+      })
+    }
 
     // 发送思考中指示
     const prefix = this.resolveContextPrefix(chatId)
@@ -1179,7 +1263,7 @@ class FeishuBridge {
         channelId,
         modelId,
         workspaceId: binding.workspaceId,
-        permissionModeOverride: 'bypassPermissions',
+        permissionModeOverride: agentRuntimeChannelsV2.enabled ? 'auto' : 'bypassPermissions',
         ...(customMcpServers && { customMcpServers }),
       }
 
@@ -1188,6 +1272,8 @@ class FeishuBridge {
           const errPrefix = this.resolveContextPrefix(chatId)
           this.sendCardMessage(chatId, buildErrorCard(`${errPrefix}${error}`)).catch(console.error)
           this.sessionBuffers.delete(binding!.sessionId)
+          this.feishuChannels.delete(binding!.sessionId)
+          this.runtimeEnvelopeState.delete(binding!.sessionId)
         },
         onComplete: () => {
           // complete 事件由 EventBus listener 处理
@@ -1208,6 +1294,11 @@ class FeishuBridge {
   // ===== EventBus 事件处理 =====
 
   private handleAgentPayload(sessionId: string, payload: AgentStreamPayload): void {
+    if (agentRuntimeChannelsV2.enabled) {
+      this.handleAgentPayloadWithRuntimeChannel(sessionId, payload)
+      return
+    }
+
     // 对于飞书发起的会话，缓冲由 handleUserMessage 初始化
     // 对于桌面发起的会话，complete 事件时检查是否需要通知
     const buffer = this.sessionBuffers.get(sessionId)
@@ -1264,6 +1355,57 @@ class FeishuBridge {
         this.sessionBuffers.delete(sessionId)
       }
     }
+  }
+
+  private handleAgentPayloadWithRuntimeChannel(sessionId: string, payload: AgentStreamPayload): void {
+    const adapter = this.feishuChannels.get(sessionId)
+    if (!adapter) {
+      const runtimeEvents = adaptAgentStreamPayloadToRuntimeEvents(payload)
+      if (runtimeEvents.some((event) => event.type === 'run_completed')) {
+        this.handleDesktopSessionComplete(sessionId)
+      }
+      return
+    }
+
+    const runtimeEvents = adaptAgentStreamPayloadToRuntimeEvents(payload)
+    for (const event of runtimeEvents) {
+      const envelope = this.createRuntimeEnvelopeForPayload(sessionId, payload, event)
+      adapter.consumeEnvelope(envelope).catch((error) => {
+        console.error('[飞书 Channel] 处理 runtime envelope 失败:', error)
+      })
+      if (event.type === 'run_completed' || event.type === 'run_failed' || event.type === 'run_stopped') {
+        this.feishuChannels.delete(sessionId)
+        this.runtimeEnvelopeState.delete(sessionId)
+      }
+    }
+  }
+
+  private createRuntimeEnvelopeForPayload(
+    sessionId: string,
+    payload: AgentStreamPayload,
+    event: AgentRuntimeEvent,
+  ): AgentStreamEnvelope {
+    let state = this.runtimeEnvelopeState.get(sessionId)
+    if (!state) {
+      state = { runId: `feishu-${Date.now()}-${sessionId}`, sequence: 0 }
+      this.runtimeEnvelopeState.set(sessionId, state)
+    }
+    const envelope = createAgentStreamEnvelope({
+      sessionId,
+      runId: state.runId,
+      sequence: state.sequence,
+      source: this.resolveRuntimeSource(payload, event),
+      event,
+    })
+    state.sequence += 1
+    return envelope
+  }
+
+  private resolveRuntimeSource(payload: AgentStreamPayload, event: AgentRuntimeEvent): AgentStreamEnvelope['source'] {
+    if (payload.kind === 'sdk_message') return 'claude_sdk'
+    if (event.type === 'permission_requested' || event.type === 'permission_resolved') return 'permission_service'
+    if (event.type === 'ask_user_requested' || event.type === 'ask_user_resolved') return 'ask_user_service'
+    return 'rv_insights'
   }
 
   /** 飞书发起的会话完成：发送完整回复到飞书 */

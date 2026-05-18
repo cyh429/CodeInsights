@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 8 Renderer 切新 Reducer 已完成实现、验证与提交；下一阶段为阶段 9 External Channel Adapter。
+当前阶段：阶段 9 External Channel Adapter 已完成实现与验证；下一阶段为阶段 10 Pipeline 复用 Runner。
 
 已完成：
 
@@ -44,14 +44,14 @@
 
 - [x] 阶段 8 Renderer 切新 Reducer 已完成实现与聚焦验证。
 - [x] 已提交阶段 8 成果：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`
-- [ ] 阶段 9 External Channel Adapter 尚未开始。
+- [x] 阶段 9 External Channel Adapter 已完成实现与验证。
 - [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
 - [ ] 阶段 11 清理旧路径尚未开始。
 
 下一步建议：
 
-1. 下一次开发从阶段 9 External Channel Adapter 开始；阶段 8 已让 Renderer 主路径优先消费 runtime envelope，并保留旧 transcript/debug 兼容路径。
-2. 阶段 9 开始前复核阶段 0 基线缺口；触碰外部渠道或新的 runtime 入口时，应继续补充真实 Electron 交互证据。
+1. 下一次开发从阶段 10 Pipeline 复用 Runner 开始；阶段 9 已新增 External Channel Adapter 边界与飞书最小接入层，并通过 feature flag 保留旧路径。
+2. 阶段 10 开始前复核阶段 0 基线缺口；触碰 Pipeline runner 入口时，应继续补充真实 Electron 交互证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -59,7 +59,7 @@
 - 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 5 已用单元测试覆盖旧 session cwd 不迁移和 Orchestrator 路径判定，但未启动 Electron 桌面壳做真实旧 session resume。
 - 阶段 7 已用聚焦测试覆盖 host MCP bridge handler 与 materialized runtime 注入配置；当前未启动 Electron 桌面壳或真实 Claude Code MCP 会话，因此真实 MCP 可见性仍需后续补跑。
 - 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
-- 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
+- 当前本地配置没有飞书配置；阶段 9 已用 fixture 覆盖 Feishu channel adapter 降级策略，但飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
 
 ## 全局硬约束
@@ -510,35 +510,47 @@
 
 ### 任务
 
-- [ ] 新增 `agent-channel.ts`。
-- [ ] 新增 Electron channel adapter。
-- [ ] 新增 Feishu channel adapter。
-- [ ] 定义 channel session binding 存储。
-- [ ] 飞书 assistant_delta 节流卡片更新。
-- [ ] 飞书 run_completed 最终 Markdown 拼接。
-- [ ] 飞书 permission_requested 默认 `queue_to_desktop`。
-- [ ] 支持 `interactive_card` 策略打桩。
-- [ ] channel-scoped MCP overlay 不写 workspace manifest。
-- [ ] 旧 feishu bridge 通过 feature flag 保留。
+- [x] 新增 `agent-channel.ts`。
+- [x] 新增 Electron channel adapter。
+- [x] 新增 Feishu channel adapter。
+- [x] 定义 channel session binding 存储。
+- [x] 飞书 assistant_delta 节流卡片更新。
+- [x] 飞书 run_completed 最终 Markdown 拼接。
+- [x] 飞书 permission_requested 默认 `queue_to_desktop`。
+- [x] 支持 `interactive_card` 策略打桩。
+- [x] channel-scoped MCP overlay 不写 workspace manifest。
+- [x] 旧 feishu bridge 通过 feature flag 保留。
 
 ### 验收
 
-- [ ] Electron 和飞书可驱动同一 runtime session。
-- [ ] 外部渠道不直接依赖 SDKMessage 内部结构。
-- [ ] 外部渠道不默认 bypass 权限。
-- [ ] Electron 客户端 UI diff 为零。
+- [x] Electron 和飞书可驱动同一 runtime session。
+- [x] 外部渠道不直接依赖 SDKMessage 内部结构。
+- [x] 外部渠道不默认 bypass 权限。
+- [x] Electron 客户端 UI diff 为零。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` channel adapter fixture。
-- [ ] 人工飞书发送、完成、权限 pending。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test` channel adapter fixture。
+- [!] 人工飞书发送、完成、权限 pending：当前本机不存在 `~/.rv-insights/feishu.json`，无法补跑真实飞书入口。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] 关闭 `agentRuntimeChannelsV2`。
-- [ ] 飞书回到旧 bridge 路径。
+- [x] 关闭 `agentRuntimeChannelsV2`。
+- [x] 飞书回到旧 bridge 路径。
+
+### 阶段 9 完成说明
+
+- 新增 `apps/electron/src/main/lib/agent-channel.ts`，定义 `AgentChannel`、`AgentChannelRunContext`、`agentRuntimeChannelsV2` feature flag 和 `ElectronAgentChannel`；Electron adapter 只包装现有 IPC payload 转发，不改变 Renderer 可见行为。
+- 新增 `apps/electron/src/main/lib/agent-channel-binding-store.ts`，使用 `agent-channel-bindings.json` 与 `agent-channel-bindings.events.jsonl` 保存 channel session binding 和审计事件，继续保持本地 JSON / JSONL 存储。
+- 新增 `apps/electron/src/main/lib/feishu-channel-adapter.ts`，Feishu adapter 只消费 `AgentStreamEnvelope`，不再直接解析 SDKMessage 内部结构；assistant delta 节流输出，run completed 拼接最终 Markdown，permission requested 默认 `queue_to_desktop`。
+- `feishu-bridge.ts` 仅在 `RV_AGENT_RUNTIME_CHANNELS_V2=1` 时使用新 Feishu channel adapter；旧 Feishu bridge 和旧 `feishu-bindings-{botId}.json` 持久化继续保留，客户端 UI 零可见变化。
+- 飞书群聊 `feishu_chat` MCP 仍通过 `customMcpServers` 作为 run overlay 传给 Agent，不写入 workspace runtime manifest。
+- 新增聚焦测试覆盖 channel binding store upsert/remove、Feishu adapter delta/final Markdown/permission queue 策略，并保留 Runner fixture 作为 runtime event contract 回归。
+- `@rv-insights/electron` patch 版本从 `0.0.85` 提升到 `0.0.86`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-channel-binding-store.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
+- 本轮未启动 Electron 桌面壳补跑真实 Agent 发送；当前本机不存在 `~/.rv-insights/feishu.json`，真实飞书入口、飞书群聊 MCP 和权限 pending 仍保留为后续可用环境验证缺口。
 
 ## 阶段 10：Pipeline 复用 Runner
 
