@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 2 Event Log 双写已完成实现与聚焦验证，等待阶段提交。
+当前阶段：阶段 2 Event Log 双写已完成并提交，下一步进入阶段 3 In-process AgentRuntimeRunner。
 
 已完成：
 
@@ -26,6 +26,8 @@
 - [x] 阶段 1 Shared Event Contract 已完成实现与聚焦验证。
 - [x] 已提交阶段 1 成果：`d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约`
 - [x] 阶段 2 Event Log 双写已完成实现与聚焦验证。
+- [x] 已提交阶段 2 成果：`04f23aa6 feat(agent): 完成 Agent 重构阶段 2 事件日志双写`
+- [x] 已提交阶段 3 交接提示词更新：`d7d0ae60 docs(agent): 更新 Agent 重构阶段 3 交接提示`
 
 未开始：
 
@@ -41,8 +43,8 @@
 
 下一步建议：
 
-1. 阶段 2 完成并提交后，进入阶段 3 In-process AgentRuntimeRunner。
-2. 阶段 3 会抽出 SDK query 边界，开始前继续保持 Renderer 旧路径和 UI 零可见变化。
+1. 进入阶段 3 In-process AgentRuntimeRunner，先抽出 SDK query / stream 遍历边界，保留旧 Orchestrator 路径作为回滚。
+2. 阶段 3 开始前先复核阶段 0 基线缺口，优先补跑或用 mock 覆盖发送、停止、resume、权限、AskUser。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -247,6 +249,14 @@
 
 - [ ] 关闭 `agentRuntimeRunnerV2`。
 - [ ] Orchestrator 回到旧 SDK query 路径。
+
+### 阶段 3 启动说明
+
+- 当前尚未开始编码。
+- 目标不是改 UI，而是把 SDK query、SDKMessage 转换、权限/AskUser callback、SDKMessage 持久化接口抽到进程内 Runner。
+- 建议先新增类型和 Runner mock 测试，再迁移实现，避免一次性重写 `agent-orchestrator.ts`。
+- 必须保留旧 Orchestrator SDK query 路径，并通过 `agentRuntimeRunnerV2` 或等价 feature flag 回滚。
+- 阶段 3 完成前 Renderer 仍走旧路径，客户端 UI 应继续零可见变化。
 
 ## 阶段 4：Runtime Manifest 只读解析
 

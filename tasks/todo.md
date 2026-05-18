@@ -1,5 +1,16 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-18 Agent 重构阶段 3：In-process AgentRuntimeRunner 下一步计划
+
+- [ ] 先复习 `tasks/lessons.md`、`docs/agent-refactor/development-checklist.md`、`event-contract.md` 和阶段 0 基线。
+- [ ] 新增 `agent-runtime-types.ts`，定义 Runner 输入、输出、store interface、权限/AskUser callback。
+- [ ] 新增 `agent-runtime-runner.ts`，把 SDK query 封装为进程内 Runner，输出 `AsyncIterable<AgentStreamEnvelope>`。
+- [ ] 新增 `agent-sdk-env.ts` 与 `agent-sdk-message-converter.ts`，迁移 env 构建和 SDKMessage 转换边界。
+- [ ] 用 `agentRuntimeRunnerV2` feature flag 接入 Orchestrator，保留旧 SDK query 路径作为回滚。
+- [ ] 补充 Runner mock SDK stream 测试，覆盖发送、停止、resume、权限、AskUser、错误终态。
+- [ ] 保持 Renderer 旧路径和客户端 UI 零可见变化。
+- [ ] 完成后更新 `docs/agent-refactor/development-checklist.md` 和本文件 Review，并单独提交阶段 3。
+
 ## 2026-05-18 Agent 重构阶段 2：Event Log 双写计划
 
 - [x] 复习阶段 0/1 文档与现有 Agent Orchestrator、会话持久化、权限和 AskUser 路径，确认 UI 零可见变化边界。
