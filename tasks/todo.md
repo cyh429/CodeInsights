@@ -14,7 +14,26 @@
 - [x] 阶段 8 Renderer 切新 Reducer 已完成并提交：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`。
 - [x] 阶段 9 External Channel Adapter 已完成并提交：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`。
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
-- [~] 阶段 11 清理旧路径进行中。
+- [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
+- [ ] 阶段 12 真实交互补跑与 Runner v2 默认化准备尚未开始。
+
+## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
+
+- [ ] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 0 baseline 和阶段 11 Review。
+- [ ] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [ ] 启动 Electron 桌面壳，确认可用 Agent 兼容渠道/API Key；若无法启动或缺少渠道，明确记录阻塞。
+- [ ] 补跑 Agent 发送、停止、同会话并发、旧 session resume。
+- [ ] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
+- [ ] 补跑附件、additional directory、fork、rewind。
+- [ ] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
+- [ ] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性。
+- [ ] 补跑飞书入口和飞书群聊 MCP；若本机缺少 `~/.rv-insights/feishu.json`，明确记录缺失原因，不伪造通过。
+- [ ] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常。
+- [ ] 开启 feature flag 做对照评估：`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 是否具备默认开启条件。
+- [ ] 若发现 Runner v2 缺口，优先记录并补测试，不直接删除旧 Agent 主循环。
+- [ ] 更新 `docs/agent-refactor/baseline-runs/` 新一轮证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
+- [ ] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、`git diff --check`。
+- [ ] 阶段 12 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
 
 ## 2026-05-18 Agent 重构阶段 11：清理旧路径计划
 
