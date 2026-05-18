@@ -76,7 +76,9 @@ import {
   getMaterializedAgentRuntimeCwd,
   hasMaterializedAgentRuntime,
   materializeAgentRuntimeForNewSession,
+  readMaterializedAgentRuntime,
 } from './agent-runtime-materializer'
+import { expandDmiSlashCommand } from './agent-plugin-catalog'
 
 // ===== 类型定义 =====
 
@@ -633,6 +635,7 @@ export class AgentOrchestrator {
     let agentCwd: string | undefined
     let workspaceSlug: string | undefined
     let workspace: import('@rv-insights/shared').AgentWorkspace | undefined
+    let materializedRuntimeManifest: import('@rv-insights/shared').AgentRuntimeManifest | undefined
     let usesMaterializedRuntime = false
     let runtimeEventLog: AgentRuntimeEventLogWriter | null = null
 
@@ -685,13 +688,20 @@ export class AgentOrchestrator {
       if (workspaceId) {
         const ws = getAgentWorkspace(workspaceId)
         if (ws) {
-          if (hasMaterializedAgentRuntime(ws.slug, sessionId)) {
+          const existingRuntimeManifest = readMaterializedAgentRuntime(ws.slug, sessionId)
+          if (existingRuntimeManifest) {
+            materializedRuntimeManifest = existingRuntimeManifest
+            agentCwd = existingRuntimeManifest.sessionCwd ?? getMaterializedAgentRuntimeCwd(ws.slug, sessionId)
+            usesMaterializedRuntime = true
+            console.log(`[Agent 编排] 使用已物化 session cwd: ${agentCwd} (${ws.name}/${sessionId})`)
+          } else if (!existingSdkSessionId) {
             try {
               ensurePluginManifest(ws.slug, ws.name)
               const manifest = materializeAgentRuntimeForNewSession({
                 workspace: ws,
                 sessionId,
               })
+              materializedRuntimeManifest = manifest
               agentCwd = manifest.sessionCwd ?? getMaterializedAgentRuntimeCwd(ws.slug, sessionId)
               usesMaterializedRuntime = true
               console.log(`[Agent 编排] 使用 materialized session cwd: ${agentCwd} (${ws.name}/${sessionId})`)
@@ -798,6 +808,17 @@ export class AgentOrchestrator {
         }
         enrichedMessage = `<mentioned_tools>\n${toolLines.join('\n')}\n</mentioned_tools>\n\n${userMessage}`
         console.log(`[Agent 编排] 注入 mentioned_tools: ${mentionedSkills?.length ?? 0} skills, ${mentionedMcpServers?.length ?? 0} MCP`)
+      }
+
+      if (materializedRuntimeManifest) {
+        const expansion = expandDmiSlashCommand({
+          prompt: enrichedMessage,
+          commands: materializedRuntimeManifest.enabledPlugins.flatMap((plugin) => plugin.commands),
+        })
+        if (expansion.expanded) {
+          enrichedMessage = expansion.prompt
+          console.log(`[Agent 编排] 已展开 DMI slash command: /${expansion.command?.name}`)
+        }
       }
 
       const contextualMessage = `${dynamicCtx}\n\n${enrichedMessage}`
@@ -933,7 +954,11 @@ export class AgentOrchestrator {
         // 回退后 resume：从指定消息处继续（SDK 在同一 JSONL 内创建分支）
         ...(rewindResumeAt && { resumeSessionAt: rewindResumeAt }),
         ...(Object.keys(mcpServers).length > 0 && { mcpServers }),
-        ...(workspaceSlug && { plugins: [{ type: 'local' as const, path: getAgentWorkspacePath(workspaceSlug) }] }),
+        ...(materializedRuntimeManifest
+          ? { plugins: materializedRuntimeManifest.enabledPlugins.map((plugin) => ({ type: 'local' as const, path: plugin.snapshotPath })) }
+          : workspaceSlug
+            ? { plugins: [{ type: 'local' as const, path: getAgentWorkspacePath(workspaceSlug) }] }
+            : {}),
         // 合并用户附加目录 + 工作区附加目录 + 工作区文件目录
         ...(() => {
           const allDirs = [...(additionalDirectories || [])]

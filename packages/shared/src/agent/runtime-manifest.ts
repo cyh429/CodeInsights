@@ -21,8 +21,38 @@ export interface AgentRuntimeManifestSkill {
 
 export interface AgentRuntimeManifestPlugin {
   id: string
+  name: string
   sourcePath: string
   snapshotPath: string
+  hash: string
+  commands: AgentPluginCommandIndexEntry[]
+  enabled: boolean
+  sourceType: 'legacy-workspace' | 'local'
+}
+
+export interface AgentPluginCatalogEntry {
+  id: string
+  name: string
+  sourcePath: string
+  sourceType: 'local'
+  enabledByDefault?: boolean
+  description?: string
+  hash?: string
+}
+
+export interface AgentPluginEnabledRef {
+  id: string
+  sourcePath?: string
+  enabled: boolean
+}
+
+export interface AgentPluginCommandIndexEntry {
+  name: string
+  pluginId: string
+  sourcePath: string
+  snapshotPath: string
+  handler: 'app-dmi' | 'sdk'
+  description?: string
   hash: string
 }
 

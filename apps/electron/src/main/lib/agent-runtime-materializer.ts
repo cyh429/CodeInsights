@@ -3,6 +3,7 @@ import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, r
 import { dirname, join, relative, resolve } from 'node:path'
 import type { AgentRuntimeManifest, AgentWorkspace, WorkspaceMcpConfig } from '@rv-insights/shared'
 import { buildAgentRuntimeManifest } from './agent-runtime-manifest-registry'
+import { materializePluginSnapshot } from './agent-plugin-catalog'
 import { getAgentSessionRuntimeManifestPath, getAgentSessionRuntimeCwdPath } from './config-paths'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 
@@ -110,6 +111,10 @@ function resolveSessionRuntimeCwdPath(workspaceSlug: string, sessionId: string, 
 
 function writeRuntimeSettings(manifest: AgentRuntimeManifest): void {
   const desiredSettings: Record<string, unknown> = {
+    enabledPlugins: manifest.enabledPlugins.map((plugin) => ({
+      type: 'local',
+      path: plugin.snapshotPath,
+    })),
     plansDirectory: '.context',
     skipWebFetchPreflight: true,
   }
@@ -192,10 +197,7 @@ function materializeSkillSnapshots(manifest: AgentRuntimeManifest): void {
 
 function materializePluginSnapshots(manifest: AgentRuntimeManifest): void {
   for (const plugin of manifest.enabledPlugins) {
-    assertSafeExistingPath(manifest.workspaceRoot, plugin.sourcePath)
-    assertPathInsideWorkspace(manifest.workspaceRoot, plugin.snapshotPath)
-    ensureSafeDirectory(manifest.workspaceRoot, dirname(plugin.snapshotPath))
-    writeTextTarget(manifest.workspaceRoot, plugin.snapshotPath, readFileSync(plugin.sourcePath, 'utf-8'))
+    materializePluginSnapshot(manifest.workspaceRoot, plugin)
   }
 }
 

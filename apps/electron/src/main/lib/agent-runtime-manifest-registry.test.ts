@@ -79,9 +79,13 @@ describe('buildAgentRuntimeManifest', () => {
     }])
     expect(manifest.enabledPlugins).toEqual([{
       id: 'rv-insights-workspace-default',
-      sourcePath: join(workspaceRoot, '.claude-plugin', 'plugin.json'),
-      snapshotPath: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default', 'plugin.json'),
+      name: 'rv-insights-workspace-default',
+      sourcePath: join(workspaceRoot, '.claude-plugin'),
+      snapshotPath: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default'),
       hash: expect.stringMatching(/^sha256:/),
+      commands: [],
+      enabled: true,
+      sourceType: 'legacy-workspace',
     }])
     expect(manifest.additionalDirectories).toEqual([{ path: '/Users/zq/Desktop/reference', mode: 'read' }])
     expect(manifest.sourceConfigHash).toMatch(/^sha256:/)
@@ -164,7 +168,7 @@ describe('buildAgentRuntimeManifest', () => {
     const manifest = buildAgentRuntimeManifest({ workspace, workspacesRoot: tempDir })
 
     expect(manifest.enabledPlugins[0]?.id).toBe('-unsafe-plugin')
-    expect(manifest.enabledPlugins[0]?.snapshotPath).toBe(join(workspaceRoot, 'runtime', '.claude', 'plugins', '-unsafe-plugin', 'plugin.json'))
+    expect(manifest.enabledPlugins[0]?.snapshotPath).toBe(join(workspaceRoot, 'runtime', '.claude', 'plugins', '-unsafe-plugin'))
   })
 
   test('拒绝 mcp/config/plugin 入口符号链接', () => {

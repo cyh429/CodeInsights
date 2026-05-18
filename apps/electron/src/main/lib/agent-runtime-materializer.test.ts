@@ -63,6 +63,10 @@ describe('materializeAgentRuntimeForNewSession', () => {
       sessionCwd: join(workspaceRoot, 'sessions', 'session-1', 'cwd'),
     })
     expect(JSON.parse(readFileSync(join(workspaceRoot, 'runtime', '.claude', 'settings.json'), 'utf-8'))).toMatchObject({
+      enabledPlugins: [{
+        type: 'local',
+        path: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default'),
+      }],
       plansDirectory: '.context',
       skipWebFetchPreflight: true,
     })

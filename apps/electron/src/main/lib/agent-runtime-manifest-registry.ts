@@ -8,6 +8,7 @@ import type {
   AgentWorkspace,
   WorkspaceMcpConfig,
 } from '@rv-insights/shared'
+import { buildWorkspacePluginSnapshots } from './agent-plugin-catalog'
 import { getAgentWorkspacesDir } from './config-paths'
 
 export const AGENT_RUNTIME_MATERIALIZER_VERSION = '2026-05-18.1'
@@ -49,13 +50,12 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
   const legacyMcpPath = join(workspaceRoot, 'mcp.json')
   const legacySkillsDir = join(workspaceRoot, 'skills')
   const legacyInactiveSkillsDir = join(workspaceRoot, 'skills-inactive')
-  const legacyPluginManifest = join(workspaceRoot, '.claude-plugin', 'plugin.json')
   const workspaceConfigPath = join(workspaceRoot, 'config.json')
 
   const mcpConfig = readLegacyMcpConfig(workspaceRoot, legacyMcpPath)
   const enabledMcpServers = buildMcpServerEntries(mcpConfig)
   const enabledSkills = readLegacySkills(workspaceRoot, legacySkillsDir, skillsDir)
-  const enabledPlugins = readLegacyPlugins(workspaceRoot, legacyPluginManifest, pluginsDir)
+  const enabledPlugins = buildWorkspacePluginSnapshots({ workspaceRoot, pluginsDir })
   const additionalDirectories = readAttachedDirectories(workspaceRoot, workspaceConfigPath).map((path) => ({
     path,
     mode: 'read' as const,
@@ -65,7 +65,14 @@ export function buildAgentRuntimeManifest(input: BuildAgentRuntimeManifestInput)
   const mcpHash = existsSync(legacyMcpPath) ? hashFile(workspaceRoot, legacyMcpPath) : EMPTY_HASH
   const skillsSnapshotHash = hashJson(enabledSkills.map(({ id, sourcePath, hash, enabled }) => ({ id, sourcePath, hash, enabled })))
   const inactiveSkillsSourceHash = existsSync(legacyInactiveSkillsDir) ? hashDirectory(workspaceRoot, legacyInactiveSkillsDir) : EMPTY_HASH
-  const pluginsSnapshotHash = hashJson(enabledPlugins.map(({ id, sourcePath, hash }) => ({ id, sourcePath, hash })))
+  const pluginsSnapshotHash = hashJson(enabledPlugins.map(({ id, sourcePath, hash, commands, enabled, sourceType }) => ({
+    id,
+    sourcePath,
+    hash,
+    commands: commands.map(({ name, handler, hash }) => ({ name, handler, hash })),
+    enabled,
+    sourceType,
+  })))
   const sourceConfigHash = hashJson({
     mcpHash,
     skillsSnapshotHash,
@@ -165,22 +172,6 @@ function readLegacySkills(workspaceRoot: string, sourceDir: string, snapshotRoot
   return skills.sort((a, b) => a.id.localeCompare(b.id))
 }
 
-function readLegacyPlugins(workspaceRoot: string, manifestPath: string, snapshotRoot: string): AgentRuntimeManifest['enabledPlugins'] {
-  if (!existsSync(manifestPath)) return []
-  assertSafeExistingPath(workspaceRoot, manifestPath)
-  const raw = readFileSync(manifestPath, 'utf-8')
-  const parsed = JSON.parse(raw) as { name?: string }
-  const id = sanitizeManifestId(parsed.name?.trim() || 'legacy-workspace-plugin')
-  const snapshotPath = join(snapshotRoot, id, 'plugin.json')
-  assertPathInsideWorkspace(workspaceRoot, snapshotPath)
-  return [{
-    id,
-    sourcePath: manifestPath,
-    snapshotPath,
-    hash: hashString(raw),
-  }]
-}
-
 function readAttachedDirectories(workspaceRoot: string, configPath: string): string[] {
   if (!existsSync(configPath)) return []
   assertSafeExistingPath(workspaceRoot, configPath)
@@ -274,12 +265,4 @@ function assertSafeWorkspaceSlug(slug: string): void {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
     throw new Error(`非法 workspace slug: ${slug}`)
   }
-}
-
-function sanitizeManifestId(id: string): string {
-  const sanitized = id.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^\.+|\.+$/g, '')
-  if (!sanitized || sanitized.includes('..')) {
-    throw new Error(`非法 manifest id: ${id}`)
-  }
-  return sanitized
 }

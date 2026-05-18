@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 5 Runtime Materializer for New Sessions 已完成实现、验证与提交；下一阶段为阶段 6 插件系统原生化。
+当前阶段：阶段 6 插件系统原生化已完成实现与验证，待提交；下一阶段为阶段 7 内置 MCP Bridge。
 
 已完成：
 
@@ -35,10 +35,10 @@
 - [x] 已提交阶段 5 交接提示词更新：`410d8945 docs(agent): 更新阶段 5 交接提示词`
 - [x] 阶段 5 Runtime Materializer for New Sessions 已完成实现与聚焦验证。
 - [x] 已提交阶段 5 成果：`10fd5808 feat(agent): 完成 Agent 重构阶段 5 Runtime Materializer`
+- [x] 阶段 6 插件系统原生化已完成实现与聚焦验证。
 
 未开始：
 
-- [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
 - [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
 - [ ] 阶段 9 External Channel Adapter 尚未开始。
@@ -47,14 +47,15 @@
 
 下一步建议：
 
-1. 下一次开发从阶段 6 插件系统原生化开始；阶段 5 已让新 session 物化 runtime 目录，旧 session 继续保持旧 cwd。
-2. 阶段 6 开始前复核阶段 0 基线缺口；触碰 plugin catalog / plugin command / Runner options 边界时，应优先补充插件可见性、权限和旧 session resume 证据。
+1. 下一次开发从阶段 7 内置 MCP Bridge 开始；阶段 6 已让 materialized session 使用 RV plugin snapshot，旧 session 继续保持旧 plugin 路径。
+2. 阶段 7 开始前复核阶段 0 基线缺口；触碰 MCP bridge / host tools / 权限边界时，应优先补充 MCP 可见性、权限和旧 session resume 证据。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
 - 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 5 已用单元测试覆盖旧 session cwd 不迁移和 Orchestrator 路径判定，但未启动 Electron 桌面壳做真实旧 session resume。
 - 当前本地配置没有 workspace MCP server，因此 MCP 可见性只记录了预期和缺口。
+- 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
 - 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
 
@@ -365,34 +366,46 @@
 
 ### 任务
 
-- [ ] 新增 plugin catalog 类型。
-- [ ] 新增 enabled plugin refs 配置。
-- [ ] 新增 plugin snapshot materializer。
-- [ ] 支持导入本地 Claude Code plugin。
-- [ ] 记录 plugin source path、snapshot path、hash。
-- [ ] plugin command 索引。
-- [ ] DMI slash command 应用层展开。
-- [ ] 非 DMI plugin command 交给 SDK。
-- [ ] 禁止 snapshot 失败时 fallback 到用户全局 plugin。
+- [x] 新增 plugin catalog 类型。
+- [x] 新增 enabled plugin refs 配置。
+- [x] 新增 plugin snapshot materializer。
+- [x] 支持导入本地 Claude Code plugin。
+- [x] 记录 plugin source path、snapshot path、hash。
+- [x] plugin command 索引。
+- [x] DMI slash command 应用层展开。
+- [x] 非 DMI plugin command 交给 SDK。
+- [x] 禁止 snapshot 失败时 fallback 到用户全局 plugin。
 
 ### 验收
 
-- [ ] 启用/禁用插件后 Runner `options.plugins` 正确变化。
-- [ ] 删除插件只删除 RV snapshot，不删除用户源目录。
-- [ ] 插件能力不绕过权限。
-- [ ] UI 无可见变化，沿用现有设置入口。
+- [x] 启用/禁用插件后 Runner `options.plugins` 正确变化。
+- [x] 删除插件只删除 RV snapshot，不删除用户源目录。
+- [x] 插件能力不绕过权限。
+- [x] UI 无可见变化，沿用现有设置入口。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` plugin materializer fixture。
-- [ ] 人工启用/禁用一个本地 plugin。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/main/lib/agent-plugin-catalog.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-runtime-materializer.test.ts`
+- [!] 人工启用/禁用一个本地 plugin：本轮未启动 Electron 桌面壳；已用 `config.json` catalog / enabled refs fixture 覆盖本地 plugin 启用与禁用，真实 UI 交互仍作为后续补跑缺口。
+- [x] `git diff --check`
 
 ### 回滚
 
 - [ ] Runner 不传 `options.plugins`。
 - [ ] 保留旧 Skill / plugin 兼容路径。
+
+### 阶段 6 完成说明
+
+- 新增文件：`apps/electron/src/main/lib/agent-plugin-catalog.ts`、`apps/electron/src/main/lib/agent-plugin-catalog.test.ts`
+- 已新增 plugin catalog / enabled refs 类型，`config.json.pluginCatalog` 记录可导入本地 plugin，`config.json.enabledPlugins` 控制启用状态；缺省仍兼容旧 `.claude-plugin/plugin.json`。
+- 已新增 plugin snapshot materializer：materialized runtime 会复制 plugin source 到 `runtime/.claude/plugins/{pluginId}`，manifest 记录 `sourcePath`、`snapshotPath`、`hash`、`sourceType`、`commands` 和 `enabled`。
+- snapshot 前后校验 hash，source 内符号链接会被拒绝；snapshot 失败会阻断 materialize，不会回退到用户全局 plugin 目录。
+- 已建立 plugin command index，扫描 plugin `commands/*.md` 与 `.claude/commands/*.md`；frontmatter `dmi: true` / `rv-dmi: true` 的 slash command 由应用层展开，其他 command 保留给 SDK。
+- `agent-orchestrator.ts` 在已有 runtime manifest 的 session 下直接复用 materialized runtime；新 session 无 manifest 时先物化，再把 SDK `queryOptions.plugins` 指向 RV snapshot，旧 session 继续使用旧 workspace plugin 路径。
+- 代码审查后补强：DMI 展开改为优先读取 snapshot，plugin catalog 导入前对 `config.json` 写目标做 symlink 防护，避免运行期绕过 snapshot 或污染 workspace 配置。
+- 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；没有默认启用 Runner v2。
+- `@rv-insights/shared` patch 版本从 `0.1.37` 提升到 `0.1.38`；`@rv-insights/electron` patch 版本从 `0.0.82` 提升到 `0.0.83`。
 
 ## 阶段 7：内置 MCP Bridge
 

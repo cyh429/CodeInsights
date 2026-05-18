@@ -18,6 +18,30 @@
 
 下一次开发应从阶段 6 开始：插件系统原生化。阶段 5 已让新 session 物化 runtime 目录，旧 session 继续保持旧 cwd / resume 行为。继续保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
 
+## 2026-05-18 Agent 重构阶段 6：插件系统原生化计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构文档、事件契约、runtime manifest 设计和阶段 0 基线。
+- [x] 检查当前工作树，确认 `.DS_Store` 与 `improve/` 为无关噪音，不纳入阶段提交。
+- [x] 梳理阶段 4/5 manifest registry 与 materializer 中现有 plugin 读取、snapshot、hash 边界，确认阶段 6 不改变 Renderer、不默认启用 Runner v2。
+- [x] 新增 plugin catalog 类型与 enabled plugin refs 配置，支持 workspace 本地 Claude Code plugin 引用。
+- [x] 实现 plugin snapshot materializer，记录 plugin source path、snapshot path、hash，snapshot 失败时阻断而不是 fallback 到用户全局 plugin。
+- [x] 建立 plugin command 索引，区分 DMI slash command 与非 DMI plugin command。
+- [x] 实现 DMI slash command 应用层展开能力；非 DMI command 保留给 SDK 原生处理。
+- [x] 补充 plugin catalog / materializer / snapshot / command index 聚焦测试，并记录人工启用/禁用本地 plugin 或未补跑原因。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行验证并单独提交阶段 6。
+
+## 2026-05-18 Agent 重构阶段 6：插件系统原生化 Review
+
+- 已新增 `packages/shared/src/agent/runtime-manifest.ts` 的插件扩展字段：`AgentPluginCatalogEntry`、`AgentPluginEnabledRef`、`AgentPluginCommandIndexEntry`，以及增强后的 `AgentRuntimeManifestPlugin`。
+- 已新增 `apps/electron/src/main/lib/agent-plugin-catalog.ts` 与聚焦测试，支持从 `config.json` 读取 plugin catalog / enabled refs，导入本地 Claude Code plugin，生成 runtime snapshot，记录 source path / snapshot path / hash，并建立 command index。
+- DMI slash command 现在在应用层展开，非 DMI command 保留给 SDK；插件 snapshot 失败会直接阻断，不会 fallback 到用户全局 plugin 目录。
+- `agent-runtime-manifest-registry.ts` 现在把 plugin snapshot 作为 manifest 的一部分输出，`agent-runtime-materializer.ts` 负责落盘 runtime plugin snapshot 与 `enabledPlugins` settings。
+- `agent-orchestrator.ts` 在已有 runtime manifest 的 session 下复用 materialized runtime；新 session 无 manifest 时先物化，再将 `queryOptions.plugins` 指向 RV snapshot，旧 session 继续走原 workspace plugin 路径，Renderer 和默认 Runner 路径没有变化。
+- 代码审查后修复了两个关键风险：新 session runtime 分支判定反向、DMI slash command 展开读取 source 而不是 snapshot；并补充 snapshot 优先读取与 `config.json` symlink 防护测试。
+- `@rv-insights/shared` 已升到 `0.1.38`，`@rv-insights/electron` 已升到 `0.0.83`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-plugin-catalog.test.ts apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts apps/electron/src/main/lib/agent-runtime-materializer.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
+- 人工启用/禁用本地 plugin 已通过聚焦测试覆盖；当前环境未单独跑 Electron 桌面壳，故真实桌面交互未补跑，已记录为后续缺口。
+
 ## 2026-05-18 Agent 重构阶段 5：Runtime Materializer for New Sessions 计划
 
 - [x] 复习 `tasks/lessons.md`、Agent 重构文档、事件契约、runtime manifest 设计和阶段 0 基线。
