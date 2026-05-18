@@ -10,7 +10,7 @@ mock.module('electron', () => ({
   },
 }))
 
-const { buildSdkEnv, resolveSDKCliPath } = await import('./sdk-environment')
+const { buildSdkEnv, resolveSDKCliPath } = await import('../agent-sdk-env')
 
 const baseEnv = {
   PATH: '/usr/bin',

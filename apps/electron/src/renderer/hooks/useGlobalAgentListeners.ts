@@ -23,7 +23,6 @@ import {
   fileBrowserAutoRevealAtom,
   recentlyModifiedPathsAtom,
   RECENTLY_MODIFIED_TTL_MS,
-  applyAgentEvent,
   liveMessagesMapAtom,
   agentSessionModelMapAtom,
   agentModelIdAtom,
@@ -36,7 +35,6 @@ import {
   unviewedCompletedSessionIdsAtom,
   workingDoneSessionIdsAtom,
   applyAgentStreamEnvelopeToState,
-  createAgentStreamStateShadowSnapshot,
 } from '@/atoms/agent-atoms'
 import {
   notificationsEnabledAtom,
@@ -55,11 +53,11 @@ import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope, repl
 
 /** 触发右侧文件浏览器自动定位的写入类工具集合 */
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Update'])
-const ENABLE_RUNTIME_ENVELOPE_REDUCER = true
 
 // ============================================================================
-// Phase 1 临时兼容层：将 AgentStreamPayload 转换为旧 AgentEvent
-// Phase 2 将移除此转换，直接使用 SDKMessage 渲染
+// 兼容层：将 AgentStreamPayload 转换为旧 AgentEvent。
+// 流式 view model 已由 runtime envelope reducer 驱动；这里仅保留
+// 文件自动定位、后台任务、权限/AskUser 队列、Plan Mode 等副作用路径。
 // ============================================================================
 
 /**
@@ -509,7 +507,7 @@ export function useGlobalAgentListeners(): void {
           }
         }
 
-        const runtimeEnvelopes = ENABLE_RUNTIME_ENVELOPE_REDUCER ? recordRuntimeEnvelopes(sessionId, payload) : []
+        const runtimeEnvelopes = recordRuntimeEnvelopes(sessionId, payload)
         const legacyEvents = payloadToLegacyEvents(payload)
 
         for (const event of legacyEvents) {
@@ -524,26 +522,6 @@ export function useGlobalAgentListeners(): void {
                 return next
               })
             }
-          }
-
-          // 旧 reducer 仅保留副作用分支；流式状态由 runtime envelope reducer 统一驱动
-          if (!ENABLE_RUNTIME_ENVELOPE_REDUCER && event.type !== 'prompt_suggestion') {
-            store.set(agentStreamingStatesAtom, (prev) => {
-              const current: AgentStreamState = prev.get(sessionId) ?? {
-                running: true,
-                content: '',
-                toolActivities: [],
-                teammates: [],
-                model: undefined,
-                // startedAt 留空：让 STREAM_COMPLETE 竞态保护跳过时间戳比较，
-                // 正常流程中 handleSend 已设置了正确的 startedAt，此 fallback 仅在极端情况下触发
-                startedAt: undefined,
-              }
-              const next = applyAgentEvent(current, event)
-              const map = new Map(prev)
-              map.set(sessionId, next)
-              return map
-            })
           }
 
           // 自动打开侧面板：检测到 Agent/Task 工具启动或 teammate 任务开始时
@@ -708,7 +686,7 @@ export function useGlobalAgentListeners(): void {
           }
         }
 
-        if (ENABLE_RUNTIME_ENVELOPE_REDUCER && runtimeEnvelopes.length > 0) {
+        if (runtimeEnvelopes.length > 0) {
           store.set(agentStreamingStatesAtom, (prev) => {
             const baseState = prev.get(sessionId) ?? {
               running: true,
@@ -719,31 +697,14 @@ export function useGlobalAgentListeners(): void {
               startedAt: undefined,
             }
             let currentState: AgentStreamState = baseState
-            let legacyProjectedState: AgentStreamState = baseState
 
             for (const envelope of runtimeEnvelopes) {
               currentState = applyAgentStreamEnvelopeToState(currentState, envelope)
-            }
-            for (const event of legacyEvents) {
-              if (event.type !== 'prompt_suggestion') {
-                legacyProjectedState = applyAgentEvent(legacyProjectedState, event)
-              }
             }
 
             if (currentState === baseState) return prev
             const next = new Map(prev)
             next.set(sessionId, currentState)
-
-            const runtimeSnapshot = createAgentStreamStateShadowSnapshot(currentState)
-            const legacySnapshot = createAgentStreamStateShadowSnapshot(legacyProjectedState)
-            if (JSON.stringify(runtimeSnapshot) !== JSON.stringify(legacySnapshot)) {
-              console.debug('[Agent Runtime] renderer shadow compare 差异', {
-                sessionId,
-                legacy: legacySnapshot,
-                runtime: runtimeSnapshot,
-              })
-            }
-
             return next
           })
 

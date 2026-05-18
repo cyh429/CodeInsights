@@ -14,7 +14,35 @@
 - [x] 阶段 8 Renderer 切新 Reducer 已完成并提交：`6ff5a6cb feat(agent): 完成 Agent 重构阶段 8 Renderer 切新 Reducer`。
 - [x] 阶段 9 External Channel Adapter 已完成并提交：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`。
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
-- [ ] 阶段 11 清理旧路径尚未开始。
+- [~] 阶段 11 清理旧路径进行中。
+
+## 2026-05-18 Agent 重构阶段 11：清理旧路径计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest 和阶段 0 基线。
+- [x] 检查阶段 0 真实交互缺口，确认阶段 11 不能清理尚未人工补跑的发送、停止、权限、AskUser、Plan Mode、附件、additional directory、fork、rewind、MCP、飞书关键路径。
+- [x] 梳理 Orchestrator / Pipeline / Renderer / shared runtime event 中 legacy reducer、重复 SDK env、重复 SDK query 包装的当前落点。
+- [x] 清理已验证的重复 SDK env 导出与测试入口，确保 Orchestrator 与 Pipeline 统一使用 `agent-sdk-env.ts`。
+- [x] 瘦身 Renderer legacy reducer/shadow compare 的重复转换逻辑，但保留旧 session、transcript/debug、副作用、pending permission、AskUser、Plan Mode 和回滚兼容路径。
+- [x] 复核 shared runtime event adapter，确认本阶段不删除公共导出的旧 `AgentEvent` adapter，避免改变 `AgentStreamEnvelope` / `AgentRuntimeEvent` 公共契约与测试对照。
+- [x] 保留 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭回滚点，不改变 Agent / Pipeline / 飞书 / Renderer UI 可见行为。
+- [x] 补充或调整 Agent Runtime Runner / Event Log / Pipeline Node Runner / Renderer atoms 聚焦测试。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Pipeline / Renderer 相关聚焦测试、`git diff --check`。
+- [!] 尽量补跑阶段 0 核心真实交互；本轮未启动 Electron 桌面壳，缺少真实渠道/API 交互上下文，无法补跑发送、停止、权限 approve/deny、AskUser、Plan Mode、MCP、飞书和 Pipeline UI。
+- [x] 阶段 11 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
+
+## 2026-05-18 Agent 重构阶段 11：清理旧路径 Review
+
+- 已删除 `useGlobalAgentListeners.ts` 中硬编码 runtime envelope reducer 后不再可达的旧 reducer fallback；Renderer 流式 view model 继续由 `AgentStreamEnvelope` reducer 驱动。
+- 已删除 Renderer 端 shadow compare 投影和 `console.debug` 差异输出，保留主进程 event log shadow compare 作为迁移诊断安全网。
+- `payloadToLegacyEvents()` 仍保留为副作用适配层，用于文件自动定位、后台任务、权限/AskUser/ExitPlanMode 队列、Plan Mode、提示建议和通知；未清理尚未人工补跑的关键交互路径。
+- `agent-orchestrator/sdk-environment.test.ts` 改为从统一 `agent-sdk-env.ts` 入口导入 `buildSdkEnv()` / `resolveSDKCliPath()`；Orchestrator 与 Pipeline 仍共用同一个 SDK env/CLI 解析实现。
+- 未删除 Agent 主循环旧 `adapter.query()` 路径：该路径仍承载自动重试、Watchdog、Teams auto-resume、typed error 持久化和现有 UI `sdk_message` 推送。
+- 未删除 Pipeline legacy adapter、shared `adaptAgentEventToRuntimeEvent()` 或旧 session transcript 兼容；这些仍是默认关闭 feature flag、测试对照或旧数据读取的回滚点。
+- 已将 `@rv-insights/electron` 升到 `0.0.88`，并同步 `bun.lock`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/renderer/atoms/agent-atoms.test.ts apps/electron/src/main/lib/agent-orchestrator/sdk-environment.test.ts packages/shared/src/agent/runtime-events.test.ts`；`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`。
+- `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/pipeline-node-runner.test.ts` 组合运行时复现既有 Bun/Electron named export 问题；同一批中 Pipeline Node Runner 与 Runtime Runner 测试先通过，event log 已单独通过。
+- 人工验证缺口：本轮未启动 Electron 桌面壳补跑真实交互，因此阶段 0 的实时交互缺口继续保留。
 
 ## 2026-05-18 Agent 重构阶段 10：Pipeline 复用 Runner 计划
 

@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证；下一阶段为阶段 11 清理旧路径。
+当前阶段：阶段 11 清理旧路径进行中；阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 
 已完成：
 
@@ -48,12 +48,12 @@
 - [x] 已提交阶段 9 成果：`09e558a7 feat(agent): 完成 Agent 重构阶段 9 External Channel Adapter`
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
-- [ ] 阶段 11 清理旧路径尚未开始。
+- [~] 阶段 11 清理旧路径进行中。
 
 下一步建议：
 
-1. 下一次开发从阶段 11 清理旧路径开始；阶段 10 已让 Pipeline Claude 节点可在 feature flag 下复用 AgentRuntimeRunner。
-2. 阶段 11 开始前复核阶段 0 基线缺口；触碰旧路径删除时，应继续补充真实 Electron 交互证据。
+1. 阶段 11 继续只清理已验证的旧路径重复逻辑，不触碰未补跑的真实交互边界。
+2. 继续保留旧 session、transcript/debug、权限、AskUser、Plan Mode 和回滚路径兼容。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -81,6 +81,48 @@
 - `[~]` 进行中
 - `[x]` 已完成
 - `[!]` 阻塞，需要记录原因和决策
+
+## 阶段 11：清理旧路径
+
+目标：在不改变 Agent / Pipeline / 飞书 / Renderer UI 可见行为的前提下，清理已验证无用的旧路径重复逻辑，保留旧 session、resume / fork / rewind、权限、AskUser、Plan Mode 和必要回滚点。
+
+### 任务
+
+- [x] 复核阶段 0 真实交互缺口，确认不清理尚未人工补跑的关键路径。
+- [x] 删除 Renderer 中硬编码 runtime reducer 后不再可达的旧 reducer fallback。
+- [x] 删除 Renderer 端 shadow compare 投影和 `console.debug` 差异输出。
+- [x] 保留 `payloadToLegacyEvents()` 作为副作用适配层，继续服务文件自动定位、后台任务、权限/AskUser/ExitPlanMode 队列、Plan Mode、提示建议和通知。
+- [x] 将 SDK env 测试入口调整为统一 `agent-sdk-env.ts` 门面。
+- [x] 复核 shared runtime event adapter，暂不删除公共导出的旧 `AgentEvent` adapter。
+- [x] 保留 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭回滚点。
+- [x] 递增 `@rv-insights/electron` patch 版本并同步 lockfile。
+
+### 验收
+
+- [x] Renderer view model 仍由 `AgentStreamEnvelope` reducer 驱动。
+- [x] 旧 session transcript/debug 兼容路径未删除。
+- [x] 权限、AskUser、Plan Mode、MCP、飞书和 Pipeline 默认路径未改变。
+- [x] 客户端 UI 零可见变化：不改布局、样式、文案、入口、按钮行为或交互路径。
+
+### 验证
+
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/renderer/atoms/agent-atoms.test.ts apps/electron/src/main/lib/agent-orchestrator/sdk-environment.test.ts packages/shared/src/agent/runtime-events.test.ts`
+- [x] `bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`
+- [!] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/pipeline-node-runner.test.ts` 组合运行复现既有 Bun/Electron named export 问题；Pipeline Node Runner 与 Runtime Runner 测试先通过，event log 已单独通过。
+- [x] `git diff --check`
+- [!] 阶段 0 核心真实交互：本轮未启动 Electron 桌面壳，缺少真实渠道/API 交互上下文，无法补跑发送、停止、权限 approve/deny、AskUser、Plan Mode、MCP、飞书和 Pipeline UI。
+
+### 回滚
+
+- [x] `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 仍默认关闭。
+- [x] 主进程 event log shadow compare、旧 Agent 主循环、Pipeline legacy adapter、旧 session JSONL 读取均保留。
+
+### 阶段 11 当前说明
+
+- 已删除 Renderer 端不可达旧 reducer fallback 与 shadow compare，不再对每个 stream payload 做 legacy view model 投影。
+- 本阶段未删除 Agent 主循环旧 `adapter.query()` 路径，因为它仍承载自动重试、Watchdog、Teams auto-resume、typed error 持久化和现有 UI `sdk_message` 推送。
+- 本阶段未删除 shared `adaptAgentEventToRuntimeEvent()`，避免改变公共导出和现有 reducer 对照测试。
 
 ## 阶段 0：冻结基线
 
