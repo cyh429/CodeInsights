@@ -20,7 +20,7 @@
     },
     "apps/electron": {
       "name": "@rv-insights/electron",
-      "version": "0.0.80",
+      "version": "0.0.81",
       "dependencies": {
         "@anthropic-ai/claude-agent-sdk": "0.2.123",
         "@openai/codex": "0.130.0",
@@ -138,7 +138,7 @@
     },
     "packages/shared": {
       "name": "@rv-insights/shared",
-      "version": "0.1.35",
+      "version": "0.1.36",
       "devDependencies": {
         "typescript": "^5.0.0",
       },

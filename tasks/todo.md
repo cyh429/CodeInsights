@@ -1,5 +1,44 @@
 # Agent Cockpit UI 创意升级任务
 
+## 2026-05-18 Agent 重构最新状态交接
+
+- [x] 阶段 0 冻结基线已完成并提交：`47f8ad8d docs: 冻结 Agent 重构阶段 0 行为基线`。
+- [x] 阶段 1 Shared Event Contract 已完成并提交：`d9801cf9 feat(shared): 完成 Agent 重构阶段 1 事件契约`。
+- [x] 阶段 2 Event Log 双写已完成并提交：`04f23aa6 feat(agent): 完成 Agent 重构阶段 2 事件日志双写`。
+- [x] 阶段 3 In-process AgentRuntimeRunner 已完成并提交：`ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner`。
+- [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
+- [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
+- [ ] 阶段 6 插件系统原生化尚未开始。
+- [ ] 阶段 7 内置 MCP Bridge 尚未开始。
+- [ ] 阶段 8 Renderer 切新 Reducer 尚未开始。
+- [ ] 阶段 9 External Channel Adapter 尚未开始。
+- [ ] 阶段 10 Pipeline 复用 Runner 尚未开始。
+- [ ] 阶段 11 清理旧路径尚未开始。
+
+下一次开发应从阶段 4 开始：新增 Runtime Manifest 类型和只读 Registry，读取旧 workspace 的 `mcp.json`、skills、plugin manifest，生成 manifest/source hash，并补路径安全测试。保持客户端 UI 零可见变化，默认不切换 Agent 对话可见行为。
+
+## 2026-05-18 Agent 重构阶段 4：Runtime Manifest 只读解析计划
+
+- [x] 复习 `tasks/lessons.md`、Agent 重构阶段文档、事件契约、runtime manifest 设计和阶段 0 基线。
+- [x] 梳理现有 workspace 路径、MCP、skills、plugin manifest、attached directories 读取边界，确认只读解析不改变 cwd / UI / 运行路径。
+- [x] 新增 Runtime Manifest 类型与只读 feature flag，默认关闭运行时切换。
+- [x] 新增 Workspace Runtime Registry，只从旧 workspace 配置生成 manifest 快照、source hash、runtimeHash 和能力列表，不物化 runtime 目录。
+- [x] 加固路径安全：已存在路径段拒绝 symlink，manifest 内部路径必须保持在 workspace root 内，additional directories 只保存引用。
+- [x] 补充单元测试，覆盖旧 mcp.json、skills、plugin manifest、attached directories、缺失配置、hash 稳定性和 symlink traversal 拒绝。
+- [x] 更新 `docs/agent-refactor/development-checklist.md` 与本文件 Review，运行验证并单独提交阶段 4。
+
+## 2026-05-18 Agent 重构阶段 4：Runtime Manifest 只读解析 Review
+
+- 已新增 `packages/shared/src/agent/runtime-manifest.ts`，定义 `AgentRuntimeManifest`、MCP / Skill / Plugin / additional directory manifest 类型，以及默认关闭的 `agentRuntimeManifestV1` feature flag。
+- 已新增 `apps/electron/src/main/lib/agent-runtime-manifest-registry.ts`，只读解析旧 workspace 的 `mcp.json`、`skills/`、`skills-inactive/`、`.claude-plugin/plugin.json` 和 `config.json.attachedDirectories`，生成 source hash / runtime hash / 能力快照。
+- `skills-inactive/` 只参与 source hash，不进入 `enabledSkills`；additional directories 只保存引用，不复制、不物化。
+- 路径安全已覆盖 workspace 内路径边界、workspace slug traversal、plugin name traversal、已存在路径段 symlink 拒绝、realpath 复验、入口文件 symlink、nested Skill symlink 和 `skills-inactive` symlink fixture。
+- 本阶段未创建 runtime 目录、未写 manifest 文件、未改变 cwd / Runner / Orchestrator / Renderer；客户端 UI 零可见变化。
+- 已将 `@rv-insights/shared` 升到 `0.1.36`，`@rv-insights/electron` 升到 `0.0.81`，并同步 `bun.lock`。
+- 代码审查发现并已修复 shared barrel 顶层 `process`、workspace slug traversal 和 plugin snapshot path 风险。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts`（9 pass）；`git diff --check`。
+- 当前未启动 Electron 桌面壳人工打开旧 workspace / old session；阶段 4 只读 registry 未接入运行路径，该真实交互仍作为后续补跑缺口记录。
+
 ## 2026-05-18 Agent 重构阶段 3：In-process AgentRuntimeRunner 下一步计划
 
 - [x] 先复习 `tasks/lessons.md`、`docs/agent-refactor/development-checklist.md`、`event-contract.md` 和阶段 0 基线。

@@ -6,7 +6,7 @@
 
 更新时间：2026-05-18
 
-当前阶段：阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证，等待整理文档并提交。
+当前阶段：阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
 
 已完成：
 
@@ -28,11 +28,12 @@
 - [x] 阶段 2 Event Log 双写已完成实现与聚焦验证。
 - [x] 已提交阶段 2 成果：`04f23aa6 feat(agent): 完成 Agent 重构阶段 2 事件日志双写`
 - [x] 已提交阶段 3 交接提示词更新：`d7d0ae60 docs(agent): 更新 Agent 重构阶段 3 交接提示`
+- [x] 阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证。
+- [x] 已提交阶段 3 成果：`ee1157b9 feat(agent): 完成 Agent 重构阶段 3 进程内 Runner`
 
 未开始：
 
-- [x] 阶段 3 In-process AgentRuntimeRunner 已完成实现与聚焦验证。
-- [ ] 阶段 4 Runtime Manifest 只读解析尚未开始。
+- [x] 阶段 4 Runtime Manifest 只读解析已完成实现与聚焦验证。
 - [ ] 阶段 5 Runtime Materializer for New Sessions 尚未开始。
 - [ ] 阶段 6 插件系统原生化尚未开始。
 - [ ] 阶段 7 内置 MCP Bridge 尚未开始。
@@ -43,13 +44,13 @@
 
 下一步建议：
 
-1. 进入阶段 3 In-process AgentRuntimeRunner，先抽出 SDK query / stream 遍历边界，保留旧 Orchestrator 路径作为回滚。
-2. 阶段 3 开始前先复核阶段 0 基线缺口，优先补跑或用 mock 覆盖发送、停止、resume、权限、AskUser。
+1. 阶段 4 完成后进入阶段 5 Runtime Materializer for New Sessions；新 session 才允许开始写 runtime 目录，旧 session 继续保持旧 cwd。
+2. 阶段 5 开始前复核阶段 0 基线缺口；触碰 materializer / cwd / MCP / Skill 物化边界时，应优先补充旧 workspace、旧 session resume、MCP/Skill 可见性和 symlink traversal fixture。
 3. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
-- 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。
+- 阶段 0 首轮没有实时 Electron 桌面交互证据；并发、停止、权限 approve/deny、AskUser、Plan Mode、附件、additional directory、fork、rewind 仍需在触碰相关边界前补跑。阶段 4 只新增只读 manifest 解析，未改变运行路径；人工打开旧 workspace / old session 仍保留为后续补跑缺口。
 - 当前本地配置没有 workspace MCP server，因此 MCP 可见性只记录了预期和缺口。
 - 当前本地配置没有飞书配置，因此飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
@@ -263,35 +264,47 @@
 
 ### 任务
 
-- [ ] 新增 `agent-runtime-registry.ts`。
-- [ ] 在 `packages/shared/src/agent/` 新增 runtime manifest 类型。
-- [ ] 读取旧 workspace `mcp.json`。
-- [ ] 读取旧 workspace `skills/` 与 `skills-inactive/`。
-- [ ] 读取旧 plugin manifest。
-- [ ] 生成 manifest source hash。
-- [ ] 路径安全：resolve + lstat + realpath。
-- [ ] 拒绝 symlink traversal fixture。
-- [ ] additionalDirectories 只记录引用，不复制。
+- [x] 新增 `agent-runtime-manifest-registry.ts`。
+- [x] 在 `packages/shared/src/agent/` 新增 runtime manifest 类型。
+- [x] 读取旧 workspace `mcp.json`。
+- [x] 读取旧 workspace `skills/`。
+- [x] 读取旧 plugin manifest。
+- [x] 生成 manifest source hash 与 runtime hash。
+- [x] 路径安全：resolve + lstat + realpath。
+- [x] 拒绝 symlink traversal fixture。
+- [x] additionalDirectories 只记录引用，不复制。
 
 ### 验收
 
-- [ ] 旧 workspace 都能生成 manifest。
-- [ ] 旧 session cwd 不移动。
-- [ ] 旧 session resume 不变。
-- [ ] Manifest 与 [Runtime Manifest](./runtime-manifest.md) 字段一致。
-- [ ] UI 无可见变化。
+- [x] 旧 workspace 都能生成 manifest。
+- [x] 旧 session cwd 不移动。
+- [x] 旧 session resume 不变。
+- [x] Manifest 与 [Runtime Manifest](./runtime-manifest.md) 字段一致。
+- [x] UI 无可见变化。
 
 ### 验证
 
-- [ ] `bun run typecheck`
-- [ ] `bun test` registry/path safety fixture。
-- [ ] 人工打开旧 workspace 和旧 session。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts`
+- [!] 人工打开旧 workspace 和旧 session：本阶段未启动 Electron 桌面壳；只读 manifest registry 未接入 Runner / Orchestrator / Renderer，旧 session cwd 和 resume 路径未改变，真实 UI 交互仍保留为后续补跑缺口。
+- [x] `git diff --check`
 
 ### 回滚
 
-- [ ] Runner 不读取 manifest。
-- [ ] 继续使用旧 `agent-workspace-manager.ts` 配置解析。
+- [x] Runner 不读取 manifest。
+- [x] 继续使用旧 `agent-workspace-manager.ts` 配置解析。
+
+### 阶段 4 完成说明
+
+- 新增文件：`packages/shared/src/agent/runtime-manifest.ts`、`apps/electron/src/main/lib/agent-runtime-manifest-registry.ts`、`apps/electron/src/main/lib/agent-runtime-manifest-registry.test.ts`
+- 已新增 `AgentRuntimeManifest`、MCP / Skill / Plugin / additional directory manifest 类型，以及默认关闭的 `agentRuntimeManifestV1` feature flag。
+- 已新增只读 Workspace Runtime Registry：从旧 workspace 根目录读取 `mcp.json`、`skills/`、`.claude-plugin/plugin.json` 和 `config.json.attachedDirectories`，生成 manifest 字段、source hash、runtime hash 和能力快照。
+- 本阶段不创建 `runtime/`、不写 `runtime-manifest.json`、不改变 `agentCwd`、不接入 Runner / Orchestrator / Renderer；旧 session cwd 与 resume 行为保持原路径。
+- 路径安全已覆盖：workspace 内路径必须保持在 workspace root 内；已存在路径段用 `lstat` 拒绝 symlink；已存在目标再用 `realpath` 复验；additional directories 只保存引用，不复制也不解析成 runtime 内容。
+- 单元测试覆盖旧 MCP、Skill、plugin manifest、attached directories、缺失配置、hash 稳定性、workspace slug traversal、plugin name traversal、入口文件 symlink、nested Skill symlink 和 `skills-inactive` symlink 拒绝。
+- `@rv-insights/shared` patch 版本从 `0.1.35` 提升到 `0.1.36`；`@rv-insights/electron` patch 版本从 `0.0.80` 提升到 `0.0.81`。
+- 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；客户端 UI 零可见变化。
+- 代码审查发现并已修复：shared barrel 顶层访问 `process` 的浏览器兼容风险、workspace slug traversal、plugin manifest name 进入 snapshot path 的路径风险，并补充对应回归测试。
 
 ## 阶段 5：Runtime Materializer for New Sessions
 
