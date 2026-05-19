@@ -1187,6 +1187,70 @@ function buildExplorerFallbackStageOutput(
   }
 }
 
+function extractPlannerFallbackItems(text: string, keywords: string[], fallback: string[]): string[] {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line
+      .replace(/^\s*(?:[-*]|\d+[.)]|TC-\d+\s*[:：-]?)\s*/, '')
+      .replace(/\*\*/g, '')
+      .trim())
+    .filter(Boolean)
+
+  const matches = lines
+    .filter((line) => keywords.some((keyword) => line.includes(keyword)))
+    .map((line) => truncateForSummary(line, 180))
+
+  return [...new Set(matches)].slice(0, 8).length > 0
+    ? [...new Set(matches)].slice(0, 8)
+    : fallback
+}
+
+function buildPlannerFallbackStageOutput(
+  text: string,
+): PipelinePlannerStageOutput {
+  const blocks = splitNonEmptyTextBlocks(text)
+  const summarySource = blocks[0] ?? 'Planner 返回了非 JSON 方案结果'
+
+  return {
+    node: 'planner',
+    summary: truncateForSummary(summarySource, 160),
+    steps: extractPlannerFallbackItems(text, [
+      '步骤',
+      '实施',
+      'Developer',
+      'Reviewer',
+      'Tester',
+      '创建',
+      '修改',
+      '生成',
+    ], [
+      '基于 selected-task.md 补齐最小实现方案。',
+      '由 developer 按方案执行必要改动。',
+      '由 reviewer 和 tester 分别审查与验证结果。',
+    ]),
+    risks: extractPlannerFallbackItems(text, [
+      '风险',
+      '权限',
+      '失败',
+      '阻塞',
+      '写入',
+    ], [
+      'Planner 未返回结构化 JSON，已保留自然语言输出并使用 fallback 文档进入人工审核。',
+    ]),
+    verification: extractPlannerFallbackItems(text, [
+      '验证',
+      '测试',
+      'TC-',
+      'bun ',
+      'typecheck',
+    ], [
+      '人工审核 fallback 生成的 plan.md 和 test-plan.md。',
+      '后续 tester 必须基于实际证据保守判定。',
+    ]),
+    content: text,
+  }
+}
+
 interface ExplorerReportDraft {
   title: string
   summary: string
@@ -1392,7 +1456,7 @@ function enrichPlannerPatchWorkArtifacts(
   const task = getContributionTaskByPipelineSessionId(context.sessionId)
   if (!task) return result
 
-  const parsed = parseStructuredOutput('planner', result.output)
+  const parsed = parseJsonObject(result.output) ?? {}
   const planMarkdown = readOptionalString(parsed, 'planMarkdown')
     ?? buildFallbackPlanMarkdown(result.stageOutput)
   const testPlanMarkdown = readOptionalString(parsed, 'testPlanMarkdown')
@@ -1915,11 +1979,11 @@ function throwIfInvalid(node: PipelineNodeKind, issues: string[], text: string):
 }
 
 function buildStageOutput(node: PipelineNodeKind, text: string): PipelineStageOutput {
-  const parsed = node === 'explorer'
-    ? parseJsonObject(text)
-    : parseStructuredOutput(node, text)
+  const parsed = parseJsonObject(text)
   if (!parsed) {
-    return buildExplorerFallbackStageOutput(text)
+    if (node === 'explorer') return buildExplorerFallbackStageOutput(text)
+    if (node === 'planner') return buildPlannerFallbackStageOutput(text)
+    throw new PipelineStructuredOutputError(node, ['输出不是合法 JSON 对象'], text)
   }
   const issues: string[] = []
   const summary = readRequiredString(parsed, 'summary', issues)

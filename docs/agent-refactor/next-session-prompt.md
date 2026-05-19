@@ -35,10 +35,12 @@
 - 阶段 13 代码侧补强：328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据
 - 阶段 13 追加修复：46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据
 - 阶段 13 Plan Mode 退出证据补强：acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据
+- 阶段 13 Watchdog / Teams auto-resume 证据补强：b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据
+- 阶段 13 planner fallback 修复：待提交
 
 当前版本：
 - @rv-insights/shared：0.1.40
-- @rv-insights/electron：0.0.93
+- @rv-insights/electron：0.0.94
 
 当前状态：
 - 默认 Agent 对话仍走旧 Orchestrator 主循环。
@@ -52,16 +54,22 @@
 - 当前工作树可能只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 噪音；不要纳入提交。
 
 当前未完成：
-- 最小 Pipeline 真实 UI run 已启动并可 stop，但 150 秒内停留 `explorer/running`，未到 human gate / patch-work / tester；human gate、patch-work Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定仍需复验。
-- 本轮再次尝试 Electron 真实 UI 补跑时，`bunx electron . --remote-debugging-port=9334` 启动后立即退出，未建立 CDP；需要先定位桌面壳退出原因，再补 Pipeline 深水位证据。
+- 最小 Pipeline 真实 UI run 已进入 `explorer/task_selection` gate 并写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
+- 已定位 Electron 退出根因：先前 9333 实例持有单实例锁，导致 9334 新进程退出；结束旧实例后 9334 CDP 可连接。
 - 飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞；不要伪造通过。
 - 仍不能默认开启 Runner v2。
+
+当前明确已完成：
+- Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
+- Pipeline v2 真实补跑已补到 explorer/task_selection gate，并修复 planner 自然语言 fallback；完整 developer / reviewer / tester 仍被渠道余额阻塞。
+- Runner v2 真实 Electron 交互证据：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
+- 验证证据：`bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、`git diff --check` 已在阶段 13 文档中记录。
 
 下一步请继续阶段 13 真实证据补齐：
 1. 先确认 `git status --short`，只忽略 `.DS_Store`、`improve/` 等无关噪音。
 2. 不默认开启 feature flag，不删除旧 Agent 主循环，不做 UI 改版。
-3. 优先定位 Electron 桌面壳启动后立即退出的原因，恢复 CDP 可连接状态。
-4. 再补能到 human gate / patch-work / tester 的最小 Pipeline 真实 UI run，复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+3. 优先确认可用模型余额/渠道；当前 DeepSeek 返回 `Insufficient Balance` 会阻断 Pipeline 深水位真实 run。
+4. 再补能到 developer / reviewer / tester 的最小 Pipeline 真实 UI run，复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
 5. 检查飞书配置文件；若仍不存在，继续明确记录阻塞，不能伪造通过。
 6. 完成后更新 `tasks/todo.md`、`docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md` 和 `docs/agent-refactor/next-session-prompt.md`。
 7. 验证至少包括 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。

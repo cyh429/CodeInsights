@@ -429,6 +429,30 @@ describe('pipeline-node-runner', () => {
     })
   })
 
+  test('planner 自然语言输出会生成保守 fallback 方案', () => {
+    const result = buildNodeExecutionResult('planner', [
+      'Planner 节点已完成。输出包含最小实施计划。',
+      '',
+      '- Developer 创建 PIPELINE-VERIFICATION.md',
+      '- Reviewer 审查格式规范',
+      '- Tester 执行保守判定',
+      '- 风险点：模型未返回结构化 JSON',
+      '- 验证方式：检查 patch-work 文档并运行测试',
+    ].join('\n'))
+
+    expect(result.approved).toBe(true)
+    expect(result.stageOutput).toMatchObject({
+      node: 'planner',
+      steps: expect.arrayContaining([
+        'Developer 创建 PIPELINE-VERIFICATION.md',
+        'Reviewer 审查格式规范',
+        'Tester 执行保守判定',
+      ]),
+      risks: ['风险点：模型未返回结构化 JSON'],
+      verification: ['验证方式：检查 patch-work 文档并运行测试'],
+    })
+  })
+
   test('reviewer 缺少 approved 时不会被误判为驳回', () => {
     expect(() => buildNodeExecutionResult('reviewer', JSON.stringify({
       summary: '格式缺少 approved',
@@ -994,6 +1018,50 @@ describe('pipeline-node-runner', () => {
     })
     expect(existsSync(join(repoRoot, 'patch-work', 'plan.md'))).toBe(true)
     expect(readFileSync(join(repoRoot, 'patch-work', 'test-plan.md'), 'utf-8')).toContain('覆盖 patch-work service')
+  })
+
+  test('v2 planner 自然语言 fallback 也会写入 plan.md / test-plan.md', () => {
+    createContributionTask({
+      id: 'task-runner-planner-fallback',
+      pipelineSessionId: 'session-runner-planner-fallback',
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedReportId: 'report-001',
+      status: 'planning',
+    })
+
+    const result = buildNodeExecutionResult('planner', [
+      'Planner 节点已完成。输出包含最小实施计划。',
+      '',
+      '- Developer 创建 PIPELINE-VERIFICATION.md',
+      '- Tester 执行保守判定',
+      '- 风险点：模型未返回结构化 JSON',
+      '- 验证方式：检查 patch-work 文档并运行测试',
+    ].join('\n'))
+
+    const enriched = enrichPipelineV2PatchWorkArtifacts('planner', {
+      sessionId: 'session-runner-planner-fallback',
+      userInput: '阶段 13 fallback 验证',
+      currentNode: 'planner',
+      version: 2,
+      reviewIteration: 0,
+    }, result)
+
+    expect(enriched.stageOutput).toMatchObject({
+      node: 'planner',
+      planRef: {
+        relativePath: 'plan.md',
+        revision: 1,
+      },
+      testPlanRef: {
+        relativePath: 'test-plan.md',
+        revision: 1,
+      },
+    })
+    expect(readFileSync(join(repoRoot, 'patch-work', 'plan.md'), 'utf-8')).toContain('Developer 创建 PIPELINE-VERIFICATION.md')
+    expect(readFileSync(join(repoRoot, 'patch-work', 'test-plan.md'), 'utf-8')).toContain('验证方式：检查 patch-work 文档并运行测试')
   })
 
   test('v2 developer 必须读取已接受 plan.md / test-plan.md 并写入 dev.md', () => {

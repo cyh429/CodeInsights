@@ -1,4 +1,26 @@
-# Agent Cockpit UI 创意升级任务
+# RV-Insights Agent 重构任务
+
+## 2026-05-19 Agent 重构当前可接续状态
+
+- [x] 阶段 0-12 均已完成并提交。
+- [x] 阶段 13 已完成并提交代码侧等价补强：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出事件持久化、Watchdog / Teams auto-resume。
+- [x] 阶段 13 已完成真实 Electron Runner v2 交互证据：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
+- [x] 最新阶段 13 提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；本轮 planner fallback 修复待提交。
+- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.94`。
+- [!] 当前仍不能默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
+- [!] 剩余关键缺口 1：Pipeline 深水位真实 UI run 已到 `explorer/task_selection` human gate 并写入 patch-work report；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，仍未到 developer / reviewer / tester。
+- [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
+- [!] 剩余关键缺口 3：飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
+- [ ] 下次启动优先顺序：确认工作树噪音 -> 确认可用模型余额/渠道 -> 补 Pipeline 深水位 UI run -> 检查飞书配置 -> 更新文档和验证 -> 阶段提交。
+
+## 2026-05-19 Agent 重构阶段 13：Pipeline planner fallback 与深水位补跑 Review
+
+- 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例并重启后 `curl http://127.0.0.1:9334/json/version` 返回 `@rv-insights/electron/0.0.93`，CDP 恢复。
+- 真实 Pipeline run `2432c724-3b6f-463e-89c6-bdb135ac0a65` 已进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；选择 `report-001` 后 planner 返回自然语言摘要，旧逻辑因“输出不是合法 JSON 对象”失败。
+- 已修复 planner 自然语言 fallback：非 JSON planner 输出会生成保守 `PipelinePlannerStageOutput`，v2 enrichment 会继续写入 `patch-work/plan.md` 与 `patch-work/test-plan.md`，不放宽 reviewer / tester 严格结构化校验。
+- 修复后新真实 Pipeline run `e81216eb-9902-475e-98fc-a51661426694` 启动成功，explorer 阶段尝试写文件被只读工具防护拦截，随后 DeepSeek 渠道返回 `Insufficient Balance`，无法继续到 developer / reviewer / tester，不能标记深水位通过。
+- 飞书配置复查仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
+- 验证通过：`bun run typecheck`；Agent / Runtime / Event Log / Renderer atoms 聚焦测试 44 pass；Pipeline 聚焦测试 83 pass；`git diff --check`。
 
 ## 2026-05-18 Agent 重构最新状态交接
 
@@ -133,7 +155,7 @@
 - [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在，继续记录飞书阻塞，不伪造通过。
 - [x] 更新 `docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`、`docs/agent-refactor/next-session-prompt.md` 和本文件 Review。
 - [x] 运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
-- [ ] 阶段 13 本轮补证完成后单独提交，只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动。
+- [x] 阶段 13 本轮补证完成后单独提交，只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`。
 
 ## 2026-05-19 Agent 重构阶段 13：Watchdog / Pipeline 深水位补证 Review
 

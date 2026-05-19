@@ -1,6 +1,6 @@
 {
   "name": "@rv-insights/electron",
-  "version": "0.0.93",
+  "version": "0.0.94",
   "description": "RV-Insights next gen ai software with general agents - Electron App",
   "main": "dist/main.cjs",
   "author": {
