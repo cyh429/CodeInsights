@@ -99,6 +99,26 @@ describe('Agent runtime event log', () => {
     expect(terminalEvents.map((event) => event.event.type)).toEqual(['run_stopped'])
   })
 
+  test('同一 run 内重复 sdk_session 只写入一次', () => {
+    const sessionId = 'session-event-log-sdk-session-dedupe'
+    const writer = startAgentRuntimeEventLogRun({
+      sessionId,
+      model: 'claude-test',
+      cwd: '/tmp/workspace',
+      permissionMode: 'auto',
+    })
+
+    writer.appendRuntimeEvent('claude_sdk', { type: 'sdk_session', sdkSessionId: 'sdk-session-1' })
+    writer.appendRuntimeEvent('claude_sdk', { type: 'sdk_session', sdkSessionId: 'sdk-session-1' })
+    writer.appendRuntimeEvent('claude_sdk', { type: 'sdk_session', sdkSessionId: 'sdk-session-2' })
+
+    const sdkSessionEvents = getAgentSessionRuntimeEvents(sessionId)
+      .map((event) => ({ sequence: event.sequence, event: event.event }))
+      .filter((entry): entry is { sequence: number; event: { type: 'sdk_session'; sdkSessionId: string } } => entry.event.type === 'sdk_session')
+    expect(sdkSessionEvents.map((event) => event.sequence)).toEqual([1, 2])
+    expect(sdkSessionEvents.map((event) => event.event.sdkSessionId)).toEqual(['sdk-session-1', 'sdk-session-2'])
+  })
+
   test('SDK result 同时写入 usage 与终态', () => {
     const sessionId = 'session-event-log-usage'
     const writer = startAgentRuntimeEventLogRun({

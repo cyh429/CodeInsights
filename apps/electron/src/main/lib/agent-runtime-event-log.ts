@@ -102,12 +102,20 @@ class JsonlAgentRuntimeEventLogWriter implements AgentRuntimeEventLogWriter {
   readonly runId = randomUUID()
   private nextSequence = 0
   private terminalWritten = false
+  private sdkSessionIds = new Set<string>()
   private envelopes: AgentStreamEnvelope[] = []
   private replayState: AgentRuntimeReplayState | undefined
 
   constructor(readonly sessionId: string) {}
 
   appendRuntimeEvent(source: AgentEventSource, event: AgentRuntimeEvent): AgentStreamEnvelope | null {
+    if (event.type === 'sdk_session') {
+      if (this.sdkSessionIds.has(event.sdkSessionId)) {
+        console.warn(`[Agent EventLog] 重复 sdk_session，已跳过: sessionId=${this.sessionId}, runId=${this.runId}, sdkSessionId=${event.sdkSessionId}`)
+        return null
+      }
+      this.sdkSessionIds.add(event.sdkSessionId)
+    }
     if (isAgentRuntimeTerminalEvent(event)) {
       if (this.terminalWritten) {
         console.warn(`[Agent EventLog] 终态重复，已跳过: sessionId=${this.sessionId}, runId=${this.runId}, type=${event.type}`)

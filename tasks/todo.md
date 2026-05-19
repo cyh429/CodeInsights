@@ -16,7 +16,7 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- [~] 阶段 13 Runner v2 默认化证据补齐进行中。
+- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；真实 Electron / Pipeline UI 证据仍未补齐，继续进行中。
 
 ## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
 
@@ -30,9 +30,9 @@
 - [!] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定；本轮未进入。
 - [ ] 若有飞书配置，补跑 `agentRuntimeChannelsV2` 飞书入口与群聊 MCP；若仍无配置，继续明确阻塞，不伪造通过。
 - [~] 判断是否具备默认开启 `agentRuntimeRunnerV2` 条件；目前仅部分证据补齐，仍不能默认开启。
-- [~] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
+- [x] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
 - [~] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
-- [ ] 阶段 13 验证通过后单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动。
+- [x] 阶段 13 代码侧补强已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`。
 
 ## 2026-05-18 Agent 重构阶段 13：当前 Review
 
@@ -42,6 +42,44 @@
 - 旧 session resume、同会话并发、附件、additional directory、fork、rewind、最小 Pipeline 真实 UI run 仍未完成。
 - 当前仍不能默认开启 `agentRuntimeRunnerV2`；缺口主要在真实交互覆盖，不在 typecheck 或聚焦单测。
 - 已将 `@rv-insights/electron` 升到 `0.0.90`，并同步 `bun.lock` workspace 版本元数据。
+- 新增阶段 13 状态证据文档：`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`。
+
+## 2026-05-18 Agent 重构阶段 13：下次启动继续开发入口
+
+- [x] 先复习本文件、`tasks/lessons.md`、`docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-12.md` 和 `docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`。
+- [x] 不默认开启 `agentRuntimeRunnerV2`，不删除旧 Agent 主循环，不做 UI 改版。
+- [~] 用更小粒度 CDP / preload 脚本补跑 Runner v2 权限 approve、权限 deny、AskUser、Plan Mode；权限 approve / deny 已补跑通过，其他 pending 仍待补。
+- [ ] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；每项记录 sessionId、输入、终态、events JSONL 证据和阻塞原因。
+- [ ] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+- [ ] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；若仍不存在，继续记录飞书阻塞，不能伪造通过。
+- [ ] 完成真实证据后再评估 `agentRuntimeRunnerV2` 是否具备默认开启条件。
+- [ ] 收尾时运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+
+## 2026-05-19 Agent 重构阶段 13：真实证据补跑计划
+
+- [x] 复习阶段 13 交接文档、事件契约、runtime manifest、阶段 12/13 baseline 和 lessons。
+- [x] 梳理 preload / CDP / Electron 启动入口，确认 Agent pending 响应字段严格使用 `behavior`、`answers`、`action`。
+- [x] 单场景补跑 Runner v2 权限 approve，记录 sessionId、requestId、events JSONL 终态和 SDKMessage 证据。
+- [x] 单场景补跑 Runner v2 权限 deny，记录 sessionId、requestId、permission_denials / run 终态。
+- [ ] 单场景补跑 Runner v2 AskUser，记录 requestId、回答 payload、resolved event 和后续终态或明确阻塞。
+- [ ] 单场景补跑 Runner v2 Plan Mode，记录 `plan_mode_entered`、`plan_mode_exited` 或阻塞原因，并恢复 workspace permission mode。
+- [ ] 分项补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；失败时必须 stop 当前 session 并记录阻塞。
+- [ ] 补跑最小 Pipeline 真实 UI run，并复验 human gate、patch-work Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+- [x] 检查飞书配置文件；`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 仍缺失，继续记录阻塞。
+- [~] 更新 `docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md` 和本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+
+## 2026-05-19 Agent 重构阶段 13：当前 Review
+
+- Runner v2 权限 approve 已用 Electron 0.0.90 + `RV_AGENT_RUNTIME_RUNNER_V2=1` 真实补跑通过：sessionId `d2fd3559-3515-40ed-b0dd-304c6c218200`，requestId `f7bf1269-3e92-45b0-b99a-f5f451eefde5`，`Write` 工具批准后写入 `stage13-runner-v2-approve-dedupe.txt`，events JSONL 终态 `run_completed`。
+- Runner v2 权限 deny 已用同一 Electron 实例真实补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，`permission_resolved(decision=denied)` 后 `tool_completed(status=error, outputSummary=用户拒绝了此操作)`，目标文件未生成。
+- 补跑中发现阶段 13 原“重复 sdk_session 去重”仍不完整：`queryOptions.onSessionId` 会多次写入相同 `sdk_session`。已改为 event log writer 对同一 run 内相同 `sdkSessionId` 去重，并新增聚焦测试。
+- 修复后复验：`d2fd3559-3515-40ed-b0dd-304c6c218200.events.jsonl` 中 `sdk_session_count=1`，事件序列保持连续，文件写入成功。
+- 已将 `@rv-insights/electron` 升到 `0.0.91`，并同步 `bun.lock` workspace 版本元数据。
+- 已通过聚焦测试：`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`。
+- 已通过收尾验证：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（41 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
+- 飞书配置仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
+- 仍不能默认开启 Runner v2；权限 deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind、最小 Pipeline 真实 UI run 和飞书入口仍未补齐。
 
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 
