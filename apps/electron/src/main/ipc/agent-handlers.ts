@@ -57,7 +57,7 @@ import {
 import { permissionService } from '../lib/agent-permission-service'
 import { askUserService } from '../lib/agent-ask-user-service'
 import { exitPlanService } from '../lib/agent-exit-plan-service'
-import { appendAskUserResolvedRuntimeEvent, appendPermissionResolvedRuntimeEvent } from '../lib/agent-runtime-event-log'
+import { appendAskUserResolvedRuntimeEvent, appendExitPlanModeResolvedRuntimeEvent, appendPermissionResolvedRuntimeEvent } from '../lib/agent-runtime-event-log'
 import { getAgentTeamData, readAgentOutputFile } from '../lib/agent-team-reader'
 import {
   getAgentSessionWorkspacePath,
@@ -550,6 +550,9 @@ export function registerAgentIpcHandlers(): void {
 
       if (result) {
         const { sessionId, targetMode } = result
+        if (response.action === 'approve_auto' || response.action === 'approve_edit') {
+          appendExitPlanModeResolvedRuntimeEvent(sessionId, response.requestId, response.action, response.feedback)
+        }
 
         // 通知渲染进程请求已处理
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {

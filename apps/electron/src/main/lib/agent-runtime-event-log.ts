@@ -98,6 +98,20 @@ export function appendAskUserResolvedRuntimeEvent(
   })
 }
 
+export function appendExitPlanModeResolvedRuntimeEvent(
+  sessionId: string,
+  requestId: string,
+  action: 'approve_auto' | 'approve_edit',
+  feedback?: string,
+): void {
+  getActiveAgentRuntimeEventLogWriter(sessionId)?.appendRuntimeEvent('rv_insights', {
+    type: 'plan_mode_exited',
+    requestId,
+    decision: 'approved',
+    summary: feedback,
+  })
+}
+
 class JsonlAgentRuntimeEventLogWriter implements AgentRuntimeEventLogWriter {
   readonly runId = randomUUID()
   private nextSequence = 0

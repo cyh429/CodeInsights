@@ -27,6 +27,7 @@ const { getAgentSessionEventsPath } = await import('./config-paths')
 const { getAgentSessionRuntimeEvents } = await import('./agent-session-manager')
 const {
   appendAskUserResolvedRuntimeEvent,
+  appendExitPlanModeResolvedRuntimeEvent,
   appendPermissionResolvedRuntimeEvent,
   finishAgentRuntimeEventLogRun,
   startAgentRuntimeEventLogRun,
@@ -146,7 +147,7 @@ describe('Agent runtime event log', () => {
     ])
   })
 
-  test('权限和 AskUser resolved 写入活跃 run', () => {
+  test('权限、AskUser 和 Plan Mode resolved 写入活跃 run', () => {
     const sessionId = 'session-event-log-interactions'
     const writer = startAgentRuntimeEventLogRun({
       sessionId,
@@ -184,6 +185,20 @@ describe('Agent runtime event log', () => {
       },
     })
     appendAskUserResolvedRuntimeEvent(sessionId, 'ask-1', { answer: '继续' })
+
+    writer.appendStreamPayload({
+      kind: 'rv_insights_event',
+      event: {
+        type: 'exit_plan_mode_request',
+        request: {
+          requestId: 'plan-1',
+          sessionId,
+          toolInput: {},
+          allowedPrompts: [],
+        },
+      },
+    })
+    appendExitPlanModeResolvedRuntimeEvent(sessionId, 'plan-1', 'approve_edit')
     finishAgentRuntimeEventLogRun(sessionId, writer)
 
     expect(getAgentSessionRuntimeEvents(sessionId).map((event) => event.event.type)).toEqual([
@@ -192,6 +207,44 @@ describe('Agent runtime event log', () => {
       'permission_resolved',
       'ask_user_requested',
       'ask_user_resolved',
+      'plan_mode_entered',
+      'plan_mode_exited',
     ])
+  })
+
+  test('ExitPlanMode 拒绝时不写 plan_mode_exited，replay 保持计划模式', () => {
+    const sessionId = 'session-event-log-plan-deny'
+    const writer = startAgentRuntimeEventLogRun({
+      sessionId,
+      model: 'claude-test',
+      cwd: '/tmp/workspace',
+      permissionMode: 'plan',
+    })
+
+    writer.appendRuntimeEvent('rv_insights', {
+      type: 'plan_mode_entered',
+      reason: 'manual-plan-mode',
+    })
+    writer.appendStreamPayload({
+      kind: 'rv_insights_event',
+      event: {
+        type: 'exit_plan_mode_request',
+        request: {
+          requestId: 'plan-deny-1',
+          sessionId,
+          toolInput: {},
+          allowedPrompts: [],
+        },
+      },
+    })
+    finishAgentRuntimeEventLogRun(sessionId, writer)
+
+    const events = getAgentSessionRuntimeEvents(sessionId)
+    expect(events.map((event) => event.event.type)).toEqual([
+      'run_started',
+      'plan_mode_entered',
+      'plan_mode_entered',
+    ])
+    expect(events.some((event) => event.event.type === 'plan_mode_exited')).toBe(false)
   })
 })

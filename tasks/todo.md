@@ -16,7 +16,7 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；真实 Electron / Pipeline UI 证据仍未补齐，继续进行中。
+- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加 `sdk_session` 去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；真实 Electron Runner v2 已补齐本轮目标，Pipeline UI 深水位证据仍未补齐，继续进行中。
 
 ## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
 
@@ -33,6 +33,7 @@
 - [x] 更新 `docs/agent-refactor/baseline-runs/` 新证据、`docs/agent-refactor/development-checklist.md` 和本文件 Review。
 - [~] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
 - [x] 阶段 13 代码侧补强已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`。
+- [x] 阶段 13 追加修复已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
 
 ## 2026-05-18 Agent 重构阶段 13：当前 Review
 
@@ -75,11 +76,50 @@
 - Runner v2 权限 deny 已用同一 Electron 实例真实补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，`permission_resolved(decision=denied)` 后 `tool_completed(status=error, outputSummary=用户拒绝了此操作)`，目标文件未生成。
 - 补跑中发现阶段 13 原“重复 sdk_session 去重”仍不完整：`queryOptions.onSessionId` 会多次写入相同 `sdk_session`。已改为 event log writer 对同一 run 内相同 `sdkSessionId` 去重，并新增聚焦测试。
 - 修复后复验：`d2fd3559-3515-40ed-b0dd-304c6c218200.events.jsonl` 中 `sdk_session_count=1`，事件序列保持连续，文件写入成功。
+- 追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
 - 已将 `@rv-insights/electron` 升到 `0.0.91`，并同步 `bun.lock` workspace 版本元数据。
 - 已通过聚焦测试：`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`。
 - 已通过收尾验证：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（41 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
 - 飞书配置仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
-- 仍不能默认开启 Runner v2；权限 deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind、最小 Pipeline 真实 UI run 和飞书入口仍未补齐。
+- 仍不能默认开启 Runner v2；AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 已在后续补跑通过，剩余缺口是 Watchdog、Teams auto-resume、能进入 gate/patch-work/tester 的 Pipeline 真实 UI run 和飞书入口。
+
+## 2026-05-19 Agent 重构阶段 13：下次启动继续开发入口
+
+- [x] 当前代码侧补强和 `sdk_session` 去重修复已提交，提交号分别为 `328b3c96` 与 `46e62a75`。
+- [x] 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均不能默认开启。
+- [x] 已完成真实 Electron Runner v2：发送、停止、权限 approve、权限 deny。
+- [ ] 下一步先补 Runner v2 AskUser 单场景脚本，记录 requestId、`respondAskUser({ requestId, answers })` payload、resolved event、终态和 events JSONL。
+- [ ] 再补 Runner v2 Plan Mode 单场景脚本，记录 `plan_mode_entered`、`respondExitPlanMode({ requestId, action })`、`plan_mode_exited` 或阻塞原因，并恢复 workspace permission mode。
+- [ ] 再分项补旧 session resume、同会话并发、附件、additional directory、fork、rewind；每项只跑一个脚本，失败必须 stop 当前 session 并记录阻塞。
+- [ ] 再补最小 Pipeline 真实 UI run，复验 human gate、patch-work Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
+- [ ] 再检查飞书配置；若 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 仍不存在，继续记录阻塞，不伪造通过。
+- [ ] 收尾前更新 `tasks/todo.md`、`docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md` 和 `docs/agent-refactor/next-session-prompt.md`。
+- [ ] 收尾验证至少包括 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+
+## 2026-05-19 Agent 重构阶段 13：继续真实证据补跑计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13 baseline 和 next-session prompt。
+- [x] 检查 `git status --short`，确认只忽略 `.DS_Store`、`improve/` 与既有阶段 13 文档改动，不纳入无关噪音。
+- [x] 单独补跑 Runner v2 AskUser：记录 sessionId、requestId、`respondAskUser({ requestId, answers })` payload、`ask_user_resolved` 和终态；超时必须 stop 并记录阻塞。
+- [x] 单独补跑 Runner v2 Plan Mode：记录 `plan_mode_entered`、`respondExitPlanMode({ requestId, action })`、`plan_mode_exited` 或阻塞原因，并恢复 workspace permission mode。
+- [x] 分项补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind；每项记录 sessionId、输入、终态、events JSONL 证据和阻塞原因。
+- [!] 补跑最小 Pipeline 真实 UI run，复验 human gate、patch-work Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定；已启动并 stop，但 150 秒内未到 gate / patch-work / tester，不能标记通过。
+- [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在，继续记录飞书阻塞，不伪造通过。
+- [x] 更新阶段 13 baseline、development checklist、next-session prompt 和本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+
+## 2026-05-19 Agent 重构阶段 13：继续真实证据补跑 Review
+
+- Runner v2 AskUser 已真实补跑通过：sessionId `436a4963-edc9-4e7f-b5ec-50058ec9ce3b`，requestId `d5e9574f-9811-4bdb-b0f5-0fb61e55c9c3`，`respondAskUser({ requestId, answers })` 后写入 `ask_user_resolved` 与 `run_completed`，最终输出 `stage13 runner v2 askuser ok`。
+- Runner v2 Plan Mode 已真实补跑通过：sessionId `8f5ac714-6397-4d0e-94a7-38aa0f9f8696`，requestId `4ebe4e01-d822-4b25-8938-5162a118a259`，`approve_edit` 后写入 `plan_mode_entered -> plan_mode_exited -> run_completed`，workspace permission mode 已恢复 `auto`。
+- 真实补跑发现并修复 `plan_mode_exited` 持久化缺口；修复后只在 `approve_auto` / `approve_edit` 写退出事件，`deny` / `feedback` 不写，避免 replay 错误关闭 plan mode。
+- 旧 session resume 已补跑：旧会话 `0ec2d089-e052-4d20-9ed6-57746cf4ac29` 无 runtime manifest，Runner v2 复用旧 cwd 与 `sdkSessionId=d4de1bc5-93d6-46bd-bb6f-6450ad95e8e2`，终态 `run_completed`。
+- 同会话并发、附件保存、additional directory、fork、rewind 均已形成最小真实证据；详见 stage-13 baseline。
+- 最小 Pipeline v2 真实 run 已尝试：sessionId `e4012949-23ff-417f-ae73-1febd99800b1`，150 秒停留 `explorer/running`，stop 后 stream/records 写入 `terminated`；未到 human gate / patch-work / tester，不能标记通过。
+- 飞书配置仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
+- 已将 `@rv-insights/electron` 升到 `0.0.92` 并同步 `bun.lock`。
+- 收尾验证已通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（42 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
+- 当前仍不能默认开启 Runner v2；剩余缺口主要是 Watchdog、Teams auto-resume、能进入 gate/patch-work/tester 的 Pipeline 真实 run 和飞书入口。
 
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 
