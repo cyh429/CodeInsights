@@ -34,15 +34,15 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 ## 当前进度
 
 - 阶段 0-12 已完成并提交，最新提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- 阶段 13 已完成并提交最新代码侧证据：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`。
+- 阶段 13 已完成并提交最新代码侧证据：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`、`6171f164`。
 - 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均保持默认关闭。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
-- 当前仍缺 Pipeline 深水位真实 UI run 进入 developer / reviewer / tester，以及飞书配置文件；本轮已到 explorer human gate 并修复 planner 自然语言 fallback，但后续 run 被 DeepSeek `Insufficient Balance` 阻塞。
+- 当前仍缺 Pipeline 深水位真实 UI run 进入 developer / reviewer / tester，以及飞书配置文件；本轮已到 explorer human gate，planner 自然语言 fallback 已修复并提交，但后续 run 被 DeepSeek `Insufficient Balance` 阻塞。
 
 ## 仍未完成
 
-- Pipeline Runner v2 仍缺完整真实 Pipeline UI run 证据；本轮已验证 explorer human gate、patch-work explorer report 和 planner fallback，developer / reviewer / tester、HEAD/refs/index/config 校验和 tester 证据保守判定需要在可用模型余额下继续复验。
+- Pipeline Runner v2 仍缺完整真实 Pipeline UI run 证据；本轮已验证 explorer human gate、patch-work explorer report 和 planner fallback（提交 `6171f164`），developer / reviewer / tester、HEAD/refs/index/config 校验和 tester 证据保守判定需要在可用模型余额下继续复验。
 - 已定位 `bunx electron . --remote-debugging-port=9334` 启动后立即退出原因：已有 9333 Electron 实例持有单实例锁；结束旧实例后 9334 CDP 可连接。
 - 飞书入口和飞书群聊 MCP 受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
 - Skill / Plugin snapshot 已有聚焦测试，但缺真实 Agent 对话中被模型实际使用的证据。

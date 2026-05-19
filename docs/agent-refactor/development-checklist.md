@@ -6,7 +6,7 @@
 
 更新时间：2026-05-19
 
-当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强，以及 Watchdog / Teams auto-resume 等价证据补强均已完成并提交/验证；真实 Electron Runner v2 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline 已补到 explorer/task_selection human gate 和 planner fallback 修复，但完整 developer / reviewer / tester 深水位真实 UI 证据仍被模型余额阻塞，不能默认开启 Runner v2。
+当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强，以及 Pipeline planner 自然语言 fallback 修复均已完成并提交/验证；真实 Electron Runner v2 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline 已补到 explorer/task_selection human gate 和 planner fallback 修复，但完整 developer / reviewer / tester 深水位真实 UI 证据仍被模型余额阻塞，不能默认开启 Runner v2。
 
 已完成：
 
@@ -50,7 +50,7 @@
 - [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
-- [~] 阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`。
+- [~] 阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 
 下一步建议：
 
@@ -73,6 +73,7 @@
 - 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
 - 当前本地配置没有飞书配置；阶段 9 已用 fixture 覆盖 Feishu channel adapter 降级策略，但飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 阶段 13 已启动新的 Pipeline 真实 UI run 并进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
+- 2026-05-19 Pipeline planner 自然语言 fallback 修复已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 - 2026-05-19 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例后 9334 CDP 可连接。
 - 阶段 11 已完成 Renderer 旧 reducer fallback / shadow compare 清理；阶段 12 仍未删除 Agent 主循环旧 `adapter.query()`、Pipeline legacy adapter、shared `adaptAgentEventToRuntimeEvent()` 或旧 session transcript 兼容。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
@@ -114,6 +115,7 @@
 - [x] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
 - [x] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - [!] 补跑最小 Pipeline 真实 UI run；本轮已到 explorer/task_selection gate 并写入 `patch-work/explorer/report-001.md`，planner fallback 已修复，但真实后续 run 被 `Insufficient Balance` 阻塞，仍未到 developer / reviewer / tester。
+- [x] 修复 Pipeline planner 自然语言 fallback 并提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 - [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`。
 - [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.94` 并同步 lockfile workspace 版本。
 - [x] 提交阶段 13 追加修复：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
@@ -145,6 +147,7 @@
 - [x] 本阶段追加提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`
 - [x] 本阶段 Plan Mode 证据补强提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`
 - [x] 本阶段 Watchdog / Teams auto-resume 证据补强提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`
+- [x] 本阶段 Pipeline planner fallback 证据补强提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`
 
 ### 阶段 13 当前说明
 

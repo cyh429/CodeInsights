@@ -36,7 +36,7 @@
 - 阶段 13 追加修复：46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据
 - 阶段 13 Plan Mode 退出证据补强：acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据
 - 阶段 13 Watchdog / Teams auto-resume 证据补强：b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据
-- 阶段 13 planner fallback 修复：待提交
+- 阶段 13 Pipeline planner fallback 证据补强：6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据
 
 当前版本：
 - @rv-insights/shared：0.1.40
@@ -54,7 +54,7 @@
 - 当前工作树可能只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 噪音；不要纳入提交。
 
 当前未完成：
-- 最小 Pipeline 真实 UI run 已进入 `explorer/task_selection` gate 并写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
+- 最小 Pipeline 真实 UI run 已进入 `explorer/task_selection` gate 并写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复并提交为 `6171f164`，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
 - 已定位 Electron 退出根因：先前 9333 实例持有单实例锁，导致 9334 新进程退出；结束旧实例后 9334 CDP 可连接。
 - 飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞；不要伪造通过。
 - 仍不能默认开启 Runner v2。
