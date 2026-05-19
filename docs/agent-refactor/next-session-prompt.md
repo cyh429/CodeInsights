@@ -40,7 +40,7 @@
 
 当前版本：
 - @rv-insights/shared：0.1.40
-- @rv-insights/electron：0.0.94
+- @rv-insights/electron：0.0.95
 
 当前状态：
 - 默认 Agent 对话仍走旧 Orchestrator 主循环。
@@ -51,27 +51,28 @@
 - 阶段 13 已真实 Electron 补跑通过：Runner v2 发送、停止、权限 approve、权限 deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - `sdk_session` 去重已从 Orchestrator 过滤补强到 event log writer 层，避免 `queryOptions.onSessionId` 多次触发写入重复 `sdk_session`。
 - Plan Mode 退出事件持久化已补强：只有 `approve_auto` / `approve_edit` 写 `plan_mode_exited`；`deny` / `feedback` 不写退出事件，避免 replay 错误关闭 plan mode。
+- Codex Pipeline runner 已补强本机 auth 隔离：无渠道场景支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，内部 Git snapshot 清理宿主 `GIT_*` 环境并 fail closed，单测不再依赖开发机本机登录。
+- Pipeline 深水位真实 UI run `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，HEAD / refs / index / config 未被污染。
 - 当前工作树可能只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 噪音；不要纳入提交。
 
 当前未完成：
-- 最小 Pipeline 真实 UI run 已进入 `explorer/task_selection` gate 并写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复并提交为 `6171f164`，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
 - 已定位 Electron 退出根因：先前 9333 实例持有单实例锁，导致 9334 新进程退出；结束旧实例后 9334 CDP 可连接。
 - 飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞；不要伪造通过。
 - 仍不能默认开启 Runner v2。
 
 当前明确已完成：
 - Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
-- Pipeline v2 真实补跑已补到 explorer/task_selection gate，并修复 planner 自然语言 fallback；完整 developer / reviewer / tester 仍被渠道余额阻塞。
+- Pipeline v2 真实补跑已补到 explorer/task_selection gate、planner fallback、developer、reviewer、tester 和 committer draft；Git guard、HEAD/refs/index/config 校验和 tester evidence 保守判定已形成证据。
+- Codex Pipeline runner strict schema 与 auth / Git guard 隔离补强：递归检查所有 object schema 必填字段，reviewer 空字符串字段保守拒绝，clean-env Codex runner 测试通过。
 - Runner v2 真实 Electron 交互证据：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - 验证证据：`bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、`git diff --check` 已在阶段 13 文档中记录。
 
-下一步请继续阶段 13 真实证据补齐：
+下一步请继续阶段 13 收尾：
 1. 先确认 `git status --short`，只忽略 `.DS_Store`、`improve/` 等无关噪音。
 2. 不默认开启 feature flag，不删除旧 Agent 主循环，不做 UI 改版。
-3. 优先确认可用模型余额/渠道；当前 DeepSeek 返回 `Insufficient Balance` 会阻断 Pipeline 深水位真实 run。
-4. 再补能到 developer / reviewer / tester 的最小 Pipeline 真实 UI run，复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
-5. 检查飞书配置文件；若仍不存在，继续明确记录阻塞，不能伪造通过。
-6. 完成后更新 `tasks/todo.md`、`docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md` 和 `docs/agent-refactor/next-session-prompt.md`。
-7. 验证至少包括 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
-8. 提交只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动；提交信息用详细中文说明完成项、验证项和未完成项。
+3. 复核本轮 `CODEX_HOME` auth 隔离、strict schema、deepwater evidence 文档是否已提交。
+4. 检查飞书配置文件；若仍不存在，继续明确记录阻塞，不能伪造通过。
+5. 如需再次重跑 Pipeline 深水位，先确认可用模型余额/渠道；当前本机开发配置仍只有 DeepSeek 渠道。
+6. 验证至少包括 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、clean-env Codex runner 测试、Electron 真实交互证据复核和 `git diff --check`。
+7. 提交只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动；提交信息用详细中文说明完成项、验证项和未完成项。
 ```

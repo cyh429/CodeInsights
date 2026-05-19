@@ -1,10 +1,10 @@
 import { execFileSync, spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { delimiter, dirname, join, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import type {
   PipelineNodeKind,
   PipelineStreamEvent,
@@ -79,6 +79,15 @@ interface CodexGitGuardSnapshot {
 interface CodexCommandGuard {
   env: Record<string, string>
   cleanup(): Promise<void>
+}
+
+interface CodexAuthState {
+  kind: 'api_key' | 'native'
+  codexHome?: string
+}
+
+interface CodexCommandGuardOptions {
+  auth: CodexAuthState
 }
 
 export interface CodexCliRunInput {
@@ -265,10 +274,38 @@ function runGitOrNull(repositoryRoot: string, args: string[]): string | null {
     return execFileSync('git', ['-C', repositoryRoot, ...args], {
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'],
+      env: buildInternalGitEnv(),
     }).trim()
   } catch {
     return null
   }
+}
+
+function isUnsafeGitEnvironmentKey(key: string): boolean {
+  return key === 'GIT_DIR'
+    || key === 'GIT_WORK_TREE'
+    || key === 'GIT_INDEX_FILE'
+    || key === 'GIT_ASKPASS'
+    || key === 'SSH_ASKPASS'
+    || key === 'GIT_SSH'
+    || key === 'GIT_SSH_COMMAND'
+    || key === 'GIT_CONFIG'
+    || key === 'GIT_CONFIG_GLOBAL'
+    || key === 'GIT_CONFIG_SYSTEM'
+    || key === 'GIT_CONFIG_NOSYSTEM'
+    || key === 'GIT_CONFIG_COUNT'
+    || key.startsWith('GIT_CONFIG_KEY_')
+    || key.startsWith('GIT_CONFIG_VALUE_')
+}
+
+function buildInternalGitEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env }
+  for (const key of Object.keys(env)) {
+    if (isUnsafeGitEnvironmentKey(key)) {
+      delete env[key]
+    }
+  }
+  return env
 }
 
 function listGitRemotes(repositoryRoot: string): string[] {
@@ -339,32 +376,46 @@ function blockedCliCmdScript(command: string): string {
 async function createCodexCommandGuard(
   env: Record<string, string>,
   repositoryRoot: string | undefined,
+  options: CodexCommandGuardOptions,
 ): Promise<CodexCommandGuard> {
   const guarded = withRemoteWriteGuards(env, repositoryRoot)
-  if (!repositoryRoot) {
-    return {
-      env: guarded,
-      cleanup: async () => {},
-    }
+  if (options.auth.kind === 'native') {
+    delete guarded.CODEX_API_KEY
   }
-
   const originalPath = guarded.PATH ?? process.env.PATH ?? ''
-  const guardDir = await mkdtemp(join(tmpdir(), 'rv-codex-command-guard-'))
   const guardHome = await mkdtemp(join(tmpdir(), 'rv-codex-home-'))
   const gitConfigPath = join(guardHome, '.gitconfig')
-  const gitShellPath = join(guardDir, 'git')
-  const gitCmdPath = join(guardDir, 'git.cmd')
-  await writeFile(gitConfigPath, '', 'utf-8')
-  await writeFile(gitShellPath, gitGuardShellScript(), 'utf-8')
-  await writeFile(gitCmdPath, gitGuardCmdScript(), 'utf-8')
-  await chmod(gitShellPath, 0o755)
+  const isolatedCodexHome = options.auth.kind === 'native' && options.auth.codexHome
+    ? options.auth.codexHome
+    : join(guardHome, '.codex')
+  let guardDir: string | undefined
 
-  for (const command of ['gh', 'hub']) {
-    const shellPath = join(guardDir, command)
-    const cmdPath = join(guardDir, `${command}.cmd`)
-    await writeFile(shellPath, blockedCliShellScript(command), 'utf-8')
-    await writeFile(cmdPath, blockedCliCmdScript(command), 'utf-8')
-    await chmod(shellPath, 0o755)
+  await mkdir(join(guardHome, '.config'), { recursive: true })
+  if (options.auth.kind === 'api_key') {
+    await mkdir(isolatedCodexHome, { recursive: true })
+  }
+  await writeFile(gitConfigPath, '', 'utf-8')
+
+  const guardedGitEnv: Record<string, string> = {}
+  if (repositoryRoot) {
+    guardDir = await mkdtemp(join(tmpdir(), 'rv-codex-command-guard-'))
+    const gitShellPath = join(guardDir, 'git')
+    const gitCmdPath = join(guardDir, 'git.cmd')
+    await writeFile(gitShellPath, gitGuardShellScript(), 'utf-8')
+    await writeFile(gitCmdPath, gitGuardCmdScript(), 'utf-8')
+    await chmod(gitShellPath, 0o755)
+
+    for (const command of ['gh', 'hub']) {
+      const shellPath = join(guardDir, command)
+      const cmdPath = join(guardDir, `${command}.cmd`)
+      await writeFile(shellPath, blockedCliShellScript(command), 'utf-8')
+      await writeFile(cmdPath, blockedCliCmdScript(command), 'utf-8')
+      await chmod(shellPath, 0o755)
+    }
+
+    guardedGitEnv.GIT_DIR = '/__rv_insights_git_disabled__'
+    guardedGitEnv.RV_INSIGHTS_GIT_DISABLED = '1'
+    guardedGitEnv.PATH = [guardDir, originalPath].filter(Boolean).join(delimiter)
   }
 
   return {
@@ -373,17 +424,18 @@ async function createCodexCommandGuard(
       HOME: guardHome,
       USERPROFILE: guardHome,
       XDG_CONFIG_HOME: join(guardHome, '.config'),
-      GIT_DIR: '/__rv_insights_git_disabled__',
+      CODEX_HOME: isolatedCodexHome,
       GIT_CONFIG_GLOBAL: gitConfigPath,
       GIT_CONFIG_NOSYSTEM: '1',
       GCM_INTERACTIVE: 'Never',
       GIT_ASKPASS: '',
       SSH_ASKPASS: '',
-      RV_INSIGHTS_GIT_DISABLED: '1',
-      PATH: [guardDir, originalPath].filter(Boolean).join(delimiter),
+      ...guardedGitEnv,
     },
     cleanup: async () => {
-      await rm(guardDir, { recursive: true, force: true })
+      if (guardDir) {
+        await rm(guardDir, { recursive: true, force: true })
+      }
       await rm(guardHome, { recursive: true, force: true })
     },
   }
@@ -408,7 +460,48 @@ function sanitizeCodexGitEnvironment(env: Record<string, string>): Record<string
   ]) {
     delete sanitized[key]
   }
+  for (const key of Object.keys(sanitized)) {
+    if (isUnsafeGitEnvironmentKey(key)) {
+      delete sanitized[key]
+    }
+  }
   return sanitized
+}
+
+function resolveNativeCodexHome(env: Record<string, string>): string {
+  const explicitCodexHome = env.CODEX_HOME?.trim()
+  if (explicitCodexHome) return resolve(explicitCodexHome)
+
+  const homeDir = env.HOME || env.USERPROFILE || homedir()
+  return join(homeDir, '.codex')
+}
+
+function getNativeCodexAuthPath(env: Record<string, string>): string {
+  return join(resolveNativeCodexHome(env), 'auth.json')
+}
+
+function resolveCodexAuth(
+  runtime: CodexRuntimeOptions,
+  env: Record<string, string>,
+): CodexAuthState {
+  if (runtime.apiKey) {
+    return { kind: 'api_key' }
+  }
+
+  const codexHome = resolveNativeCodexHome(env)
+  const authPath = getNativeCodexAuthPath(env)
+  if (existsSync(authPath)) {
+    return {
+      kind: 'native',
+      codexHome,
+    }
+  }
+
+  if (env.CODEX_API_KEY) {
+    return { kind: 'api_key' }
+  }
+
+  throw new Error('Codex 节点未配置 Pipeline Codex 渠道，且未检测到 CODEX_API_KEY、CODEX_HOME/auth.json 或本机 ~/.codex/auth.json，请配置 OpenAI/Custom Codex 渠道或先完成本机 Codex 登录')
 }
 
 function parseGitRefs(output: string): Map<string, string> {
@@ -464,7 +557,9 @@ function createCodexGitGuardSnapshot(
   const task = getContributionTaskByPipelineSessionId(context.sessionId)
   if (!task) return null
   const headCommit = runGitOrNull(task.repositoryRoot, ['rev-parse', 'HEAD'])
-  if (!headCommit) return null
+  if (!headCommit) {
+    throw new Error('Pipeline v2 Git guard 初始化失败：无法读取 repository HEAD')
+  }
 
   return {
     repositoryRoot: task.repositoryRoot,
@@ -492,7 +587,9 @@ function assertCodexGitGuardUnchanged(snapshot: CodexGitGuardSnapshot | null): v
   if (!snapshot) return
   const violations: string[] = []
   const currentHead = runGitOrNull(snapshot.repositoryRoot, ['rev-parse', 'HEAD'])
-  if (currentHead && currentHead !== snapshot.headCommit) {
+  if (!currentHead) {
+    violations.push('读取 Git HEAD 失败')
+  } else if (currentHead !== snapshot.headCommit) {
     runGitOrNull(snapshot.repositoryRoot, ['reset', '--soft', snapshot.headCommit])
     violations.push('创建真实 Git commit')
   }
@@ -916,9 +1013,12 @@ export class CodexCliPipelineNodeRunner implements PipelineNodeRunner {
     const workspace = resolveCodexWorkspace(this.workspaceId, context.sessionId)
     const runtime = resolveCodexRuntime(this.channelId)
     const gitGuard = createCodexGitGuardSnapshot(node, context)
+    const codexEnv = sanitizeCodexGitEnvironment(await buildCodexEnv())
+    const codexAuth = resolveCodexAuth(runtime, codexEnv)
     const commandGuard = await createCodexCommandGuard(
-      sanitizeCodexGitEnvironment(await buildCodexEnv()),
+      codexEnv,
       gitGuard?.repositoryRoot,
+      { auth: codexAuth },
     )
     const prompt = buildCodexPrompt(node, context, workspace.name)
 
@@ -996,9 +1096,12 @@ export class CodexSdkPipelineNodeRunner implements PipelineNodeRunner {
     const workspace = resolveCodexWorkspace(this.workspaceId, context.sessionId)
     const runtime = resolveCodexRuntime(this.channelId)
     const gitGuard = createCodexGitGuardSnapshot(node, context)
+    const codexEnv = sanitizeCodexGitEnvironment(await buildCodexEnv())
+    const codexAuth = resolveCodexAuth(runtime, codexEnv)
     const commandGuard = await createCodexCommandGuard(
-      sanitizeCodexGitEnvironment(await buildCodexEnv()),
+      codexEnv,
       gitGuard?.repositoryRoot,
+      { auth: codexAuth },
     )
     const prompt = buildCodexPrompt(node, context, workspace.name)
     try {

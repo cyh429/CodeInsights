@@ -5,13 +5,42 @@
 - [x] 阶段 0-12 均已完成并提交。
 - [x] 阶段 13 已完成并提交代码侧等价补强：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出事件持久化、Watchdog / Teams auto-resume。
 - [x] 阶段 13 已完成真实 Electron Runner v2 交互证据：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- [x] 最新阶段 13 提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；planner 自然语言 fallback 修复已完成并提交。
-- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.94`。
+- [x] 最新已提交阶段 13 证据：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；本轮 Codex auth 隔离、strict schema 和 clean-env 测试稳定性补强随阶段 13 收尾提交。
+- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.95`。
 - [!] 当前仍不能默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
-- [!] 剩余关键缺口 1：Pipeline 深水位真实 UI run 已到 `explorer/task_selection` human gate 并写入 patch-work report；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，仍未到 developer / reviewer / tester。
+- [x] Pipeline 深水位真实 UI run 已补齐：sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard 与 tester evidence。
 - [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
 - [!] 剩余关键缺口 3：飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
-- [ ] 下次启动优先顺序：确认工作树噪音 -> 确认可用模型余额/渠道 -> 补 Pipeline 深水位 UI run -> 检查飞书配置 -> 更新文档和验证 -> 阶段提交。
+- [x] 下次启动优先顺序已更新：确认工作树噪音 -> 复核阶段 13 收尾提交 -> 检查飞书配置 -> 再判断是否进入 Runner v2 默认化评估。
+
+## 2026-05-19 Agent 重构阶段 13：Pipeline 深水位续跑计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13 baseline 和 next-session prompt。
+- [x] 检查 `git status --short`，确认当前只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 噪音，不纳入阶段提交。
+- [x] 确认可用渠道/模型：本机开发配置仍只有 DeepSeek 渠道；本轮采用已完成的 deepwater session 证据，不再重新赌余额。
+- [x] 启动 Electron / CDP，并在 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1`、`RV_AGENT_RUNTIME_RUNNER_V2=1` 下补跑最小 Pipeline v2 真实 UI run。
+- [x] 让 Pipeline 至少进入 developer / reviewer / tester，记录 sessionId、gateId、选择的 report、records、patch-work 文件和最终状态。
+- [x] 复验 Git 写入防护：确认 developer / tester 阶段没有污染 HEAD、refs、index、local config，并保留校验命令/结果。
+- [x] 复验 tester 证据保守判定：真实 session 的 evidence 全部为 `passed`，缺失或 failed/skipped evidence 仍由聚焦测试保守阻断。
+- [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在，继续记录阻塞，不伪造通过。
+- [x] 更新 `docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`、`docs/agent-refactor/next-session-prompt.md` 和本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、clean-env Codex runner 测试、Electron 真实交互证据复核和 `git diff --check`。
+- [x] 阶段 13 本轮补证完成后单独提交，只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动。
+
+## 2026-05-19 Agent 重构阶段 13：Pipeline 深水位与 Codex auth Review
+
+- Pipeline deepwater session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已形成真实 UI 证据：`patch-work/dev.md`、`patch-work/review.md`、`patch-work/result.md`、`patch-work/commit.md`、`patch-work/pr.md` 和 `patch-work/patch-set/*` 均存在。
+- Reviewer 只读通过：`patch-work/review.md` 结论 `approved=true`，未发现 blocking issue。
+- Tester workspace-write 通过：`patch-work/result.md` 记录 `bun test` 与 `bun test --coverage` 成功；`test-evidence.json` 三条 evidence 均为 `passed`。
+- Committer 仅生成草稿：`commit.md` / `pr.md` 均为 draft only，明确未执行 `git add`、`git commit`、`git push` 或创建 PR。
+- Git guard 复验通过：HEAD 为 `9e701190e6ea8ca80f4417aa6300d70b40f89e50`，refs 仅 `refs/heads/main`，staged diff 为空，index SHA256 为 `676c9ec5d1621f8e7007ec8d6fdc415332a3703d641a0c323ba7f3367472ea74`，config SHA256 为 `507d44b93b030d2b2c78262ca9920be5a0d43ca914dce94943f5007673f91a37`。
+- Codex Pipeline runner 已补强 auth 隔离：支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，测试默认用假 `CODEX_API_KEY`，只有 fail-fast 用例保留无凭证路径。
+- Strict schema 已补递归测试，所有 object schema 的 `required` 必须完整覆盖 `properties`，Codex mock finalResponse 已更新为符合 schema 的响应；reviewer `structuredIssues` 的 id / file / suggestedFix 空字符串会被保守拒绝。
+- Git guard 已补宿主 `GIT_*` 环境隔离：内部 Git snapshot 使用清理后的环境，v2 写入节点存在 contribution task 但无法读取 HEAD 时 fail closed，避免因宿主 `GIT_DIR` / `GIT_CONFIG_COUNT` 导致 guard 不安装。
+- 飞书配置复查仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在，不能伪造通过。
+- clean-env Codex runner 单测在 3 秒等待窗口下曾复现 `grandchild.pid` 假阴性超时；已把进程树 fixture 等待窗口调宽到 10 秒，避免干净环境 Bun 子进程冷启动导致误报。
+- 已通过 clean-env Codex runner 单测：空 `HOME` / 空 `CODEX_HOME` / 无 `CODEX_API_KEY` / 无 `OPENAI_API_KEY` 下 `codex-pipeline-node-runner.test.ts` 30 pass。
+- 已通过本轮收尾验证：`bun run typecheck`；Agent / Runtime / Event Log / Renderer atoms 聚焦测试 44 pass；Pipeline 聚焦测试 87 pass；clean-env Codex runner 单测 30 pass；`git diff --check`。
 
 ## 2026-05-19 Agent 重构阶段 13：Pipeline planner fallback 与深水位补跑 Review
 

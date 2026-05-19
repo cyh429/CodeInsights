@@ -293,7 +293,8 @@ function buildV2SystemPromptAppendix(
       'Pipeline v2 约束：',
       '- 必须基于已接受的 patch-work/plan.md 和 patch-work/test-plan.md 完成实现。',
       '- 可以修改源码和测试，但不要执行 git commit、git push 或创建 PR。',
-      '- 最终 JSON 可包含 devMarkdown；应用会把它写入 patch-work/dev.md。',
+      '- 最终 JSON 必须包含 changedFiles、testsRun、devMarkdown；没有可填内容时使用空数组或空字符串。',
+      '- 应用会把 devMarkdown 写入 patch-work/dev.md。',
       '- devMarkdown 必须覆盖需求复述、实现摘要、变更文件、验证情况、未执行验证、风险和 reviewer 关注点。',
     ].join('\n')
   }
@@ -303,8 +304,9 @@ function buildV2SystemPromptAppendix(
       'Pipeline v2 约束：',
       '- 必须保持 read-only，不要修改源码、patch-work 或 Git 状态。',
       '- 必须读取已接受的 patch-work/dev.md，并结合 git diff -- . \':!patch-work/**\' 审查源码变更。',
+      '- 最终 JSON 必须包含 issues、structuredIssues、reviewMarkdown；没有结构化问题时 structuredIssues 使用空数组。',
       '- issues 字段保留问题标题数组；structuredIssues 提供 stable id、severity、category、detail 和 status。',
-      '- 最终 JSON 可包含 reviewMarkdown；应用会把它写入 patch-work/review.md。',
+      '- 应用会把 reviewMarkdown 写入 patch-work/review.md。',
     ].join('\n')
   }
 
@@ -314,7 +316,7 @@ function buildV2SystemPromptAppendix(
       '- 必须读取已接受的 patch-work/test-plan.md、patch-work/dev.md 和最新 patch-work/review.md。',
       '- 可以运行测试和做必要修复，但不要执行 git 命令、git commit、git push 或创建 PR。',
       '- 应用会在节点结束后生成 patch-set，并保证排除 patch-work/**。',
-      '- 最终 JSON 可包含 passed、testEvidence 和 resultMarkdown；应用会写入 result.md 和 patch-work/patch-set/*。',
+      '- 最终 JSON 必须包含 passed、testEvidence 和 resultMarkdown；应用会写入 result.md 和 patch-work/patch-set/*。',
       '- 如果环境缺失导致测试无法运行，请把原因写入 blockers，并将 passed 设为 false。',
     ].join('\n')
   }
@@ -325,7 +327,7 @@ function buildV2SystemPromptAppendix(
       '- 必须读取已接受的 patch-work/result.md、patch-set/changes.patch、patch-set/changed-files.json、patch-set/diff-summary.md、patch-set/test-evidence.json、CONTRIBUTING 和 Git 状态。',
       '- 只生成 commit.md 和 pr.md 草稿，不要执行 git add、git commit、git push 或创建 PR。',
       '- 应用会把提交材料写入 patch-work/commit.md 和 patch-work/pr.md。',
-      '- 最终 JSON 可包含 commitMarkdown 和 prMarkdown；如果没有充分阻塞，也必须保持 draft-only，不得尝试真实本地提交或远端写。',
+      '- 最终 JSON 必须包含 commitMarkdown 和 prMarkdown；如果没有充分阻塞，也必须保持 draft-only，不得尝试真实本地提交或远端写。',
     ].join('\n')
   }
 
@@ -588,7 +590,7 @@ function explorerReportDraftSchema(): Record<string, unknown> {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['title', 'summary'],
+    required: ['title', 'summary', 'rationale', 'keyFiles'],
     properties: {
       title: { type: 'string' },
       summary: { type: 'string' },
@@ -618,7 +620,7 @@ function testRunSchema(): Record<string, unknown> {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['command', 'status', 'summary'],
+    required: ['command', 'status', 'summary', 'durationMs'],
     properties: {
       command: { type: 'string' },
       status: {
@@ -626,6 +628,7 @@ function testRunSchema(): Record<string, unknown> {
         enum: ['passed', 'failed', 'skipped'],
       },
       summary: { type: 'string' },
+      durationMs: { type: 'number' },
     },
   }
 }
@@ -634,7 +637,7 @@ function reviewIssueSchema(): Record<string, unknown> {
   return {
     type: 'object',
     additionalProperties: false,
-    required: ['severity', 'category', 'title', 'detail', 'status'],
+    required: ['id', 'severity', 'category', 'title', 'detail', 'status', 'file', 'line', 'suggestedFix'],
     properties: {
       id: { type: 'string' },
       severity: {
@@ -664,7 +667,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['summary', 'findings', 'keyFiles', 'nextSteps'],
+        required: ['summary', 'findings', 'keyFiles', 'nextSteps', 'reports'],
         properties: {
           summary: { type: 'string' },
           findings: stringArraySchema(),
@@ -680,7 +683,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['summary', 'steps', 'risks', 'verification'],
+        required: ['summary', 'steps', 'risks', 'verification', 'planMarkdown', 'testPlanMarkdown'],
         properties: {
           summary: { type: 'string' },
           steps: stringArraySchema(),
@@ -694,7 +697,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['summary', 'changes', 'tests', 'risks'],
+        required: ['summary', 'changes', 'tests', 'risks', 'changedFiles', 'testsRun', 'devMarkdown'],
         properties: {
           summary: { type: 'string' },
           changes: stringArraySchema(),
@@ -715,7 +718,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['approved', 'summary', 'issues'],
+        required: ['approved', 'summary', 'issues', 'structuredIssues', 'reviewMarkdown'],
         properties: {
           approved: { type: 'boolean' },
           summary: { type: 'string' },
@@ -731,7 +734,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['summary', 'commands', 'results', 'blockers', 'passed', 'testEvidence'],
+        required: ['summary', 'commands', 'results', 'blockers', 'passed', 'testEvidence', 'resultMarkdown'],
         properties: {
           summary: { type: 'string' },
           commands: stringArraySchema(),
@@ -744,7 +747,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
             items: {
               type: 'object',
               additionalProperties: false,
-              required: ['command', 'status', 'summary'],
+              required: ['command', 'status', 'summary', 'durationMs'],
               properties: {
                 command: { type: 'string' },
                 status: {
@@ -763,7 +766,7 @@ export function pipelineNodeJsonSchema(node: PipelineNodeKind): Record<string, u
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['summary', 'commitMessage', 'prTitle', 'prBody', 'submissionStatus', 'blockers', 'risks'],
+        required: ['summary', 'commitMessage', 'prTitle', 'prBody', 'submissionStatus', 'blockers', 'risks', 'commitMarkdown', 'prMarkdown'],
         properties: {
           summary: { type: 'string' },
           commitMessage: { type: 'string' },
@@ -1091,9 +1094,7 @@ function readOptionalReviewIssues(
       return
     }
     const record = item as Record<string, unknown>
-    const id = typeof record.id === 'string' && record.id.trim()
-      ? record.id.trim()
-      : buildStableReviewIssueId(index)
+    const id = typeof record.id === 'string' ? record.id.trim() : ''
     const severity = readEnumValue<PipelineReviewIssueSeverity>(
       record.severity,
       ['blocker', 'major', 'minor', 'nit'] as const,
@@ -1108,7 +1109,10 @@ function readOptionalReviewIssues(
       record.status,
       ['open', 'fixed', 'accepted_risk'] as const,
     )
-    if (!severity || !category || !title || !detail || !status) {
+    const file = typeof record.file === 'string' ? record.file.trim() : ''
+    const suggestedFix = typeof record.suggestedFix === 'string' ? record.suggestedFix.trim() : ''
+    const line = typeof record.line === 'number' && Number.isFinite(record.line) ? record.line : undefined
+    if (!id || !severity || !category || !title || !detail || !status || !file || line === undefined || !suggestedFix) {
       issues.push(`缺少或非法字段: ${field}[${index}]`)
       return
     }
@@ -1120,11 +1124,9 @@ function readOptionalReviewIssues(
       title,
       detail,
       status,
-      file: typeof record.file === 'string' && record.file.trim() ? record.file.trim() : undefined,
-      line: typeof record.line === 'number' && Number.isFinite(record.line) ? record.line : undefined,
-      suggestedFix: typeof record.suggestedFix === 'string' && record.suggestedFix.trim()
-        ? record.suggestedFix.trim()
-        : undefined,
+      file,
+      line,
+      suggestedFix,
     })
   })
 
@@ -1978,6 +1980,110 @@ function throwIfInvalid(node: PipelineNodeKind, issues: string[], text: string):
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function schemaPath(parent: string, child: string): string {
+  return parent ? `${parent}.${child}` : child
+}
+
+function schemaIssuePath(path: string): string {
+  return path || 'root'
+}
+
+function readSchemaStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : []
+}
+
+function validateJsonSchemaValue(
+  schema: Record<string, unknown>,
+  value: unknown,
+  path: string,
+  issues: string[],
+): void {
+  const type = typeof schema.type === 'string' ? schema.type : undefined
+
+  if (type === 'object') {
+    if (!isRecord(value)) {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+      return
+    }
+
+    const properties = isRecord(schema.properties) ? schema.properties : {}
+    const required = readSchemaStringArray(schema.required)
+    for (const key of required) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) {
+        issues.push(`缺少或非法字段: ${schemaPath(path, key)}`)
+      }
+    }
+
+    if (schema.additionalProperties === false) {
+      const propertyNames = new Set(Object.keys(properties))
+      for (const key of Object.keys(value)) {
+        if (!propertyNames.has(key)) {
+          issues.push(`包含 schema 之外字段: ${schemaPath(path, key)}`)
+        }
+      }
+    }
+
+    for (const [key, propertySchema] of Object.entries(properties)) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) continue
+      if (!isRecord(propertySchema)) continue
+      validateJsonSchemaValue(propertySchema, value[key], schemaPath(path, key), issues)
+    }
+    return
+  }
+
+  if (type === 'array') {
+    if (!Array.isArray(value)) {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+      return
+    }
+    if (typeof schema.minItems === 'number' && value.length < schema.minItems) {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+    }
+    if (isRecord(schema.items)) {
+      value.forEach((item, index) => {
+        validateJsonSchemaValue(schema.items as Record<string, unknown>, item, `${path}[${index}]`, issues)
+      })
+    }
+    return
+  }
+
+  if (type === 'string') {
+    if (typeof value !== 'string') {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+      return
+    }
+  } else if (type === 'boolean') {
+    if (typeof value !== 'boolean') {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+      return
+    }
+  } else if (type === 'number') {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+      return
+    }
+  }
+
+  if (Array.isArray(schema.enum) && !schema.enum.includes(value)) {
+    issues.push(`缺少或非法字段: ${schemaIssuePath(path)}`)
+  }
+}
+
+function validatePipelineNodeJsonSchema(
+  node: PipelineNodeKind,
+  parsed: Record<string, unknown>,
+): string[] {
+  const issues: string[] = []
+  validateJsonSchemaValue(pipelineNodeJsonSchema(node), parsed, '', issues)
+  return issues
+}
+
 function buildStageOutput(node: PipelineNodeKind, text: string): PipelineStageOutput {
   const parsed = parseJsonObject(text)
   if (!parsed) {
@@ -1985,6 +2091,7 @@ function buildStageOutput(node: PipelineNodeKind, text: string): PipelineStageOu
     if (node === 'planner') return buildPlannerFallbackStageOutput(text)
     throw new PipelineStructuredOutputError(node, ['输出不是合法 JSON 对象'], text)
   }
+  throwIfInvalid(node, validatePipelineNodeJsonSchema(node, parsed), text)
   const issues: string[] = []
   const summary = readRequiredString(parsed, 'summary', issues)
 

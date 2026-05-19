@@ -6,7 +6,7 @@
 
 更新时间：2026-05-19
 
-当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强，以及 Pipeline planner 自然语言 fallback 修复均已完成并提交/验证；真实 Electron Runner v2 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline 已补到 explorer/task_selection human gate 和 planner fallback 修复，但完整 developer / reviewer / tester 深水位真实 UI 证据仍被模型余额阻塞，不能默认开启 Runner v2。
+当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强，以及 Pipeline planner 自然语言 fallback 修复均已完成并提交/验证；真实 Electron Runner v2 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline 深水位真实 UI run `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，并复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定；飞书配置仍缺失，当前仍不默认开启 Runner v2。
 
 已完成：
 
@@ -54,9 +54,9 @@
 
 下一步建议：
 
-1. 下一轮优先确认可用模型余额/渠道，避免 Pipeline 深水位 run 被 `Insufficient Balance` 阻塞。
-2. 补跑能到 developer / reviewer / tester 的 Pipeline 真实 UI run，复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
-3. 在证据不足前，不默认开启 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2` 或 `agentRuntimeChannelsV2`。
+1. 本轮补强提交前继续保持 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭。
+2. 若后续要重跑 Pipeline 深水位，先确认可用模型余额/渠道，避免再次被 `Insufficient Balance` 阻塞。
+3. 若本机出现飞书配置，再补飞书入口和飞书群聊 MCP；缺配置时继续明确记录阻塞。
 4. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -68,12 +68,13 @@
 - 2026-05-19 权限 approve 补跑发现重复 `sdk_session` 去重仍不完整；已在 event log writer 层按同一 run 的 `sdkSessionId` 去重，并复验证据中 `sdk_session_count=1`。
 - 2026-05-19 `sdk_session` writer 层去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
 - 2026-05-19 Plan Mode 真实补跑发现 approve 后缺少 `plan_mode_exited` 持久化；已提交 `acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`，只在 `approve_auto` / `approve_edit` 写退出事件，`deny` / `feedback` 保持 plan mode active。
-- 2026-05-19 Runner v2 已补上 Watchdog / Teams auto-resume 的等价测试；但仍缺真实 Electron 前端跑到 human gate / patch-work / tester 的 Pipeline 深水位证据。
+- 2026-05-19 Runner v2 已补上 Watchdog / Teams auto-resume 的等价测试；Pipeline 深水位真实 UI run `342a6f0f-bea1-40eb-9396-378685bfaadc` 已补到 developer / reviewer / tester / committer draft。
 - 2026-05-19 Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`。
 - 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
 - 当前本地配置没有飞书配置；阶段 9 已用 fixture 覆盖 Feishu channel adapter 降级策略，但飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
-- 阶段 13 已启动新的 Pipeline 真实 UI run 并进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复，但后续真实 run 被 DeepSeek `Insufficient Balance` 阻塞，未到 developer / reviewer / tester。
+- 阶段 13 已启动新的 Pipeline 真实 UI run 并进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复；追加 deepwater session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已完成 developer / reviewer / tester / committer draft，patch-set 排除 `patch-work/**`，HEAD / refs / index / config 未被污染。
 - 2026-05-19 Pipeline planner 自然语言 fallback 修复已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
+- 2026-05-19 Codex Pipeline runner 追加支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，内部 Git snapshot 清理宿主 `GIT_*` 环境并 fail closed，并补齐 strict schema 递归校验、reviewer 空字符串保守拒绝和 clean-env 单测。
 - 2026-05-19 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例后 9334 CDP 可连接。
 - 阶段 11 已完成 Renderer 旧 reducer fallback / shadow compare 清理；阶段 12 仍未删除 Agent 主循环旧 `adapter.query()`、Pipeline legacy adapter、shared `adaptAgentEventToRuntimeEvent()` 或旧 session transcript 兼容。
 - 工作树当前只有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
@@ -114,10 +115,10 @@
 - [x] 补充 Runner v2 聚焦测试：UI `sdk_message`、catch error 持久化、retry success、typed error 持久化。
 - [x] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
 - [x] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- [!] 补跑最小 Pipeline 真实 UI run；本轮已到 explorer/task_selection gate 并写入 `patch-work/explorer/report-001.md`，planner fallback 已修复，但真实后续 run 被 `Insufficient Balance` 阻塞，仍未到 developer / reviewer / tester。
+- [x] 补跑最小 Pipeline 真实 UI run；已到 explorer/task_selection gate、planner、developer、reviewer、tester 和 committer draft，sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc`。
 - [x] 修复 Pipeline planner 自然语言 fallback 并提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 - [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`。
-- [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.94` 并同步 lockfile workspace 版本。
+- [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.95` 并同步 lockfile workspace 版本。
 - [x] 提交阶段 13 追加修复：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
 - [x] 提交阶段 13 Plan Mode 退出证据补强：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`。
 
@@ -127,16 +128,17 @@
 - [x] 旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容均保留。
 - [x] 代码侧等价证据已覆盖自动重试、typed error 持久化、catch error 持久化、UI `sdk_message` 推送、Watchdog / Teams auto-resume 等价回路。
 - [x] 真实 Electron Runner v2 交互已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- [!] 真实 Pipeline UI run 已到 explorer human gate / patch-work explorer report；developer / reviewer / tester 仍受模型余额阻塞，飞书入口仍受配置缺失阻塞。
+- [x] 真实 Pipeline UI run 已到 explorer human gate / patch-work explorer report / developer / reviewer / tester / committer draft；飞书入口仍受配置缺失阻塞。
 
 ### 验证
 
 - [x] `bun run typecheck`
 - [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`
 - [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] `env -i HOME=/tmp/rv-clean-home-full-3 USERPROFILE=/tmp/rv-clean-home-full-3 TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
 - [x] `git diff --check`
 - [x] Electron 桌面壳真实交互：Runner v2 发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 已通过。
-- [!] 最小 Pipeline 真实 UI run 已恢复 Electron/CDP 并进入 explorer gate；后续深水位被 `Insufficient Balance` 阻塞，无法进入 developer / reviewer / tester。
+- [x] 最小 Pipeline 真实 UI run 已进入 developer / reviewer / tester / committer draft，并复验 Git guard 与 tester 证据保守判定。
 
 ### 回滚
 

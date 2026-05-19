@@ -35,6 +35,7 @@ const {
   buildPipelineNodeToolPermissionOptions,
   buildPipelineNodePrompts,
   enrichPipelineV2PatchWorkArtifacts,
+  pipelineNodeJsonSchema,
 } = await import('./pipeline-node-runner')
 const { createContributionTask } = await import('./contribution-task-service')
 const {
@@ -112,6 +113,37 @@ describe('pipeline-node-runner', () => {
     expect(prompts.userPrompt).not.toContain('完整计划正文不应进入 compact prompt')
   })
 
+  test('pipelineNodeJsonSchema 为 Codex strict response_format 要求所有 properties 都必填', () => {
+    function expectAllPropertiesRequired(schema: Record<string, unknown>, schemaPath = 'root'): void {
+      const properties = schema.properties
+      expect(properties && typeof properties === 'object' && !Array.isArray(properties)).toBe(true)
+      const propertyKeys = Object.keys(properties as Record<string, unknown>).sort()
+      const requiredKeys = Array.isArray(schema.required)
+        ? schema.required.filter((item): item is string => typeof item === 'string').sort()
+        : []
+      expect(requiredKeys).toEqual(propertyKeys)
+
+      for (const [propertyName, propertySchema] of Object.entries(properties as Record<string, unknown>)) {
+        if (!propertySchema || typeof propertySchema !== 'object' || Array.isArray(propertySchema)) continue
+        const record = propertySchema as Record<string, unknown>
+        if (record.type === 'object' && record.properties) {
+          expectAllPropertiesRequired(record, `${schemaPath}.${propertyName}`)
+          continue
+        }
+        if (record.type === 'array' && record.items && typeof record.items === 'object' && !Array.isArray(record.items)) {
+          const items = record.items as Record<string, unknown>
+          if (items.type === 'object' && items.properties) {
+            expectAllPropertiesRequired(items, `${schemaPath}.${propertyName}[]`)
+          }
+        }
+      }
+    }
+
+    ;(['explorer', 'planner', 'developer', 'reviewer', 'tester', 'committer'] as const).forEach((node) => {
+      expectAllPropertiesRequired(pipelineNodeJsonSchema(node), node)
+    })
+  })
+
   test('Pipeline runtime runner v2 透传 pipeline metadata 并保持 Pipeline 结构化结果', async () => {
     const originalFlag = agentRuntimePipelineRunnerV2.enabled
     agentRuntimePipelineRunnerV2.enabled = true
@@ -152,6 +184,14 @@ describe('pipeline-node-runner', () => {
                 findings: ['复用 AgentRuntimeRunner'],
                 keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
                 nextSteps: ['继续 planner'],
+                reports: [
+                  {
+                    title: '探索结论',
+                    summary: '已完成探索。',
+                    rationale: '需要给后续节点提供可执行方向。',
+                    keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
+                  },
+                ],
               }),
             }],
             status: 'complete',
@@ -226,6 +266,14 @@ describe('pipeline-node-runner', () => {
       findings: ['delta 已累计'],
       keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
       nextSteps: ['避免 complete 重复追加'],
+      reports: [
+        {
+          title: '流式探索',
+          summary: '流式探索完成。',
+          rationale: '验证 delta 与最终消息合并逻辑。',
+          keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
+        },
+      ],
     })
     const runtimeRunner: import('./agent-runtime-types').AgentRuntimeRunner = {
       async *run(input) {
@@ -352,6 +400,12 @@ describe('pipeline-node-runner', () => {
         findings: ['Pipeline 启动失败发生在 explorer'],
         keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
         nextSteps: ['增强结构化输出解析容错'],
+        reports: [{
+          title: 'Pipeline 启动失败',
+          summary: 'Pipeline 启动失败发生在 explorer。',
+          rationale: '该文件包含节点输出解析入口。',
+          keyFiles: ['apps/electron/src/main/lib/pipeline-node-runner.ts'],
+        }],
       }, null, 2),
       '```',
     ].join('\n'))
@@ -416,6 +470,8 @@ describe('pipeline-node-runner', () => {
         steps: ['补测试', '修解析', '跑验证'],
         risks: ['不能放宽字段校验'],
         verification: ['bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts'],
+        planMarkdown: '# 开发方案\n\n- 补测试\n- 修解析\n',
+        testPlanMarkdown: '# 测试方案\n\n- bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts\n',
       }, null, 2),
       '以上为本阶段产物。',
     ].join('\n'))
@@ -465,6 +521,8 @@ describe('pipeline-node-runner', () => {
       approved: true,
       summary: '审查通过',
       issues: [],
+      structuredIssues: [],
+      reviewMarkdown: '# 审查报告\n\n## 结论\n通过。\n',
     }))
 
     expect(result.approved).toBe(true)
@@ -473,7 +531,9 @@ describe('pipeline-node-runner', () => {
       approved: true,
       summary: '审查通过',
       issues: [],
+      structuredIssues: [],
     })
+    expect(result.stageOutput?.content).toContain('"reviewMarkdown":"# 审查报告')
   })
 
   test('tester 缺少 passed 时不会被误判为可继续', () => {
@@ -487,8 +547,10 @@ describe('pipeline-node-runner', () => {
           command: 'bun test',
           status: 'failed',
           summary: '失败',
+          durationMs: 1,
         },
       ],
+      resultMarkdown: '# 测试报告\n\n## 测试结论\n不通过。\n',
     }))).toThrow(/缺少或非法字段: passed/)
   })
 
@@ -499,6 +561,8 @@ describe('pipeline-node-runner', () => {
       results: ['模型声称通过'],
       blockers: [],
       passed: true,
+      testEvidence: [],
+      resultMarkdown: '',
     }))).toThrow(/缺少或非法字段: testEvidence/)
   })
 
@@ -514,8 +578,10 @@ describe('pipeline-node-runner', () => {
           command: 'bun test',
           status: 'failed',
           summary: '失败',
+          durationMs: 1,
         },
       ],
+      resultMarkdown: '# 测试报告\n\n## 测试结论\n不通过。\n',
     }))
 
     expect(result.approved).toBe(false)
@@ -554,8 +620,10 @@ describe('pipeline-node-runner', () => {
           command: 'bun test',
           status: 'failed',
           summary: '存在失败用例',
+          durationMs: 1,
         },
       ],
+      resultMarkdown: '',
     }))
     const enriched = enrichPipelineV2PatchWorkArtifacts('tester', {
       sessionId: 'session-runner-tester-failed-evidence',
@@ -582,6 +650,8 @@ describe('pipeline-node-runner', () => {
       submissionStatus: 'draft_only',
       blockers: [],
       risks: ['未执行真实 commit'],
+      commitMarkdown: '# Commit 准备\n\nfeat: add pipeline v2 skeleton\n',
+      prMarkdown: '# PR 草稿\n\nAdd Pipeline v2 skeleton\n',
     }))
 
     expect(result.approved).toBe(true)
@@ -603,6 +673,8 @@ describe('pipeline-node-runner', () => {
       prBody: 'This PR adds the v2 skeleton.',
       submissionStatus: 'draft_only',
       risks: ['未执行真实 commit'],
+      commitMarkdown: '# Commit 准备\n\nfeat: add pipeline v2 skeleton\n',
+      prMarkdown: '# PR 草稿\n\nAdd Pipeline v2 skeleton\n',
     }))).toThrow(PipelineStructuredOutputError)
   })
 
@@ -615,6 +687,8 @@ describe('pipeline-node-runner', () => {
       submissionStatus: 'local_commit_created',
       blockers: [],
       risks: [],
+      commitMarkdown: '# Commit 准备\n\n模型声称已创建本地提交。\n',
+      prMarkdown: '# PR 草稿\n\n不应创建真实 PR。\n',
     }))).toThrow(PipelineStructuredOutputError)
   })
 
@@ -832,9 +906,24 @@ describe('pipeline-node-runner', () => {
       keyFiles: ['PipelineView.tsx'],
       nextSteps: ['选择任务'],
       reports: [
-        { title: '方向一', summary: '第一份报告。' },
-        { title: '方向二', summary: '第二份报告。' },
-        { title: '方向三', summary: '第三份报告。' },
+        {
+          title: '方向一',
+          summary: '第一份报告。',
+          rationale: '验证 explorer 重跑保留行为。',
+          keyFiles: ['PipelineView.tsx'],
+        },
+        {
+          title: '方向二',
+          summary: '第二份报告。',
+          rationale: '验证 explorer 重跑保留行为。',
+          keyFiles: ['PipelineView.tsx'],
+        },
+        {
+          title: '方向三',
+          summary: '第三份报告。',
+          rationale: '验证 explorer 重跑保留行为。',
+          keyFiles: ['PipelineView.tsx'],
+        },
       ],
     }))
 
@@ -852,7 +941,12 @@ describe('pipeline-node-runner', () => {
       keyFiles: ['PipelineView.tsx'],
       nextSteps: ['选择任务'],
       reports: [
-        { title: '方向一修订版', summary: '重跑后的唯一报告。' },
+        {
+          title: '方向一修订版',
+          summary: '重跑后的唯一报告。',
+          rationale: '重跑结果只保留一个方向。',
+          keyFiles: ['PipelineView.tsx'],
+        },
       ],
     }))
 
@@ -1120,6 +1214,7 @@ describe('pipeline-node-runner', () => {
           command: 'bun test apps/electron/src/main/lib/pipeline-graph.test.ts',
           status: 'passed',
           summary: 'Phase 4 graph 场景通过',
+          durationMs: 42,
         },
       ],
       risks: ['reviewer loop 仍需人工接管上限'],
@@ -1198,7 +1293,7 @@ describe('pipeline-node-runner', () => {
     expect(existsSync(join(repoRoot, 'patch-work', 'dev.md'))).toBe(false)
   })
 
-  test('v2 developer fallback dev.md 对缺失 testsRun 保持保守说明', () => {
+  test('v2 developer 缺少 testsRun 时会被严格 schema 拒绝', () => {
     createContributionTask({
       id: 'task-runner-developer-fallback',
       pipelineSessionId: 'session-runner-developer-fallback',
@@ -1231,23 +1326,14 @@ describe('pipeline-node-runner', () => {
       kinds: ['implementation_plan', 'test_plan'],
     })
 
-    const result = buildNodeExecutionResult('developer', JSON.stringify({
+    expect(() => buildNodeExecutionResult('developer', JSON.stringify({
       summary: '完成 developer 文档',
       changes: ['新增 dev.md fallback'],
       tests: ['bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts'],
       risks: [],
-    }))
-    enrichPipelineV2PatchWorkArtifacts('developer', {
-      sessionId: 'session-runner-developer-fallback',
-      userInput: '实现 Phase 4',
-      currentNode: 'developer',
-      version: 2,
-      reviewIteration: 0,
-    }, result)
-
-    const devMarkdown = readFileSync(join(repoRoot, 'patch-work', 'dev.md'), 'utf-8')
-    expect(devMarkdown).toContain('developer 未提供结构化 testsRun')
-    expect(devMarkdown).not.toContain('## 未执行验证及原因\n- 无。')
+      changedFiles: [],
+      devMarkdown: '# 开发文档\n\n## 需求复述\n完成 developer 文档。\n',
+    }))).toThrow(/缺少或非法字段: testsRun/)
   })
 
   test('v2 developer fallback dev.md 在空 testsRun 时也保持保守说明', () => {
@@ -1287,8 +1373,10 @@ describe('pipeline-node-runner', () => {
       summary: '完成 developer 文档',
       changes: ['新增 dev.md fallback'],
       tests: ['bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts'],
+      changedFiles: [],
       testsRun: [],
       risks: [],
+      devMarkdown: '',
     }))
     enrichPipelineV2PatchWorkArtifacts('developer', {
       sessionId: 'session-runner-developer-empty-tests',
@@ -1360,11 +1448,15 @@ describe('pipeline-node-runner', () => {
       issues: ['缺少 Developer UI 状态测试'],
       structuredIssues: [
         {
+          id: 'RV-REV-001',
           severity: 'major',
           category: 'test_gap',
           title: '缺少 Developer UI 状态测试',
           detail: '需要覆盖 dev.md 文档审核状态。',
           status: 'open',
+          file: 'apps/electron/src/main/lib/pipeline-node-runner.ts',
+          line: 1414,
+          suggestedFix: '补充 Developer UI 状态测试。',
         },
       ],
       reviewMarkdown: '# 审查报告\n\n## 结论\n不通过。\n',
@@ -1402,5 +1494,27 @@ describe('pipeline-node-runner', () => {
       createdByNode: 'reviewer',
     })
     expect(readFileSync(join(repoRoot, 'patch-work', 'review.md'), 'utf-8')).toContain('不通过')
+  })
+
+  test('v2 reviewer 结构化 issue 的空字符串字段会被严格拒绝', () => {
+    expect(() => buildNodeExecutionResult('reviewer', JSON.stringify({
+      approved: false,
+      summary: '缺少验证',
+      issues: ['缺少 Developer UI 状态测试'],
+      structuredIssues: [
+        {
+          id: '',
+          severity: 'major',
+          category: 'test_gap',
+          title: '缺少 Developer UI 状态测试',
+          detail: '需要覆盖 dev.md 文档审核状态。',
+          status: 'open',
+          file: '',
+          line: 1414,
+          suggestedFix: '',
+        },
+      ],
+      reviewMarkdown: '# 审查报告\n\n## 结论\n不通过。\n',
+    }))).toThrow(/缺少或非法字段: structuredIssues\[0\]/)
   })
 })

@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { execFileSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -86,7 +86,7 @@ function initializeGitRepo(repoRoot: string): void {
   git(repoRoot, ['commit', '-m', 'initial'])
 }
 
-async function waitForCondition(predicate: () => boolean, timeoutMs = 3_000): Promise<void> {
+async function waitForCondition(predicate: () => boolean, timeoutMs = 10_000): Promise<void> {
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
     if (predicate()) return
@@ -168,6 +168,123 @@ class FakeCodexCliExecutor implements CodexCliExecutor {
   }
 }
 
+const originalProcessCodexApiKey = process.env.CODEX_API_KEY
+const originalProcessCodexHome = process.env.CODEX_HOME
+
+type CodexTestChangeType = 'added' | 'modified' | 'deleted' | 'renamed'
+type CodexTestEvidenceStatus = 'passed' | 'failed' | 'skipped'
+type CodexTestSubmissionStatus = 'draft_only' | 'blocked'
+
+interface CodexTestChangedFile {
+  path: string
+  changeType: CodexTestChangeType
+  summary: string
+}
+
+interface CodexTestRun {
+  command: string
+  status: CodexTestEvidenceStatus
+  summary: string
+  durationMs: number
+}
+
+interface CodexTestReviewIssue {
+  id: string
+  severity: 'blocker' | 'major' | 'minor' | 'nit'
+  category: 'correctness' | 'regression' | 'test_gap' | 'maintainability' | 'security' | 'style'
+  title: string
+  detail: string
+  status: 'open' | 'fixed' | 'accepted_risk'
+  file: string
+  line: number
+  suggestedFix: string
+}
+
+function developerResponse(input: {
+  summary: string
+  changes?: string[]
+  tests?: string[]
+  risks?: string[]
+  changedFiles?: CodexTestChangedFile[]
+  testsRun?: CodexTestRun[]
+  devMarkdown?: string
+}): string {
+  return JSON.stringify({
+    summary: input.summary,
+    changes: input.changes ?? [],
+    tests: input.tests ?? [],
+    risks: input.risks ?? [],
+    changedFiles: input.changedFiles ?? [],
+    testsRun: input.testsRun ?? [],
+    devMarkdown: input.devMarkdown ?? '',
+  })
+}
+
+function reviewerResponse(input: {
+  approved: boolean
+  summary: string
+  issues?: string[]
+  structuredIssues?: CodexTestReviewIssue[]
+  reviewMarkdown?: string
+}): string {
+  return JSON.stringify({
+    approved: input.approved,
+    summary: input.summary,
+    issues: input.issues ?? [],
+    structuredIssues: input.structuredIssues ?? [],
+    reviewMarkdown: input.reviewMarkdown ?? '',
+  })
+}
+
+function testerResponse(input: {
+  summary: string
+  commands?: string[]
+  results?: string[]
+  blockers?: string[]
+  passed: boolean
+  testEvidence?: CodexTestRun[]
+  resultMarkdown?: string
+}): string {
+  return JSON.stringify({
+    summary: input.summary,
+    commands: input.commands ?? [],
+    results: input.results ?? [],
+    blockers: input.blockers ?? [],
+    passed: input.passed,
+    testEvidence: input.testEvidence ?? [{
+      command: 'bun test',
+      status: 'passed',
+      summary: '通过',
+      durationMs: 1,
+    }],
+    resultMarkdown: input.resultMarkdown ?? '',
+  })
+}
+
+function committerResponse(input: {
+  summary: string
+  commitMessage: string
+  prTitle: string
+  prBody: string
+  submissionStatus: CodexTestSubmissionStatus
+  blockers?: string[]
+  risks?: string[]
+  commitMarkdown?: string
+  prMarkdown?: string
+}): string {
+  return JSON.stringify({
+    summary: input.summary,
+    commitMessage: input.commitMessage,
+    prTitle: input.prTitle,
+    prBody: input.prBody,
+    submissionStatus: input.submissionStatus,
+    blockers: input.blockers ?? [],
+    risks: input.risks ?? [],
+    commitMarkdown: input.commitMarkdown ?? '',
+    prMarkdown: input.prMarkdown ?? '',
+  })
+}
+
 describe('codex-pipeline-node-runner', () => {
   test('resolvePipelineCodexChannelId 默认不注入渠道，使用本机 Codex auth', () => {
     expect(resolvePipelineCodexChannelId({}, {})).toBeUndefined()
@@ -192,6 +309,24 @@ describe('codex-pipeline-node-runner', () => {
       { pipelineCodexChannelId: null },
       { RV_PIPELINE_CODEX_CHANNEL_ID: 'env-channel' },
     )).toBeUndefined()
+  })
+
+  beforeEach(() => {
+    process.env.CODEX_API_KEY = 'test-codex-key'
+    delete process.env.CODEX_HOME
+  })
+
+  afterEach(() => {
+    if (originalProcessCodexApiKey === undefined) {
+      delete process.env.CODEX_API_KEY
+    } else {
+      process.env.CODEX_API_KEY = originalProcessCodexApiKey
+    }
+    if (originalProcessCodexHome === undefined) {
+      delete process.env.CODEX_HOME
+    } else {
+      process.env.CODEX_HOME = originalProcessCodexHome
+    }
   })
 
   test('buildCodexCliArgs 构造 codex exec 结构化输出参数', () => {
@@ -303,11 +438,12 @@ describe('codex-pipeline-node-runner', () => {
 
   test('Codex CLI runner 执行 developer 并解析结构化结果', async () => {
     const events: PipelineStreamEvent[] = []
-    const executor = new FakeCodexCliExecutor(JSON.stringify({
+    const executor = new FakeCodexCliExecutor(developerResponse({
       summary: '完成修复',
       changes: ['新增 Codex CLI runner'],
       tests: ['bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts'],
       risks: [],
+      devMarkdown: '# 开发文档\n\n## 实现摘要\n完成修复。\n',
     }))
     const runner = new CodexCliPipelineNodeRunner({
       executor,
@@ -319,7 +455,7 @@ describe('codex-pipeline-node-runner', () => {
     expect(executor.calls).toHaveLength(1)
     expect(executor.calls[0]?.sandboxMode).toBe('workspace-write')
     expect(executor.calls[0]?.schema).toMatchObject({
-      required: ['summary', 'changes', 'tests', 'risks'],
+      required: ['summary', 'changes', 'tests', 'risks', 'changedFiles', 'testsRun', 'devMarkdown'],
     })
     expect(result.summary).toBe('完成修复')
     expect(result.approved).toBe(true)
@@ -336,10 +472,15 @@ describe('codex-pipeline-node-runner', () => {
 
   test('Codex CLI runner 在 v2 developer 后写入 dev.md 并回填文档 ref', async () => {
     const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+    const previousGitDir = process.env.GIT_DIR
+    const previousGitConfigCount = process.env.GIT_CONFIG_COUNT
     const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-dev-config-'))
     const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-dev-repo-'))
     process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    process.env.GIT_DIR = '/__rv_bad_git_dir__'
+    process.env.GIT_CONFIG_COUNT = '1'
     try {
+      initializeGitRepo(repoRoot)
       createContributionTask({
         id: 'task-codex-dev-doc',
         pipelineSessionId: 'session-codex-dev-doc',
@@ -370,12 +511,27 @@ describe('codex-pipeline-node-runner', () => {
         gateId: 'gate-plan',
         kinds: ['implementation_plan', 'test_plan'],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(developerResponse({
         summary: '完成 Phase 4 developer',
         changes: ['写入 dev.md'],
         tests: ['bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts'],
         risks: [],
         devMarkdown: '# 开发文档\n\n## 实现摘要\n写入 dev.md。\n',
+        changedFiles: [
+          {
+            path: 'apps/electron/src/main/lib/codex-pipeline-node-runner.ts',
+            changeType: 'modified',
+            summary: '补充 dev.md 写入',
+          },
+        ],
+        testsRun: [
+          {
+            command: 'bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts',
+            status: 'passed',
+            summary: '通过',
+            durationMs: 30,
+          },
+        ],
       }))
       const runner = new CodexCliPipelineNodeRunner({ executor })
 
@@ -387,6 +543,8 @@ describe('codex-pipeline-node-runner', () => {
         reviewIteration: 0,
       })
 
+      expect(executor.calls[0]?.env.GIT_DIR).toBe('/__rv_insights_git_disabled__')
+      expect(executor.calls[0]?.env.RV_INSIGHTS_GIT_DISABLED).toBe('1')
       expect(executor.calls[0]?.prompt).toContain('已接受开发方案（plan.md）')
       expect(result.stageOutput).toMatchObject({
         node: 'developer',
@@ -400,6 +558,16 @@ describe('codex-pipeline-node-runner', () => {
         delete process.env.RV_INSIGHTS_CONFIG_DIR
       } else {
         process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+      }
+      if (previousGitDir === undefined) {
+        delete process.env.GIT_DIR
+      } else {
+        process.env.GIT_DIR = previousGitDir
+      }
+      if (previousGitConfigCount === undefined) {
+        delete process.env.GIT_CONFIG_COUNT
+      } else {
+        process.env.GIT_CONFIG_COUNT = previousGitConfigCount
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -452,7 +620,7 @@ describe('codex-pipeline-node-runner', () => {
         gateId: 'gate-test-plan',
         kinds: ['test_plan', 'dev_doc'],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(testerResponse({
         summary: '测试通过',
         commands: ['bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts'],
         results: ['Phase 5 tester 测试通过'],
@@ -569,7 +737,7 @@ describe('codex-pipeline-node-runner', () => {
         gateId: 'gate-test-plan',
         kinds: ['test_plan', 'dev_doc'],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(testerResponse({
         summary: '测试通过且命令防护生效',
         commands: ['bun test'],
         results: ['通过'],
@@ -580,6 +748,7 @@ describe('codex-pipeline-node-runner', () => {
             command: 'bun test',
             status: 'passed',
             summary: '通过',
+            durationMs: 1,
           },
         ],
         resultMarkdown: '# 测试报告\n\n## 测试结论\n通过。\n',
@@ -727,7 +896,7 @@ describe('codex-pipeline-node-runner', () => {
         gateId: 'gate-test-plan',
         kinds: ['test_plan', 'dev_doc'],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(testerResponse({
         summary: '测试通过但不应丢弃补丁',
         commands: ['bun test'],
         results: ['通过'],
@@ -738,6 +907,7 @@ describe('codex-pipeline-node-runner', () => {
             command: 'bun test',
             status: 'passed',
             summary: '通过',
+            durationMs: 1,
           },
         ],
       }), (input) => {
@@ -837,7 +1007,7 @@ describe('codex-pipeline-node-runner', () => {
         gateId: 'gate-tester',
         kinds: ['test_result', 'patch', 'changed_files', 'diff_summary', 'test_evidence'],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(committerResponse({
         summary: '提交材料已生成',
         commitMessage: 'feat(pipeline): add draft submission',
         prTitle: 'Add draft submission materials',
@@ -845,6 +1015,8 @@ describe('codex-pipeline-node-runner', () => {
         submissionStatus: 'draft_only',
         blockers: [],
         risks: ['未执行真实 commit'],
+        commitMarkdown: '# Commit 准备\n\n## 建议 Commit Message\nfeat(pipeline): add draft submission\n',
+        prMarkdown: '# PR 草稿\n\n## 标题\nAdd draft submission materials\n',
       }))
       const runner = new CodexCliPipelineNodeRunner({ executor })
 
@@ -893,7 +1065,7 @@ describe('codex-pipeline-node-runner', () => {
       run: async () => {
         controller.abort()
         return {
-          finalResponse: JSON.stringify({
+          finalResponse: developerResponse({
             summary: '不应发布成功结果',
             changes: [],
             tests: [],
@@ -918,11 +1090,19 @@ describe('codex-pipeline-node-runner', () => {
     const previousCodexKey = process.env.CODEX_API_KEY
     const previousCodexThreadId = process.env.CODEX_THREAD_ID
     const previousAnthropicToken = process.env.ANTHROPIC_AUTH_TOKEN
+    const previousHome = process.env.HOME
+    const previousUserProfile = process.env.USERPROFILE
+    const previousCodexHome = process.env.CODEX_HOME
+    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-cli-api-key-home-'))
+    const ambientCodexHome = join(tempHome, 'ambient-codex-home')
+    process.env.HOME = tempHome
+    process.env.USERPROFILE = tempHome
+    process.env.CODEX_HOME = ambientCodexHome
     process.env.CODEX_API_KEY = 'codex-env-key'
     process.env.CODEX_THREAD_ID = 'outer-thread-id'
     process.env.ANTHROPIC_AUTH_TOKEN = 'anthropic-token'
     try {
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(developerResponse({
         summary: '完成修复',
         changes: [],
         tests: [],
@@ -936,6 +1116,8 @@ describe('codex-pipeline-node-runner', () => {
 
       expect(executor.calls[0]?.apiKey).toBeUndefined()
       expect(executor.calls[0]?.env.CODEX_API_KEY).toBe('codex-env-key')
+      expect(executor.calls[0]?.env.CODEX_HOME).not.toBe(ambientCodexHome)
+      expect(executor.calls[0]?.env.CODEX_HOME).toContain('rv-codex-home-')
       expect(executor.calls[0]?.env.CODEX_THREAD_ID).toBeUndefined()
       expect(executor.calls[0]?.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined()
     } finally {
@@ -954,6 +1136,22 @@ describe('codex-pipeline-node-runner', () => {
       } else {
         process.env.ANTHROPIC_AUTH_TOKEN = previousAnthropicToken
       }
+      if (previousHome === undefined) {
+        delete process.env.HOME
+      } else {
+        process.env.HOME = previousHome
+      }
+      if (previousUserProfile === undefined) {
+        delete process.env.USERPROFILE
+      } else {
+        process.env.USERPROFILE = previousUserProfile
+      }
+      if (previousCodexHome === undefined) {
+        delete process.env.CODEX_HOME
+      } else {
+        process.env.CODEX_HOME = previousCodexHome
+      }
+      rmSync(tempHome, { recursive: true, force: true })
     }
   })
 
@@ -967,15 +1165,15 @@ describe('codex-pipeline-node-runner', () => {
         startThread: (optionsForThread) => {
           threadOptions.push(optionsForThread ?? {})
           return {
-            run: async (_input, optionsForTurn) => {
-              turnOptions.push(optionsForTurn ?? {})
-              return {
-                finalResponse: JSON.stringify({
-                  approved: false,
-                  summary: '需要返工',
-                  issues: ['缺少回归测试'],
-                }),
-              }
+              run: async (_input, optionsForTurn) => {
+                turnOptions.push(optionsForTurn ?? {})
+                return {
+                  finalResponse: reviewerResponse({
+                    approved: false,
+                    summary: '需要返工',
+                    issues: ['缺少回归测试'],
+                  }),
+                }
             },
           }
         },
@@ -998,7 +1196,7 @@ describe('codex-pipeline-node-runner', () => {
     })
     expect(threadOptions[0]?.model).toBeUndefined()
     expect(turnOptions[0]?.outputSchema).toMatchObject({
-      required: ['approved', 'summary', 'issues'],
+      required: ['approved', 'summary', 'issues', 'structuredIssues', 'reviewMarkdown'],
     })
     expect(result.approved).toBe(false)
     expect(result.issues).toEqual(['缺少回归测试'])
@@ -1009,6 +1207,14 @@ describe('codex-pipeline-node-runner', () => {
     const previousOpenAiKey = process.env.OPENAI_API_KEY
     const previousCodexThreadId = process.env.CODEX_THREAD_ID
     const previousAnthropicToken = process.env.ANTHROPIC_AUTH_TOKEN
+    const previousHome = process.env.HOME
+    const previousUserProfile = process.env.USERPROFILE
+    const previousCodexHome = process.env.CODEX_HOME
+    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-api-key-home-'))
+    const ambientCodexHome = join(tempHome, 'ambient-codex-home')
+    process.env.HOME = tempHome
+    process.env.USERPROFILE = tempHome
+    process.env.CODEX_HOME = ambientCodexHome
     process.env.CODEX_API_KEY = 'codex-env-key'
     process.env.OPENAI_API_KEY = 'openai-env-key'
     process.env.CODEX_THREAD_ID = 'outer-thread-id'
@@ -1020,7 +1226,7 @@ describe('codex-pipeline-node-runner', () => {
         return {
           startThread: () => ({
             run: async () => ({
-              finalResponse: JSON.stringify({
+              finalResponse: developerResponse({
                 summary: '完成修复',
                 changes: [],
                 tests: [],
@@ -1041,6 +1247,8 @@ describe('codex-pipeline-node-runner', () => {
       expect(sdkOptions[0]?.baseUrl).toBeUndefined()
       expect(sdkOptions[0]?.env?.CODEX_API_KEY).toBe('codex-env-key')
       expect(sdkOptions[0]?.env?.OPENAI_API_KEY).toBe('openai-env-key')
+      expect(sdkOptions[0]?.env?.CODEX_HOME).not.toBe(ambientCodexHome)
+      expect(sdkOptions[0]?.env?.CODEX_HOME).toContain('rv-codex-home-')
       expect(sdkOptions[0]?.env?.CODEX_THREAD_ID).toBeUndefined()
       expect(sdkOptions[0]?.env?.ANTHROPIC_AUTH_TOKEN).toBeUndefined()
     } finally {
@@ -1064,6 +1272,193 @@ describe('codex-pipeline-node-runner', () => {
       } else {
         process.env.ANTHROPIC_AUTH_TOKEN = previousAnthropicToken
       }
+      if (previousHome === undefined) {
+        delete process.env.HOME
+      } else {
+        process.env.HOME = previousHome
+      }
+      if (previousUserProfile === undefined) {
+        delete process.env.USERPROFILE
+      } else {
+        process.env.USERPROFILE = previousUserProfile
+      }
+      if (previousCodexHome === undefined) {
+        delete process.env.CODEX_HOME
+      } else {
+        process.env.CODEX_HOME = previousCodexHome
+      }
+      rmSync(tempHome, { recursive: true, force: true })
+    }
+  })
+
+  test('Codex SDK runner v2 无渠道时优先使用 native auth 并隔离 ambient CODEX_API_KEY', async () => {
+    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+    const previousHome = process.env.HOME
+    const previousCodexHome = process.env.CODEX_HOME
+    const previousCodexKey = process.env.CODEX_API_KEY
+    const previousCodexThreadId = process.env.CODEX_THREAD_ID
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-native-auth-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-native-auth-repo-'))
+    const nativeHome = mkdtempSync(join(tmpdir(), 'rv-codex-native-home-'))
+    const nativeCodexHome = join(nativeHome, 'custom-codex-home')
+    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    process.env.HOME = nativeHome
+    process.env.CODEX_HOME = nativeCodexHome
+    process.env.CODEX_API_KEY = 'ambient-codex-key'
+    process.env.CODEX_THREAD_ID = 'outer-thread-id'
+    try {
+      mkdirSync(nativeCodexHome, { recursive: true })
+      writeFileSync(join(nativeCodexHome, 'auth.json'), '{}\n', 'utf-8')
+      initializeGitRepo(repoRoot)
+      createContributionTask({
+        id: 'task-codex-sdk-native-auth',
+        pipelineSessionId: 'session-codex-sdk-native-auth',
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'local_patch',
+        allowRemoteWrites: false,
+        status: 'developing',
+      })
+      writePatchWorkFile({
+        contributionTaskId: 'task-codex-sdk-native-auth',
+        pipelineSessionId: 'session-codex-sdk-native-auth',
+        repositoryRoot: repoRoot,
+        kind: 'implementation_plan',
+        createdByNode: 'planner',
+        content: '# 开发方案\n\n- 保留本机 Codex auth。\n',
+      })
+      writePatchWorkFile({
+        contributionTaskId: 'task-codex-sdk-native-auth',
+        pipelineSessionId: 'session-codex-sdk-native-auth',
+        repositoryRoot: repoRoot,
+        kind: 'test_plan',
+        createdByNode: 'planner',
+        content: '# 测试方案\n\n- 验证 Git guard 与本机 auth 可共存。\n',
+      })
+      acceptPatchWorkDocuments({
+        repositoryRoot: repoRoot,
+        gateId: 'gate-native-auth-plan',
+        kinds: ['implementation_plan', 'test_plan'],
+      })
+
+      const sdkOptions: CodexSdkOptions[] = []
+      const createCodexClient: CreateCodexSdkClient = (options) => {
+        sdkOptions.push(options)
+        return {
+          startThread: () => ({
+            run: async () => ({
+              finalResponse: developerResponse({
+                summary: '完成修复',
+                changes: ['尊重 CODEX_HOME'],
+                tests: [],
+                risks: [],
+                devMarkdown: '# 开发文档\n\n尊重 CODEX_HOME。\n',
+              }),
+            }),
+          }),
+        }
+      }
+      const runner = new CodexSdkPipelineNodeRunner({
+        createCodexClient,
+        codexPath: '/mock/codex',
+      })
+
+      await runner.runNode('developer', {
+        sessionId: 'session-codex-sdk-native-auth',
+        userInput: '验证本机 Codex auth',
+        currentNode: 'developer',
+        version: 2,
+        reviewIteration: 0,
+      })
+
+      const env = sdkOptions[0]?.env
+      expect(sdkOptions[0]?.apiKey).toBeUndefined()
+      expect(env?.HOME).not.toBe(nativeHome)
+      expect(env?.CODEX_HOME).toBe(nativeCodexHome)
+      expect(env?.CODEX_API_KEY).toBeUndefined()
+      expect(env?.CODEX_THREAD_ID).toBeUndefined()
+      expect(env?.GIT_DIR).toBe('/__rv_insights_git_disabled__')
+      expect(env?.GIT_CONFIG_GLOBAL).toContain('rv-codex-home-')
+      expect(env?.PATH).toContain('rv-codex-command-guard-')
+    } finally {
+      if (previousConfigDir === undefined) {
+        delete process.env.RV_INSIGHTS_CONFIG_DIR
+      } else {
+        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+      }
+      if (previousHome === undefined) {
+        delete process.env.HOME
+      } else {
+        process.env.HOME = previousHome
+      }
+      if (previousCodexHome === undefined) {
+        delete process.env.CODEX_HOME
+      } else {
+        process.env.CODEX_HOME = previousCodexHome
+      }
+      if (previousCodexKey === undefined) {
+        delete process.env.CODEX_API_KEY
+      } else {
+        process.env.CODEX_API_KEY = previousCodexKey
+      }
+      if (previousCodexThreadId === undefined) {
+        delete process.env.CODEX_THREAD_ID
+      } else {
+        process.env.CODEX_THREAD_ID = previousCodexThreadId
+      }
+      rmSync(tempConfigDir, { recursive: true, force: true })
+      rmSync(repoRoot, { recursive: true, force: true })
+      rmSync(nativeHome, { recursive: true, force: true })
+    }
+  })
+
+  test('Codex SDK runner 无渠道且无 CODEX_API_KEY / 本机 auth 时 fail-fast', async () => {
+    const previousHome = process.env.HOME
+    const previousUserProfile = process.env.USERPROFILE
+    const previousCodexHome = process.env.CODEX_HOME
+    const previousCodexKey = process.env.CODEX_API_KEY
+    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-no-auth-home-'))
+    process.env.HOME = tempHome
+    process.env.USERPROFILE = tempHome
+    delete process.env.CODEX_API_KEY
+    delete process.env.CODEX_HOME
+    try {
+      let clientCreated = false
+      const createCodexClient: CreateCodexSdkClient = () => {
+        clientCreated = true
+        throw new Error('不应创建 Codex client')
+      }
+      const runner = new CodexSdkPipelineNodeRunner({
+        createCodexClient,
+        codexPath: '/mock/codex',
+      })
+
+      await expect(runner.runNode('developer', context('developer'))).rejects.toThrow(
+        /未配置 Pipeline Codex 渠道/,
+      )
+      expect(clientCreated).toBe(false)
+    } finally {
+      if (previousHome === undefined) {
+        delete process.env.HOME
+      } else {
+        process.env.HOME = previousHome
+      }
+      if (previousUserProfile === undefined) {
+        delete process.env.USERPROFILE
+      } else {
+        process.env.USERPROFILE = previousUserProfile
+      }
+      if (previousCodexKey === undefined) {
+        delete process.env.CODEX_API_KEY
+      } else {
+        process.env.CODEX_API_KEY = previousCodexKey
+      }
+      if (previousCodexHome === undefined) {
+        delete process.env.CODEX_HOME
+      } else {
+        process.env.CODEX_HOME = previousCodexHome
+      }
+      rmSync(tempHome, { recursive: true, force: true })
     }
   })
 
@@ -1123,6 +1518,7 @@ describe('codex-pipeline-node-runner', () => {
     const events: PipelineStreamEvent[] = []
     process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
     try {
+      initializeGitRepo(repoRoot)
       createContributionTask({
         id: 'task-codex-sdk-abort',
         pipelineSessionId: 'session-codex-sdk-abort',
@@ -1158,7 +1554,7 @@ describe('codex-pipeline-node-runner', () => {
           run: async () => {
             controller.abort()
             return {
-              finalResponse: JSON.stringify({
+              finalResponse: developerResponse({
                 summary: '不应写入 dev.md',
                 changes: ['不应落盘'],
                 tests: [],
@@ -1220,7 +1616,7 @@ describe('codex-pipeline-node-runner', () => {
             threadOptions.push(optionsForThread ?? {})
             return {
               run: async () => ({
-                finalResponse: JSON.stringify({
+                finalResponse: developerResponse({
                   summary: '完成修复',
                   changes: ['使用 OpenAI 渠道'],
                   tests: [],
@@ -1276,7 +1672,7 @@ describe('codex-pipeline-node-runner', () => {
             threadOptions.push(optionsForThread ?? {})
             return {
               run: async () => ({
-                finalResponse: JSON.stringify({
+                finalResponse: developerResponse({
                   summary: '完成修复',
                   changes: ['使用 Custom 渠道'],
                   tests: [],
@@ -1354,7 +1750,7 @@ describe('codex-pipeline-node-runner', () => {
         enabled: false,
         models: [{ id: 'gpt-5.4', name: 'GPT-5.4', enabled: true }],
       })
-      const executor = new FakeCodexCliExecutor(JSON.stringify({
+      const executor = new FakeCodexCliExecutor(developerResponse({
         summary: '不应执行',
         changes: [],
         tests: [],
