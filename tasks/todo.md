@@ -16,7 +16,7 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加 `sdk_session` 去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；真实 Electron Runner v2 已补齐本轮目标，Pipeline UI 深水位证据仍未补齐，继续进行中。
+- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加 `sdk_session` 去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；真实 Electron Runner v2 已补齐本轮目标，Pipeline UI 深水位证据仍未补齐，继续进行中。
 
 ## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
 
@@ -34,6 +34,7 @@
 - [~] 运行 `bun run typecheck`、Agent / Runtime / Renderer / Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
 - [x] 阶段 13 代码侧补强已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`。
 - [x] 阶段 13 追加修复已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
+- [x] 阶段 13 Plan Mode 退出证据补强已单独提交，不纳入 `.DS_Store`、`improve/` 或无关改动：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`。
 
 ## 2026-05-18 Agent 重构阶段 13：当前 Review
 
@@ -77,6 +78,7 @@
 - 补跑中发现阶段 13 原“重复 sdk_session 去重”仍不完整：`queryOptions.onSessionId` 会多次写入相同 `sdk_session`。已改为 event log writer 对同一 run 内相同 `sdkSessionId` 去重，并新增聚焦测试。
 - 修复后复验：`d2fd3559-3515-40ed-b0dd-304c6c218200.events.jsonl` 中 `sdk_session_count=1`，事件序列保持连续，文件写入成功。
 - 追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
+- Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`。
 - 已将 `@rv-insights/electron` 升到 `0.0.91`，并同步 `bun.lock` workspace 版本元数据。
 - 已通过聚焦测试：`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`。
 - 已通过收尾验证：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（41 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
@@ -85,7 +87,7 @@
 
 ## 2026-05-19 Agent 重构阶段 13：下次启动继续开发入口
 
-- [x] 当前代码侧补强和 `sdk_session` 去重修复已提交，提交号分别为 `328b3c96` 与 `46e62a75`。
+- [x] 当前代码侧补强、`sdk_session` 去重修复和 Plan Mode 退出证据补强已提交，提交号分别为 `328b3c96`、`46e62a75` 与 `acc769f1`。
 - [x] 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均不能默认开启。
 - [x] 已完成真实 Electron Runner v2：发送、停止、权限 approve、权限 deny。
 - [ ] 下一步先补 Runner v2 AskUser 单场景脚本，记录 requestId、`respondAskUser({ requestId, answers })` payload、resolved event、终态和 events JSONL。

@@ -6,7 +6,7 @@
 
 更新时间：2026-05-19
 
-当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强与 `sdk_session` 去重修复均已提交，真实 Electron 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline UI 已启动并可 stop，但未到 human gate / patch-work / tester，不能默认开启 Runner v2。
+当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复和 Plan Mode 退出证据补强均已提交，真实 Electron 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline UI 已启动并可 stop，但未到 human gate / patch-work / tester，不能默认开启 Runner v2。
 
 已完成：
 
@@ -50,7 +50,7 @@
 - [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
-- [~] 阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`
+- [~] 阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`
 
 下一步建议：
 
@@ -66,6 +66,7 @@
 - 2026-05-19 权限 deny 补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，目标文件未生成。
 - 2026-05-19 权限 approve 补跑发现重复 `sdk_session` 去重仍不完整；已在 event log writer 层按同一 run 的 `sdkSessionId` 去重，并复验证据中 `sdk_session_count=1`。
 - 2026-05-19 `sdk_session` writer 层去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
+- 2026-05-19 Plan Mode 真实补跑发现 approve 后缺少 `plan_mode_exited` 持久化；已提交 `acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`，只在 `approve_auto` / `approve_edit` 写退出事件，`deny` / `feedback` 保持 plan mode active。
 - `agentRuntimeRunnerV2` 仍缺 Watchdog、Teams auto-resume 的真实等价证据。
 - 阶段 6 已用聚焦测试覆盖本地 plugin 启用/禁用、snapshot 和 command index；未启动 Electron 桌面壳补跑真实插件启用/禁用交互。
 - 当前本地配置没有飞书配置；阶段 9 已用 fixture 覆盖 Feishu channel adapter 降级策略，但飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
@@ -105,6 +106,7 @@
 - [x] 在 Runner v2 path 继续向 UI 推送 `sdk_message` payload。
 - [x] 在 Orchestrator Runner v2 event log path 过滤重复 `run_started` / `sdk_session`。
 - [x] 在 event log writer 层按同一 run 的 `sdkSessionId` 去重，覆盖 SDK `onSessionId` 多次触发。
+- [x] 在 ExitPlanMode approve 后持久化 `plan_mode_exited`，并确保 deny / feedback 不误写退出事件。
 - [x] 补充 Runner v2 聚焦测试：UI `sdk_message`、catch error 持久化、retry success、typed error 持久化。
 - [x] 补跑真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode。
 - [x] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind。
@@ -112,6 +114,7 @@
 - [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`。
 - [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.92` 并同步 lockfile workspace 版本。
 - [x] 提交阶段 13 追加修复：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
+- [x] 提交阶段 13 Plan Mode 退出证据补强：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`。
 
 ### 验收
 
@@ -137,6 +140,7 @@
 - [x] `agentRuntimeChannelsV2` 默认关闭，旧 Feishu bridge 仍保留。
 - [x] 本阶段提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`
 - [x] 本阶段追加提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`
+- [x] 本阶段 Plan Mode 证据补强提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`
 
 ### 阶段 13 当前说明
 

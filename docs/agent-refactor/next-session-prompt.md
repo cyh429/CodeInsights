@@ -34,6 +34,7 @@
 - 阶段 12：0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固
 - 阶段 13 代码侧补强：328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据
 - 阶段 13 追加修复：46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据
+- 阶段 13 Plan Mode 退出证据补强：acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据
 
 当前版本：
 - @rv-insights/shared：0.1.40
