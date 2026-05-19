@@ -6,6 +6,7 @@ import type {
 } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import type { CanUseToolOptions, PermissionResult } from './agent-permission-service'
+import type { TeamsCoordinator, TeamsCoordinatorDeps } from './agent-orchestrator/teams-coordinator'
 
 export const agentRuntimeRunnerV2 = {
   enabled: process.env.RV_AGENT_RUNTIME_RUNNER_V2 === '1',
@@ -88,6 +89,11 @@ export interface AgentRuntimeRunnerDeps {
   query: AgentRuntimeQuery
   store: AgentRuntimeSdkMessageStore
   interactions?: AgentRuntimeInteractionCallbacks
+  createTeamsCoordinator?: (initialSdkSessionId?: string) => TeamsCoordinator
+  teamsCoordinatorDeps?: TeamsCoordinatorDeps
+  watchdogIntervalMs?: number
+  onTeamsWaitingResume?: (sessionId: string, message: string) => void
+  onTeamsResumeStart?: (sessionId: string, messageId: string) => void
   now?: () => string
   createRunId?: () => string
   retryDelayMs?: (attempt: number) => number

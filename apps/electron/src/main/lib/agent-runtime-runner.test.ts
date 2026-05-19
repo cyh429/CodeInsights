@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentStreamEnvelope, SDKMessage } from '@rv-insights/shared'
+import type { AgentStreamEnvelope, SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
 import type { AgentRuntimeRunInput } from './agent-runtime-types'
@@ -217,6 +217,94 @@ describe('InProcessAgentRuntimeRunner', () => {
     expect(stored.map((message) => message.type)).toEqual(['assistant'])
     expect((stored[0] as { _errorCode?: string } | undefined)?._errorCode).toBe('invalid_api_key')
   })
+
+  test('Teams auto-resume 会延迟 result 并用 summary fallback 继续同一 SDK session', async () => {
+    const stored: SDKMessage[] = []
+    const emitted: SDKMessage[] = []
+    const teamsEvents: string[] = []
+    const prompts: string[] = []
+    let calls = 0
+    const runner = new InProcessAgentRuntimeRunner({
+      createRunId: () => 'run-teams-resume',
+      now: () => baseTime,
+      query: async function* (options) {
+        calls += 1
+        prompts.push(options.prompt)
+        options.onSessionId?.('sdk-team')
+        if (calls === 1) {
+          yield systemMessage({
+            subtype: 'task_started',
+            task_id: 'task-1',
+            task_type: 'local_agent',
+          })
+          yield systemMessage({
+            subtype: 'task_notification',
+            task_id: 'task-1',
+            status: 'completed',
+            summary: 'Worker 已完成实现',
+          })
+          yield resultMessage({ sessionId: 'sdk-team' })
+          return
+        }
+        yield assistantTextMessage('已汇总 teammate 结果')
+      },
+      teamsCoordinatorDeps: {
+        findTeamLeadInboxPath: async () => null,
+        formatSummaryFallbackPrompt: (summaries) => `resume:${summaries[0]?.summary ?? ''}`,
+      },
+      store: {
+        appendMessages: (_sessionId, messages) => {
+          stored.push(...messages)
+        },
+      },
+      onSdkMessage: (_sessionId, message) => {
+        emitted.push(message)
+      },
+      onTeamsWaitingResume: (_sessionId, message) => {
+        teamsEvents.push(`waiting:${message}`)
+      },
+      onTeamsResumeStart: (_sessionId, messageId) => {
+        teamsEvents.push(`start:${messageId.length > 0}`)
+      },
+    })
+
+    const envelopes = await collect(runner.run(createRunInput({ sessionId: 'session-teams-resume' })))
+
+    expect(calls).toBe(2)
+    expect(prompts).toEqual(['你好', 'resume:Worker 已完成实现'])
+    expect(lastEvent(envelopes)).toMatchObject({ type: 'run_completed' })
+    expect(stored.map((message) => message.type)).toEqual(['result', 'assistant'])
+    expect(emitted.map((message) => message.type)).toEqual(['system', 'system', 'assistant', 'result'])
+    expect(teamsEvents).toEqual(['waiting:正在收集 teammate 工作结果...', 'start:true'])
+  })
+
+  test('Watchdog 检测 worker idle 后会退出挂起 query 并结束 run', async () => {
+    const runner = new InProcessAgentRuntimeRunner({
+      createRunId: () => 'run-teams-watchdog',
+      now: () => baseTime,
+      watchdogIntervalMs: 0,
+      query: async function* () {
+        yield systemMessage({
+          subtype: 'task_started',
+          task_id: 'task-1',
+          task_type: 'remote_agent',
+        })
+        await new Promise<void>(() => {})
+      },
+      teamsCoordinatorDeps: {
+        areAllWorkersIdle: async () => true,
+        findTeamLeadInboxPath: async () => null,
+      },
+      store: { appendMessages: () => {} },
+    })
+
+    const envelopes = await collect(runner.run(createRunInput({
+      sessionId: 'session-teams-watchdog',
+      resumeFrom: 'sdk-team',
+    })))
+
+    expect(lastEvent(envelopes)).toMatchObject({ type: 'run_completed' })
+  })
 })
 
 function createRunInput(overrides: Partial<AgentRuntimeRunInput> = {}): AgentRuntimeRunInput {
@@ -283,6 +371,10 @@ function resultMessage(input: { sessionId: string }): SDKMessage {
     total_cost_usd: 0.01,
     terminal_reason: 'completed',
   } as SDKMessage
+}
+
+function systemMessage(input: Omit<SDKSystemMessage, 'type'>): SDKMessage {
+  return { type: 'system', ...input } as SDKMessage
 }
 
 function createCanUseToolOptions(): Parameters<NonNullable<ClaudeAgentQueryOptions['canUseTool']>>[2] {

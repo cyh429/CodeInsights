@@ -38,13 +38,14 @@
 
 当前版本：
 - @rv-insights/shared：0.1.40
-- @rv-insights/electron：0.0.92
+- @rv-insights/electron：0.0.93
 
 当前状态：
 - 默认 Agent 对话仍走旧 Orchestrator 主循环。
 - `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 仍默认关闭。
 - 旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容都必须保留。
 - 阶段 13 已补齐 Runner v2 自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重。
+- 阶段 13 已补齐 Runner v2 Watchdog / Teams auto-resume 等价证据：复用 `TeamsCoordinator`，同一 SDK session resume，延迟 result，保留 `waiting_resume` / `resume_start` UI 副作用，worker idle 时退出挂起 query。
 - 阶段 13 已真实 Electron 补跑通过：Runner v2 发送、停止、权限 approve、权限 deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - `sdk_session` 去重已从 Orchestrator 过滤补强到 event log writer 层，避免 `queryOptions.onSessionId` 多次触发写入重复 `sdk_session`。
 - Plan Mode 退出事件持久化已补强：只有 `approve_auto` / `approve_edit` 写 `plan_mode_exited`；`deny` / `feedback` 不写退出事件，避免 replay 错误关闭 plan mode。
@@ -52,14 +53,14 @@
 
 当前未完成：
 - 最小 Pipeline 真实 UI run 已启动并可 stop，但 150 秒内停留 `explorer/running`，未到 human gate / patch-work / tester；human gate、patch-work Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定仍需复验。
-- Watchdog、Teams auto-resume 仍未证明与旧主循环等价。
+- 本轮再次尝试 Electron 真实 UI 补跑时，`bunx electron . --remote-debugging-port=9334` 启动后立即退出，未建立 CDP；需要先定位桌面壳退出原因，再补 Pipeline 深水位证据。
 - 飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞；不要伪造通过。
 - 仍不能默认开启 Runner v2。
 
 下一步请继续阶段 13 真实证据补齐：
 1. 先确认 `git status --short`，只忽略 `.DS_Store`、`improve/` 等无关噪音。
 2. 不默认开启 feature flag，不删除旧 Agent 主循环，不做 UI 改版。
-3. 优先补 Watchdog、Teams auto-resume 与旧主循环等价证据。
+3. 优先定位 Electron 桌面壳启动后立即退出的原因，恢复 CDP 可连接状态。
 4. 再补能到 human gate / patch-work / tester 的最小 Pipeline 真实 UI run，复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定。
 5. 检查飞书配置文件；若仍不存在，继续明确记录阻塞，不能伪造通过。
 6. 完成后更新 `tasks/todo.md`、`docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md` 和 `docs/agent-refactor/next-session-prompt.md`。

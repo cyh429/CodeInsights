@@ -123,6 +123,29 @@
 - 收尾验证已通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（42 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
 - 当前仍不能默认开启 Runner v2；剩余缺口主要是 Watchdog、Teams auto-resume、能进入 gate/patch-work/tester 的 Pipeline 真实 run 和飞书入口。
 
+## 2026-05-19 Agent 重构阶段 13：Watchdog / Pipeline 深水位补证计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13 baseline 和 next-session prompt。
+- [x] 检查 `git status --short`，确认当前只有 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 噪音，不纳入阶段提交。
+- [x] 定位旧 Agent 主循环 Watchdog、Teams auto-resume 逻辑，明确 Runner v2 已覆盖、未覆盖或需补测试的边界。
+- [x] 在不默认开启 `agentRuntimeRunnerV2` 的前提下补齐 Watchdog 与 Teams auto-resume 等价证据；Runner v2 复用 `TeamsCoordinator` 并补聚焦测试。
+- [!] 补跑可进入 human gate / patch-work / tester 的最小 Pipeline 真实 UI run；本轮 Electron 启动后立即退出，未建立 CDP，不能标记通过。
+- [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在，继续记录飞书阻塞，不伪造通过。
+- [x] 更新 `docs/agent-refactor/development-checklist.md`、`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`、`docs/agent-refactor/next-session-prompt.md` 和本文件 Review。
+- [x] 运行 `bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、Electron 真实交互补跑和 `git diff --check`。
+- [ ] 阶段 13 本轮补证完成后单独提交，只包含阶段 13 相关文件，不纳入 `.DS_Store`、`improve/` 或无关改动。
+
+## 2026-05-19 Agent 重构阶段 13：Watchdog / Pipeline 深水位补证 Review
+
+- Runner v2 已补上 Watchdog / Teams auto-resume 等价回路：`InProcessAgentRuntimeRunner` 复用 `TeamsCoordinator`，捕获 `sdkSessionId` 后同步给 coordinator，Teams 活跃时延迟 result，resume 后再推送，并通过 legacy lifecycle 回调保持 `waiting_resume` / `resume_start` UI 副作用。
+- 新增聚焦证据：Teams auto-resume 使用 summary fallback 在同一 SDK session 继续 query；Watchdog 检测 worker idle 后退出挂起 query 并收尾。
+- 已通过 `bun run typecheck`。
+- 已通过 Agent / Runtime / Event Log / Renderer atoms 聚焦测试：`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/teams-coordinator.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（50 pass）。
+- 已通过 Pipeline 聚焦测试：`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）。
+- 飞书配置仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
+- Pipeline 真实 UI 深水位仍阻塞：`bunx electron . --remote-debugging-port=9334` 启动后立即退出，仅输出配置目录日志，`127.0.0.1:9334/json/version` 无法连接；未能进入 human gate / patch-work / tester，不能伪造通过。
+- 已将 `@rv-insights/electron` 升到 `0.0.93` 并同步 `bun.lock`。
+
 ## 2026-05-18 Agent 重构阶段 12：真实交互补跑与 Runner v2 默认化准备计划
 
 - [x] 复习 `tasks/lessons.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 0 baseline 和阶段 11 Review。

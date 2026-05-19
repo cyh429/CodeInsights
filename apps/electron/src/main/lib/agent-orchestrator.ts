@@ -1700,6 +1700,18 @@ export class AgentOrchestrator {
       onSdkMessage: (sessionId, message) => {
         this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
       },
+      onTeamsWaitingResume: (sessionId, message) => {
+        this.eventBus.emit(sessionId, {
+          kind: 'rv_insights_event',
+          event: { type: 'waiting_resume', message },
+        })
+      },
+      onTeamsResumeStart: (sessionId, messageId) => {
+        this.eventBus.emit(sessionId, {
+          kind: 'rv_insights_event',
+          event: { type: 'resume_start', messageId },
+        })
+      },
     })
 
     for await (const envelope of runner.run({

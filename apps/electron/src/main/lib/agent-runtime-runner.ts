@@ -6,6 +6,7 @@ import type { PermissionResult } from './agent-permission-service'
 import { createRuntimeEnvelope, convertSdkMessageToRuntimeEnvelopes } from './agent-sdk-message-converter'
 import { prepareSdkMessageForAccumulation, prepareSdkMessagesForPersistence } from './agent-orchestrator/sdk-message-persistence'
 import { isAutoRetryableCatchError, isAutoRetryableTypedError } from './agent-orchestrator/retryable-error-classifier'
+import { TeamsCoordinator } from './agent-orchestrator/teams-coordinator'
 import {
   createCatchErrorSDKMessage,
   createRetryExhaustedSDKMessage,
@@ -19,6 +20,7 @@ import type {
 
 const MAX_AUTO_RETRIES = 8
 const RETRY_MAX_DELAY_MS = 10_000
+const WATCHDOG_INTERVAL_MS = 5_000
 
 interface SideEnvelopeQueue {
   push(envelope: AgentStreamEnvelope): void
@@ -36,8 +38,11 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
     const accumulatedMessages: SDKMessage[] = []
     const queryStartedAt = Date.now()
     const sideQueue = createSideEnvelopeQueue()
+    const teamsCoordinator = this.deps.createTeamsCoordinator?.(input.resumeFrom)
+      ?? new TeamsCoordinator(input.resumeFrom, this.deps.teamsCoordinatorDeps)
     let lastRetryableError: string | undefined
     let retrySucceeded = false
+    let deferredResultMessage: SDKMessage | null = null
 
     const nextSequence = (): number => {
       const sequence = nextSequenceValue
@@ -78,6 +83,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
     const queryOptions = this.buildQueryOptions(input, {
       onSdkSession: (capturedSessionId) => {
         sdkSessionId = capturedSessionId
+        teamsCoordinator.setCapturedSdkSessionId(capturedSessionId)
         pushSideEvent({ type: 'sdk_session', sdkSessionId: capturedSessionId, resumeFrom: input.resumeFrom }, 'claude_sdk')
       },
       pushSideEvent,
@@ -119,75 +125,118 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
         let shouldStopForRetryExhausted = false
 
         try {
-          for await (const rawMessage of this.deps.query(queryOptions)) {
-        for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
-        if (input.abortSignal?.aborted) {
-          const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
-          if (stoppedEnvelope) yield stoppedEnvelope
-          return
-        }
+          const queryIterator = this.deps.query(queryOptions)[Symbol.asyncIterator]()
+          let pendingNext: Promise<IteratorResult<SDKMessage>> | null = null
 
-        const message = prepareSdkMessageForAccumulation(rawMessage, { channelModelId: input.channelModelId }) ?? rawMessage
-        const typedErrorResult = this.classifyAssistantTypedError(message, attempt)
-        if (typedErrorResult?.kind === 'retry') {
-          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
-          lastRetryableError = typedErrorResult.reason
-          shouldRetry = true
-          break
-        }
-        if (typedErrorResult?.kind === 'retry_exhausted') {
-          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
-          shouldStopForRetryExhausted = true
-          break
-        }
-        if (typedErrorResult?.kind === 'fatal') {
-          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
-          const errorMessage = createTypedErrorSDKMessage(typedErrorResult.error)
-          await this.persistAndEmit(input.sessionId, [errorMessage])
-          const failedEnvelope = makeEnvelope({
-            type: 'run_failed',
-            error: {
-              code: typedErrorResult.error.code,
-              title: typedErrorResult.error.title,
-              message: typedErrorResult.error.message,
-              retryable: typedErrorResult.error.canRetry,
-              details: typedErrorResult.error.details,
-              originalError: typedErrorResult.error.originalError,
-            },
-            recoverable: typedErrorResult.error.canRetry,
-          }, 'runtime_service')
-          if (failedEnvelope) yield failedEnvelope
-          return
-        }
+          while (true) {
+            if (!pendingNext) pendingNext = queryIterator.next()
 
-        if (message.type === 'assistant' || message.type === 'user' || message.type === 'result' || message.type === 'system') {
-          const accumulationMessage = prepareSdkMessageForAccumulation(message, { channelModelId: input.channelModelId })
-          if (accumulationMessage) accumulatedMessages.push(accumulationMessage)
-        }
+            const raceResult = await Promise.race([
+              pendingNext.then((result) => ({ kind: 'event' as const, result })),
+              timerWithAbort(this.deps.watchdogIntervalMs ?? WATCHDOG_INTERVAL_MS, input.abortSignal)
+                .then(() => ({ kind: 'watchdog_tick' as const })),
+            ])
 
-        const envelopes = convertSdkMessageToRuntimeEnvelopes(message, {
-          sessionId: input.sessionId,
-          runId,
-          nextSequence,
-          source: 'claude_sdk',
-          createdAt: this.deps.now,
-        }).filter((envelope) => {
-          if (!isTerminalEvent(envelope.event)) return true
-          if (terminalWritten) return false
-          terminalWritten = true
-          return true
-        })
+            if (raceResult.kind === 'watchdog_tick') {
+              if (input.abortSignal?.aborted) {
+                const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
+                if (stoppedEnvelope) yield stoppedEnvelope
+                return
+              }
+              if (teamsCoordinator.shouldCheckWorkerIdle() && await teamsCoordinator.areWorkersIdle()) {
+                pendingNext.catch(() => {})
+                pendingNext = null
+                await Promise.race([
+                  queryIterator.return?.(undefined as never) ?? Promise.resolve(),
+                  new Promise<void>((resolve) => setTimeout(resolve, 1000)),
+                ])
+                break
+              }
+              continue
+            }
 
-        for (const envelope of envelopes) yield envelope
-        this.emitSdkMessage(input.sessionId, message)
+            pendingNext = null
+            if (raceResult.result.done) break
 
-        if (message.type === 'result') {
-          await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
-          if (!shouldKeepChannelOpen((message as { terminal_reason?: string }).terminal_reason)) {
             for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
+            if (input.abortSignal?.aborted) {
+              const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
+              if (stoppedEnvelope) yield stoppedEnvelope
+              return
+            }
+
+            const rawMessage = raceResult.result.value
+            const message = prepareSdkMessageForAccumulation(rawMessage, { channelModelId: input.channelModelId }) ?? rawMessage
+            const typedErrorResult = this.classifyAssistantTypedError(message, attempt)
+            if (typedErrorResult?.kind === 'retry') {
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+              lastRetryableError = typedErrorResult.reason
+              shouldRetry = true
+              break
+            }
+            if (typedErrorResult?.kind === 'retry_exhausted') {
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+              shouldStopForRetryExhausted = true
+              break
+            }
+            if (typedErrorResult?.kind === 'fatal') {
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+              const errorMessage = createTypedErrorSDKMessage(typedErrorResult.error)
+              await this.persistAndEmit(input.sessionId, [errorMessage])
+              const failedEnvelope = makeEnvelope({
+                type: 'run_failed',
+                error: {
+                  code: typedErrorResult.error.code,
+                  title: typedErrorResult.error.title,
+                  message: typedErrorResult.error.message,
+                  retryable: typedErrorResult.error.canRetry,
+                  details: typedErrorResult.error.details,
+                  originalError: typedErrorResult.error.originalError,
+                },
+                recoverable: typedErrorResult.error.canRetry,
+              }, 'runtime_service')
+              if (failedEnvelope) yield failedEnvelope
+              return
+            }
+
+            if (message.type === 'assistant' || message.type === 'user' || message.type === 'result' || message.type === 'system') {
+              const accumulationMessage = prepareSdkMessageForAccumulation(message, { channelModelId: input.channelModelId })
+              if (accumulationMessage) accumulatedMessages.push(accumulationMessage)
+            }
+
+            if (message.type === 'system') {
+              teamsCoordinator.recordSystemMessage(message as Parameters<TeamsCoordinator['recordSystemMessage']>[0])
+            }
+
+            if (message.type === 'result' && teamsCoordinator.shouldDeferResultMessage()) {
+              deferredResultMessage = message
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+              continue
+            }
+
+            const envelopes = convertSdkMessageToRuntimeEnvelopes(message, {
+              sessionId: input.sessionId,
+              runId,
+              nextSequence,
+              source: 'claude_sdk',
+              createdAt: this.deps.now,
+            }).filter((envelope) => {
+              if (!isTerminalEvent(envelope.event)) return true
+              if (terminalWritten) return false
+              terminalWritten = true
+              return true
+            })
+
+            for (const envelope of envelopes) yield envelope
+            this.emitSdkMessage(input.sessionId, message)
+
+            if (message.type === 'result') {
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
+              if (!shouldKeepChannelOpen((message as { terminal_reason?: string }).terminal_reason)) {
+                for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
+              }
+            }
           }
-        }
-      }
 
           if (shouldRetry) continue
           if (shouldStopForRetryExhausted) break
@@ -198,6 +247,30 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
         const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
         if (stoppedEnvelope) yield stoppedEnvelope
         return
+      }
+      if (teamsCoordinator.hasAutoResumeContext()) {
+        const resumePromptResult = await teamsCoordinator.buildResumePrompt()
+        if (resumePromptResult.prompt && sdkSessionId) {
+          this.deps.onTeamsWaitingResume?.(input.sessionId, '正在收集 teammate 工作结果...')
+          const resumeMessageId = randomUUID()
+          this.deps.onTeamsResumeStart?.(input.sessionId, resumeMessageId)
+          const resumeMessages = await teamsCoordinator.runResumeQuery({
+            adapter: { query: this.deps.query, abort: () => {}, dispose: () => {} },
+            baseQueryOptions: queryOptions,
+            prompt: resumePromptResult.prompt,
+            resumeSessionId: sdkSessionId,
+            sessionId: input.sessionId,
+            isSessionActive: () => !input.abortSignal?.aborted,
+            emitSdkMessage: (message) => this.emitSdkMessage(input.sessionId, message),
+          })
+          if (resumeMessages.length > 0) {
+            await this.flushMessages(input.sessionId, resumeMessages, Date.now() - queryStartedAt)
+          }
+        }
+      }
+      if (deferredResultMessage) {
+        this.emitSdkMessage(input.sessionId, deferredResultMessage)
+        deferredResultMessage = null
       }
       if (!terminalWritten) {
         const completeEnvelope = makeEnvelope({
