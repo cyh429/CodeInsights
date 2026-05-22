@@ -1,11 +1,90 @@
 import { describe, expect, test } from 'bun:test'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createAgentStreamEnvelope, type AgentRuntimeEvent, type AgentStreamEnvelope } from '@rv-insights/shared'
-import { agentRuntimeChannelsV2 } from './agent-channel'
-import { FeishuChannelAdapter } from './feishu-channel-adapter'
+
+const originalChannelsV2Env = process.env.RV_AGENT_RUNTIME_CHANNELS_V2
+delete process.env.RV_AGENT_RUNTIME_CHANNELS_V2
+
+const agentChannelModule = await import('./agent-channel')
+const { FeishuChannelAdapter } = await import('./feishu-channel-adapter')
+
+if (originalChannelsV2Env == null) {
+  delete process.env.RV_AGENT_RUNTIME_CHANNELS_V2
+} else {
+  process.env.RV_AGENT_RUNTIME_CHANNELS_V2 = originalChannelsV2Env
+}
+
+const {
+  agentRuntimeChannelsV2,
+  resolveAgentRuntimeChannelsV2Enabled,
+} = agentChannelModule
+
+const agentChannelUrl = new URL('./agent-channel.ts', import.meta.url).href
+
+function assertChannelsV2ImportFlag(
+  envValue: string | undefined,
+  expectedEnabled: boolean,
+): void {
+  const tempDir = mkdtempSync(join(tmpdir(), 'rv-agent-channel-env-'))
+  const testPath = join(tempDir, 'agent-channel-env.test.ts')
+  writeFileSync(testPath, `
+import { expect, test } from 'bun:test'
+
+test('channels v2 import flag', async () => {
+  const mod = await import(${JSON.stringify(agentChannelUrl)})
+  expect(mod.agentRuntimeChannelsV2.enabled).toBe(${JSON.stringify(expectedEnabled)})
+})
+`, 'utf-8')
+
+  try {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      RV_INSIGHTS_CONFIG_DIR: tempDir,
+    }
+    if (envValue === undefined) {
+      delete env.RV_AGENT_RUNTIME_CHANNELS_V2
+    } else {
+      env.RV_AGENT_RUNTIME_CHANNELS_V2 = envValue
+    }
+    execFileSync(process.execPath, ['test', testPath], {
+      cwd: process.cwd(),
+      env,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
+}
 
 describe('FeishuChannelAdapter', () => {
-  test('Channels v2 仍需显式 env 开启', () => {
-    expect(agentRuntimeChannelsV2.enabled).toBe(false)
+  test('Channels v2 未设置 env 时默认启用', () => {
+    expect(resolveAgentRuntimeChannelsV2Enabled(undefined)).toBe(true)
+    expect(resolveAgentRuntimeChannelsV2Enabled('')).toBe(true)
+    expect(agentRuntimeChannelsV2.enabled).toBe(true)
+  })
+
+  test('Channels v2 显式关闭 env 会回到旧 Feishu bridge 路径', () => {
+    for (const value of ['0', 'false', 'off', 'no', 'disabled']) {
+      expect(resolveAgentRuntimeChannelsV2Enabled(value)).toBe(false)
+      expect(resolveAgentRuntimeChannelsV2Enabled(` ${value.toUpperCase()} `)).toBe(false)
+    }
+  })
+
+  test('Channels v2 显式开启 env 会强制 AgentChannel 路径', () => {
+    for (const value of ['1', 'true', 'on', 'yes', 'enabled']) {
+      expect(resolveAgentRuntimeChannelsV2Enabled(value)).toBe(true)
+      expect(resolveAgentRuntimeChannelsV2Enabled(` ${value.toUpperCase()} `)).toBe(true)
+    }
+  })
+
+  test('Channels v2 模块导入时遵守 env 默认与回滚开关', () => {
+    assertChannelsV2ImportFlag(undefined, true)
+    assertChannelsV2ImportFlag('0', false)
+    assertChannelsV2ImportFlag('1', true)
   })
 
   test('throttles assistant delta and sends final markdown from runtime events', async () => {

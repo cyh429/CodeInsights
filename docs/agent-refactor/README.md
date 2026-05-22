@@ -38,21 +38,21 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - 阶段 14 默认化评估计划已建立并提交：`02199299 docs(agent): 建立阶段14 Runner v2 默认化评估计划`。
 - 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。未设置 `RV_AGENT_RUNTIME_RUNNER_V2` 时默认走 Runner v2，显式 `RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
 - 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`。未设置 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2` 时默认走 Pipeline Runner v2，显式 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 可回到 Pipeline legacy adapter。
-- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.97`。
-- 默认 Agent 对话和默认 Pipeline Claude 节点现在走 Runner v2；`agentRuntimeChannelsV2` 仍保持默认关闭。
+- 阶段 14C Channels v2 默认化已按用户指示排除飞书真实入口阻塞后完成代码侧评估。未设置 `RV_AGENT_RUNTIME_CHANNELS_V2` 时默认走 Channels v2，显式 `RV_AGENT_RUNTIME_CHANNELS_V2=0` 可回到旧 Feishu bridge 路径。
+- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.98`。
+- 默认 Agent 对话、默认 Pipeline Claude 节点和默认 Channels v2 入口现在均走 v2 路径，三者均保留显式 env 关闭回滚。
 - 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - Pipeline 深水位真实 UI run 已完成：session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
 - 阶段 14B 默认 Pipeline 深水位真实 UI run 已完成：session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 已到 explorer / planner / developer / reviewer / tester / committer，最终 completed；显式关闭回滚 session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认走 legacy adapter。
 - Codex Pipeline runner 已完成收尾补强：支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，strict schema 递归校验所有 object schema，Git snapshot 清理宿主 `GIT_*` 并 fail closed，clean-env 单测通过。
-- 阶段 14 分批策略已写入 checklist：14A 已完成 Agent Runner v2 默认化；14B 已完成 Pipeline Runner v2 默认化；14C Channels v2 继续受飞书配置阻塞。
+- 阶段 14 分批策略已写入 checklist：14A 已完成 Agent Runner v2 默认化；14B 已完成 Pipeline Runner v2 默认化；14C 已按用户指示不以飞书真实入口为阻塞完成 Channels v2 默认化。
 
 ## 仍未完成
 
-- 飞书入口和飞书群聊 MCP 仍受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
-- Channels v2 尚未默认开启；下一阶段只能在补齐飞书配置后评估 `agentRuntimeChannelsV2` 默认化。
-- `agentRuntimeChannelsV2` 在飞书配置缺失时继续保持关闭；只有补齐飞书配置并真实跑通飞书入口和飞书群聊 MCP 后，才能进入 Channels v2 默认化评估。
-- 后续 Channels v2 默认化或旧路径清理仍必须保留明确回滚点，并重新跑完整聚焦验证与真实 Electron 交互复核。
+- 飞书入口和飞书群聊 MCP 仍受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过；阶段 14C 不声明真实飞书入口已通过。
+- 如果后续需要声明飞书真实可用，仍需补真实飞书入口和群聊 MCP 验证。
+- 后续旧路径清理仍必须保留明确回滚点，并重新跑完整聚焦验证与真实 Electron 交互复核。
 - 删除旧路径、旧 adapter 或旧兼容逻辑只能作为默认开启稳定后的后续阶段，不能在当前状态直接清理。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
