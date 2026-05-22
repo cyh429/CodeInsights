@@ -71,8 +71,20 @@ const V2_READ_ONLY_DISALLOWED_TOOLS = [
   'NotebookEdit',
 ] as const
 
+const PIPELINE_RUNNER_V2_DISABLED_VALUES = new Set(['0', 'false', 'off', 'no', 'disabled'])
+const PIPELINE_RUNNER_V2_ENABLED_VALUES = new Set(['1', 'true', 'on', 'yes', 'enabled'])
+
+export function resolveAgentRuntimePipelineRunnerV2Enabled(value?: string): boolean {
+  if (value === undefined) return true
+  const normalized = value.trim().toLowerCase()
+  if (normalized === '') return true
+  if (PIPELINE_RUNNER_V2_DISABLED_VALUES.has(normalized)) return false
+  if (PIPELINE_RUNNER_V2_ENABLED_VALUES.has(normalized)) return true
+  return true
+}
+
 export const agentRuntimePipelineRunnerV2 = {
-  enabled: process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 === '1',
+  enabled: resolveAgentRuntimePipelineRunnerV2Enabled(process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2),
 }
 
 export interface PipelineNodeExecutionContext {
@@ -2512,6 +2524,11 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
     let combinedOutput = ''
 
     try {
+      console.log(
+        `[Pipeline Node Runner] ${node} 使用 ${
+          agentRuntimePipelineRunnerV2.enabled ? 'InProcessAgentRuntimeRunner' : 'legacy adapter'
+        } 执行`,
+      )
       combinedOutput = agentRuntimePipelineRunnerV2.enabled
         ? await this.runNodeWithRuntimeRunner(node, context, queryOptions, model, workspace.cwd, permissionMode)
         : await this.runNodeWithLegacyAdapter(node, context, queryOptions)

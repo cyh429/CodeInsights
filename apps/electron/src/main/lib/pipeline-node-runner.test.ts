@@ -27,6 +27,17 @@ mock.module('./channel-manager', () => ({
   decryptApiKey: () => 'test-api-key',
 }))
 
+const originalPipelineRunnerV2Env = process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+delete process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+
+const pipelineNodeRunnerModule = await import('./pipeline-node-runner')
+
+if (originalPipelineRunnerV2Env == null) {
+  delete process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+} else {
+  process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = originalPipelineRunnerV2Env
+}
+
 const {
   ClaudePipelineNodeRunner,
   PipelineStructuredOutputError,
@@ -36,7 +47,8 @@ const {
   buildPipelineNodePrompts,
   enrichPipelineV2PatchWorkArtifacts,
   pipelineNodeJsonSchema,
-} = await import('./pipeline-node-runner')
+  resolveAgentRuntimePipelineRunnerV2Enabled,
+} = pipelineNodeRunnerModule
 const { createContributionTask } = await import('./contribution-task-service')
 const {
   acceptPatchWorkDocuments,
@@ -45,11 +57,61 @@ const {
   writePatchWorkFile,
 } = await import('./pipeline-patch-work-service')
 
+const pipelineNodeRunnerUrl = new URL('./pipeline-node-runner.ts', import.meta.url).href
+
 function git(repoRoot: string, args: string[]): string {
   return execFileSync('git', ['-C', repoRoot, ...args], {
     encoding: 'utf-8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim()
+}
+
+function assertPipelineRunnerV2ImportFlag(
+  envValue: string | undefined,
+  expectedEnabled: boolean,
+): void {
+  const tempDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-runner-env-'))
+  const testPath = join(tempDir, 'pipeline-runner-env.test.ts')
+  writeFileSync(testPath, `
+import { expect, mock, test } from 'bun:test'
+
+mock.module('electron', () => ({
+  safeStorage: {
+    isEncryptionAvailable: () => true,
+    encryptString: (value: string) => Buffer.from(value),
+    decryptString: (value: Buffer) => value.toString(),
+  },
+  app: {
+    isPackaged: false,
+    getPath: () => '',
+  },
+}))
+
+test('pipeline runner v2 import flag', async () => {
+  const mod = await import(${JSON.stringify(pipelineNodeRunnerUrl)})
+  expect(mod.agentRuntimePipelineRunnerV2.enabled).toBe(${JSON.stringify(expectedEnabled)})
+})
+`, 'utf-8')
+
+  try {
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      RV_INSIGHTS_CONFIG_DIR: tempDir,
+    }
+    if (envValue === undefined) {
+      delete env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+    } else {
+      env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = envValue
+    }
+    execFileSync(process.execPath, ['test', testPath], {
+      cwd: process.cwd(),
+      env,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true })
+  }
 }
 
 function initializeGitRepo(repoRoot: string): void {
@@ -83,8 +145,30 @@ describe('pipeline-node-runner', () => {
     rmSync(repoRoot, { recursive: true, force: true })
   })
 
-  test('Pipeline Runner v2 仍需显式 env 开启', () => {
-    expect(agentRuntimePipelineRunnerV2.enabled).toBe(false)
+  test('Pipeline Runner v2 未设置 env 时默认启用', () => {
+    expect(resolveAgentRuntimePipelineRunnerV2Enabled(undefined)).toBe(true)
+    expect(resolveAgentRuntimePipelineRunnerV2Enabled('')).toBe(true)
+    expect(agentRuntimePipelineRunnerV2.enabled).toBe(true)
+  })
+
+  test('Pipeline Runner v2 显式关闭 env 会回到 legacy adapter', () => {
+    for (const value of ['0', 'false', 'off', 'no', 'disabled']) {
+      expect(resolveAgentRuntimePipelineRunnerV2Enabled(value)).toBe(false)
+      expect(resolveAgentRuntimePipelineRunnerV2Enabled(` ${value.toUpperCase()} `)).toBe(false)
+    }
+  })
+
+  test('Pipeline Runner v2 显式开启 env 会强制 Runner v2', () => {
+    for (const value of ['1', 'true', 'on', 'yes', 'enabled']) {
+      expect(resolveAgentRuntimePipelineRunnerV2Enabled(value)).toBe(true)
+      expect(resolveAgentRuntimePipelineRunnerV2Enabled(` ${value.toUpperCase()} `)).toBe(true)
+    }
+  })
+
+  test('Pipeline Runner v2 模块导入时遵守 env 默认与回滚开关', () => {
+    assertPipelineRunnerV2ImportFlag(undefined, true)
+    assertPipelineRunnerV2ImportFlag('0', false)
+    assertPipelineRunnerV2ImportFlag('1', true)
   })
 
   test('buildPipelineNodePrompts 拆分 system prompt 与 user prompt', () => {

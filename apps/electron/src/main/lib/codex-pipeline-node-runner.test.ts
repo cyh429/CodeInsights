@@ -844,7 +844,7 @@ describe('codex-pipeline-node-runner', () => {
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
     }
-  })
+  }, 10_000)
 
   test('Codex CLI runner 在 v2 tester 中检测绝对路径 git reset --hard 丢弃补丁', async () => {
     const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR

@@ -8,14 +8,44 @@
 - [x] 阶段 13 Pipeline 深水位真实 UI run 已补齐：sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
 - [x] 阶段 13 Codex Pipeline runner 收尾补强已完成并提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`，覆盖 Codex auth 隔离、strict schema 递归校验、reviewer 空字符串保守拒绝、Git guard 环境隔离和 clean-env 测试稳定性。
 - [x] 阶段 13 文档交接曾同步提交：`353c5c53 docs(agent): 同步阶段13最新状态并更新继续开发提示词`；本节为 2026-05-22 文档状态再同步。
-- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.96`。
+- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.97`。
 - [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
 - [!] 飞书入口与飞书群聊 MCP 仍阻塞：本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`，不能伪造通过。
-- [x] 阶段 14A 已实施并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。默认 Agent 对话走 Runner v2，`RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环，`agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
+- [x] 阶段 14A 已实施并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。默认 Agent 对话走 Runner v2，`RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
+- [x] 阶段 14B 已实施：默认 Pipeline Claude 节点走 Pipeline Runner v2，`RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 可回到 Pipeline legacy adapter，`agentRuntimeChannelsV2` 仍默认关闭。
 - [x] 已建立阶段 14 Runner v2 默认化评估计划：先只评估 Agent Runner v2 默认化，Pipeline Runner v2 不与 Agent 同一提交同步默认化，Channels v2 因飞书缺配置继续保持关闭。
 - [ ] 若补齐飞书配置，再真实补跑 `agentRuntimeChannelsV2` 飞书入口与飞书群聊 MCP；无配置时继续明确记录阻塞。
 - [x] 阶段 14A 默认化前后已跑完整聚焦验证与真实 Electron 交互复核，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容。
-- [ ] 下一阶段为 14B：只评估 Pipeline Runner v2 默认化；进入前必须更新计划并重跑 Pipeline 深水位真实 UI run，Channels v2 不得同批默认开启。
+- [ ] 下一阶段只能在补齐飞书配置后评估 14C Channels v2 默认化；缺配置时继续明确阻塞，Channels v2 不得默认开启。
+
+## 2026-05-22 Agent 重构阶段 14B：Pipeline Runner v2 默认化执行计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13/14A baseline 和 next-session prompt。
+- [x] 运行 `git status --short`，确认当前只存在 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 无关噪音，不纳入阶段提交。
+- [x] 复查飞书配置：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 仍不存在，飞书入口与飞书群聊 MCP 继续阻塞，不伪造通过。
+- [x] 范围确认：本阶段只评估 `agentRuntimePipelineRunnerV2` 默认化；不触碰 `agentRuntimeChannelsV2` 默认值，不删除 Pipeline legacy adapter、旧 Agent 主循环、旧 Feishu bridge 或旧 session JSONL 兼容。
+- [x] 默认化前验证矩阵：`bun run typecheck`；Agent / Runtime / Event Log / Renderer atoms 聚焦测试；Pipeline 聚焦测试；clean-env Codex runner 单测；真实 Electron Pipeline 深水位 UI run；`git diff --check`。
+- [x] 默认化前记录当前行为：未设置 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2` 时 Pipeline 仍走 legacy adapter；显式 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 时走 Pipeline Runner v2。
+- [x] 实现默认策略：未设置 env 时走 Pipeline Runner v2；显式关闭 env 时回到 Pipeline legacy adapter；显式开启 env 时继续强制 Pipeline Runner v2。
+- [x] 补聚焦测试：覆盖默认开启、显式关闭回滚、显式开启强制 Runner v2；确认 `agentRuntimeChannelsV2` 默认值不变。
+- [x] 默认化后复跑同一验证矩阵，并记录默认 Pipeline 走 Runner v2、显式关闭走 legacy adapter 的真实 Electron 证据。
+- [x] 更新 `docs/agent-refactor/development-checklist.md`、新增阶段 14B baseline、`docs/agent-refactor/next-session-prompt.md` 和本文件 Review；递增受影响包 patch 版本并同步 lockfile。
+- [x] 阶段 14B 完成后单独提交，不纳入 `.DS_Store`、`improve/`、`patch-work/` 或无关文件；提交信息用中文说明完成项、验证项和未完成项。
+
+## 2026-05-22 Agent 重构阶段 14B：Review
+
+- 阶段 14B 已完成：`agentRuntimePipelineRunnerV2` 默认策略改为未设置 env 时启用 Pipeline Runner v2，`RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` / `false` / `off` / `no` / `disabled` 可显式回滚 Pipeline legacy adapter，`1` / `true` / `on` / `yes` / `enabled` 继续强制 Pipeline Runner v2。
+- 本阶段只触碰 Pipeline Runner v2 默认策略、聚焦测试、`@rv-insights/electron` 版本和 Agent 重构交接文档；未默认开启 `agentRuntimeChannelsV2`，未删除旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容。
+- 默认化前验证通过：`bun run typecheck`；Agent / Runtime / Event Log / Renderer / Feishu 聚焦测试 51 pass；Pipeline 聚焦测试 88 pass；clean-env Codex runner 单测 30 pass；`git diff --check`。
+- 默认化前真实 Electron 基线：`0.0.96` + `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` session `de721097-fdb8-4cc3-9847-e5707eecb771` 走 Pipeline Runner v2 并到 committer/completed；unseeded session `35bfc6af-233b-4318-8564-a66691d44bbb` 因无 Git repository 被 Git guard fail closed。
+- 默认化后验证通过：`bun run typecheck`；Agent / Runtime / Event Log / Renderer / Feishu 聚焦测试 51 pass；Pipeline 聚焦测试 91 pass；clean-env Codex runner 单测 30 pass。
+- 默认化后真实 Electron 默认路径：`0.0.97` 无 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2` session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 日志确认 explorer / planner 使用 `InProcessAgentRuntimeRunner`，最终到 committer/completed。
+- 默认路径 Git guard 复验通过：HEAD `f908d9fc45795b5a3e65fcaec649db2e18b0a0ed` 未变，refs 仅 `refs/heads/main`，staged diff 为空，index SHA256 `5c3fac2a3d81eb4ad1e58c8b84c77882ba4c7e7b1cfa6a1d59d2062b89261d48` 未变，config SHA256 `6260efbdf5ce8288e0724fe95d167459922c83ad7e32070da3b7e1362d1518f8` 未变。
+- 默认路径 patch-work 完整写入：`explorer/report-001.md`、`selected-task.md`、`plan.md`、`test-plan.md`、`dev.md`、`review.md`、`result.md`、`commit.md`、`pr.md` 和 `patch-set/*`；`test-evidence.json` 中 `bun test` / `bun test --coverage` 均为 passed，commit / PR 仅为 draft。
+- 显式关闭回滚路径：`0.0.97` + `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认 explorer 使用 `legacy adapter`，随后手动 stop 到 `terminated`。
+- 聚焦测试补强：新增模块导入隔离测试，验证 env 在导入时决定模块级 flag；Git/PR guard 长用例因全量运行时偶发 5s 假阴性，单独重跑通过后将该用例超时调整为 10s。
+- 飞书配置复查仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在，不能伪造飞书入口或飞书群聊 MCP 通过。
+- 下一阶段只能在补齐飞书配置后进入 14C：单独评估 Channels v2 默认化；缺配置时继续保持 `agentRuntimeChannelsV2` 默认关闭。
 
 ## 2026-05-22 Agent 重构阶段 14：Runner v2 默认化评估计划
 
