@@ -51,7 +51,7 @@
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
 - [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
-- [x] 阶段 14A Agent Runner v2 默认化已完成；`agentRuntimeRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚，`agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
+- [x] 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`；`agentRuntimeRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚，`agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
 
 下一步建议：
 
@@ -150,7 +150,7 @@
 
 ### 阶段 14 当前说明
 
-- 阶段 14A 已完成 Agent Runner v2 默认化，证据文档见 [2026-05-22-stage-14A.md](./baseline-runs/2026-05-22-stage-14A.md)。
+- 阶段 14A 已完成 Agent Runner v2 默认化并提交 `88c03213`，证据文档见 [2026-05-22-stage-14A.md](./baseline-runs/2026-05-22-stage-14A.md)。
 - 当前合理顺序是进入 14B 单独评估 Pipeline Runner v2 默认化，避免同一提交扩大回归面。
 - 飞书入口和飞书群聊 MCP 仍无真实配置，Channels v2 不进入默认化候选。
 
