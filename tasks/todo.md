@@ -17,6 +17,22 @@
 - [ ] 若补齐飞书配置，再真实补跑 `agentRuntimeChannelsV2` 飞书入口与飞书群聊 MCP；无配置时继续明确记录阻塞。
 - [x] 阶段 14A 默认化前后已跑完整聚焦验证与真实 Electron 交互复核，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容。
 - [ ] 下一阶段只能在补齐飞书配置后评估 14C Channels v2 默认化；缺配置时继续明确阻塞，Channels v2 不得默认开启。
+- [!] 2026-05-22 本轮复查：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 仍不存在；未进入阶段 14C，未修改 `agentRuntimeChannelsV2` 默认策略。
+
+## 2026-05-22 Agent 重构 14C 飞书配置复查阻塞计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13/14A/14B baseline 和 next-session prompt。
+- [x] 运行 `git status --short`，确认当前只存在 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 无关噪音，不纳入提交。
+- [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在。
+- [x] 因缺少飞书配置，本轮只记录阻塞；不补跑飞书入口或飞书群聊 MCP，不伪造通过。
+- [x] 保持 `agentRuntimeChannelsV2` 默认关闭；不删除旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容。
+- [x] 运行 `git diff --check`，确认本轮只包含阻塞记录文档变更。
+
+## 2026-05-22 Agent 重构 14C 飞书配置复查 Review
+
+- 本轮未进入阶段 14C 默认化：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在，无法真实补跑飞书入口和飞书群聊 MCP。
+- `agentRuntimeChannelsV2` 继续默认关闭；Channels v2 默认化仍必须等待飞书配置存在，并真实跑通入口与群聊 MCP。
+- 本轮只更新 `tasks/todo.md` 的阻塞记录，不修改运行时代码，不修改 package 版本，不触碰旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容。
 
 ## 2026-05-22 Agent 重构 14B 后状态文档同步计划
 
