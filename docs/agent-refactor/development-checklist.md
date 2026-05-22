@@ -6,7 +6,7 @@
 
 更新时间：2026-05-22
 
-当前阶段：阶段 14B Pipeline Runner v2 默认化已完成；阶段 14A Agent Runner v2 默认化、阶段 13 的代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强、Pipeline planner 自然语言 fallback、Pipeline 深水位真实 UI run、Codex auth / Git guard / strict schema 收尾均已完成并提交/验证；飞书配置仍缺失，Channels v2 仍不修改默认开关。
+当前阶段：阶段 14B Pipeline Runner v2 默认化已完成并提交 `be82e53d`；阶段 14A Agent Runner v2 默认化、阶段 13 的代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强、Pipeline planner 自然语言 fallback、Pipeline 深水位真实 UI run、Codex auth / Git guard / strict schema 收尾均已完成并提交/验证；飞书配置仍缺失，Channels v2 仍不修改默认开关。
 
 已完成：
 
@@ -52,7 +52,7 @@
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
 - [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
 - [x] 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`；`agentRuntimeRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚，`agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
-- [x] 阶段 14B Pipeline Runner v2 默认化已完成；`agentRuntimePipelineRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 显式回滚到 Pipeline legacy adapter，`agentRuntimeChannelsV2` 仍默认关闭。
+- [x] 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`；`agentRuntimePipelineRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 显式回滚到 Pipeline legacy adapter，`agentRuntimeChannelsV2` 仍默认关闭。
 
 下一步建议：
 
@@ -68,7 +68,7 @@
 - 阶段 13 已通过真实 Runner v2 最小发送、stop、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 复验。
 - 阶段 13 已补齐 Watchdog / Teams auto-resume 等价证据：Runner v2 现在会复用 `TeamsCoordinator`，在同一 SDK session 下延迟 result、发出 legacy `waiting_resume` / `resume_start` 回调，并在 worker idle 时退出挂起 query。
 - 阶段 14A 已默认开启 Agent Runner v2：默认 Electron session `073783b3-27ae-49ec-b516-92de146e6572` 走 `InProcessAgentRuntimeRunner` 并完成，显式关闭 session `70bf7de8-043a-49c2-81c4-28e49f15ff96` 回到旧主循环并完成。
-- 阶段 14B 已默认开启 Pipeline Runner v2：默认 Electron session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 走 Pipeline Runner v2 并完成到 committer，显式关闭 session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认回到 Pipeline legacy adapter。
+- 阶段 14B 已默认开启 Pipeline Runner v2 并提交 `be82e53d`：默认 Electron session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 走 Pipeline Runner v2 并完成到 committer，显式关闭 session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认回到 Pipeline legacy adapter。
 - 2026-05-19 权限 deny 补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，目标文件未生成。
 - 2026-05-19 权限 approve 补跑发现重复 `sdk_session` 去重仍不完整；已在 event log writer 层按同一 run 的 `sdkSessionId` 去重，并复验证据中 `sdk_session_count=1`。
 - 2026-05-19 `sdk_session` writer 层去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
@@ -181,7 +181,7 @@
 ### 阶段 14 当前说明
 
 - 阶段 14A 已完成 Agent Runner v2 默认化并提交 `88c03213`，证据文档见 [2026-05-22-stage-14A.md](./baseline-runs/2026-05-22-stage-14A.md)。
-- 阶段 14B 已完成 Pipeline Runner v2 默认化，证据文档见 [2026-05-22-stage-14B.md](./baseline-runs/2026-05-22-stage-14B.md)。
+- 阶段 14B 已完成 Pipeline Runner v2 默认化并提交 `be82e53d`，证据文档见 [2026-05-22-stage-14B.md](./baseline-runs/2026-05-22-stage-14B.md)。
 - 飞书入口和飞书群聊 MCP 仍无真实配置，Channels v2 不进入默认化候选。
 
 ## 阶段 13：Runner v2 默认化证据补齐
