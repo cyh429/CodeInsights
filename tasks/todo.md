@@ -37,6 +37,21 @@
 - 默认化实现必须提供显式回滚开关，不能删除旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容。
 - 飞书配置复查仍缺失：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
 
+## 2026-05-22 Agent 重构文档状态同步计划
+
+- [x] 更新 `docs/agent-refactor/README.md` 当前进度：补入阶段 14 计划提交 `02199299`，明确下一步进入 14A。
+- [x] 更新 `docs/agent-refactor/next-session-prompt.md`：给出下次启动可直接发送的提示词，入口改为阶段 14A。
+- [x] 保持 `docs/agent-refactor/development-checklist.md` 的阶段 14 分批默认化计划为当前主控状态。
+- [x] 本轮不修改运行时代码，不修改 package 版本，不改 README 项目根文档或 AGENTS。
+- [x] 运行文档 diff 检查和 `git diff --check`。
+
+## 2026-05-22 Agent 重构文档状态同步 Review
+
+- 已把最新开发状态同步到 Agent 重构 README、development checklist、next-session prompt 和本任务记录。
+- 当前已完成：阶段 0-13 全部实现/证据项完成；阶段 14 默认化评估计划完成并已提交；阶段 14A 尚未开始实现。
+- 当前未完成：飞书入口与飞书群聊 MCP 仍缺配置阻塞；三个 Runner v2 相关默认开关尚未修改；默认化前/后完整回归尚未运行。
+- 下次启动应从阶段 14A 继续：先做默认化前验证，再只调整 Agent Runner v2 默认策略，Pipeline Runner v2 与 Channels v2 均不得同批默认开启。
+
 ## 2026-05-22 文档状态同步 Review
 
 - 本次任务只更新交接文档和下次启动提示词，不修改运行时代码。
