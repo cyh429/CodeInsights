@@ -11,10 +11,31 @@
 - [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.95`。
 - [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
 - [!] 飞书入口与飞书群聊 MCP 仍阻塞：本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`，不能伪造通过。
-- [!] 当前仍不能默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
-- [ ] 下一阶段应先做 Runner v2 默认化评估计划：明确是否只默认开启 Agent Runner v2、Pipeline Runner v2 是否同步默认、Channels v2 是否因飞书缺配置继续保持关闭。
+- [!] 当前尚未实施默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
+- [x] 已建立阶段 14 Runner v2 默认化评估计划：先只评估 Agent Runner v2 默认化，Pipeline Runner v2 不与 Agent 同一提交同步默认化，Channels v2 因飞书缺配置继续保持关闭。
 - [ ] 若补齐飞书配置，再真实补跑 `agentRuntimeChannelsV2` 飞书入口与飞书群聊 MCP；无配置时继续明确记录阻塞。
 - [ ] 默认化前必须再次跑完整聚焦验证与真实 Electron 交互复核，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容。
+
+## 2026-05-22 Agent 重构阶段 14：Runner v2 默认化评估计划
+
+- [x] 启动前复习 `tasks/lessons.md`、`tasks/todo.md`、Agent 重构 README、development checklist、event contract、runtime manifest、阶段 12/13 baseline 和 next-session prompt。
+- [x] 运行 `git status --short`，确认当前只存在 `.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 无关噪音，不纳入阶段提交。
+- [x] 检查 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`；两者仍不存在，飞书入口与飞书群聊 MCP 继续阻塞，不伪造通过。
+- [x] 定位三个默认化开关现状：`agentRuntimeRunnerV2` 在 `apps/electron/src/main/lib/agent-runtime-types.ts`，`agentRuntimePipelineRunnerV2` 在 `apps/electron/src/main/lib/pipeline-node-runner.ts`，`agentRuntimeChannelsV2` 在 `apps/electron/src/main/lib/agent-channel.ts`；当前均为 env 显式 `1` 才启用。
+- [x] 默认化策略定为分批推进：阶段 14A 只评估 Agent Runner v2 默认开启；Pipeline Runner v2 不在同一提交默认开启；Channels v2 在飞书配置缺失前保持默认关闭。
+- [x] 回滚策略：默认化实现必须保留显式 env 关闭能力，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容。
+- [ ] 阶段 14A 实现前先确认计划，不直接修改 feature flag 默认值；实现时只触碰 Agent Runner v2 默认开关和必要测试/文档。
+- [ ] 阶段 14A 默认化前复跑：`bun run typecheck`、Agent / Runtime / Event Log / Renderer atoms 聚焦测试、Pipeline 聚焦测试、clean-env Codex runner 单测、真实 Electron Agent 交互复核和 `git diff --check`。
+- [ ] 阶段 14A 默认化后复跑同一验证矩阵，确认默认 Agent 对话走 Runner v2，显式关闭开关能回到旧主循环。
+- [ ] 阶段 14B 只有在 14A 通过并单独提交后，才评估 Pipeline Runner v2 默认开启；必须重跑 Pipeline 深水位真实 UI run，复验 human gate、patch-work、Git guard 和 tester evidence。
+- [!] 阶段 14C Channels v2 默认化继续阻塞：缺少飞书配置时不得默认开启 `agentRuntimeChannelsV2`，也不得标记飞书入口或群聊 MCP 通过。
+
+## 2026-05-22 Agent 重构阶段 14：计划 Review
+
+- 本轮只建立 Runner v2 默认化评估计划，不修改运行时代码，不改变 `agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 当前默认关闭行为。
+- 分批决策：Agent Runner v2 可作为第一批默认化候选；Pipeline Runner v2 虽已有深水位证据，但因副作用面更大，必须后置到单独阶段；Channels v2 因飞书配置缺失继续阻塞。
+- 默认化实现必须提供显式回滚开关，不能删除旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容。
+- 飞书配置复查仍缺失：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
 
 ## 2026-05-22 文档状态同步 Review
 
