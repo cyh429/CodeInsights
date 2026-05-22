@@ -33,19 +33,21 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 
 ## 当前进度
 
-- 阶段 0-12 已完成并提交，最新提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- 阶段 13 已完成并提交最新代码侧证据：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`、`6171f164`。
+- 阶段 0-12 已完成并提交，阶段 13 的 Runner v2 证据补齐与收尾补强也已完成到可审计状态。
+- 阶段 13 关键提交：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`、`6171f164`、`10356a3a`；文档交接同步提交：`353c5c53`。
+- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.95`。
 - 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均保持默认关闭。
+- 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
-- 当前仍缺 Pipeline 深水位真实 UI run 进入 developer / reviewer / tester，以及飞书配置文件；本轮已到 explorer human gate，planner 自然语言 fallback 已修复并提交，但后续 run 被 DeepSeek `Insufficient Balance` 阻塞。
+- Pipeline 深水位真实 UI run 已完成：session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
+- Codex Pipeline runner 已完成收尾补强：支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，strict schema 递归校验所有 object schema，Git snapshot 清理宿主 `GIT_*` 并 fail closed，clean-env 单测通过。
 
 ## 仍未完成
 
-- Pipeline Runner v2 仍缺完整真实 Pipeline UI run 证据；本轮已验证 explorer human gate、patch-work explorer report 和 planner fallback（提交 `6171f164`），developer / reviewer / tester、HEAD/refs/index/config 校验和 tester 证据保守判定需要在可用模型余额下继续复验。
-- 已定位 `bunx electron . --remote-debugging-port=9334` 启动后立即退出原因：已有 9333 Electron 实例持有单实例锁；结束旧实例后 9334 CDP 可连接。
-- 飞书入口和飞书群聊 MCP 受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
-- Skill / Plugin snapshot 已有聚焦测试，但缺真实 Agent 对话中被模型实际使用的证据。
+- 飞书入口和飞书群聊 MCP 仍受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
+- 当前仍不能默认开启 Runner v2。下一阶段需要先做默认化评估计划，再决定是否分批默认开启 `agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2`；`agentRuntimeChannelsV2` 在飞书配置缺失时应继续保持关闭。
+- 默认化前必须保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容，并重新跑完整聚焦验证与真实 Electron 交互复核。
+- 删除旧路径、旧 adapter 或旧兼容逻辑只能作为默认开启稳定后的后续阶段，不能在当前状态直接清理。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
 

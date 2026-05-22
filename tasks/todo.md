@@ -1,17 +1,26 @@
 # RV-Insights Agent 重构任务
 
-## 2026-05-19 Agent 重构当前可接续状态
+## 2026-05-22 Agent 重构最新开发状态（下次接续优先读）
 
 - [x] 阶段 0-12 均已完成并提交。
-- [x] 阶段 13 已完成并提交代码侧等价补强：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出事件持久化、Watchdog / Teams auto-resume。
-- [x] 阶段 13 已完成真实 Electron Runner v2 交互证据：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- [x] 最新已提交阶段 13 证据：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；本轮 Codex auth 隔离、strict schema 和 clean-env 测试稳定性补强随阶段 13 收尾提交。
+- [x] 阶段 13 Runner v2 代码侧等价证据已完成并提交：自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送、重复 `run_started` / `sdk_session` 去重、Plan Mode 退出事件持久化、Watchdog / Teams auto-resume。
+- [x] 阶段 13 真实 Electron Runner v2 交互证据已完成：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
+- [x] 阶段 13 Pipeline 深水位真实 UI run 已补齐：sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
+- [x] 阶段 13 Codex Pipeline runner 收尾补强已完成并提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`，覆盖 Codex auth 隔离、strict schema 递归校验、reviewer 空字符串保守拒绝、Git guard 环境隔离和 clean-env 测试稳定性。
+- [x] 阶段 13 文档交接曾同步提交：`353c5c53 docs(agent): 同步阶段13最新状态并更新继续开发提示词`；本节为 2026-05-22 文档状态再同步。
 - [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.95`。
-- [!] 当前仍不能默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
-- [x] Pipeline 深水位真实 UI run 已补齐：sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard 与 tester evidence。
 - [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
-- [!] 剩余关键缺口 3：飞书入口与飞书群聊 MCP 受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
-- [x] 下次启动优先顺序已更新：确认工作树噪音 -> 复核阶段 13 收尾提交 -> 检查飞书配置 -> 再判断是否进入 Runner v2 默认化评估。
+- [!] 飞书入口与飞书群聊 MCP 仍阻塞：本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`，不能伪造通过。
+- [!] 当前仍不能默认开启 Runner v2；默认 Agent 对话继续走旧 Orchestrator 主循环，`agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
+- [ ] 下一阶段应先做 Runner v2 默认化评估计划：明确是否只默认开启 Agent Runner v2、Pipeline Runner v2 是否同步默认、Channels v2 是否因飞书缺配置继续保持关闭。
+- [ ] 若补齐飞书配置，再真实补跑 `agentRuntimeChannelsV2` 飞书入口与飞书群聊 MCP；无配置时继续明确记录阻塞。
+- [ ] 默认化前必须再次跑完整聚焦验证与真实 Electron 交互复核，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容。
+
+## 2026-05-22 文档状态同步 Review
+
+- 本次任务只更新交接文档和下次启动提示词，不修改运行时代码。
+- 历史阶段条目中的旧 `[ ]` / `[~]` 可能是当时记录，判断当前进度时以本节、`docs/agent-refactor/development-checklist.md` 的“当前开发状态”和 `docs/agent-refactor/next-session-prompt.md` 为准。
+- 当前工作树已知无关噪音：`.DS_Store`、`docs/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store`；后续提交不得纳入这些文件。
 
 ## 2026-05-19 Agent 重构阶段 13：Pipeline 深水位续跑计划
 
@@ -47,7 +56,7 @@
 - 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例并重启后 `curl http://127.0.0.1:9334/json/version` 返回 `@rv-insights/electron/0.0.93`，CDP 恢复。
 - 真实 Pipeline run `2432c724-3b6f-463e-89c6-bdb135ac0a65` 已进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；选择 `report-001` 后 planner 返回自然语言摘要，旧逻辑因“输出不是合法 JSON 对象”失败。
 - 已修复 planner 自然语言 fallback：非 JSON planner 输出会生成保守 `PipelinePlannerStageOutput`，v2 enrichment 会继续写入 `patch-work/plan.md` 与 `patch-work/test-plan.md`，不放宽 reviewer / tester 严格结构化校验。
-- 修复后新真实 Pipeline run `e81216eb-9902-475e-98fc-a51661426694` 启动成功，explorer 阶段尝试写文件被只读工具防护拦截，随后 DeepSeek 渠道返回 `Insufficient Balance`，无法继续到 developer / reviewer / tester，不能标记深水位通过。
+- 修复后新真实 Pipeline run `e81216eb-9902-475e-98fc-a51661426694` 启动成功，explorer 阶段尝试写文件被只读工具防护拦截，随后 DeepSeek 渠道返回 `Insufficient Balance`，当时未标记深水位通过；后续 session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已补齐深水位证据。
 - Pipeline planner fallback 修复已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 - 飞书配置复查仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
 - 验证通过：`bun run typecheck`；Agent / Runtime / Event Log / Renderer atoms 聚焦测试 44 pass；Pipeline 聚焦测试 83 pass；`git diff --check`。
@@ -68,7 +77,7 @@
 - [x] 阶段 10 Pipeline 复用 Runner 已完成实现与聚焦验证。
 - [x] 阶段 11 清理旧路径已完成并提交：`2760a3e8 feat(agent): 完成阶段11旧路径清理`。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
-- [~] 阶段 13 Runner v2 默认化证据补齐已完成代码侧补强并提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加 `sdk_session` 去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；真实 Electron Runner v2 已补齐本轮目标，Pipeline UI 深水位证据仍未补齐，继续进行中。
+- [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态：代码侧补强 `328b3c96`、`sdk_session` 去重 `46e62a75`、Plan Mode 退出 `acc769f1`、Watchdog / Teams auto-resume `b3d0517e`、Pipeline planner fallback `6171f164`、Pipeline 与 Codex guard 收尾 `10356a3a` 均已提交；Pipeline UI 深水位证据已由后续 session `342a6f0f-bea1-40eb-9396-378685bfaadc` 补齐。
 
 ## 2026-05-18 Agent 重构阶段 13：Runner v2 默认化证据补齐计划
 
@@ -173,7 +182,7 @@
 - 飞书配置仍阻塞：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
 - 已将 `@rv-insights/electron` 升到 `0.0.92` 并同步 `bun.lock`。
 - 收尾验证已通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`（42 pass）；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`（81 pass）；`git diff --check`。
-- 当前仍不能默认开启 Runner v2；剩余缺口主要是 Watchdog、Teams auto-resume、能进入 gate/patch-work/tester 的 Pipeline 真实 run 和飞书入口。
+- 当前仍不能默认开启 Runner v2；Watchdog、Teams auto-resume 和 Pipeline 深水位真实 run 后续均已补齐，剩余阻塞是飞书入口缺配置，以及默认化本身仍需单独计划和回归验证。
 
 ## 2026-05-19 Agent 重构阶段 13：Watchdog / Pipeline 深水位补证计划
 

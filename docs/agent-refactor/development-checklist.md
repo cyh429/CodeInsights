@@ -4,9 +4,9 @@
 
 ## 当前开发状态
 
-更新时间：2026-05-19
+更新时间：2026-05-22
 
-当前阶段：阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强，以及 Pipeline planner 自然语言 fallback 修复均已完成并提交/验证；真实 Electron Runner v2 已补到发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind；Pipeline 深水位真实 UI run `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，并复验 Git 写入防护、HEAD/refs/index/config 校验和 tester 证据保守判定；飞书配置仍缺失，当前仍不默认开启 Runner v2。
+当前阶段：阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强、Pipeline planner 自然语言 fallback、Pipeline 深水位真实 UI run、Codex auth / Git guard / strict schema 收尾均已完成并提交/验证；飞书配置仍缺失，当前仍不默认开启 Runner v2。
 
 已完成：
 
@@ -50,14 +50,15 @@
 - [x] 已提交阶段 10 成果：`feat(agent): 完成阶段10 Pipeline 复用 Runner`
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
-- [~] 阶段 13 Runner v2 默认化证据补齐进行中；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
+- [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
 
 下一步建议：
 
-1. 本轮补强提交前继续保持 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭。
-2. 若后续要重跑 Pipeline 深水位，先确认可用模型余额/渠道，避免再次被 `Insufficient Balance` 阻塞。
+1. 先保持 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭，不删除旧路径。
+2. 下一阶段先写默认化评估计划：明确是否分批默认开启 Agent Runner v2 / Pipeline Runner v2，以及 Channels v2 如何因飞书阻塞继续关闭。
 3. 若本机出现飞书配置，再补飞书入口和飞书群聊 MCP；缺配置时继续明确记录阻塞。
-4. 每阶段完成并通过验证后立即单独提交。
+4. 默认化前重新跑完整聚焦验证与真实 Electron 交互复核。
+5. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
@@ -74,6 +75,7 @@
 - 当前本地配置没有飞书配置；阶段 9 已用 fixture 覆盖 Feishu channel adapter 降级策略，但飞书入口和飞书群聊 MCP 仍需后续在可用环境中补跑。
 - 阶段 13 已启动新的 Pipeline 真实 UI run 并进入 `explorer/task_selection` gate，写入 `patch-work/explorer/report-001.md`；planner 自然语言 fallback 已修复；追加 deepwater session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已完成 developer / reviewer / tester / committer draft，patch-set 排除 `patch-work/**`，HEAD / refs / index / config 未被污染。
 - 2026-05-19 Pipeline planner 自然语言 fallback 修复已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
+- 2026-05-19 Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
 - 2026-05-19 Codex Pipeline runner 追加支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，内部 Git snapshot 清理宿主 `GIT_*` 环境并 fail closed，并补齐 strict schema 递归校验、reviewer 空字符串保守拒绝和 clean-env 单测。
 - 2026-05-19 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例后 9334 CDP 可连接。
 - 阶段 11 已完成 Renderer 旧 reducer fallback / shadow compare 清理；阶段 12 仍未删除 Agent 主循环旧 `adapter.query()`、Pipeline legacy adapter、shared `adaptAgentEventToRuntimeEvent()` 或旧 session transcript 兼容。
@@ -117,6 +119,7 @@
 - [x] 补跑旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - [x] 补跑最小 Pipeline 真实 UI run；已到 explorer/task_selection gate、planner、developer、reviewer、tester 和 committer draft，sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc`。
 - [x] 修复 Pipeline planner 自然语言 fallback 并提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
+- [x] 补强 Codex Pipeline runner auth 隔离、strict schema 递归校验、reviewer 空字符串保守拒绝、Git guard 环境隔离与 clean-env 单测稳定性，并提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
 - [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`。
 - [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.95` 并同步 lockfile workspace 版本。
 - [x] 提交阶段 13 追加修复：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
@@ -150,15 +153,16 @@
 - [x] 本阶段 Plan Mode 证据补强提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`
 - [x] 本阶段 Watchdog / Teams auto-resume 证据补强提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`
 - [x] 本阶段 Pipeline planner fallback 证据补强提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`
+- [x] 本阶段 Pipeline 与 Codex guard 收尾证据提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`
 
 ### 阶段 13 当前说明
 
 - 证据文档：`docs/agent-refactor/baseline-runs/2026-05-18-stage-13.md`
-- 当前不能默认开启 Runner v2。缺口集中在 Pipeline UI 深水位真实运行和飞书配置，而不是 typecheck、聚焦单测或 Watchdog / Teams auto-resume 等价实现。
+- 当前不能默认开启 Runner v2。Pipeline 深水位真实运行已补齐；剩余阻塞是飞书真实入口缺配置，以及默认化本身仍需单独计划、分批启用决策和回归验证。
 - 2026-05-19 已新增真实权限 approve 证据：sessionId `d2fd3559-3515-40ed-b0dd-304c6c218200`，requestId `f7bf1269-3e92-45b0-b99a-f5f451eefde5`，`sdk_session_count=1`。
 - 2026-05-19 已新增真实权限 deny 证据：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，目标文件未生成。
 - 2026-05-19 已新增真实 AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 证据；Plan Mode 修复只在 `approve_auto` / `approve_edit` 时写 `plan_mode_exited`，`deny` / `feedback` 不写退出事件。
-- 2026-05-19 已补齐 Watchdog / Teams auto-resume 聚焦证据；当前默认化阻塞只剩 Pipeline 深水位真实 UI 运行与飞书配置。
+- 2026-05-19 已补齐 Watchdog / Teams auto-resume 聚焦证据；Pipeline 深水位真实 UI run 也已补齐。当前默认化阻塞集中在飞书配置缺失和默认开启评估尚未启动。
 
 ## 阶段 11：清理旧路径
 
