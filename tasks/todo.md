@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-22 Agent 右侧资源边栏布局优化计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认本轮应优先做结构减法，避免给右侧边栏继续堆叠装饰和重复信息。
+- [x] 定位 Agent 右侧边栏实现：`SidePanel.tsx` 负责 Resource Bay、会话文件、工作区文件；`FileDropZone.tsx` 负责拖拽上传空态；`globals.css` 负责 cockpit / vault 视觉。
+- [x] 调整布局：保留会话文件和工作区文件能力，但减少重复空态、压缩标题栏和投放区，让两个资源区更像统一的简洁面板。
+- [x] 调整样式：降低边框、扫描线、虚线框和内阴影权重，保留深色科技主题但提升留白和层级清晰度。
+- [x] 验证：运行类型检查/聚焦构建，必要时启动本地界面核验右侧边栏首屏观感和无明显溢出。
+- [x] Review：在本节末尾记录改动范围、验证结果和残留风险。
+
+## 2026-05-22 Agent 右侧资源边栏布局优化 Review
+
+- 已将右侧 `Resource Bay` 改为更薄的中文资源面板工具栏，刷新和关闭动作收拢到顶部，减少原先顶部英文 HUD 与分区标题重复。
+- 已将会话文件、工作区文件改为统一的 `agent-resource-card` 结构：轻量标题、路径摘要、单个打开目录动作；移除两个区块之间的厚分隔线和多层嵌套边框。
+- 已为 `FileDropZone` 增加 `compact` 模式，右侧边栏内上传区改为单行轻量投放入口，保留选择文件和附加文件夹能力；完整模式保持原有外部调用兼容。
+- 已按审查反馈恢复空目录提示的条件显示：无附加目录时仍显示“此文件夹为空”，有附加目录时隐藏重复空态；同时补充纯图标按钮 `aria-label` / `title`，会话和工作区路径摘要兼容 Windows 分隔符。
+- 验证通过：`cd apps/electron && bun run typecheck`；`cd apps/electron && bun run build:renderer`；仓库根目录 `bun run typecheck`；`git diff --check`。
+- 已尝试用本地浏览器打开 `http://localhost:5173/` 做视觉核验，但浏览器环境缺少 Electron preload 的 `window.electronAPI`，初始化组件报错，不能作为桌面壳视觉证据；当前 Electron dev 进程未开放远程调试端口，因此本轮未产出真实桌面截图。
+- 工作树中已有 `.DS_Store`、`assets/`、`improve/` 以及更早的图标任务记录未跟随本轮改动处理；本轮代码改动仅限 Agent 右侧资源边栏相关文件。
+
 ## 2026-05-22 CodeInsights 项目重命名计划
 
 - [x] 启动前复习 `tasks/lessons.md`，确认本轮需要保护已有 `.DS_Store`、`tasks/todo.md`、`assets/`、`improve/` 等未提交改动。

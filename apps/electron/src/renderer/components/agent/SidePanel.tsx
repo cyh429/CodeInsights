@@ -229,7 +229,7 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
   // 面包屑：显示根路径最后两段
   const breadcrumb = React.useMemo(() => {
     if (!sessionPath) return ''
-    const parts = sessionPath.split('/').filter(Boolean)
+    const parts = sessionPath.split(/[/\\]+/).filter(Boolean)
     return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : sessionPath
   }, [sessionPath])
 
@@ -243,6 +243,12 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
     window.electronAPI.getWorkspaceFilesPath(workspaceSlug).then(setWorkspaceFilesPath).catch(() => setWorkspaceFilesPath(null))
   }, [workspaceSlug])
 
+  const workspaceBreadcrumb = React.useMemo(() => {
+    if (!workspaceFilesPath) return ''
+    const parts = workspaceFilesPath.split(/[/\\]+/).filter(Boolean)
+    return parts.length > 2 ? `.../${parts.slice(-2).join('/')}` : workspaceFilesPath
+  }, [workspaceFilesPath])
+
   // 自动打开：文件变化时（仅在有 sessionPath 时）
   const prevFilesVersionRef = React.useRef(filesVersion)
   React.useEffect(() => {
@@ -255,7 +261,7 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
   return (
     <div
       className={cn(
-        'agent-resource-panel agent-file-cockpit agent-file-cockpit--vault relative h-full flex-shrink-0 overflow-hidden titlebar-drag-region rounded-panel border border-border-subtle/55',
+        'agent-resource-panel agent-file-cockpit agent-file-cockpit--vault agent-file-cockpit--quiet relative h-full flex-shrink-0 overflow-hidden titlebar-drag-region rounded-panel border border-border-subtle/55',
         shouldAnimate && 'transition-[width] duration-normal ease-out',
       )}
       style={{ width: isOpen ? width : 0 }}
@@ -263,7 +269,7 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
       {/* 面板内容 */}
         <div
           className={cn(
-          'h-full flex flex-col titlebar-no-drag pt-0.5',
+          'h-full flex flex-col titlebar-no-drag p-2',
           shouldAnimate && 'transition-opacity duration-normal',
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none',
         )}
@@ -271,86 +277,99 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
       >
           {/* 文件浏览内容 */}
           {workspaceSlug ? (
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="agent-resource-panel__mast agent-resource-panel__mast--scanner mx-2 mt-2 mb-1 flex items-center justify-between rounded-card border border-border-subtle/45 bg-background/30 px-3 py-2">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-status-running-fg">Resource Bay</div>
-                  <div className="truncate text-[11px] text-text-tertiary">文件、目录与工作区附件统一收纳</div>
+            <div className="flex-1 min-h-0 flex flex-col gap-2">
+              <div className="agent-resource-panel__mast agent-resource-panel__mast--compact flex items-center justify-between gap-3 rounded-card border border-border-subtle/35 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[12px] font-semibold text-text-primary">资源面板</div>
+                  <div className="truncate text-[11px] text-text-tertiary">会话文件与工作区文件</div>
                 </div>
-                <div className="inline-flex items-center gap-1 rounded-full border border-border-subtle/55 bg-surface-card/50 px-2 py-1 text-[10px] text-text-secondary">
-                  <FolderHeart className="size-3 text-status-success-fg" />
-                  {workspaceFilesPath ? 'Workspace linked' : 'Workspace pending'}
+                <div className="flex flex-shrink-0 items-center gap-1.5">
+                  <div className="inline-flex h-6 items-center gap-1 rounded-full border border-border-subtle/45 bg-surface-card/45 px-2 text-[10px] text-text-secondary">
+                    <FolderHeart className="size-3 text-status-success-fg" />
+                    {workspaceFilesPath ? '已连接' : '待连接'}
+                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 flex-shrink-0"
+                        aria-label="刷新文件列表"
+                        title="刷新文件列表"
+                        onClick={handleRefresh}
+                      >
+                        <RefreshCw className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>刷新文件列表</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 flex-shrink-0"
+                        aria-label="关闭侧面板"
+                        title="关闭侧面板"
+                        onClick={() => setIsOpen((prev) => !prev)}
+                      >
+                        <X className="size-3.5" aria-hidden="true" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>关闭侧面板</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
                   {/* ===== 会话文件区（仅当 sessionPath 存在时显示） ===== */}
                   {sessionPath && (
-                    <>
-                      <div className="agent-file-section-header mx-2 mt-2 flex h-10 flex-shrink-0 items-center gap-1 rounded-card border border-border-subtle/45 pl-3 pr-2">
-                        <FolderOpen className="size-3.5 text-status-running-fg" />
-                        <span className="text-[11px] font-semibold text-text-secondary">会话文件</span>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="size-3 text-muted-foreground/50 cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom" className="max-w-[200px]">
-                            <p>当前会话的专属文件，仅本次对话的 Agent 可以访问</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <span className="text-[10px] text-muted-foreground/75 truncate flex-1" title={sessionPath}>
-                          {breadcrumb}
-                        </span>
+                    <div className="agent-resource-card flex min-h-0 flex-[1.05] flex-col overflow-hidden rounded-card">
+                      <div className="agent-resource-card__header flex h-11 flex-shrink-0 items-center gap-2 px-2.5">
+                        <div className="agent-resource-card__icon">
+                          <FolderOpen className="size-3.5 text-status-running-fg" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[12px] font-semibold text-text-primary">会话文件</span>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="size-3 text-muted-foreground/50 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent side="bottom" className="max-w-[200px]">
+                                <p>当前会话的专属文件，仅本次对话的 Agent 可以访问</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <div className="truncate text-[10px] text-muted-foreground/75" title={sessionPath}>
+                            {breadcrumb}
+                          </div>
+                        </div>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-5 w-5 flex-shrink-0"
+                              className="h-7 w-7 flex-shrink-0"
+                              aria-label="在 Finder 中打开会话文件目录"
+                              title="在 Finder 中打开会话文件目录"
                               onClick={() => window.electronAPI.openFile(sessionPath).catch(console.error)}
                             >
-                              <ExternalLink className="size-2.5" />
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
                             <p>在 Finder 中打开</p>
                           </TooltipContent>
                         </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 flex-shrink-0"
-                              onClick={handleRefresh}
-                            >
-                              <RefreshCw className="size-2.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>刷新文件列表</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        {/* 关闭面板按钮 */}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 flex-shrink-0"
-                              onClick={() => setIsOpen((prev) => !prev)}
-                            >
-                              <X className="size-2.5" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>关闭侧面板</p>
-                          </TooltipContent>
-                        </Tooltip>
                       </div>
                       {/* 会话文件内容区（独立滚动） */}
-                      <div className="agent-resource-section agent-file-vault mx-2 mt-2 flex-1 min-h-0 overflow-y-auto rounded-card">
+                      <div className="agent-resource-card__body flex-1 min-h-0 overflow-y-auto py-1">
                         {/* 附加目录列表（可展开目录树） */}
                         {attachedDirs.length > 0 && (
                           <AttachedDirsSection
@@ -368,58 +387,43 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
                           <FileBrowser rootPath={sessionPath} hideToolbar embedded hideEmpty={attachedDirs.length > 0} onAddToChat={handleAddToChat} />
                         </>
                         {/* 会话文件拖拽上传区域 */}
-                          <div className="agent-resource-well agent-drop-vault mx-2 mb-2 rounded-card">
+                          <div className="agent-resource-card__drop">
                           <FileDropZone
                             workspaceSlug={workspaceSlug}
                             sessionId={sessionId}
                             target="session"
+                            compact
                             onFilesUploaded={handleFilesUploaded}
                             onAttachFolder={handleAttachFolder}
                             onFoldersDropped={handleSessionFoldersDropped}
                           />
                           </div>
                       </div>
-                      {/* ===== 分隔线 ===== */}
-                      <div className="mx-3 my-3 border-t border-border-subtle/45" />
-                    </>
-                  )}
-
-                  {/* ===== 顶部关闭按钮（仅在无 sessionPath 时显示，有 sessionPath 时关闭按钮在会话文件区标题栏） ===== */}
-                  {!sessionPath && (
-                    <div className="flex items-center justify-end px-3 h-[32px] flex-shrink-0">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-5 w-5 flex-shrink-0"
-                            onClick={() => setIsOpen((prev) => !prev)}
-                          >
-                            <X className="size-2.5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>关闭侧面板</p>
-                        </TooltipContent>
-                      </Tooltip>
                     </div>
                   )}
 
                   {/* ===== 工作区文件区 ===== */}
-                  <div className="flex-1 min-h-0 flex flex-col mx-2 mb-2">
-                    <div className="agent-file-section-header flex items-center gap-1 px-2 h-10 flex-shrink-0 rounded-card border border-border-subtle/45">
-                      <FolderHeart className="size-3.5 text-status-success-fg" />
-                      <span className="text-[11px] font-semibold text-text-secondary">工作区文件</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="size-3 text-muted-foreground/50 cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="max-w-[220px]">
-                          <p>工作区内所有会话可访问的文件和文件夹，每个新对话都可以自动读取</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <div className="flex-1" />
+                  <div className="agent-resource-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-card">
+                    <div className="agent-resource-card__header flex h-11 flex-shrink-0 items-center gap-2 px-2.5">
+                      <div className="agent-resource-card__icon">
+                        <FolderHeart className="size-3.5 text-status-success-fg" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[12px] font-semibold text-text-primary">工作区文件</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="size-3 text-muted-foreground/50 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="max-w-[220px]">
+                              <p>工作区内所有会话可访问的文件和文件夹，每个新对话都可以自动读取</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground/75" title={workspaceFilesPath ?? undefined}>
+                          {workspaceBreadcrumb || '等待工作区文件目录'}
+                        </div>
+                      </div>
                       {workspaceFilesPath && (
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -427,10 +431,12 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-5 w-5 flex-shrink-0"
+                              className="h-7 w-7 flex-shrink-0"
+                              aria-label="在 Finder 中打开工作区文件目录"
+                              title="在 Finder 中打开工作区文件目录"
                               onClick={() => window.electronAPI.openFile(workspaceFilesPath).catch(console.error)}
                             >
-                              <ExternalLink className="size-2.5" />
+                              <ExternalLink className="size-3.5" aria-hidden="true" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent side="bottom">
@@ -440,7 +446,7 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
                       )}
                     </div>
                     {/* 工作区文件内容区（独立滚动） */}
-                    <div className="agent-resource-section agent-file-vault mt-2 flex-1 min-h-0 overflow-y-auto rounded-card pb-1">
+                    <div className="agent-resource-card__body flex-1 min-h-0 overflow-y-auto py-1">
                       {/* 工作区级附加目录 */}
                       {wsAttachedDirs.length > 0 && (
                         <AttachedDirsSection
@@ -460,10 +466,11 @@ export function SidePanel({ sessionId, sessionPath, width = 320 }: SidePanelProp
                         </>
                       )}
                       {/* 工作区文件拖拽上传区域 */}
-                      <div className="agent-resource-well agent-drop-vault mx-2 mb-2 rounded-card">
+                      <div className="agent-resource-card__drop">
                       <FileDropZone
                         workspaceSlug={workspaceSlug}
                         target="workspace"
+                        compact
                         onFilesUploaded={handleFilesUploaded}
                         onAttachFolder={handleAttachWorkspaceFolder}
                         onFoldersDropped={handleWorkspaceFoldersDropped}

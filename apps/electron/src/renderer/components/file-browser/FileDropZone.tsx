@@ -26,9 +26,11 @@ interface FileDropZoneProps {
   onAttachFolder?: () => void
   /** 拖拽文件夹回调（拖拽放下文件夹时直接附加） */
   onFoldersDropped?: (folderPaths: string[]) => void
+  /** 紧凑模式：用于窄侧边栏内的轻量上传入口 */
+  compact?: boolean
 }
 
-export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onFilesUploaded, onAttachFolder, onFoldersDropped }: FileDropZoneProps): React.ReactElement {
+export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onFilesUploaded, onAttachFolder, onFoldersDropped, compact = false }: FileDropZoneProps): React.ReactElement {
   const [isDragOver, setIsDragOver] = React.useState(false)
   const [isUploading, setIsUploading] = React.useState(false)
 
@@ -168,11 +170,14 @@ export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onF
   }, [workspaceSlug, sessionId, isWorkspace, onFilesUploaded])
 
   return (
-    <div className="flex-shrink-0 px-3 pt-3 pb-1">
+    <div className={cn('flex-shrink-0', compact ? 'px-2 pb-2 pt-1.5' : 'px-3 pt-3 pb-1')}>
       <div
         className={cn(
-          'relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-3 py-4',
+          'relative flex items-center justify-center border border-dashed',
           'transition-colors duration-200 cursor-default',
+          compact
+            ? 'min-h-12 flex-row gap-2 rounded-lg px-2.5 py-2'
+            : 'flex-col gap-2 rounded-xl px-3 py-4',
           isDragOver
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/20 hover:border-muted-foreground/40',
@@ -184,34 +189,45 @@ export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onF
       >
         {isUploading ? (
           <>
-            <Loader2 className="size-5 text-muted-foreground animate-spin" />
+            <Loader2 className={cn('text-muted-foreground animate-spin', compact ? 'size-4' : 'size-5')} />
             <span className="text-xs text-muted-foreground">正在上传...</span>
           </>
         ) : (
           <>
             <Upload className={cn(
-              'size-5 transition-colors',
+              'transition-colors',
+              compact ? 'size-4 flex-shrink-0' : 'size-5',
               isDragOver ? 'text-primary' : 'text-muted-foreground/75',
             )} />
-            <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            <p className={cn(
+              'text-xs text-muted-foreground',
+              compact ? 'min-w-0 flex-1 truncate text-left' : 'text-center leading-relaxed',
+            )}>
               拖拽文件到此处
-              <br />
-              <span className="text-[10px] text-muted-foreground/75">
-                {isWorkspace ? '工作区内所有会话可访问' : '供 Agent 读取和处理'}
-              </span>
+              {!compact && (
+                <>
+                  <br />
+                  <span className="text-[10px] text-muted-foreground/75">
+                    {isWorkspace ? '工作区内所有会话可访问' : '供 Agent 读取和处理'}
+                  </span>
+                </>
+              )}
             </p>
-            <div className="flex items-center gap-1.5">
+            <div className={cn('flex items-center gap-1', !compact && 'gap-1.5')}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground"
+                    className={cn(
+                      'gap-1 text-[11px] text-muted-foreground hover:text-foreground',
+                      compact ? 'h-7 px-1.5' : 'h-6 px-2',
+                    )}
                     onClick={handleSelectFiles}
                   >
                     <File className="size-3" />
-                    选择文件
+                    <span className={compact ? 'sr-only' : undefined}>选择文件</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
@@ -225,11 +241,14 @@ export function FileDropZone({ workspaceSlug, sessionId, target = 'session', onF
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-6 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground"
+                      className={cn(
+                        'gap-1 text-[11px] text-muted-foreground hover:text-foreground',
+                        compact ? 'h-7 px-1.5' : 'h-6 px-2',
+                      )}
                       onClick={onAttachFolder}
                     >
                       <FolderPlus className="size-3" />
-                      附加文件夹
+                      <span className={compact ? 'sr-only' : undefined}>附加文件夹</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom">
