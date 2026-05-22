@@ -59,6 +59,7 @@ interface AdapterHarness {
 let currentConfigDir: string | undefined
 
 beforeEach(() => {
+  agentRuntimeRunnerV2.enabled = false
   currentConfigDir = mkdtempSync(join(tmpdir(), 'rv-completion-signal-'))
   process.env.RV_INSIGHTS_CONFIG_DIR = currentConfigDir
 })

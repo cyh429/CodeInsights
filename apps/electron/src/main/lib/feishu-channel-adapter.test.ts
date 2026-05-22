@@ -1,8 +1,13 @@
 import { describe, expect, test } from 'bun:test'
 import { createAgentStreamEnvelope, type AgentRuntimeEvent, type AgentStreamEnvelope } from '@rv-insights/shared'
+import { agentRuntimeChannelsV2 } from './agent-channel'
 import { FeishuChannelAdapter } from './feishu-channel-adapter'
 
 describe('FeishuChannelAdapter', () => {
+  test('Channels v2 仍需显式 env 开启', () => {
+    expect(agentRuntimeChannelsV2.enabled).toBe(false)
+  })
+
   test('throttles assistant delta and sends final markdown from runtime events', async () => {
     const deltas: Array<{ chatId: string; text: string }> = []
     const finals: Array<{ chatId: string; markdown: string; tools: string[] }> = []

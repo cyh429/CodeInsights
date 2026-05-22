@@ -8,8 +8,22 @@ import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import type { CanUseToolOptions, PermissionResult } from './agent-permission-service'
 import type { TeamsCoordinator, TeamsCoordinatorDeps } from './agent-orchestrator/teams-coordinator'
 
+const RUNNER_V2_DISABLED_VALUES = new Set(['0', 'false', 'off', 'no', 'disabled'])
+const RUNNER_V2_ENABLED_VALUES = new Set(['1', 'true', 'on', 'yes', 'enabled'])
+
+export function resolveAgentRuntimeRunnerV2Enabled(
+  value = process.env.RV_AGENT_RUNTIME_RUNNER_V2,
+): boolean {
+  if (value === undefined) return true
+  const normalized = value.trim().toLowerCase()
+  if (normalized === '') return true
+  if (RUNNER_V2_DISABLED_VALUES.has(normalized)) return false
+  if (RUNNER_V2_ENABLED_VALUES.has(normalized)) return true
+  return true
+}
+
 export const agentRuntimeRunnerV2 = {
-  enabled: process.env.RV_AGENT_RUNTIME_RUNNER_V2 === '1',
+  enabled: resolveAgentRuntimeRunnerV2Enabled(),
 }
 
 export interface AgentRuntimePipelineMetadata {

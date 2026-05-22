@@ -83,6 +83,10 @@ describe('pipeline-node-runner', () => {
     rmSync(repoRoot, { recursive: true, force: true })
   })
 
+  test('Pipeline Runner v2 仍需显式 env 开启', () => {
+    expect(agentRuntimePipelineRunnerV2.enabled).toBe(false)
+  })
+
   test('buildPipelineNodePrompts 拆分 system prompt 与 user prompt', () => {
     const prompts = buildPipelineNodePrompts('developer', {
       sessionId: 'session-1',

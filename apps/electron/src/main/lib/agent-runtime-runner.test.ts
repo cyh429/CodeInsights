@@ -2,9 +2,31 @@ import { describe, expect, test } from 'bun:test'
 import type { AgentStreamEnvelope, SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
-import type { AgentRuntimeRunInput } from './agent-runtime-types'
+import {
+  resolveAgentRuntimeRunnerV2Enabled,
+  type AgentRuntimeRunInput,
+} from './agent-runtime-types'
 
 const baseTime = '2026-05-18T00:00:00.000Z'
+
+describe('agentRuntimeRunnerV2 feature flag', () => {
+  test('未设置 env 时默认启用 Runner v2', () => {
+    expect(resolveAgentRuntimeRunnerV2Enabled(undefined)).toBe(true)
+    expect(resolveAgentRuntimeRunnerV2Enabled('')).toBe(true)
+  })
+
+  test('显式关闭 env 会回到旧 Agent 主循环', () => {
+    for (const value of ['0', 'false', 'FALSE', 'off', 'no', 'disabled']) {
+      expect(resolveAgentRuntimeRunnerV2Enabled(value)).toBe(false)
+    }
+  })
+
+  test('显式开启 env 会强制 Runner v2', () => {
+    for (const value of ['1', 'true', 'TRUE', 'on', 'yes', 'enabled']) {
+      expect(resolveAgentRuntimeRunnerV2Enabled(value)).toBe(true)
+    }
+  })
+})
 
 describe('InProcessAgentRuntimeRunner', () => {
   test('发送消息时输出 run_started、SDK envelopes 并通过 store 写 SDKMessage', async () => {

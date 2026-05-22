@@ -6,7 +6,7 @@
 
 更新时间：2026-05-22
 
-当前阶段：阶段 14 Runner v2 默认化评估计划已建立；阶段 13 的代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强、Pipeline planner 自然语言 fallback、Pipeline 深水位真实 UI run、Codex auth / Git guard / strict schema 收尾均已完成并提交/验证；飞书配置仍缺失，当前仍不修改默认开关。
+当前阶段：阶段 14A Agent Runner v2 默认化已完成；阶段 13 的代码侧补强、`sdk_session` 去重修复、Plan Mode 退出证据补强、Watchdog / Teams auto-resume 等价证据补强、Pipeline planner 自然语言 fallback、Pipeline 深水位真实 UI run、Codex auth / Git guard / strict schema 收尾均已完成并提交/验证；飞书配置仍缺失，Pipeline Runner v2 与 Channels v2 仍不修改默认开关。
 
 已完成：
 
@@ -51,14 +51,14 @@
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
 - [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
-- [~] 阶段 14 Runner v2 默认化评估计划已建立；尚未修改 `agentRuntimeRunnerV2` / `agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 默认值。
+- [x] 阶段 14A Agent Runner v2 默认化已完成；`agentRuntimeRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚，`agentRuntimePipelineRunnerV2` / `agentRuntimeChannelsV2` 仍默认关闭。
 
 下一步建议：
 
-1. 先保持 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭，不删除旧路径。
-2. 阶段 14A 只评估 Agent Runner v2 默认化；Pipeline Runner v2 不与 Agent 同一提交同步默认化。
+1. 保持 `agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭，不删除旧路径。
+2. 阶段 14B 才评估 Pipeline Runner v2 默认化；必须重新跑 Pipeline 深水位真实 UI run，不能与 14A 同一提交。
 3. `agentRuntimeChannelsV2` 在飞书配置缺失时继续关闭；若本机出现飞书配置，再补飞书入口和飞书群聊 MCP。
-4. 默认化前后都重新跑完整聚焦验证与真实 Electron 交互复核，并证明显式回滚开关可用。
+4. 后续默认化前后都重新跑完整聚焦验证与真实 Electron 交互复核，并证明显式回滚开关可用。
 5. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
@@ -66,6 +66,7 @@
 - 阶段 13 已补齐 Runner v2 自动重试、typed error 持久化、catch error SDKMessage 持久化、UI `sdk_message` 推送和重复 `run_started/sdk_session` 去重的代码侧证据。
 - 阶段 13 已通过真实 Runner v2 最小发送、stop、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 复验。
 - 阶段 13 已补齐 Watchdog / Teams auto-resume 等价证据：Runner v2 现在会复用 `TeamsCoordinator`，在同一 SDK session 下延迟 result、发出 legacy `waiting_resume` / `resume_start` 回调，并在 worker idle 时退出挂起 query。
+- 阶段 14A 已默认开启 Agent Runner v2：默认 Electron session `073783b3-27ae-49ec-b516-92de146e6572` 走 `InProcessAgentRuntimeRunner` 并完成，显式关闭 session `70bf7de8-043a-49c2-81c4-28e49f15ff96` 回到旧主循环并完成。
 - 2026-05-19 权限 deny 补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，目标文件未生成。
 - 2026-05-19 权限 approve 补跑发现重复 `sdk_session` 去重仍不完整；已在 event log writer 层按同一 run 的 `sdkSessionId` 去重，并复验证据中 `sdk_session_count=1`。
 - 2026-05-19 `sdk_session` writer 层去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
@@ -109,7 +110,7 @@
 ### 前置条件
 
 - [x] 阶段 13 Runner v2 代码侧等价证据、真实 Electron Agent 交互证据、Pipeline 深水位真实 UI run 和 Codex guard 收尾证据均已完成。
-- [x] 当前三个开关仍默认关闭：`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2`。
+- [x] 阶段 14A 后当前开关状态：`agentRuntimeRunnerV2` 默认开启且可显式关闭；`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 仍默认关闭。
 - [x] 开关实现位置已确认：`agent-runtime-types.ts`、`pipeline-node-runner.ts`、`agent-channel.ts` 均为 env 显式 `1` 才启用。
 - [!] 飞书配置仍缺失：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在。
 
@@ -122,35 +123,35 @@
 
 ### 阶段 14A 任务
 
-- [ ] 实现前 check-in：确认只修改 Agent Runner v2 默认开关和必要测试/文档，不直接触碰 Pipeline / Feishu 默认值。
-- [ ] 设计可回滚开关语义：未设置 env 走新默认，显式关闭 env 可回到旧 Agent 主循环，显式开启 env 继续强制 Runner v2。
-- [ ] 修改 `agentRuntimeRunnerV2` 默认策略，并补充默认开启 / 显式关闭聚焦测试。
-- [ ] 复跑默认化前验证矩阵，记录基线结果。
-- [ ] 复跑默认化后验证矩阵，证明默认 Agent 对话走 Runner v2，显式关闭能回到旧主循环。
-- [ ] 更新 `tasks/todo.md`、本 checklist 和必要交接文档。
-- [ ] 阶段 14A 通过后单独提交，不纳入 `.DS_Store`、`improve/`、`patch-work/` 或无关文件。
+- [x] 实现前 check-in：确认只修改 Agent Runner v2 默认开关和必要测试/文档，不直接触碰 Pipeline / Feishu 默认值。
+- [x] 设计可回滚开关语义：未设置 env 走新默认，显式关闭 env 可回到旧 Agent 主循环，显式开启 env 继续强制 Runner v2。
+- [x] 修改 `agentRuntimeRunnerV2` 默认策略，并补充默认开启 / 显式关闭聚焦测试。
+- [x] 复跑默认化前验证矩阵，记录基线结果。
+- [x] 复跑默认化后验证矩阵，证明默认 Agent 对话走 Runner v2，显式关闭能回到旧主循环。
+- [x] 更新 `tasks/todo.md`、本 checklist 和必要交接文档。
+- [x] 阶段 14A 通过后单独提交，不纳入 `.DS_Store`、`improve/`、`patch-work/` 或无关文件。
 
 ### 阶段 14A 验证矩阵
 
-- [ ] `bun run typecheck`
-- [ ] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`
-- [ ] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [ ] `env -i HOME=/tmp/rv-clean-home-stage14 USERPROFILE=/tmp/rv-clean-home-stage14 TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [ ] Electron 桌面壳真实 Agent 交互复核：默认发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
-- [ ] 显式关闭 Runner v2 的 Electron Agent 发送回归，证明旧主循环回滚路径仍可用。
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts`
+- [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] `env -i HOME=/tmp/rv-clean-home-stage14-post USERPROFILE=/tmp/rv-clean-home-stage14-post TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] Electron 桌面壳真实 Agent 默认发送复核：session `073783b3-27ae-49ec-b516-92de146e6572` 走 Runner v2 并完成。
+- [x] 显式关闭 Runner v2 的 Electron Agent 发送回归：session `70bf7de8-043a-49c2-81c4-28e49f15ff96` 走旧主循环并完成。
+- [x] `git diff --check`
 
 ### 阶段 14A 回滚
 
-- [ ] 显式关闭 env 可回到旧 Agent 主循环。
-- [ ] 旧 Agent 主循环代码保留，不删除旧 retry / Watchdog / Teams / SDKMessage 兼容路径。
-- [ ] `agentRuntimePipelineRunnerV2` 与 `agentRuntimeChannelsV2` 继续默认关闭。
-- [ ] 如默认化后真实 Electron 回归失败，回滚本阶段默认开关改动，保留阶段 13 证据和旧默认行为。
+- [x] 显式关闭 env 可回到旧 Agent 主循环。
+- [x] 旧 Agent 主循环代码保留，不删除旧 retry / Watchdog / Teams / SDKMessage 兼容路径。
+- [x] `agentRuntimePipelineRunnerV2` 与 `agentRuntimeChannelsV2` 继续默认关闭。
+- [x] 如默认化后真实 Electron 回归失败，回滚本阶段默认开关改动，保留阶段 13 证据和旧默认行为。
 
 ### 阶段 14 当前说明
 
-- 本节只建立默认化计划，尚未修改运行时代码或 feature flag 默认值。
-- 当前合理顺序是先做 Agent Runner v2 默认化候选；Pipeline Runner v2 后置到独立阶段，避免同一提交扩大回归面。
+- 阶段 14A 已完成 Agent Runner v2 默认化，证据文档见 [2026-05-22-stage-14A.md](./baseline-runs/2026-05-22-stage-14A.md)。
+- 当前合理顺序是进入 14B 单独评估 Pipeline Runner v2 默认化，避免同一提交扩大回归面。
 - 飞书入口和飞书群聊 MCP 仍无真实配置，Channels v2 不进入默认化候选。
 
 ## 阶段 13：Runner v2 默认化证据补齐

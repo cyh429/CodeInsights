@@ -29,28 +29,29 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 3. 然后读 [目标架构](./target-architecture.md) 与 [迁移路线](./migration-plan.md)，确认模块边界和阶段顺序。
 4. 实现前读 [行为基线清单](./baseline-checklist.md)、[事件契约](./event-contract.md)、[Runtime Manifest](./runtime-manifest.md) 和 [第一批实现 PR 拆分](./implementation-prs.md)，把阶段拆成可验证 PR。
 5. 后续迭代按 [开发进度跟踪清单](./development-checklist.md) 更新状态、验证结果和回滚记录。
-6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续阶段 14A。
+6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续阶段 14B。
 
 ## 当前进度
 
 - 阶段 0-12 已完成并提交，阶段 13 的 Runner v2 证据补齐与收尾补强也已完成到可审计状态。
 - 阶段 13 关键提交：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`、`6171f164`、`10356a3a`；文档交接同步提交：`353c5c53`。
 - 阶段 14 默认化评估计划已建立并提交：`02199299 docs(agent): 建立阶段14 Runner v2 默认化评估计划`。
-- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.95`。
-- 默认 Agent 对话仍走旧 Orchestrator 主循环；`agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 均保持默认关闭。
+- 阶段 14A Agent Runner v2 默认化已完成：未设置 `RV_AGENT_RUNTIME_RUNNER_V2` 时默认走 Runner v2，显式 `RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
+- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.96`。
+- 默认 Agent 对话现在走 Runner v2；`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 仍保持默认关闭。
 - 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
 - Pipeline 深水位真实 UI run 已完成：session `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
 - Codex Pipeline runner 已完成收尾补强：支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，strict schema 递归校验所有 object schema，Git snapshot 清理宿主 `GIT_*` 并 fail closed，clean-env 单测通过。
-- 阶段 14 分批策略已写入 checklist：14A 先只评估 Agent Runner v2 默认化；14B 再单独评估 Pipeline Runner v2；14C Channels v2 继续受飞书配置阻塞。
+- 阶段 14 分批策略已写入 checklist：14A 已完成 Agent Runner v2 默认化；14B 再单独评估 Pipeline Runner v2；14C Channels v2 继续受飞书配置阻塞。
 
 ## 仍未完成
 
 - 飞书入口和飞书群聊 MCP 仍受本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞，不能伪造通过。
-- 当前尚未修改 Runner v2 默认开关。下一阶段应进入 14A：先做 Agent Runner v2 默认化实现前验证，再只修改 `agentRuntimeRunnerV2` 默认策略和必要测试/文档。
+- Pipeline Runner v2 尚未默认开启；下一阶段应进入 14B：重新跑 Pipeline 深水位真实 UI run 后，再单独评估 `agentRuntimePipelineRunnerV2` 默认化。
 - `agentRuntimePipelineRunnerV2` 不与 Agent Runner v2 同一提交默认开启；只有 14A 通过并单独提交后，才进入 14B 并重新补 Pipeline 深水位真实 UI run。
 - `agentRuntimeChannelsV2` 在飞书配置缺失时继续保持关闭；只有补齐飞书配置并真实跑通飞书入口和飞书群聊 MCP 后，才能进入 Channels v2 默认化评估。
-- 默认化前必须保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容，并重新跑完整聚焦验证与真实 Electron 交互复核。
+- 后续默认化仍必须保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容，并重新跑完整聚焦验证与真实 Electron 交互复核。
 - 删除旧路径、旧 adapter 或旧兼容逻辑只能作为默认开启稳定后的后续阶段，不能在当前状态直接清理。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
