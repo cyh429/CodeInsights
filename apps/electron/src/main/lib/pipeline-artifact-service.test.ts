@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { PipelineStageArtifactRecord } from '@rv-insights/shared'
+import type { PipelineStageArtifactRecord } from '@codeinsights/shared'
 import {
   persistPipelineStageArtifactRecord,
   readPipelineArtifactContent,
@@ -11,19 +11,19 @@ import {
 } from './pipeline-artifact-service'
 
 describe('pipeline-artifact-service', () => {
-  const originalConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+  const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
   let tempConfigDir = ''
 
   beforeEach(() => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-artifacts-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-artifacts-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   })
 
   afterEach(() => {
     if (originalConfigDir == null) {
-      delete process.env.RV_INSIGHTS_CONFIG_DIR
+      delete process.env.CODEINSIGHTS_CONFIG_DIR
     } else {
-      process.env.RV_INSIGHTS_CONFIG_DIR = originalConfigDir
+      process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
     }
 
     rmSync(tempConfigDir, { recursive: true, force: true })

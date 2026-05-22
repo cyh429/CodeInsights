@@ -2,7 +2,7 @@
  * AppearanceSettings - 外观设置页
  *
  * 特殊风格选择 + 主题模式切换（浅色/深色/跟随系统/特殊风格）。
- * 通过 Jotai atom 管理状态，持久化到 ~/.rv-insights/settings.json。
+ * 通过 Jotai atom 管理状态，持久化到 ~/.codeinsights/settings.json。
  */
 
 import * as React from 'react'
@@ -27,19 +27,19 @@ import { cn } from '@/lib/utils'
 import type { ThemeMode, ThemeStyle } from '../../../types'
 
 // ===== Logo 资源导入（用于图标选择器） =====
-import rvInsightsBlackLogo from '@/assets/bots/rv-insights-logos/rv-insights-black.png'
-import rvInsightsWhiteLogo from '@/assets/bots/rv-insights-logos/rv-insights-white.png'
-import rvInsightsBlueLogo from '@/assets/bots/rv-insights-logos/rv-insights-blue.png'
-import rvInsightsPurpleLogo from '@/assets/bots/rv-insights-logos/rv-insights-purple.png'
-import rvInsightsGradientLogo from '@/assets/bots/rv-insights-logos/rv-insights-gradient.png'
-import rvInsightsCoralLogo from '@/assets/bots/rv-insights-logos/rv-insights-coral.png'
-import rvInsightsVeriPeriLogo from '@/assets/bots/rv-insights-logos/rv-insights-veri-peri.png'
-import rvInsightsVivaMagentaLogo from '@/assets/bots/rv-insights-logos/rv-insights-viva-magenta.png'
-import rvInsightsMochaMousseLogo from '@/assets/bots/rv-insights-logos/rv-insights-mocha-mousse.png'
-import rvInsightsEmeraldLogo from '@/assets/bots/rv-insights-logos/rv-insights-emerald.png'
-import rvInsights8bitLogo from '@/assets/bots/rv-insights-logos/rv-insights-8bit.png'
-import rvInsightsCyberpunkLogo from '@/assets/bots/rv-insights-logos/rv-insights-cyberpunk.png'
-import rvInsightsFuturisticLogo from '@/assets/bots/rv-insights-logos/rv-insights-futuristic.png'
+import codeInsightsBlackLogo from '@/assets/bots/codeinsights-logos/codeinsights-black.png'
+import codeInsightsWhiteLogo from '@/assets/bots/codeinsights-logos/codeinsights-white.png'
+import codeInsightsBlueLogo from '@/assets/bots/codeinsights-logos/codeinsights-blue.png'
+import codeInsightsPurpleLogo from '@/assets/bots/codeinsights-logos/codeinsights-purple.png'
+import codeInsightsGradientLogo from '@/assets/bots/codeinsights-logos/codeinsights-gradient.png'
+import codeInsightsCoralLogo from '@/assets/bots/codeinsights-logos/codeinsights-coral.png'
+import codeInsightsVeriPeriLogo from '@/assets/bots/codeinsights-logos/codeinsights-veri-peri.png'
+import codeInsightsVivaMagentaLogo from '@/assets/bots/codeinsights-logos/codeinsights-viva-magenta.png'
+import codeInsightsMochaMousseLogo from '@/assets/bots/codeinsights-logos/codeinsights-mocha-mousse.png'
+import codeInsightsEmeraldLogo from '@/assets/bots/codeinsights-logos/codeinsights-emerald.png'
+import codeInsights8bitLogo from '@/assets/bots/codeinsights-logos/codeinsights-8bit.png'
+import codeInsightsCyberpunkLogo from '@/assets/bots/codeinsights-logos/codeinsights-cyberpunk.png'
+import codeInsightsFuturisticLogo from '@/assets/bots/codeinsights-logos/codeinsights-futuristic.png'
 
 /** 主题选项 */
 const THEME_OPTIONS = [
@@ -110,19 +110,19 @@ interface IconVariant {
 
 const ICON_VARIANTS: readonly IconVariant[] = [
   { id: 'default', name: '默认', src: '', previewBg: 'bg-neutral-900' },
-  { id: 'black', name: '经典黑', src: rvInsightsBlackLogo, previewBg: 'bg-neutral-900' },
-  { id: 'white', name: '纯白版', src: rvInsightsWhiteLogo, previewBg: 'bg-white' },
-  { id: 'blue', name: '品牌蓝', src: rvInsightsBlueLogo, previewBg: 'bg-blue-900' },
-  { id: 'purple', name: '紫色版', src: rvInsightsPurpleLogo, previewBg: 'bg-purple-900' },
-  { id: 'gradient', name: '渐变版', src: rvInsightsGradientLogo, previewBg: 'bg-gradient-to-br from-blue-600 to-purple-600' },
-  { id: 'coral', name: '珊瑚橘', src: rvInsightsCoralLogo, previewBg: 'bg-[#FF6F61]' },
-  { id: 'veri-peri', name: '长春花蓝', src: rvInsightsVeriPeriLogo, previewBg: 'bg-[#6667AB]' },
-  { id: 'viva-magenta', name: '非凡洋红', src: rvInsightsVivaMagentaLogo, previewBg: 'bg-[#BB2649]' },
-  { id: 'mocha-mousse', name: '摩卡慕斯', src: rvInsightsMochaMousseLogo, previewBg: 'bg-[#A47764]' },
-  { id: 'emerald', name: '翡翠绿', src: rvInsightsEmeraldLogo, previewBg: 'bg-[#009473]' },
-  { id: '8bit', name: '8bit 像素', src: rvInsights8bitLogo, previewBg: 'bg-[#1a1a2e]' },
-  { id: 'cyberpunk', name: '赛博朋克', src: rvInsightsCyberpunkLogo, previewBg: 'bg-[#0d0221]' },
-  { id: 'futuristic', name: '未来质感', src: rvInsightsFuturisticLogo, previewBg: 'bg-[#4a4a4a]' },
+  { id: 'black', name: '经典黑', src: codeInsightsBlackLogo, previewBg: 'bg-neutral-900' },
+  { id: 'white', name: '纯白版', src: codeInsightsWhiteLogo, previewBg: 'bg-white' },
+  { id: 'blue', name: '品牌蓝', src: codeInsightsBlueLogo, previewBg: 'bg-blue-900' },
+  { id: 'purple', name: '紫色版', src: codeInsightsPurpleLogo, previewBg: 'bg-purple-900' },
+  { id: 'gradient', name: '渐变版', src: codeInsightsGradientLogo, previewBg: 'bg-gradient-to-br from-blue-600 to-purple-600' },
+  { id: 'coral', name: '珊瑚橘', src: codeInsightsCoralLogo, previewBg: 'bg-[#FF6F61]' },
+  { id: 'veri-peri', name: '长春花蓝', src: codeInsightsVeriPeriLogo, previewBg: 'bg-[#6667AB]' },
+  { id: 'viva-magenta', name: '非凡洋红', src: codeInsightsVivaMagentaLogo, previewBg: 'bg-[#BB2649]' },
+  { id: 'mocha-mousse', name: '摩卡慕斯', src: codeInsightsMochaMousseLogo, previewBg: 'bg-[#A47764]' },
+  { id: 'emerald', name: '翡翠绿', src: codeInsightsEmeraldLogo, previewBg: 'bg-[#009473]' },
+  { id: '8bit', name: '8bit 像素', src: codeInsights8bitLogo, previewBg: 'bg-[#1a1a2e]' },
+  { id: 'cyberpunk', name: '赛博朋克', src: codeInsightsCyberpunkLogo, previewBg: 'bg-[#0d0221]' },
+  { id: 'futuristic', name: '未来质感', src: codeInsightsFuturisticLogo, previewBg: 'bg-[#4a4a4a]' },
 ] as const
 
 /** 根据平台返回缩放快捷键提示 */
@@ -289,7 +289,7 @@ function IconCard({
         )}
       >
         {variant.id === 'default' ? (
-          // 默认图标用 CSS 模拟 RV-Insights logo 形状
+          // 默认图标用 CSS 模拟 CodeInsights logo 形状
           <div className="flex items-end gap-[2px] -rotate-12">
             {[1, 0.85, 0.7, 0.55, 0.4, 0.25].map((opacity, i) => (
               <div

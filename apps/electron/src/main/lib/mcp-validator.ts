@@ -10,7 +10,7 @@
 
 import { existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
-import type { McpServerEntry } from '@rv-insights/shared'
+import type { McpServerEntry } from '@codeinsights/shared'
 
 /**
  * MCP 验证结果

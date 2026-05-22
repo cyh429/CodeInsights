@@ -100,7 +100,7 @@ describe('buildSdkEnv', () => {
 
 describe('resolveSDKCliPath', () => {
   test('无法通过 require 解析时使用模块目录 fallback', () => {
-    const moduleDir = '/Applications/RV-Insights.app/Contents/Resources/app/dist'
+    const moduleDir = '/Applications/CodeInsights.app/Contents/Resources/app/dist'
     const cliPath = resolveSDKCliPath({
       platform: 'win32',
       arch: 'x64',
@@ -115,6 +115,6 @@ describe('resolveSDKCliPath', () => {
       },
     })
 
-    expect(cliPath).toBe('/Applications/RV-Insights.app/Contents/Resources/app/node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/claude.exe')
+    expect(cliPath).toBe('/Applications/CodeInsights.app/Contents/Resources/app/node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/claude.exe')
   })
 })

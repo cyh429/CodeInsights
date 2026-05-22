@@ -1,39 +1,54 @@
 /**
  * 配置路径工具
  *
- * 管理 RV-Insights 应用的本地配置文件路径。
- * 所有用户配置存储在 ~/.rv-insights/ 目录下。
+ * 管理 CodeInsights 应用的本地配置文件路径。
+ * 所有用户配置存储在 ~/.codeinsights/ 目录下。
  */
 
 import { join } from 'node:path'
 import { mkdirSync, existsSync, cpSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 
+const CONFIG_DIR_NAMES = {
+  production: '.codeinsights',
+  development: '.codeinsights-dev',
+} as const
+
+const LEGACY_CONFIG_DIR_NAMES = {
+  production: '.rv-insights',
+  development: '.rv-insights-dev',
+} as const
+
+const CONFIG_DIR_OVERRIDE_ENV = 'CODEINSIGHTS_CONFIG_DIR'
+const LEGACY_CONFIG_DIR_OVERRIDE_ENV = 'RV_INSIGHTS_CONFIG_DIR'
+const DEV_MODE_ENV = 'CODEINSIGHTS_DEV'
+const LEGACY_DEV_MODE_ENV = 'PROMA_DEV'
+
 /**
  * 获取配置目录名称
  *
- * 开发模式下返回 '.rv-insights-dev'，正式版本返回 '.rv-insights'。
+ * 开发模式下返回 '.codeinsights-dev'，正式版本返回 '.codeinsights'。
  *
  * 检测优先级：
- * 1. PROMA_DEV=1 环境变量（显式覆盖）
+ * 1. CODEINSIGHTS_DEV=1 环境变量（显式覆盖）
  * 2. Electron app.isPackaged（未打包 = 开发模式）
- * 3. 兜底 '.rv-insights'
+ * 3. 兜底 '.codeinsights'
  */
 let _configDirName: string | undefined
 
 export function getConfigDirName(): string {
   if (_configDirName === undefined) {
-    if (process.env.PROMA_DEV === '1') {
-      _configDirName = '.rv-insights-dev'
+    if (process.env[DEV_MODE_ENV] === '1' || process.env[LEGACY_DEV_MODE_ENV] === '1') {
+      _configDirName = CONFIG_DIR_NAMES.development
     } else {
       try {
         const { app } = require('electron')
-        _configDirName = app.isPackaged ? '.rv-insights' : '.rv-insights-dev'
+        _configDirName = app.isPackaged ? CONFIG_DIR_NAMES.production : CONFIG_DIR_NAMES.development
       } catch {
-        _configDirName = '.rv-insights'
+        _configDirName = CONFIG_DIR_NAMES.production
       }
     }
-    const mode = _configDirName === '.rv-insights-dev' ? '开发模式' : '正式版本'
+    const mode = _configDirName === CONFIG_DIR_NAMES.development ? '开发模式' : '正式版本'
     console.log(`[配置] 配置目录: ~/${_configDirName}/（${mode}）`)
   }
   return _configDirName
@@ -42,11 +57,11 @@ export function getConfigDirName(): string {
 /**
  * 获取配置目录路径
  *
- * 开发模式返回 ~/.rv-insights-dev/，正式版本返回 ~/.rv-insights/。
+ * 开发模式返回 ~/.codeinsights-dev/，正式版本返回 ~/.codeinsights/。
  * 如果目录不存在则自动创建。
  */
 export function getConfigDir(): string {
-  const overrideDir = process.env.RV_INSIGHTS_CONFIG_DIR?.trim()
+  const overrideDir = process.env[CONFIG_DIR_OVERRIDE_ENV]?.trim()
   if (overrideDir) {
     if (!existsSync(overrideDir)) {
       mkdirSync(overrideDir, { recursive: true })
@@ -55,20 +70,43 @@ export function getConfigDir(): string {
     return overrideDir
   }
 
+  const legacyOverrideDir = process.env[LEGACY_CONFIG_DIR_OVERRIDE_ENV]?.trim()
+  if (legacyOverrideDir) {
+    console.warn(`[配置] ${LEGACY_CONFIG_DIR_OVERRIDE_ENV} 已重命名为 ${CONFIG_DIR_OVERRIDE_ENV}，本次继续兼容旧环境变量。`)
+    if (!existsSync(legacyOverrideDir)) {
+      mkdirSync(legacyOverrideDir, { recursive: true })
+      console.log(`[配置] 已创建旧环境变量指定的配置目录: ${legacyOverrideDir}`)
+    }
+    return legacyOverrideDir
+  }
+
   const configDir = join(homedir(), getConfigDirName())
 
   if (!existsSync(configDir)) {
-    mkdirSync(configDir, { recursive: true })
-    console.log(`[配置] 已创建配置目录: ${configDir}`)
+    const legacyConfigDir = getLegacyConfigDir()
+    if (legacyConfigDir && existsSync(legacyConfigDir)) {
+      cpSync(legacyConfigDir, configDir, { recursive: true, errorOnExist: false })
+      console.log(`[配置] 已从旧配置目录迁移到: ${configDir}`)
+    } else {
+      mkdirSync(configDir, { recursive: true })
+      console.log(`[配置] 已创建配置目录: ${configDir}`)
+    }
   }
 
   return configDir
 }
 
+function getLegacyConfigDir(): string | null {
+  const currentName = getConfigDirName()
+  if (currentName === CONFIG_DIR_NAMES.development) return join(homedir(), LEGACY_CONFIG_DIR_NAMES.development)
+  if (currentName === CONFIG_DIR_NAMES.production) return join(homedir(), LEGACY_CONFIG_DIR_NAMES.production)
+  return null
+}
+
 /**
  * 获取渠道配置文件路径
  *
- * @returns ~/.rv-insights/channels.json
+ * @returns ~/.codeinsights/channels.json
  */
 export function getChannelsPath(): string {
   return join(getConfigDir(), 'channels.json')
@@ -77,7 +115,7 @@ export function getChannelsPath(): string {
 /**
  * 获取对话索引文件路径
  *
- * @returns ~/.rv-insights/conversations.json
+ * @returns ~/.codeinsights/conversations.json
  */
 export function getConversationsIndexPath(): string {
   return join(getConfigDir(), 'conversations.json')
@@ -88,7 +126,7 @@ export function getConversationsIndexPath(): string {
  *
  * 如果目录不存在则自动创建。
  *
- * @returns ~/.rv-insights/conversations/
+ * @returns ~/.codeinsights/conversations/
  */
 export function getConversationsDir(): string {
   const dir = join(getConfigDir(), 'conversations')
@@ -105,7 +143,7 @@ export function getConversationsDir(): string {
  * 获取指定对话的消息文件路径
  *
  * @param id 对话 ID
- * @returns ~/.rv-insights/conversations/{id}.jsonl
+ * @returns ~/.codeinsights/conversations/{id}.jsonl
  */
 export function getConversationMessagesPath(id: string): string {
   return join(getConversationsDir(), `${id}.jsonl`)
@@ -116,7 +154,7 @@ export function getConversationMessagesPath(id: string): string {
  *
  * 如果目录不存在则自动创建。
  *
- * @returns ~/.rv-insights/attachments/
+ * @returns ~/.codeinsights/attachments/
  */
 export function getAttachmentsDir(): string {
   const dir = join(getConfigDir(), 'attachments')
@@ -135,7 +173,7 @@ export function getAttachmentsDir(): string {
  * 如果目录不存在则自动创建。
  *
  * @param conversationId 对话 ID
- * @returns ~/.rv-insights/attachments/{conversationId}/
+ * @returns ~/.codeinsights/attachments/{conversationId}/
  */
 export function getConversationAttachmentsDir(conversationId: string): string {
   const dir = join(getAttachmentsDir(), conversationId)
@@ -151,7 +189,7 @@ export function getConversationAttachmentsDir(conversationId: string): string {
  * 解析附件相对路径为完整路径
  *
  * @param localPath 相对路径 {conversationId}/{uuid}.ext
- * @returns 完整路径 ~/.rv-insights/attachments/{conversationId}/{uuid}.ext
+ * @returns 完整路径 ~/.codeinsights/attachments/{conversationId}/{uuid}.ext
  */
 export function resolveAttachmentPath(localPath: string): string {
   return join(getAttachmentsDir(), localPath)
@@ -160,7 +198,7 @@ export function resolveAttachmentPath(localPath: string): string {
 /**
  * 获取应用设置文件路径
  *
- * @returns ~/.rv-insights/settings.json
+ * @returns ~/.codeinsights/settings.json
  */
 export function getSettingsPath(): string {
   return join(getConfigDir(), 'settings.json')
@@ -169,7 +207,7 @@ export function getSettingsPath(): string {
 /**
  * 获取用户档案文件路径
  *
- * @returns ~/.rv-insights/user-profile.json
+ * @returns ~/.codeinsights/user-profile.json
  */
 export function getUserProfilePath(): string {
   return join(getConfigDir(), 'user-profile.json')
@@ -178,7 +216,7 @@ export function getUserProfilePath(): string {
 /**
  * 获取代理配置文件路径
  *
- * @returns ~/.rv-insights/proxy-settings.json
+ * @returns ~/.codeinsights/proxy-settings.json
  */
 export function getProxySettingsPath(): string {
   return join(getConfigDir(), 'proxy-settings.json')
@@ -187,7 +225,7 @@ export function getProxySettingsPath(): string {
 /**
  * 获取系统提示词配置文件路径
  *
- * @returns ~/.rv-insights/system-prompts.json
+ * @returns ~/.codeinsights/system-prompts.json
  */
 export function getSystemPromptsPath(): string {
   return join(getConfigDir(), 'system-prompts.json')
@@ -196,7 +234,7 @@ export function getSystemPromptsPath(): string {
 /**
  * 获取记忆配置文件路径
  *
- * @returns ~/.rv-insights/memory.json
+ * @returns ~/.codeinsights/memory.json
  */
 export function getMemoryConfigPath(): string {
   return join(getConfigDir(), 'memory.json')
@@ -205,7 +243,7 @@ export function getMemoryConfigPath(): string {
 /**
  * 获取 Chat 工具配置文件路径
  *
- * @returns ~/.rv-insights/chat-tools.json
+ * @returns ~/.codeinsights/chat-tools.json
  */
 export function getChatToolsConfigPath(): string {
   return join(getConfigDir(), 'chat-tools.json')
@@ -214,7 +252,7 @@ export function getChatToolsConfigPath(): string {
 /**
  * 获取 Agent 会话索引文件路径
  *
- * @returns ~/.rv-insights/agent-sessions.json
+ * @returns ~/.codeinsights/agent-sessions.json
  */
 export function getAgentSessionsIndexPath(): string {
   return join(getConfigDir(), 'agent-sessions.json')
@@ -225,7 +263,7 @@ export function getAgentSessionsIndexPath(): string {
  *
  * 如果目录不存在则自动创建。
  *
- * @returns ~/.rv-insights/agent-sessions/
+ * @returns ~/.codeinsights/agent-sessions/
  */
 export function getAgentSessionsDir(): string {
   const dir = join(getConfigDir(), 'agent-sessions')
@@ -242,7 +280,7 @@ export function getAgentSessionsDir(): string {
  * 获取指定 Agent 会话的消息文件路径
  *
  * @param id 会话 ID
- * @returns ~/.rv-insights/agent-sessions/{id}.jsonl
+ * @returns ~/.codeinsights/agent-sessions/{id}.jsonl
  */
 export function getAgentSessionMessagesPath(id: string): string {
   return join(getAgentSessionsDir(), `${id}.jsonl`)
@@ -252,7 +290,7 @@ export function getAgentSessionMessagesPath(id: string): string {
  * 获取指定 Agent 会话的 runtime event log 文件路径
  *
  * @param id 会话 ID
- * @returns ~/.rv-insights/agent-sessions/{id}.events.jsonl
+ * @returns ~/.codeinsights/agent-sessions/{id}.events.jsonl
  */
 export function getAgentSessionEventsPath(id: string): string {
   return join(getAgentSessionsDir(), `${id}.events.jsonl`)
@@ -261,7 +299,7 @@ export function getAgentSessionEventsPath(id: string): string {
 /**
  * 获取 Pipeline 会话索引文件路径
  *
- * @returns ~/.rv-insights/pipeline-sessions.json
+ * @returns ~/.codeinsights/pipeline-sessions.json
  */
 export function getPipelineSessionsIndexPath(): string {
   return join(getConfigDir(), 'pipeline-sessions.json')
@@ -270,7 +308,7 @@ export function getPipelineSessionsIndexPath(): string {
 /**
  * 获取 Pipeline 会话记录目录
  *
- * @returns ~/.rv-insights/pipeline-sessions/
+ * @returns ~/.codeinsights/pipeline-sessions/
  */
 export function getPipelineSessionsDir(): string {
   const dir = join(getConfigDir(), 'pipeline-sessions')
@@ -287,7 +325,7 @@ export function getPipelineSessionsDir(): string {
  * 获取指定 Pipeline 会话的记录文件路径
  *
  * @param id 会话 ID
- * @returns ~/.rv-insights/pipeline-sessions/{id}.jsonl
+ * @returns ~/.codeinsights/pipeline-sessions/{id}.jsonl
  */
 export function getPipelineSessionRecordsPath(id: string): string {
   return join(getPipelineSessionsDir(), `${id}.jsonl`)
@@ -296,7 +334,7 @@ export function getPipelineSessionRecordsPath(id: string): string {
 /**
  * 获取 Pipeline checkpoint 根目录
  *
- * @returns ~/.rv-insights/pipeline-checkpoints/
+ * @returns ~/.codeinsights/pipeline-checkpoints/
  */
 export function getPipelineCheckpointsDir(): string {
   const dir = join(getConfigDir(), 'pipeline-checkpoints')
@@ -313,7 +351,7 @@ export function getPipelineCheckpointsDir(): string {
  * 获取指定 Pipeline 会话的 checkpoint 目录
  *
  * @param sessionId 会话 ID
- * @returns ~/.rv-insights/pipeline-checkpoints/{sessionId}/
+ * @returns ~/.codeinsights/pipeline-checkpoints/{sessionId}/
  */
 export function getPipelineSessionCheckpointDir(sessionId: string): string {
   const dir = join(getPipelineCheckpointsDir(), sessionId)
@@ -328,7 +366,7 @@ export function getPipelineSessionCheckpointDir(sessionId: string): string {
 /**
  * 获取 Pipeline artifacts 根目录
  *
- * @returns ~/.rv-insights/pipeline-artifacts/
+ * @returns ~/.codeinsights/pipeline-artifacts/
  */
 export function getPipelineArtifactsDir(): string {
   const dir = join(getConfigDir(), 'pipeline-artifacts')
@@ -345,7 +383,7 @@ export function getPipelineArtifactsDir(): string {
  * 获取指定 Pipeline 会话的 artifacts 目录
  *
  * @param sessionId 会话 ID
- * @returns ~/.rv-insights/pipeline-artifacts/{sessionId}/
+ * @returns ~/.codeinsights/pipeline-artifacts/{sessionId}/
  */
 export function getPipelineSessionArtifactsDir(sessionId: string): string {
   const dir = join(getPipelineArtifactsDir(), sessionId)
@@ -360,7 +398,7 @@ export function getPipelineSessionArtifactsDir(sessionId: string): string {
 /**
  * 获取贡献任务索引文件路径
  *
- * @returns ~/.rv-insights/contribution-tasks.json
+ * @returns ~/.codeinsights/contribution-tasks.json
  */
 export function getContributionTasksIndexPath(): string {
   return join(getConfigDir(), 'contribution-tasks.json')
@@ -369,7 +407,7 @@ export function getContributionTasksIndexPath(): string {
 /**
  * 获取贡献任务事件目录
  *
- * @returns ~/.rv-insights/contribution-tasks/
+ * @returns ~/.codeinsights/contribution-tasks/
  */
 export function getContributionTaskEventsDir(): string {
   const dir = join(getConfigDir(), 'contribution-tasks')
@@ -386,7 +424,7 @@ export function getContributionTaskEventsDir(): string {
  * 获取指定贡献任务的事件 JSONL 路径
  *
  * @param id 贡献任务 ID
- * @returns ~/.rv-insights/contribution-tasks/{id}.jsonl
+ * @returns ~/.codeinsights/contribution-tasks/{id}.jsonl
  */
 export function getContributionTaskEventsPath(id: string): string {
   return join(getContributionTaskEventsDir(), `${id}.jsonl`)
@@ -395,7 +433,7 @@ export function getContributionTaskEventsPath(id: string): string {
 /**
  * 获取 Agent 工作区索引文件路径
  *
- * @returns ~/.rv-insights/agent-workspaces.json
+ * @returns ~/.codeinsights/agent-workspaces.json
  */
 export function getAgentWorkspacesIndexPath(): string {
   return join(getConfigDir(), 'agent-workspaces.json')
@@ -406,7 +444,7 @@ export function getAgentWorkspacesIndexPath(): string {
  *
  * 如果目录不存在则自动创建。
  *
- * @returns ~/.rv-insights/agent-workspaces/
+ * @returns ~/.codeinsights/agent-workspaces/
  */
 export function getAgentWorkspacesDir(): string {
   const dir = join(getConfigDir(), 'agent-workspaces')
@@ -425,7 +463,7 @@ export function getAgentWorkspacesDir(): string {
  * 如果目录不存在则自动创建。
  *
  * @param slug 工作区 slug
- * @returns ~/.rv-insights/agent-workspaces/{slug}/
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/
  */
 export function getAgentWorkspacePath(slug: string): string {
   const dir = join(getAgentWorkspacesDir(), slug)
@@ -442,7 +480,7 @@ export function getAgentWorkspacePath(slug: string): string {
  * 获取指定工作区的 MCP 配置文件路径
  *
  * @param slug 工作区 slug
- * @returns ~/.rv-insights/agent-workspaces/{slug}/mcp.json
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/mcp.json
  */
 export function getWorkspaceMcpPath(slug: string): string {
   return join(getAgentWorkspacePath(slug), 'mcp.json')
@@ -454,7 +492,7 @@ export function getWorkspaceMcpPath(slug: string): string {
  * 如果目录不存在则自动创建。
  *
  * @param slug 工作区 slug
- * @returns ~/.rv-insights/agent-workspaces/{slug}/skills/
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/skills/
  */
 export function getWorkspaceSkillsDir(slug: string): string {
   const dir = join(getAgentWorkspacePath(slug), 'skills')
@@ -473,7 +511,7 @@ export function getWorkspaceSkillsDir(slug: string): string {
  * 如果目录不存在则自动创建。
  *
  * @param slug 工作区 slug
- * @returns ~/.rv-insights/agent-workspaces/{slug}/workspace-files/
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/workspace-files/
  */
 export function getWorkspaceFilesDir(slug: string): string {
   const dir = join(getAgentWorkspacePath(slug), 'workspace-files')
@@ -492,7 +530,7 @@ export function getWorkspaceFilesDir(slug: string): string {
  * 如果目录不存在则自动创建。
  *
  * @param slug 工作区 slug
- * @returns ~/.rv-insights/agent-workspaces/{slug}/skills-inactive/
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/skills-inactive/
  */
 export function getInactiveSkillsDir(slug: string): string {
   const dir = join(getAgentWorkspacePath(slug), 'skills-inactive')
@@ -509,7 +547,7 @@ export function getInactiveSkillsDir(slug: string): string {
  *
  * 新建工作区时自动复制此目录的内容到工作区 skills/ 下。
  *
- * @returns ~/.rv-insights/default-skills/
+ * @returns ~/.codeinsights/default-skills/
  */
 export function getDefaultSkillsDir(): string {
   const dir = join(getConfigDir(), 'default-skills')
@@ -565,7 +603,7 @@ function compareSemver(a: string, b: string): number {
 }
 
 /**
- * 从 app bundle 同步默认 Skills 到 ~/.rv-insights/default-skills/
+ * 从 app bundle 同步默认 Skills 到 ~/.codeinsights/default-skills/
  *
  * 打包模式下从 process.resourcesPath/default-skills 复制。
  * 开发模式下从源码 default-skills/ 目录复制。
@@ -618,7 +656,7 @@ export function seedDefaultSkills(): void {
 /**
  * 获取微信配置文件路径
  *
- * @returns ~/.rv-insights/wechat.json
+ * @returns ~/.codeinsights/wechat.json
  */
 export function getWeChatConfigPath(): string {
   return join(getConfigDir(), 'wechat.json')
@@ -627,7 +665,7 @@ export function getWeChatConfigPath(): string {
 /**
  * 获取微信长轮询同步游标路径
  *
- * @returns ~/.rv-insights/wechat-sync.json
+ * @returns ~/.codeinsights/wechat-sync.json
  */
 export function getWeChatSyncPath(): string {
   return join(getConfigDir(), 'wechat-sync.json')
@@ -636,7 +674,7 @@ export function getWeChatSyncPath(): string {
 /**
  * 获取钉钉配置文件路径
  *
- * @returns ~/.rv-insights/dingtalk.json
+ * @returns ~/.codeinsights/dingtalk.json
  */
 export function getDingTalkConfigPath(): string {
   return join(getConfigDir(), 'dingtalk.json')
@@ -645,7 +683,7 @@ export function getDingTalkConfigPath(): string {
 /**
  * 获取飞书配置文件路径
  *
- * @returns ~/.rv-insights/feishu.json
+ * @returns ~/.codeinsights/feishu.json
  */
 export function getFeishuConfigPath(): string {
   return join(getConfigDir(), 'feishu.json')
@@ -654,7 +692,7 @@ export function getFeishuConfigPath(): string {
 /**
  * 获取飞书聊天绑定持久化路径
  *
- * @returns ~/.rv-insights/feishu-bindings.json
+ * @returns ~/.codeinsights/feishu-bindings.json
  */
 export function getFeishuBindingsPath(): string {
   return join(getConfigDir(), 'feishu-bindings.json')
@@ -663,7 +701,7 @@ export function getFeishuBindingsPath(): string {
 /**
  * 获取某个飞书 Bot 的聊天绑定持久化路径
  *
- * @returns ~/.rv-insights/feishu-bindings-{botId}.json
+ * @returns ~/.codeinsights/feishu-bindings-{botId}.json
  */
 export function getFeishuBotBindingsPath(botId: string): string {
   return join(getConfigDir(), `feishu-bindings-${botId}.json`)
@@ -672,7 +710,7 @@ export function getFeishuBotBindingsPath(botId: string): string {
 /**
  * 获取外部 Agent Channel 绑定索引路径
  *
- * @returns ~/.rv-insights/agent-channel-bindings.json
+ * @returns ~/.codeinsights/agent-channel-bindings.json
  */
 export function getAgentChannelBindingsPath(): string {
   return join(getConfigDir(), 'agent-channel-bindings.json')
@@ -681,7 +719,7 @@ export function getAgentChannelBindingsPath(): string {
 /**
  * 获取外部 Agent Channel 绑定事件日志路径
  *
- * @returns ~/.rv-insights/agent-channel-bindings.events.jsonl
+ * @returns ~/.codeinsights/agent-channel-bindings.events.jsonl
  */
 export function getAgentChannelBindingEventsPath(): string {
   return join(getConfigDir(), 'agent-channel-bindings.events.jsonl')
@@ -695,7 +733,7 @@ export function getAgentChannelBindingEventsPath(): string {
  *
  * @param workspaceSlug 工作区 slug
  * @param sessionId 会话 ID
- * @returns ~/.rv-insights/agent-workspaces/{slug}/{sessionId}/
+ * @returns ~/.codeinsights/agent-workspaces/{slug}/{sessionId}/
  */
 export function getAgentSessionWorkspacePath(workspaceSlug: string, sessionId: string): string {
   const dir = join(getAgentWorkspacePath(workspaceSlug), sessionId)
@@ -711,7 +749,7 @@ export function getAgentSessionWorkspacePath(workspaceSlug: string, sessionId: s
 /**
  * 获取新 session 的 runtime cwd 路径
  *
- * 新 session 默认使用 ~/.rv-insights/agent-workspaces/{slug}/sessions/{sessionId}/cwd/
+ * 新 session 默认使用 ~/.codeinsights/agent-workspaces/{slug}/sessions/{sessionId}/cwd/
  */
 export function getAgentSessionRuntimeCwdPath(workspaceSlug: string, sessionId: string): string {
   return join(getAgentWorkspacePath(workspaceSlug), 'sessions', sessionId, 'cwd')
@@ -728,11 +766,11 @@ export function getAgentSessionRuntimeManifestPath(workspaceSlug: string, sessio
  * 获取 SDK 隔离配置目录路径
  *
  * 用于设置 CLAUDE_CONFIG_DIR 环境变量，让 SDK 读取独立的配置文件，
- * 而不是用户的 ~/.claude.json，实现 RV-Insights 与 Claude Code CLI 的配置隔离。
+ * 而不是用户的 ~/.claude.json，实现 CodeInsights 与 Claude Code CLI 的配置隔离。
  *
  * 如果目录不存在则自动创建。
  *
- * @returns ~/.rv-insights/sdk-config/
+ * @returns ~/.codeinsights/sdk-config/
  */
 export function getSdkConfigDir(): string {
   const dir = join(getConfigDir(), 'sdk-config')

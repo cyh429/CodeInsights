@@ -10,7 +10,7 @@
  */
 
 import { safeStorage } from 'electron'
-import type { RuntimeStatus, RuntimeInitOptions, ShellEnvironmentStatus } from '@rv-insights/shared'
+import type { RuntimeStatus, RuntimeInitOptions, ShellEnvironmentStatus } from '@codeinsights/shared'
 import { loadShellEnv } from './shell-env'
 import { detectNodeRuntime } from './node-detector'
 import { detectBunRuntime } from './bun-finder'

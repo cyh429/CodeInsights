@@ -7,7 +7,7 @@ import {
   type AgentRuntimeEvent,
   type AgentStreamEnvelope,
   type SDKMessage,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export interface AgentSdkMessageConversionContext {
   sessionId: string

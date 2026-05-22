@@ -14,7 +14,7 @@
 
 import { execSync } from 'child_process'
 import { app } from 'electron'
-import type { ShellEnvResult } from '@rv-insights/shared'
+import type { ShellEnvResult } from '@codeinsights/shared'
 
 /**
  * 获取用户默认 Shell 路径
@@ -86,7 +86,7 @@ function parseEnvOutput(output: string): Record<string, string> {
 export async function getShellEnv(shell: string): Promise<Record<string, string>> {
   // 使用标记来定位环境变量输出的开始位置
   // 这样可以过滤掉 Shell 启动时的其他输出
-  const marker = '__PROMA_ENV_START__'
+  const marker = '__CODEINSIGHTS_ENV_START__'
   const command = `echo ${marker} && env`
 
   const output = execSync(`${shell} -l -i -c '${command}'`, {

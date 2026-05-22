@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { AgentEvent, AgentStreamPayload, RVInsightsEvent, SDKMessage } from '../types/agent'
+import type { AgentEvent, AgentStreamPayload, CodeInsightsEvent, SDKMessage } from '../types/agent'
 import {
   adaptAgentEventToRuntimeEvent,
   adaptAgentStreamPayloadToRuntimeEvents,
-  adaptRVInsightsEventToRuntimeEvent,
+  adaptCodeInsightsEventToRuntimeEvent,
   agentRuntimeEventsV2,
   createAgentStreamEnvelope,
   isAgentStreamEnvelope,
@@ -93,6 +93,16 @@ describe('Agent runtime event contract', () => {
     }
   })
 
+  test('accepts legacy rv_insights event source for persisted envelopes', () => {
+    const legacyEnvelope = {
+      ...envelope(1, { type: 'assistant_delta', messageId: 'msg-legacy', delta: '旧事件' }),
+      source: 'rv_insights',
+    } as unknown as AgentStreamEnvelope
+
+    expect(validateAgentStreamEnvelope(legacyEnvelope)).toEqual({ ok: true, errors: [] })
+    expect(isAgentStreamEnvelope(legacyEnvelope)).toBe(true)
+  })
+
   test('rejects invalid envelope shape', () => {
     const invalid = { ...envelopeFixture[0]!, sessionId: '', sequence: -1, createdAt: 'not-a-date' }
     const result = validateAgentStreamEnvelope(invalid)
@@ -113,7 +123,7 @@ describe('Agent runtime event contract', () => {
   })
 
   test('adapts legacy RV events for permission and AskUser', () => {
-    const legacyEvents: RVInsightsEvent[] = [
+    const legacyEvents: CodeInsightsEvent[] = [
       {
         type: 'permission_request',
         request: {
@@ -142,14 +152,14 @@ describe('Agent runtime event contract', () => {
   })
 
   test('adapts legacy retry lifecycle events', () => {
-    const retryEvents: RVInsightsEvent[] = [
+    const retryEvents: CodeInsightsEvent[] = [
       { type: 'retry', status: 'starting', attempt: 1, maxAttempts: 3, delaySeconds: 2, reason: 'network' },
       { type: 'retry', status: 'attempt', attemptData: { attempt: 1, timestamp: 1, reason: 'network', errorMessage: 'a', delaySeconds: 2 } },
       { type: 'retry', status: 'cleared' },
       { type: 'retry', status: 'failed', attemptData: { attempt: 2, timestamp: 2, reason: 'network', errorMessage: 'b', delaySeconds: 0 } },
     ]
 
-    expect(retryEvents.flatMap(adaptRVInsightsEventToRuntimeEvent).map((event) => event.type)).toEqual([
+    expect(retryEvents.flatMap(adaptCodeInsightsEventToRuntimeEvent).map((event) => event.type)).toEqual([
       'retry_scheduled',
       'retry_attempt',
       'retry_cleared',

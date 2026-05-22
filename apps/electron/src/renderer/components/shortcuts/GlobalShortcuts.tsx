@@ -167,7 +167,7 @@ export function GlobalShortcuts(): null {
   useShortcut(
     'clear-context',
     useCallback(() => {
-      window.dispatchEvent(new CustomEvent('rv-insights:clear-context'))
+      window.dispatchEvent(new CustomEvent('codeinsights:clear-context'))
     }, []),
   )
 
@@ -175,7 +175,7 @@ export function GlobalShortcuts(): null {
   useShortcut(
     'focus-input',
     useCallback(() => {
-      window.dispatchEvent(new CustomEvent('rv-insights:focus-input'))
+      window.dispatchEvent(new CustomEvent('codeinsights:focus-input'))
     }, []),
   )
 
@@ -183,7 +183,7 @@ export function GlobalShortcuts(): null {
   useShortcut(
     'stop-generation',
     useCallback(() => {
-      window.dispatchEvent(new CustomEvent('rv-insights:stop-generation'))
+      window.dispatchEvent(new CustomEvent('codeinsights:stop-generation'))
     }, []),
   )
 
@@ -263,7 +263,7 @@ export function GlobalShortcuts(): null {
           store.set(currentConversationIdAtom, meta.id)
 
           // 处理附件：保存到磁盘，收集 FileAttachment[]
-          const savedAttachments: import('@rv-insights/shared').FileAttachment[] = []
+          const savedAttachments: import('@codeinsights/shared').FileAttachment[] = []
           if (data.files && data.files.length > 0) {
             for (const file of data.files) {
               try {

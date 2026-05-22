@@ -5,7 +5,7 @@ import type {
   PipelineRecordsSearchMatch as SharedPipelineRecordsSearchMatch,
   PipelineRecordsSearchResult,
   PipelineStageArtifactRecord,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   Archive,
   Boxes,

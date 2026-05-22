@@ -1,4 +1,4 @@
-import type { SDKMessage } from '@rv-insights/shared'
+import type { SDKMessage } from '@codeinsights/shared'
 
 export const MAX_CONTEXT_MESSAGES = 20
 export const MAX_TOOL_SUMMARY_LENGTH = 200

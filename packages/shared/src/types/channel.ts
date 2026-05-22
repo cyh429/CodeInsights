@@ -93,7 +93,7 @@ export interface ChannelModel {
 /**
  * 渠道配置
  *
- * 存储在 ~/.rv-insights/channels.json 中，apiKey 字段为加密后的 base64 字符串
+ * 存储在 ~/.codeinsights/channels.json 中，apiKey 字段为加密后的 base64 字符串
  */
 export interface Channel {
   /** 渠道唯一标识 */

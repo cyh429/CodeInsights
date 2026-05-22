@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentWorkspace, Channel } from '@rv-insights/shared'
+import type { AgentWorkspace, Channel } from '@codeinsights/shared'
 import { resolvePipelineRunConfig } from './pipeline-preflight'
 
 const channel: Channel = {

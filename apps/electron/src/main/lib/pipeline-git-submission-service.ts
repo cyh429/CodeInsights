@@ -5,7 +5,7 @@ import type {
   PipelinePatchSetFile,
   PipelineRemoteSubmissionSummary,
   PipelineTestEvidence,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export interface BuildPipelinePatchSetDraftInput {
   repositoryRoot: string

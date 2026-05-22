@@ -1,4 +1,4 @@
-import type { SDKMessage, TypedError } from '@rv-insights/shared'
+import type { SDKMessage, TypedError } from '@codeinsights/shared'
 
 export interface AgentErrorMessageOptions {
   now?: number

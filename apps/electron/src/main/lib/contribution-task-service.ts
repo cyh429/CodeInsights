@@ -12,7 +12,7 @@ import type {
   ContributionTaskEvent,
   ContributionTaskEventType,
   ContributionTaskStatus,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   getContributionTaskEventsPath,
   getContributionTasksIndexPath,

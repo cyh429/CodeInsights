@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import type { ProxyConfig } from '@rv-insights/shared'
+import type { ProxyConfig } from '@codeinsights/shared'
 
 /**
  * 代理配置 Atom

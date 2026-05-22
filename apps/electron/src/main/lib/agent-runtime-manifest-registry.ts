@@ -7,7 +7,7 @@ import type {
   AgentRuntimeManifestSkill,
   AgentWorkspace,
   WorkspaceMcpConfig,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { buildWorkspacePluginSnapshots } from './agent-plugin-catalog'
 import { AGENT_HOST_BRIDGE_READONLY_TOOLS, AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { getAgentWorkspacesDir } from './config-paths'

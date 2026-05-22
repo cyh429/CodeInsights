@@ -1,4 +1,4 @@
-import type { PipelineRecord } from '@rv-insights/shared'
+import type { PipelineRecord } from '@codeinsights/shared'
 
 export interface PipelineRecordsTailLoadState {
   loadId: number

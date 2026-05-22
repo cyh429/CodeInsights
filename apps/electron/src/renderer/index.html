@@ -3,13 +3,37 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RV-Insights</title>
+    <title>CodeInsights</title>
     <script>
       // 主题初始化脚本（在 React 加载前执行，避免闪烁）
       // 从 localStorage 缓存读取主题模式和特殊风格，立即应用类名
       ;(function() {
-        var mode = localStorage.getItem('rv-insights-theme-mode') || 'dark'
-        var style = localStorage.getItem('rv-insights-theme-style')
+        var migratedKeys = [
+          ['rv-insights-theme-mode', 'codeinsights-theme-mode'],
+          ['rv-insights-theme-style', 'codeinsights-theme-style'],
+          ['rv-insights-app-mode', 'codeinsights-app-mode'],
+          ['rv-insights-selected-model', 'codeinsights-selected-model'],
+          ['rv-insights-context-length', 'codeinsights-context-length'],
+          ['rv-insights-thinking-enabled', 'codeinsights-thinking-enabled'],
+          ['rv-insights-thinking-expanded', 'codeinsights-thinking-expanded'],
+          ['rv-insights-selected-system-prompt-id', 'codeinsights-selected-system-prompt-id'],
+          ['rv-insights-workspace-list-height', 'codeinsights-workspace-list-height'],
+          ['rv-insights-agent-sidebar-top-height', 'codeinsights-agent-sidebar-top-height'],
+          ['rv-insights-app-shell-left-sidebar-width', 'codeinsights-app-shell-left-sidebar-width'],
+          ['rv-insights-app-shell-right-panel-width', 'codeinsights-app-shell-right-panel-width'],
+          ['rv-insights-sidebar-collapsed', 'codeinsights-sidebar-collapsed']
+        ]
+        for (var i = 0; i < migratedKeys.length; i += 1) {
+          var legacyKey = migratedKeys[i][0]
+          var nextKey = migratedKeys[i][1]
+          if (localStorage.getItem(nextKey) === null) {
+            var legacyValue = localStorage.getItem(legacyKey)
+            if (legacyValue !== null) localStorage.setItem(nextKey, legacyValue)
+          }
+        }
+
+        var mode = localStorage.getItem('codeinsights-theme-mode') || 'dark'
+        var style = localStorage.getItem('codeinsights-theme-style')
         var html = document.documentElement
 
         if (mode === 'special' && style && style !== 'default') {

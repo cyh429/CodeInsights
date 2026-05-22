@@ -18,14 +18,14 @@ import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta, AgentRuntimeRunnerMode } from '@rv-insights/shared'
-import { SAFE_TOOLS, isAgentRuntimeTerminalEvent } from '@rv-insights/shared'
-import type { PermissionRequest, RVInsightsPermissionMode, AskUserRequest, ExitPlanModeRequest } from '@rv-insights/shared'
+import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta, AgentRuntimeRunnerMode } from '@codeinsights/shared'
+import { SAFE_TOOLS, isAgentRuntimeTerminalEvent } from '@codeinsights/shared'
+import type { PermissionRequest, CodeInsightsPermissionMode, AskUserRequest, ExitPlanModeRequest } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { isPromptTooLongError, friendlyErrorMessage, mapSDKErrorToTypedError, extractErrorDetails, shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
 import { AgentEventBus } from './agent-event-bus'
 import { decryptApiKey, getChannelById, listChannels } from './channel-manager'
-import { getAdapter, fetchTitle } from '@rv-insights/core'
+import { getAdapter, fetchTitle } from '@codeinsights/core'
 import { getFetchFn } from './proxy-fetch'
 import { getEffectiveProxyUrl } from './proxy-settings-service'
 import { appendSDKMessages, updateAgentSessionMeta, getAgentSessionMeta, getAgentSessionMessages, getAgentSessionSDKMessages, truncateSDKMessages, resolveUserUuidFromSDK, rewindFilesFromSnapshot } from './agent-session-manager'
@@ -249,7 +249,7 @@ export class AgentOrchestrator {
   private stoppedBySessions = new Set<string>()
 
   /** 运行中会话的当前权限模式（支持运行时动态切换） */
-  private sessionPermissionModes = new Map<string, RVInsightsPermissionMode>()
+  private sessionPermissionModes = new Map<string, CodeInsightsPermissionMode>()
 
   /** 运行中会话的权限分派器（同步 plan 进入状态） */
   private sessionPermissionDispatchers = new Map<string, PermissionToolDispatcher>()
@@ -309,7 +309,7 @@ export class AgentOrchestrator {
     mcpServers: Record<string, Record<string, unknown>>,
   ): Promise<void> {
     const memoryConfig = getMemoryConfig()
-    const memUserId = memoryConfig.userId?.trim() || 'rv-insights-user'
+    const memUserId = memoryConfig.userId?.trim() || 'codeinsights-user'
     if (!memoryConfig.enabled || !memoryConfig.apiKey) return
 
     try {
@@ -378,7 +378,7 @@ export class AgentOrchestrator {
   private async injectHostBridgeTools(
     sdk: typeof import('@anthropic-ai/claude-agent-sdk'),
     mcpServers: Record<string, Record<string, unknown>>,
-    manifest: import('@rv-insights/shared').AgentRuntimeManifest | undefined,
+    manifest: import('@codeinsights/shared').AgentRuntimeManifest | undefined,
   ): Promise<void> {
     if (!manifest?.hostBridge.enabled) return
     if (mcpServers[AGENT_HOST_MCP_SERVER_NAME]) {
@@ -388,9 +388,9 @@ export class AgentOrchestrator {
 
     try {
       mcpServers[AGENT_HOST_MCP_SERVER_NAME] = await createAgentHostMcpServer(sdk, { manifest })
-      console.log(`[Agent 编排] 已注入 RV host bridge MCP (${manifest.hostBridge.tools.length} tools)`)
+      console.log(`[Agent 编排] 已注入 CodeInsights host bridge MCP (${manifest.hostBridge.tools.length} tools)`)
     } catch (err) {
-      console.error('[Agent 编排] 注入 RV host bridge MCP 失败:', err)
+      console.error('[Agent 编排] 注入 CodeInsights host bridge MCP 失败:', err)
     }
   }
 
@@ -635,7 +635,7 @@ export class AgentOrchestrator {
       console.log(`[Agent 编排] 检测到回退 resume: resumeSessionAt=${rewindResumeAt}`)
     }
 
-    console.log(`[Agent 编排] Resume 状态: sdkSessionId=${existingSdkSessionId || '无'}, rv-insights sessionId=${sessionId}`)
+    console.log(`[Agent 编排] Resume 状态: sdkSessionId=${existingSdkSessionId || '无'}, codeinsights sessionId=${sessionId}`)
 
     // 5. 持久化用户消息（SDKMessage 格式）
     const userSDKMsg: SDKMessage = {
@@ -654,8 +654,8 @@ export class AgentOrchestrator {
     let titleGenerationStarted = false
     let agentCwd: string | undefined
     let workspaceSlug: string | undefined
-    let workspace: import('@rv-insights/shared').AgentWorkspace | undefined
-    let materializedRuntimeManifest: import('@rv-insights/shared').AgentRuntimeManifest | undefined
+    let workspace: import('@codeinsights/shared').AgentWorkspace | undefined
+    let materializedRuntimeManifest: import('@codeinsights/shared').AgentRuntimeManifest | undefined
     let usesMaterializedRuntime = false
     let runtimeEventLog: AgentRuntimeEventLogWriter | null = null
 
@@ -683,13 +683,13 @@ export class AgentOrchestrator {
               key: 'd',
               label: '下载最新安装包',
               action: 'open_external',
-              payload: 'https://proma.cool/download',
+              payload: 'https://codeinsights.cool/download',
             },
             {
               key: 'i',
               label: '报告问题',
               action: 'open_external',
-              payload: 'https://github.com/ErlichLiu/RV-Insights/issues/new',
+              payload: 'https://github.com/zcxGGmu/CodeInsights/issues/new',
             },
           ],
           canRetry: false,
@@ -788,7 +788,7 @@ export class AgentOrchestrator {
 
       // 9.6 直接信任已保存的 sdkSessionId，跳过 listSessions 预验证
       // 原因：listSessions({ dir }) 基于 cwd 路径哈希查找，但 session 级别的 cwd
-      // （如 ~/.rv-insights/agent-workspaces/workspace-xxx/sessionId）与 SDK 内部存储的路径哈希可能不匹配，
+      // （如 ~/.codeinsights/agent-workspaces/workspace-xxx/sessionId）与 SDK 内部存储的路径哈希可能不匹配，
       // 导致 listSessions 始终返回 0 个会话，误杀有效的 resume。
       // SDK 本身会优雅处理无效的 resume ID（回退为新会话），无需预验证。
       if (existingSdkSessionId) {
@@ -823,7 +823,7 @@ export class AgentOrchestrator {
         const toolLines: string[] = ['用户在消息中明确引用了以下工具，请在本次回复中主动调用：']
         for (const slug of mentionedSkills ?? []) {
           const qualifiedName = workspaceSlug
-            ? `rv-insights-workspace-${workspaceSlug}:${slug}`
+            ? `codeinsights-workspace-${workspaceSlug}:${slug}`
             : slug
           toolLines.push(`- Skill: ${qualifiedName}（请立即调用此 Skill）`)
         }
@@ -862,7 +862,7 @@ export class AgentOrchestrator {
 
       // 12. 读取应用设置 + 获取权限模式
       const appSettings = getSettings()
-      const initialPermissionMode: RVInsightsPermissionMode = permissionModeOverride
+      const initialPermissionMode: CodeInsightsPermissionMode = permissionModeOverride
         ?? (workspaceSlug
           ? getWorkspacePermissionMode(workspaceSlug)
           : (appSettings.agentPermissionMode ?? 'auto'))
@@ -875,7 +875,7 @@ export class AgentOrchestrator {
       console.log(`[Agent 编排] Runtime Runner 链路: ${runnerModeResolution.mode} (${runnerModeResolution.source})`)
 
       /** 读取当前会话的实时权限模式（支持运行中切换） */
-      const getPermissionMode = (): RVInsightsPermissionMode =>
+      const getPermissionMode = (): CodeInsightsPermissionMode =>
         this.sessionPermissionModes.get(sessionId) ?? initialPermissionMode
 
       runtimeEventLog = startAgentRuntimeEventLogRun({
@@ -892,13 +892,13 @@ export class AgentOrchestrator {
       const autoCanUseTool = permissionService.createCanUseTool(
         sessionId,
         (request: PermissionRequest) => {
-          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'permission_request', request } })
-          this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'permission_request', request } })
+          runtimeEventLog?.appendStreamPayload({ kind: 'codeinsights_event', event: { type: 'permission_request', request } })
+          this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'permission_request', request } })
         },
         (sid, toolInput, signal, sendAskUser) => askUserService.handleAskUserQuestion(sid, toolInput, signal, sendAskUser),
         (request: AskUserRequest) => {
-          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
-          this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
+          runtimeEventLog?.appendStreamPayload({ kind: 'codeinsights_event', event: { type: 'ask_user_request', request } })
+          this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'ask_user_request', request } })
         },
       )
 
@@ -916,8 +916,8 @@ export class AgentOrchestrator {
           })
         },
         emitEnterPlanMode: () => {
-          runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'enter_plan_mode', sessionId } })
-          this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'enter_plan_mode', sessionId } })
+          runtimeEventLog?.appendStreamPayload({ kind: 'codeinsights_event', event: { type: 'enter_plan_mode', sessionId } })
+          this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'enter_plan_mode', sessionId } })
         },
         autoCanUseTool,
         askUserQuestion: (toolInput, signal) => askUserService.handleAskUserQuestion(
@@ -925,8 +925,8 @@ export class AgentOrchestrator {
           toolInput,
           signal,
           (request: AskUserRequest) => {
-            runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
-            this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'ask_user_request', request } })
+            runtimeEventLog?.appendStreamPayload({ kind: 'codeinsights_event', event: { type: 'ask_user_request', request } })
+            this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'ask_user_request', request } })
           },
         ),
         exitPlanMode: (toolInput, signal) => exitPlanService.handleExitPlanMode(
@@ -934,8 +934,8 @@ export class AgentOrchestrator {
           toolInput,
           signal,
           (request: ExitPlanModeRequest) => {
-            runtimeEventLog?.appendStreamPayload({ kind: 'rv_insights_event', event: { type: 'exit_plan_mode_request', request } })
-            this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'exit_plan_mode_request', request } })
+            runtimeEventLog?.appendStreamPayload({ kind: 'codeinsights_event', event: { type: 'exit_plan_mode_request', request } })
+            this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'exit_plan_mode_request', request } })
           },
         ),
       })
@@ -967,7 +967,7 @@ export class AgentOrchestrator {
         canUseTool,
         ...(initialPermissionMode === 'auto' && { allowedTools: [...SAFE_TOOLS] }),
         // claude_code preset 提供基础环境信息（platform/shell/OS/git/model/知识截止日期等）
-        // buildSystemPrompt 追加 RV-Insights 特有指令（角色定义、SubAgent 策略、工作区信息等）
+        // buildSystemPrompt 追加 CodeInsights 特有指令（角色定义、SubAgent 策略、工作区信息等）
         systemPrompt: {
           type: 'preset',
           preset: 'claude_code',
@@ -1052,7 +1052,7 @@ export class AgentOrchestrator {
           resolvedModel = model
           console.log(`[Agent 编排] SDK 确认模型: ${resolvedModel}`)
           // 通知渲染进程更新流式状态中的模型信息
-          this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'model_resolved', model } })
+          this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'model_resolved', model } })
         },
         onContextWindow: (cw: number) => {
           console.log(`[Agent 编排] 缓存 contextWindow: ${cw}`)
@@ -1103,11 +1103,11 @@ export class AgentOrchestrator {
           }
 
           this.eventBus.emit(sessionId, {
-            kind: 'rv_insights_event',
+            kind: 'codeinsights_event',
             event: { type: 'retry', status: 'starting', attempt: attempt - 1, maxAttempts: MAX_AUTO_RETRIES, delaySeconds: delaySec, reason: lastRetryableError ?? '未知错误' },
           })
           this.eventBus.emit(sessionId, {
-            kind: 'rv_insights_event',
+            kind: 'codeinsights_event',
             event: { type: 'retry', status: 'attempt', attemptData },
           })
 
@@ -1282,7 +1282,7 @@ export class AgentOrchestrator {
                 // 如果之前有重试记录，发送 retry_failed
                 if (attempt > 1 && lastRetryableError) {
                   this.eventBus.emit(sessionId, {
-                    kind: 'rv_insights_event',
+                    kind: 'codeinsights_event',
                     event: { type: 'retry', status: 'failed', attemptData: { attempt: attempt - 1, timestamp: Date.now(), reason: lastRetryableError, errorMessage: typedError.message, delaySeconds: 0 } },
                   })
                 }
@@ -1361,7 +1361,7 @@ export class AgentOrchestrator {
 
             // Agent Teams: 追踪 teammate 任务状态（从 system 消息中）
             if (msg.type === 'system') {
-              const sysMsg = msg as import('@rv-insights/shared').SDKSystemMessage
+              const sysMsg = msg as import('@codeinsights/shared').SDKSystemMessage
               teamsCoordinator.recordSystemMessage(sysMsg)
             }
           }
@@ -1404,7 +1404,7 @@ export class AgentOrchestrator {
 
           // 正常完成 — 如果之前有重试，发送 retry_cleared
           if (attempt > 1) {
-            this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'retry', status: 'cleared' } })
+            this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'retry', status: 'cleared' } })
             console.log(`[Agent 编排] 重试成功，已在第 ${attempt} 次尝试后恢复`)
           }
           retrySucceeded = true
@@ -1420,7 +1420,7 @@ export class AgentOrchestrator {
 
             // 通知前端：正在收集 teammate 结果
             this.eventBus.emit(sessionId, {
-              kind: 'rv_insights_event',
+              kind: 'codeinsights_event',
               event: { type: 'waiting_resume', message: '正在收集 teammate 工作结果...' },
             })
 
@@ -1436,7 +1436,7 @@ export class AgentOrchestrator {
 
             if (resumePrompt && this.activeSessions.has(sessionId)) {
               const resumeMessageId = randomUUID()
-              this.eventBus.emit(sessionId, { kind: 'rv_insights_event', event: { type: 'resume_start', messageId: resumeMessageId } })
+              this.eventBus.emit(sessionId, { kind: 'codeinsights_event', event: { type: 'resume_start', messageId: resumeMessageId } })
 
               // 创建 resume 查询（使用相同的 SDK session ID）
               try {
@@ -1605,7 +1605,7 @@ export class AgentOrchestrator {
           // 如果之前有重试记录，发送 retry_failed
           if (attempt > 1 && lastRetryableError) {
             this.eventBus.emit(sessionId, {
-              kind: 'rv_insights_event',
+              kind: 'codeinsights_event',
               event: { type: 'retry', status: 'failed', attemptData: { attempt: attempt - 1, timestamp: Date.now(), reason: lastRetryableError, errorMessage: userFacingError, delaySeconds: 0 } },
             })
           }
@@ -1636,7 +1636,7 @@ export class AgentOrchestrator {
       // 重试循环结束（达到最大次数仍失败）
       if (!retrySucceeded && lastRetryableError) {
         this.eventBus.emit(sessionId, {
-          kind: 'rv_insights_event',
+          kind: 'codeinsights_event',
           event: { type: 'retry', status: 'failed', attemptData: { attempt: MAX_AUTO_RETRIES, timestamp: Date.now(), reason: lastRetryableError, errorMessage: `重试 ${MAX_AUTO_RETRIES} 次后仍然失败`, delaySeconds: 0 } },
         })
 
@@ -1688,7 +1688,7 @@ export class AgentOrchestrator {
     prompt: string
     model: string
     cwd: string
-    permissionMode: RVInsightsPermissionMode
+    permissionMode: CodeInsightsPermissionMode
     queryOptions: ClaudeAgentQueryOptions
     resumeFrom?: string
     channelModelId?: string
@@ -1709,13 +1709,13 @@ export class AgentOrchestrator {
       },
       onTeamsWaitingResume: (sessionId, message) => {
         this.eventBus.emit(sessionId, {
-          kind: 'rv_insights_event',
+          kind: 'codeinsights_event',
           event: { type: 'waiting_resume', message },
         })
       },
       onTeamsResumeStart: (sessionId, messageId) => {
         this.eventBus.emit(sessionId, {
-          kind: 'rv_insights_event',
+          kind: 'codeinsights_event',
           event: { type: 'resume_start', messageId },
         })
       },
@@ -1791,10 +1791,10 @@ export class AgentOrchestrator {
   /**
    * 运行中动态切换会话的权限模式
    *
-   * 同时更新 RV-Insights 侧（canUseTool 闭包读取的 Map）和 SDK 侧（query.setPermissionMode）。
+   * 同时更新 CodeInsights 侧（canUseTool 闭包读取的 Map）和 SDK 侧（query.setPermissionMode）。
    * 典型场景：用户在 Agent 运行中通过 PermissionModeSelector 切换模式。
    */
-  async updateSessionPermissionMode(sessionId: string, mode: RVInsightsPermissionMode): Promise<void> {
+  async updateSessionPermissionMode(sessionId: string, mode: CodeInsightsPermissionMode): Promise<void> {
     if (!this.activeSessions.has(sessionId)) return
     this.sessionPermissionModes.set(sessionId, mode)
     this.sessionPermissionDispatchers.get(sessionId)?.syncPlanModeState(mode)
@@ -1811,7 +1811,7 @@ export class AgentOrchestrator {
    * 回退会话到指定消息点
    *
    * 1. 直接从 SDK JSONL 的 file-history-snapshot 恢复文件到目标时刻的状态
-   * 2. 截断 RV-Insights JSONL 到 assistantMessageUuid（inclusive）
+   * 2. 截断 CodeInsights JSONL 到 assistantMessageUuid（inclusive）
    * 3. 记录 resumeAtMessageUuid，下次发消息时 SDK 从该点分支继续
    *
    * 文件恢复通过解析 SDK JSONL 中的快照完成，无需运行中的 Query。
@@ -1875,7 +1875,7 @@ export class AgentOrchestrator {
       fileRewindResult = { canRewind: false, error: '无法从 SDK session 中解析 user message UUID' }
     }
 
-    // 2. 截断 RV-Insights JSONL
+    // 2. 截断 CodeInsights JSONL
     const kept = truncateSDKMessages(sessionId, assistantMessageUuid)
 
     // 3. 记录 resumeAtMessageUuid，下次发消息时 SDK 从此点继续

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { PipelineNodeKind, PipelineStateSnapshot, PipelineVersion } from '@rv-insights/shared'
+import type { PipelineNodeKind, PipelineStateSnapshot, PipelineVersion } from '@codeinsights/shared'
 import {
   AlertCircle,
   Check,

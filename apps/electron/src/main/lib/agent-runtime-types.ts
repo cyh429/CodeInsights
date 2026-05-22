@@ -2,9 +2,9 @@ import type {
   AgentRuntimeEvent,
   AgentRuntimeRunnerMode,
   AgentStreamEnvelope,
-  RVInsightsPermissionMode,
+  CodeInsightsPermissionMode,
   SDKMessage,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import type { CanUseToolOptions, PermissionResult } from './agent-permission-service'
 import type { TeamsCoordinator, TeamsCoordinatorDeps } from './agent-orchestrator/teams-coordinator'
@@ -15,7 +15,7 @@ const RUNNER_V2_ENABLED_VALUES = new Set(['1', 'true', 'on', 'yes', 'enabled'])
 type AgentRuntimeRunnerV2EnvOverride = 'enabled' | 'disabled' | null
 
 function resolveAgentRuntimeRunnerV2EnvOverride(
-  value = process.env.RV_AGENT_RUNTIME_RUNNER_V2,
+  value = process.env.CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2,
 ): AgentRuntimeRunnerV2EnvOverride {
   if (value === undefined) return null
   const normalized = value.trim().toLowerCase()
@@ -26,7 +26,7 @@ function resolveAgentRuntimeRunnerV2EnvOverride(
 }
 
 export function resolveAgentRuntimeRunnerV2Enabled(
-  value = process.env.RV_AGENT_RUNTIME_RUNNER_V2,
+  value = process.env.CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2,
 ): boolean {
   return resolveAgentRuntimeRunnerV2EnvOverride(value) !== 'disabled'
 }
@@ -79,7 +79,7 @@ export interface AgentRuntimeRunInput {
   prompt: string
   model: string
   cwd: string
-  permissionMode: RVInsightsPermissionMode
+  permissionMode: CodeInsightsPermissionMode
   queryOptions: ClaudeAgentQueryOptions
   resumeFrom?: string
   runtimeHash?: string

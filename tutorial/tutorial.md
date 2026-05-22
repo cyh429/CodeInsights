@@ -1,4 +1,4 @@
-# RV-Insights 教程
+# CodeInsights 教程
 
 更新时间：2026年5月6日  
 适用范围：当前仓库主线实现  
@@ -8,7 +8,7 @@
 
 ## 1. 这是什么
 
-RV-Insights 是一个本地优先的 Electron 桌面应用，用来把大模型、工作区、Skills、MCP 和文件系统操作组织成一套可持续使用的 AI 工作流。
+CodeInsights 是一个本地优先的 Electron 桌面应用，用来把大模型、工作区、Skills、MCP 和文件系统操作组织成一套可持续使用的 AI 工作流。
 
 当前版本里，普通用户会直接接触到两个主模式：
 
@@ -260,12 +260,12 @@ Agent 更像一个持续工作的助手，而不是固定阶段流程。
 
 ## 9. 本地存储与数据位置
 
-RV-Insights 当前是本地优先设计。
+CodeInsights 当前是本地优先设计。
 
 你会在本机看到类似这些目录：
 
-- `~/.rv-insights/`
-- 开发模式下也可能使用 `~/.rv-insights-dev/`
+- `~/.codeinsights/`
+- 开发模式下也可能使用 `~/.codeinsights-dev/`
 
 当前实现中常见的数据包括：
 
@@ -306,7 +306,7 @@ RV-Insights 当前是本地优先设计。
 
 ## 11. 推荐的上手顺序
 
-如果你今天第一次用 RV-Insights，建议按这个顺序：
+如果你今天第一次用 CodeInsights，建议按这个顺序：
 
 1. 先配置渠道
 2. 再配置 Agent 默认模型和默认工作区

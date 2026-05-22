@@ -55,11 +55,11 @@ import { dingtalkBotStatesAtom } from './atoms/dingtalk-atoms'
 import { currentConversationIdAtom, channelsAtom, channelsLoadedAtom, selectedModelAtom } from './atoms/chat-atoms'
 import { currentPipelineSessionIdAtom, pipelineCodexChannelIdAtom, pipelinePendingGatesAtom, pipelineSessionStateMapAtom, pipelineSessionsAtom } from './atoms/pipeline-atoms'
 import { appModeAtom } from './atoms/app-mode'
-import type { FeishuBotBridgeState, FeishuBridgeState, FeishuNotificationSentPayload, DingTalkBotBridgeState, DingTalkBridgeState } from '@rv-insights/shared'
+import type { FeishuBotBridgeState, FeishuBridgeState, FeishuNotificationSentPayload, DingTalkBotBridgeState, DingTalkBridgeState } from '@codeinsights/shared'
 import { Toaster } from './components/ui/sonner'
 import { toast } from 'sonner'
-import { diffCapabilities, migratePermissionMode } from '@rv-insights/shared'
-import type { WorkspaceCapabilities } from '@rv-insights/shared'
+import { diffCapabilities, migratePermissionMode } from '@codeinsights/shared'
+import type { WorkspaceCapabilities } from '@codeinsights/shared'
 import { showCapabilityChangeToasts } from './lib/capabilities-toast'
 import { UpdateDialog } from './components/settings/UpdateDialog'
 import { GlobalShortcuts } from './components/shortcuts/GlobalShortcuts'
@@ -510,7 +510,7 @@ function FeishuInitializer(): null {
       })
       // 桌面通知
       if (Notification.permission === 'granted') {
-        new Notification('RV-Insights → 飞书', {
+        new Notification('CodeInsights → 飞书', {
           body: `${payload.sessionTitle} 的回复已发送到飞书`,
         })
       }

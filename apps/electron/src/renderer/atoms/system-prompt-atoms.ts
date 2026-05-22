@@ -12,8 +12,8 @@ import { atomWithStorage } from 'jotai/utils'
 import {
   BUILTIN_DEFAULT_ID,
   BUILTIN_DEFAULT_PROMPT,
-} from '@rv-insights/shared'
-import type { SystemPromptConfig, SystemPrompt } from '@rv-insights/shared'
+} from '@codeinsights/shared'
+import type { SystemPromptConfig, SystemPrompt } from '@codeinsights/shared'
 import { userProfileAtom } from './user-profile'
 
 /** 提示词编辑侧栏是否打开 */
@@ -28,7 +28,7 @@ export const promptConfigAtom = atom<SystemPromptConfig>({
 
 /** 当前选中的提示词 ID（持久化到 localStorage） */
 export const selectedPromptIdAtom = atomWithStorage<string>(
-  'rv-insights-selected-system-prompt-id',
+  'codeinsights-selected-system-prompt-id',
   BUILTIN_DEFAULT_ID
 )
 

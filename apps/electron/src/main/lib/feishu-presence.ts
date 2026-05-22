@@ -8,7 +8,7 @@
  */
 
 import { BrowserWindow, powerMonitor } from 'electron'
-import type { FeishuPresenceReport } from '@rv-insights/shared'
+import type { FeishuPresenceReport } from '@codeinsights/shared'
 
 /** 内部在场状态 */
 interface PresenceState {

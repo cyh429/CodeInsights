@@ -9,7 +9,7 @@ import type {
   PipelineStateSnapshot,
   PipelineStreamCompletePayload,
   PipelineStreamPayload,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   appendPipelineNodeCompleteRecords,
   createPipelineService,
@@ -39,8 +39,8 @@ function runGit(repoRoot: string, args: string[]): string {
 
 function setupPipelineGitRepo(repoRoot: string): void {
   runGit(repoRoot, ['init'])
-  runGit(repoRoot, ['config', 'user.name', 'RV Test'])
-  runGit(repoRoot, ['config', 'user.email', 'rv-test@example.com'])
+  runGit(repoRoot, ['config', 'user.name', 'CodeInsights Test'])
+  runGit(repoRoot, ['config', 'user.email', 'codeinsights-test@example.com'])
   mkdirSync(join(repoRoot, 'src'), { recursive: true })
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   runGit(repoRoot, ['add', 'src/index.ts'])
@@ -48,19 +48,19 @@ function setupPipelineGitRepo(repoRoot: string): void {
 }
 
 describe('pipeline-service', () => {
-  const originalConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+  const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
   let tempConfigDir = ''
 
   beforeEach(() => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   })
 
   afterEach(() => {
     if (originalConfigDir == null) {
-      delete process.env.RV_INSIGHTS_CONFIG_DIR
+      delete process.env.CODEINSIGHTS_CONFIG_DIR
     } else {
-      process.env.RV_INSIGHTS_CONFIG_DIR = originalConfigDir
+      process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
     }
 
     rmSync(tempConfigDir, { recursive: true, force: true })
@@ -207,7 +207,7 @@ describe('pipeline-service', () => {
   })
 
   test('task_selection gate 必须选择 report，并写回 selected-task.md 和 ContributionTask', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-task-selection',
       sessionId: 'session-task-selection',
@@ -305,7 +305,7 @@ describe('pipeline-service', () => {
   })
 
   test('planner document_review approve 会记录 plan.md 和 test-plan.md 的 accepted checksum', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-plan-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-plan-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-plan-review',
       sessionId: 'session-plan-review',
@@ -406,7 +406,7 @@ describe('pipeline-service', () => {
   })
 
   test('developer document_review approve 会记录 dev.md accepted checksum 并进入 reviewing', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-dev-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-dev-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-dev-review',
       sessionId: 'session-dev-review',
@@ -495,7 +495,7 @@ describe('pipeline-service', () => {
   })
 
   test('review iteration limit gate 按用户选择进入 testing 或回 developer', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-review-limit-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-review-limit-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-review-limit',
       sessionId: 'session-review-limit',
@@ -571,7 +571,7 @@ describe('pipeline-service', () => {
   })
 
   test('tester document_review approve 会接受 result.md 和 patch-set 并进入 committing', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-tester-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-tester-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-tester-result',
       sessionId: 'session-tester-result',
@@ -696,7 +696,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer submission_review local_commit 会创建本地提交并通过 operation id 保持幂等', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-committer-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-committer-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-submission',
@@ -893,7 +893,7 @@ describe('pipeline-service', () => {
   }, 10_000)
 
   test('committer remote_pr 未经过独立高风险确认时不会执行远端写', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-remote-denied-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-denied-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-remote-denied',
@@ -1021,7 +1021,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer remote_pr 会回填远端结果并通过 operation id 保持幂等', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-remote-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-remote',
@@ -1211,7 +1211,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer remote_pr 必须使用 remote_write_confirmation gate kind', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-remote-kind-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-kind-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-remote-kind',
@@ -1337,7 +1337,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer remote_pr 在 push 成功但 PR 失败后可用同一 operation id 恢复且不重复 push', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-remote-retry-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-retry-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-remote-retry',
@@ -1552,7 +1552,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer submission_review local_commit 会先校验提交材料再执行本地提交', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-committer-docs-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-committer-docs-repo-'))
     setupPipelineGitRepo(repoRoot)
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-docs',
@@ -1675,7 +1675,7 @@ describe('pipeline-service', () => {
   })
 
   test('committer submission_review approve 会在后端拒绝非 draft-only 产物状态', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-committer-blocked-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-committer-blocked-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-committer-blocked',
       sessionId: 'session-committer-blocked',
@@ -1814,7 +1814,7 @@ describe('pipeline-service', () => {
   })
 
   test('tester document_review approve 会在后端拒绝包含 patch-work 的 patch-set', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-unsafe-patch-set-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-unsafe-patch-set-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-tester-unsafe-patch',
       sessionId: 'session-tester-unsafe-patch',
@@ -1923,7 +1923,7 @@ describe('pipeline-service', () => {
   })
 
   test('tester document_review approve 会在后端拒绝未通过的测试证据', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-failed-evidence-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-failed-evidence-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-tester-failed-evidence',
       sessionId: 'session-tester-failed-evidence',
@@ -2032,7 +2032,7 @@ describe('pipeline-service', () => {
   })
 
   test('tester test_blocked approve 会作为风险接受进入 committing', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-blocked-approve-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-blocked-approve-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-tester-blocked-approve',
       sessionId: 'session-tester-blocked-approve',
@@ -2150,7 +2150,7 @@ describe('pipeline-service', () => {
   })
 
   test('tester test_blocked reject_with_feedback 会把 ContributionTask 退回 developing', async () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-tester-reject-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-tester-reject-repo-'))
     const gateRequest: PipelineGateRequest = {
       gateId: 'gate-tester-reject',
       sessionId: 'session-tester-reject',
@@ -2227,7 +2227,7 @@ describe('pipeline-service', () => {
   })
 
   test('patch-work 文件读取只允许 manifest 登记文件', () => {
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-service-read-repo-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-read-repo-'))
     const service = createPipelineService()
 
     try {

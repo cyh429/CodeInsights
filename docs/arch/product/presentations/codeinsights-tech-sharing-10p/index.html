@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-themes="tokyo-night,dracula,catppuccin-mocha,blueprint,corporate-clean">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CodeInsights 技术分享 · 运行时接入层与工程工作流层</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" id="theme-link" href="assets/themes/tokyo-night.css">
+<link rel="stylesheet" href="assets/animations/animations.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="tpl-codeinsights-tech">
+<div class="deck">
+
+  <section class="slide" data-title="Cover">
+    <div class="cover-grid">
+      <div>
+        <p class="kicker">CodeInsights / technical sharing</p>
+        <h1 class="h1 anim-fade-up" data-anim="fade-up">
+          不是再造一个 Agent，<br>
+          而是把最强 Agent 接进工程流程
+        </h1>
+        <p class="lede">
+          CodeInsights 的核心不是通用 Agent 内核，而是
+          <strong>成熟 coding agent 运行时</strong> + <strong>人类工程经验 Pipeline</strong>。
+        </p>
+      </div>
+      <div class="equation-card">
+        <div class="eq-row"><span>Claude Code / Codex</span><b>完整运行时</b></div>
+        <div class="eq-op">+</div>
+        <div class="eq-row"><span>Explorer -> Tester</span><b>贡献流程</b></div>
+        <div class="eq-op">=</div>
+        <div class="eq-result">可审计、可回退、可验证的 AI 开源贡献工作台</div>
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">human judgment × agent runtime</span>
+      <span class="slide-number" data-current="1" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>大家好，今天我想用 10 页讲清楚 CodeInsights 的核心判断。它不是再造一个通用 Agent，也不是把 skills 堆得更高。</p>
+      <p>我们真正要做的是把 Claude Code、Codex 这类成熟 coding agent 的完整运行时，放进一个真实工程流程里。人类负责流程、边界和质量判断，AI 负责搜索、修改、验证和材料准备。</p>
+      <p>这页先记住一个公式：完整运行时，加上贡献 Pipeline，等于可审计、可回退、可验证的开源贡献工作台。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Diagnosis">
+    <p class="kicker">01 / diagnosis</p>
+    <h2 class="h2">Agent 已经会写代码，<span class="accent-orange">贡献仍然卡在流程</span></h2>
+    <div class="flow-bar mt-l">
+      <div class="flow-step"><span>01</span><b>Find</b><small>什么值得做</small></div>
+      <div class="flow-step"><span>02</span><b>Plan</b><small>边界和风险</small></div>
+      <div class="flow-step"><span>03</span><b>Patch</b><small>代码和测试</small></div>
+      <div class="flow-step"><span>04</span><b>Review</b><small>正确性和回归</small></div>
+      <div class="flow-step"><span>05</span><b>Prove</b><small>验证和材料</small></div>
+    </div>
+    <div class="statement mt-l">
+      <p>真实开源贡献的瓶颈，不是“模型能不能动手”，而是“过程能不能被人类理解、审查和恢复”。</p>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">execution is solved; contribution flow is not</span>
+      <span class="slide-number" data-current="2" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>先看问题。现在很多 coding agent 已经能读代码、改文件、跑测试，所以“能不能动手”不是最核心的瓶颈。</p>
+      <p>真正困难的是这五步：先判断什么贡献值得做，再规划边界和风险，然后写 patch，接着审查正确性，最后拿出验证结果和提交材料。</p>
+      <p>如果这些过程只藏在长聊天里，维护者很难判断 AI 为什么这么改，失败在哪里，下一步该继续还是返工。CodeInsights 要解决的就是这个流程问题。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Instability">
+    <p class="kicker">02 / why generic wrappers drift</p>
+    <h2 class="h2">通用 Agent 内核和 skills 堆叠，<span class="accent-red">不是稳定性的答案</span></h2>
+    <div class="risk-grid mt-l">
+      <div class="risk-card">
+        <span class="risk-tag red">drift</span>
+        <h4>内核追不上运行时</h4>
+        <p>模型、CLI、工具协议持续变化，自研内核会变成长期适配负担。</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-tag orange">semantic</span>
+        <h4>skills 会漂移</h4>
+        <p>skills 能增强上下文，但稳定性仍依赖模型理解和任务边界。</p>
+      </div>
+      <div class="risk-card">
+        <span class="risk-tag purple">opaque</span>
+        <h4>长任务不可审计</h4>
+        <p>一次性跑完复杂贡献，判断、失败和返工原因会消失在输出里。</p>
+      </div>
+    </div>
+    <div class="statement mt-l">
+      <p>CodeInsights 的选择：不把稳定性押在薄封装上，而是押在完整运行时和工程流程上。</p>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">runtime > wrapper, workflow > prompt pile</span>
+      <span class="slide-number" data-current="3" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>这里是这套产品判断里最重要的一步：通用 Agent 内核和 skills 堆叠，并不天然稳定。</p>
+      <p>如果我们自研通用内核，就要不断追底层模型、CLI 和工具协议的变化。skills 当然有价值，但它更像增强层，不能承担全部稳定性。</p>
+      <p>还有一个问题是长任务不可审计。单 Agent 一次跑完以后，过程判断和返工原因经常消失。所以 CodeInsights 把稳定性放在完整运行时和工程流程上，而不是薄封装上。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Product Bet">
+    <div class="layout-two wide-left">
+      <div>
+        <p class="kicker">03 / product bet</p>
+        <h2 class="h2">不做通用内核，<br>做<span class="accent-blue">运行时接入层</span>和<span class="accent-green">流程编排层</span></h2>
+        <div class="thesis-list mt-l">
+          <div><b>继承能力</b><span>底层 agent 升级，已接入范围内优先受益。</span></div>
+          <div><b>降低适配</b><span>不重复实现文件、终端、工具链和上下文管理。</span></div>
+          <div><b>保持控制</b><span>平台负责工作区、权限、记录、产物和 gate。</span></div>
+        </div>
+      </div>
+      <div class="diagram-frame">
+        <img src="assets/diagrams/codeinsights-runtime-access-boundary.png" alt="CodeInsights 选择接入成熟 coding agent 运行时，而不是重写通用 Agent 内核">
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">connect mature agents, orchestrate engineering work</span>
+      <span class="slide-number" data-current="4" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>所以 CodeInsights 的产品赌注很明确：不做通用 Agent 内核，做运行时接入层和流程编排层。</p>
+      <p>运行时接入层负责把成熟 coding agent 接进来，尽量继承它们原生的文件操作、终端执行、工具链和上下文能力。</p>
+      <p>流程编排层负责工程边界：工作区、权限、记录、产物、checkpoint 和人工 gate。这样我们不会跟底层 agent 赛跑，而是把它放进更适合真实贡献的系统里。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Architecture">
+    <div class="layout-two">
+      <div>
+        <p class="kicker">04 / architecture</p>
+        <h2 class="h2">系统只有三层责任，<br>边界必须清楚</h2>
+        <div class="layer-stack mt-l">
+          <div><span class="dot blue"></span><b>Agent Mode</b><em>调用完整 coding agent 运行时</em></div>
+          <div><span class="dot green"></span><b>Pipeline Mode</b><em>把贡献拆成阶段和人工 gate</em></div>
+          <div><span class="dot purple"></span><b>Platform Layer</b><em>管理工作区、权限、记录和产物</em></div>
+        </div>
+      </div>
+      <div class="diagram-frame diagram-large">
+        <img src="assets/diagrams/codeinsights-product-architecture-overview.png" alt="CodeInsights 产品架构总览，包含 Agent 模式、Pipeline 模式和平台层">
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">agent mode + pipeline mode + platform layer</span>
+      <span class="slide-number" data-current="5" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>把架构展开，其实只有三层责任。</p>
+      <p>Agent Mode 解决直接使用 coding agent 的场景，重点是调用完整运行时。Pipeline Mode 解决复杂贡献任务，把它拆成探索、规划、开发、审核、测试这些阶段。Platform Layer 解决长期工程协作需要的东西：工作区、权限、MCP、skills、记录、产物和 checkpoint。</p>
+      <p>这里最关键的是边界清楚。执行能力来自底层 agent，流程和控制来自 CodeInsights。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Agent Mode">
+    <div class="layout-two wide-left">
+      <div>
+        <p class="kicker">05 / agent mode</p>
+        <h2 class="h2">Agent 模式的核心：<br><span class="accent-blue">选择运行时，就继承它</span></h2>
+        <p class="lede">
+          用户选择 Claude Code、Codex 等 coding agent，CodeInsights 调用完整运行时，并把执行限定在当前工作区边界内。
+        </p>
+      </div>
+      <div class="runtime-stack">
+        <div class="runtime-panel highlight">
+          <div class="top"><h4>Full runtime</h4><span class="tag">must</span></div>
+          <p>不是普通聊天接口，而是保留文件、终端、工具链和权限确认。</p>
+        </div>
+        <div class="runtime-panel">
+          <div class="top"><h4>Upgrade inheritance</h4><span class="tag">payoff</span></div>
+          <p>coding agent 每次升级，已接入运行时范围内尽量零适配收益。</p>
+        </div>
+        <div class="runtime-panel">
+          <div class="top"><h4>Workspace contract</h4><span class="tag">guardrail</span></div>
+          <p>cwd、MCP、skills、权限策略和记录绑定到当前项目。</p>
+        </div>
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">full runtime inheritance</span>
+      <span class="slide-number" data-current="6" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>Agent 模式可以用一句话解释：选择运行时，就继承它。</p>
+      <p>用户在当前项目里选择 Claude Code、Codex 或其他 coding agent。CodeInsights 不把它压缩成普通聊天接口，而是尽量保留原生运行时的能力，包括文件、终端、工具链、权限确认和上下文管理。</p>
+      <p>这样做的收益是上游升级可以被继承。同时，CodeInsights 负责工作区契约：cwd、MCP、skills、权限策略和本地记录都绑定到这个项目。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Pipeline Mode">
+    <p class="kicker">06 / pipeline mode</p>
+    <h2 class="h2">Pipeline 模式：把人类工程经验，<span class="accent-green">变成五个可审批阶段</span></h2>
+    <div class="rail">
+      <div class="stage"><span class="num">01</span><h4>Explorer</h4><p>找到真正值得做的贡献点。</p></div>
+      <div class="stage"><span class="num">02</span><h4>Planner</h4><p>明确边界、风险和验证路径。</p></div>
+      <div class="stage"><span class="num">03</span><h4>Developer</h4><p>修改代码、补测试、整理 diff。</p></div>
+      <div class="stage"><span class="num">04</span><h4>Reviewer</h4><p>审查正确性、回归和测试缺口。</p></div>
+      <div class="stage"><span class="num">05</span><h4>Tester</h4><p>执行验证，留下结果和阻塞项。</p></div>
+    </div>
+    <div class="statement mt-l">
+      <p>AI 做节点内工作；人类在阶段之间决定继续、重跑还是反馈返工。</p>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">human gates before expensive steps</span>
+      <span class="slide-number" data-current="7" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>Pipeline Mode 不是多 Agent 炫技，而是把工程师处理贡献的经验结构化。</p>
+      <p>Explorer 先判断贡献点，Planner 确认边界和风险，Developer 进入实现，Reviewer 做只读审查，Tester 负责最终验证。</p>
+      <p>这里的人机分工很重要：节点内部尽量交给 AI，阶段之间保留人工 gate。也就是说，在投入下一阶段成本之前，人类可以继续、重跑，或者把反馈带回去返工。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Contribution Loop">
+    <div class="layout-two">
+      <div>
+        <p class="kicker">07 / definition of done</p>
+        <h2 class="h2">“完成”不是模型说了算，<br>而是<span class="accent-orange">闭环通过</span></h2>
+        <div class="done-stack mt-l">
+          <div><b>Developer</b><span>产出 diff、测试补充和变更摘要</span></div>
+          <div><b>Reviewer</b><span>发现问题就反馈回开发节点</span></div>
+          <div><b>Tester</b><span>验证通过后整理 patch / PR notes / artifacts</span></div>
+        </div>
+      </div>
+      <div class="diagram-frame diagram-large">
+        <img src="assets/diagrams/codeinsights-pipeline-contribution-loop.png" alt="CodeInsights Pipeline 贡献闭环，展示 Developer、Reviewer、Tester 和人工 gate">
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">review feedback loop + test gate</span>
+      <span class="slide-number" data-current="8" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>这一页定义什么叫完成。不是模型说“完成了”，而是 Developer、Reviewer、Tester 这条闭环真正通过。</p>
+      <p>Developer 产出 diff、测试补充和变更摘要。Reviewer 只读审查，如果发现正确性、边界或回归问题，反馈回到 Developer 重新处理。Tester 最后执行验证，只有通过以后才整理 patch、PR notes 和 artifacts。</p>
+      <p>所以这里的 outcome 是提交材料准备，不是在未验证前自动 PR 提交。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Trust Layer">
+    <div class="layout-two wide-left">
+      <div>
+        <p class="kicker">08 / trust model</p>
+        <h2 class="h2">控制权不是口号，<br>而是<span class="accent-purple">状态、记录和可恢复性</span></h2>
+        <div class="trust-strip compact">
+          <div class="trust-item"><b>Permission</b><span>危险操作进入确认路径。</span></div>
+          <div class="trust-item"><b>Gate</b><span>继续、重跑、反馈是状态。</span></div>
+          <div class="trust-item"><b>Records</b><span>JSONL 可回放过程。</span></div>
+          <div class="trust-item"><b>Artifacts</b><span>报告、diff、测试落盘。</span></div>
+          <div class="trust-item"><b>Checkpoint</b><span>中断后恢复审批。</span></div>
+          <div class="trust-item"><b>Local</b><span>工作区默认在本机。</span></div>
+        </div>
+      </div>
+      <div class="diagram-frame diagram-large">
+        <img src="assets/diagrams/codeinsights-trust-control-layer.png" alt="CodeInsights 信任控制层，包含权限、gate、记录、产物、checkpoint 和本地工作区">
+      </div>
+    </div>
+    <div class="deck-footer">
+      <span class="mono">auditability + recoverability + human gates</span>
+      <span class="slide-number" data-current="9" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>CodeInsights 不追求“全自动”的幻觉，它追求的是让 AI 在清晰边界里做更多事。</p>
+      <p>控制权不是一句产品文案，而是具体状态。权限请求要进确认路径；Pipeline gate 要能继续、重跑和反馈；JSONL 让过程可回放；artifacts 让结果能迁移；checkpoint 让长任务中断后能恢复。</p>
+      <p>这些机制合起来，回答维护者最关心的问题：为什么这样改，失败在哪里，能不能证明可用，出了问题能不能退回可理解状态。</p>
+    </aside>
+  </section>
+
+  <section class="slide" data-title="Takeaways">
+    <p class="kicker">09 / takeaways</p>
+    <h2 class="h2">最后带走三句话</h2>
+    <div class="final-grid punch">
+      <div class="principle">
+        <span class="num">01</span>
+        <h4>不造内核，接入运行时</h4>
+        <p>复用成熟 coding agent 的完整能力，减少重复适配。</p>
+      </div>
+      <div class="principle">
+        <span class="num">02</span>
+        <h4>不赌 prompt，沉淀流程</h4>
+        <p>把探索、规划、开发、审核、测试做成可审批 Pipeline。</p>
+      </div>
+      <div class="principle">
+        <span class="num">03</span>
+        <h4>不卖全自动，交付可审计</h4>
+        <p>用权限、记录、artifacts 和 checkpoint 保留工程控制权。</p>
+      </div>
+    </div>
+    <div class="closing-line mt-l">
+      Human engineering judgment, AI execution power.
+    </div>
+    <div class="deck-footer">
+      <span class="mono">CodeInsights</span>
+      <span class="slide-number" data-current="10" data-total="10"></span>
+    </div>
+    <aside class="notes">
+      <p>最后收束成三句话。</p>
+      <p>第一，不造内核，接入运行时。CodeInsights 不重新实现成熟 coding agent 已经做得很好的能力。</p>
+      <p>第二，不赌 prompt，沉淀流程。我们把开源贡献拆成探索、规划、开发、审核、测试，让 AI 在节点内执行，让人类在阶段之间判断。</p>
+      <p>第三，不卖全自动，交付可审计。最终我们交付的是可审查、可恢复、可验证的贡献材料，而不是一句“AI 已完成”。谢谢大家，后面可以进入 demo 或 Q&A。</p>
+    </aside>
+  </section>
+
+</div>
+
+<div class="footer-help">S presenter · T theme · left/right navigate · O overview</div>
+
+<script src="assets/runtime.js"></script>
+</body>
+</html>

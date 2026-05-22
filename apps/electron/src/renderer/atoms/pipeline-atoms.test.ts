@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { createStore } from 'jotai'
-import type { PipelineStateSnapshot, PipelineStreamPayload } from '@rv-insights/shared'
+import type { PipelineStateSnapshot, PipelineStreamPayload } from '@codeinsights/shared'
 import {
   applyPipelineStreamState,
   applyPipelineLiveOutput,

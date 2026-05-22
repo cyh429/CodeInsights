@@ -47,7 +47,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils'
 import { workspaceFilesVersionAtom, fileBrowserAutoRevealAtom, recentlyModifiedPathsAtom, currentAgentSessionIdAtom } from '@/atoms/agent-atoms'
 import { getParentPath, getPathDisplay } from '@/components/ui6-view-model'
-import type { FileEntry } from '@rv-insights/shared'
+import type { FileEntry } from '@codeinsights/shared'
 import { FileTypeIcon } from './FileTypeIcon'
 
 /** 计算目标路径相对 rootPath 的祖先目录集合（不含 rootPath 自身、含目标的所有上级） */

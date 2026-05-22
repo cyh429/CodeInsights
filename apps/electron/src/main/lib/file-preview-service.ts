@@ -259,7 +259,7 @@ function escapeHtml(text: string): string {
 
 /** 获取临时文件目录 */
 function getPreviewTmpDir(): string {
-  const dir = join(tmpdir(), 'rv-insights-preview')
+  const dir = join(tmpdir(), 'codeinsights-preview')
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }

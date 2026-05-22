@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="RV-Insights is a multi-agent RISC-V open-source contribution platform powered by dual SDK architecture (Claude Agent SDK + OpenAI Agents SDK) with human-in-the-loop review gates."
+      content="CodeInsights is a multi-agent RISC-V open-source contribution platform powered by dual SDK architecture (Claude Agent SDK + OpenAI Agents SDK) with human-in-the-loop review gates."
     />
-    <title>RV-Insights | Multi-Agent RISC-V Contribution Platform</title>
+    <title>CodeInsights | Multi-Agent RISC-V Contribution Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,8 +19,8 @@
   <body data-lang="zh">
     <header class="site-header">
       <a class="site-header__brand" href="#hero">
-        <img src="./assets/brand/logo.webp" alt="RV-Insights logo" />
-        <span>RV-Insights</span>
+        <img src="./assets/brand/logo.webp" alt="CodeInsights logo" />
+        <span>CodeInsights</span>
       </a>
       <nav class="site-header__nav" aria-label="Primary">
         <a href="#proof">
@@ -50,7 +50,7 @@
     <main>
       <section id="hero" class="hero">
         <div class="hero__copy" data-reveal>
-          <img class="hero__logo" src="./assets/brand/logo.webp" alt="RV-Insights logo" />
+          <img class="hero__logo" src="./assets/brand/logo.webp" alt="CodeInsights logo" />
           <p class="eyebrow">
             <span class="lang lang-zh">面向 RISC-V 开源贡献的多 Agent 平台</span>
             <span class="lang lang-en">A Multi-Agent Platform for RISC-V Open-Source Contributions</span>
@@ -68,7 +68,7 @@
             </span>
           </p>
           <div class="hero__actions">
-            <a class="button button-primary" href="https://github.com/zcxGGmu/RV-Insights" target="_blank" rel="noreferrer noopener">
+            <a class="button button-primary" href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">
               View on GitHub
             </a>
             <a class="button button-secondary" href="#architecture">
@@ -94,8 +94,8 @@
             <span class="lang lang-en">Core advantages</span>
           </p>
           <h2>
-            <span class="lang lang-zh">为什么选择 RV-Insights</span>
-            <span class="lang lang-en">Why RV-Insights</span>
+            <span class="lang lang-zh">为什么选择 CodeInsights</span>
+            <span class="lang lang-en">Why CodeInsights</span>
           </h2>
         </div>
         <div class="proof-strip" data-reveal>
@@ -170,7 +170,7 @@
           </p>
         </div>
         <article class="diagram-card" data-reveal>
-          <img src="./assets/diagrams/architecture-v2.svg" alt="RV-Insights v2.2 system architecture diagram" />
+          <img src="./assets/diagrams/architecture-v2.svg" alt="CodeInsights v2.2 system architecture diagram" />
         </article>
       </section>
 
@@ -187,7 +187,7 @@
         </div>
         <div class="workflow-layout">
           <article class="diagram-card" data-reveal>
-            <img src="./assets/diagrams/pipeline.svg" alt="RV-Insights 5-agent pipeline diagram" />
+            <img src="./assets/diagrams/pipeline.svg" alt="CodeInsights 5-agent pipeline diagram" />
             <img class="pipeline-detail" src="./assets/previews/pipeline-detail.jpg" alt="Pipeline detail view" />
           </article>
           <div class="workflow-notes" data-reveal>
@@ -301,7 +301,7 @@
       <section id="comparison" class="section-block">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow"><span class="lang lang-zh">对比分析</span><span class="lang lang-en">Comparison</span></p>
-          <h2><span class="lang lang-zh">与现有工具的对比</span><span class="lang lang-en">How RV-Insights compares</span></h2>
+          <h2><span class="lang lang-zh">与现有工具的对比</span><span class="lang lang-en">How CodeInsights compares</span></h2>
         </div>
         <div class="comparison-table-wrap" data-reveal>
           <table class="comparison-table">
@@ -309,7 +309,7 @@
               <tr>
                 <th><span class="lang lang-zh">维度</span><span class="lang lang-en">Dimension</span></th>
                 <th>SWE-Agent</th><th>Aider</th><th>OpenDevin</th>
-                <th class="comparison-table__highlight">RV-Insights</th>
+                <th class="comparison-table__highlight">CodeInsights</th>
               </tr>
             </thead>
             <tbody>
@@ -370,7 +370,7 @@
             <article class="step-card">
               <p class="step-card__index">01</p>
               <h3><span class="lang lang-zh">获取代码</span><span class="lang lang-en">Clone the repo</span></h3>
-              <p><span class="lang lang-zh">从 GitHub 拉取 RV-Insights 仓库。</span><span class="lang lang-en">Pull the repository from GitHub.</span></p>
+              <p><span class="lang lang-zh">从 GitHub 拉取 CodeInsights 仓库。</span><span class="lang lang-en">Pull the repository from GitHub.</span></p>
             </article>
             <article class="step-card">
               <p class="step-card__index">02</p>
@@ -384,9 +384,9 @@
             </article>
           </div>
           <div class="code-shell" data-reveal>
-            <div class="code-shell__tabs"><span>bash</span><a href="https://github.com/zcxGGmu/RV-Insights" target="_blank" rel="noreferrer noopener">GitHub</a></div>
-            <pre><code>git clone https://github.com/zcxGGmu/RV-Insights.git
-cd RV-Insights
+            <div class="code-shell__tabs"><span>bash</span><a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a></div>
+            <pre><code>git clone https://github.com/zcxGGmu/CodeInsights.git
+cd CodeInsights
 python -m pip install -r requirements.txt
 
 # Configure API keys
@@ -394,7 +394,7 @@ cp .env.example .env
 # Edit .env with your ANTHROPIC_API_KEY and OPENAI_API_KEY
 
 # Run the platform
-python -m rv_insights --help</code></pre>
+python -m codeinsights --help</code></pre>
           </div>
         </div>
       </section>
@@ -412,12 +412,12 @@ python -m rv_insights --help</code></pre>
     </main>
     <footer class="site-footer">
       <div>
-        <strong>RV-Insights</strong>
+        <strong>CodeInsights</strong>
         <p><span class="lang lang-zh">面向 RISC-V 开源软件贡献的多 Agent 平台，采用 Claude Agent SDK + OpenAI Agents SDK 混合架构。</span><span class="lang lang-en">A multi-agent platform for RISC-V open-source contributions, powered by Claude Agent SDK + OpenAI Agents SDK hybrid architecture.</span></p>
       </div>
       <div class="site-footer__links">
-        <a href="https://github.com/zcxGGmu/RV-Insights" target="_blank" rel="noreferrer noopener">GitHub</a>
-        <a href="https://github.com/zcxGGmu/RV-Insights/blob/main/LICENSE" target="_blank" rel="noreferrer noopener">MIT License</a>
+        <a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
+        <a href="https://github.com/zcxGGmu/CodeInsights/blob/main/LICENSE" target="_blank" rel="noreferrer noopener">MIT License</a>
         <button class="lang-toggle lang-toggle--footer" data-lang-toggle="footer" type="button">EN</button>
       </div>
     </footer>

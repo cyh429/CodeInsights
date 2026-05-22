@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelinePatchWorkDocumentRef, PipelineTesterStageOutput } from '@rv-insights/shared'
+import type { PipelinePatchWorkDocumentRef, PipelineTesterStageOutput } from '@codeinsights/shared'
 import {
   buildTesterResultBoardViewModel,
   collectTesterPatchWorkRefs,

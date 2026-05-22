@@ -1,4 +1,4 @@
-import type { AgentStreamEnvelope } from '@rv-insights/shared'
+import type { AgentStreamEnvelope } from '@codeinsights/shared'
 import type { AgentChannel, AgentChannelRunContext } from './agent-channel'
 
 export type FeishuPermissionStrategy = 'queue_to_desktop'

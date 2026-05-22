@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
+import type { SDKMessage, SDKSystemMessage } from '@codeinsights/shared'
 import {
   prepareSdkMessageForAccumulation,
   prepareSdkMessagesForPersistence,

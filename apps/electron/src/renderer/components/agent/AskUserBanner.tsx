@@ -12,7 +12,7 @@ import Markdown, { defaultUrlTransform } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Button } from '@/components/ui/button'
 import { allPendingAskUserRequestsAtom, agentStreamingStatesAtom, finalizeStreamingActivities } from '@/atoms/agent-atoms'
-import type { AskUserQuestion } from '@rv-insights/shared'
+import type { AskUserQuestion } from '@codeinsights/shared'
 
 interface QuestionAnswer {
   selected: string[]
@@ -244,7 +244,7 @@ export function AskUserBanner({ sessionId, active = true }: AskUserBannerProps):
       {/* 头部 + Tab 栏 */}
       <div className="px-4 pt-3 pb-2">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-current">RV-Insights Agent 需要你的输入</span>
+          <span className="text-sm font-medium text-current">CodeInsights Agent 需要你的输入</span>
           <div className="flex items-center gap-1.5">
             {requests.length > 1 && (
               <span className="text-xs text-current/60">(+{requests.length - 1})</span>

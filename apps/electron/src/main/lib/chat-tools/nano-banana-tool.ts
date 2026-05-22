@@ -3,11 +3,11 @@
  *
  * 基于 Gemini Image Generation API 提供 AI 生图能力。
  * 支持文生图、参考图编辑、多轮连续修改。
- * 凭据存储在 ~/.rv-insights/chat-tools.json 的 toolCredentials 中。
+ * 凭据存储在 ~/.codeinsights/chat-tools.json 的 toolCredentials 中。
  */
 
-import type { ToolCall, ToolResult, ToolDefinition } from '@rv-insights/core'
-import type { ChatToolMeta, FileAttachment } from '@rv-insights/shared'
+import type { ToolCall, ToolResult, ToolDefinition } from '@codeinsights/core'
+import type { ChatToolMeta, FileAttachment } from '@codeinsights/shared'
 import { randomUUID } from 'node:crypto'
 import { getToolCredentials } from '../chat-tool-config'
 import { saveAttachment, readAttachmentAsBase64, isImageAttachment } from '../attachment-service'

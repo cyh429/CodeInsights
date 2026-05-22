@@ -7,7 +7,7 @@ import type {
   PipelineNodeKind,
   PipelineStageArtifactRecord,
   PipelineStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { getPipelineArtifactsDir } from './config-paths'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 

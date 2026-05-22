@@ -14,7 +14,7 @@ import { join, dirname } from 'node:path'
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { BrowserWindow } from 'electron'
 import type { WebContents } from 'electron'
-import { AGENT_IPC_CHANNELS } from '@rv-insights/shared'
+import { AGENT_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   AgentSendInput,
   AgentGenerateTitleInput,
@@ -24,8 +24,8 @@ import type {
   AgentStreamEvent,
   AgentStreamPayload,
   AgentQueueMessageInput,
-  RVInsightsPermissionMode,
-} from '@rv-insights/shared'
+  CodeInsightsPermissionMode,
+} from '@codeinsights/shared'
 import { ClaudeAgentAdapter, scanAndKillOrphanedClaudeSubprocesses } from './adapters/claude-agent-adapter'
 import { AgentEventBus } from './agent-event-bus'
 import { AgentOrchestrator } from './agent-orchestrator'
@@ -222,7 +222,7 @@ export function stopAgent(sessionId: string): void {
 export async function rewindAgentSession(
   sessionId: string,
   assistantMessageUuid: string,
-): Promise<import('@rv-insights/shared').RewindSessionResult> {
+): Promise<import('@codeinsights/shared').RewindSessionResult> {
   return orchestrator.rewindSession(sessionId, assistantMessageUuid)
 }
 
@@ -251,9 +251,9 @@ export function killOrphanedClaudeSubprocesses(): void {
 /**
  * 运行中动态切换会话的权限模式
  *
- * 同时更新 RV-Insights 侧（canUseTool 动态读取）和 SDK 侧（query.setPermissionMode）。
+ * 同时更新 CodeInsights 侧（canUseTool 动态读取）和 SDK 侧（query.setPermissionMode）。
  */
-export async function updateAgentPermissionMode(sessionId: string, mode: RVInsightsPermissionMode): Promise<void> {
+export async function updateAgentPermissionMode(sessionId: string, mode: CodeInsightsPermissionMode): Promise<void> {
   await orchestrator.updateSessionPermissionMode(sessionId, mode)
 }
 

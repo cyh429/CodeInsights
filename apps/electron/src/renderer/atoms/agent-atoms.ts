@@ -7,7 +7,7 @@
 
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
-import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, RVInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage, AgentStreamEnvelope, AgentRuntimeEvent, AgentRuntimeUsagePayload, AgentRuntimeRunnerMode } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, CodeInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage, AgentStreamEnvelope, AgentRuntimeEvent, AgentRuntimeUsagePayload, AgentRuntimeRunnerMode } from '@codeinsights/shared'
 
 /** 活动状态 */
 export type ActivityStatus = 'pending' | 'running' | 'completed' | 'error' | 'backgrounded'
@@ -326,10 +326,10 @@ export const RECENTLY_MODIFIED_TTL_MS = 60_000
 // ===== 权限系统 Atoms =====
 
 /** 工作区默认权限模式（初始化和新会话使用） */
-export const agentDefaultPermissionModeAtom = atom<RVInsightsPermissionMode>('auto')
+export const agentDefaultPermissionModeAtom = atom<CodeInsightsPermissionMode>('auto')
 
-/** Per-session 权限模式 Map — sessionId → RVInsightsPermissionMode */
-export const agentPermissionModeMapAtom = atom<Map<string, RVInsightsPermissionMode>>(new Map())
+/** Per-session 权限模式 Map — sessionId → CodeInsightsPermissionMode */
+export const agentPermissionModeMapAtom = atom<Map<string, CodeInsightsPermissionMode>>(new Map())
 
 /** Agent 思考模式 */
 export const agentThinkingAtom = atom<ThinkingConfig | undefined>(undefined)

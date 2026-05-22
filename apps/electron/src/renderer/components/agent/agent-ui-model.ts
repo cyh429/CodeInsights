@@ -1,5 +1,5 @@
 import type { ActivityStatus } from '@/atoms/agent-atoms'
-import type { AgentRuntimeRunnerMode, DangerLevel } from '@rv-insights/shared'
+import type { AgentRuntimeRunnerMode, DangerLevel } from '@codeinsights/shared'
 
 export type AgentBannerTone = 'neutral' | 'waiting' | 'danger' | 'planning'
 

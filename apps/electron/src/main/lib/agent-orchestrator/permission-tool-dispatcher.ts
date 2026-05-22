@@ -1,6 +1,6 @@
 import { lstatSync, realpathSync } from 'node:fs'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
-import type { RVInsightsPermissionMode } from '@rv-insights/shared'
+import type { CodeInsightsPermissionMode } from '@codeinsights/shared'
 import type { PermissionResult, CanUseToolOptions } from '../agent-permission-service'
 import type { ExitPlanPermissionResult } from '../agent-exit-plan-service'
 import { validateToolInput } from '../agent-tool-input-validator'
@@ -48,11 +48,11 @@ export interface ExitPlanModeHandler {
 }
 
 export interface PermissionToolDispatcherOptions {
-  initialPermissionMode: RVInsightsPermissionMode
+  initialPermissionMode: CodeInsightsPermissionMode
   agentCwd: string
-  getPermissionMode: () => RVInsightsPermissionMode
-  setPermissionMode: (mode: RVInsightsPermissionMode) => void
-  syncAdapterPermissionMode?: (mode: RVInsightsPermissionMode) => void
+  getPermissionMode: () => CodeInsightsPermissionMode
+  setPermissionMode: (mode: CodeInsightsPermissionMode) => void
+  syncAdapterPermissionMode?: (mode: CodeInsightsPermissionMode) => void
   emitEnterPlanMode: () => void
   autoCanUseTool: PermissionToolHandler
   askUserQuestion: AskUserQuestionHandler
@@ -271,9 +271,9 @@ export function evaluatePlanModeTool(
  */
 export class PermissionToolDispatcher {
   private readonly agentCwd: string
-  private readonly getPermissionMode: () => RVInsightsPermissionMode
-  private readonly setPermissionMode: (mode: RVInsightsPermissionMode) => void
-  private readonly syncAdapterPermissionMode?: (mode: RVInsightsPermissionMode) => void
+  private readonly getPermissionMode: () => CodeInsightsPermissionMode
+  private readonly setPermissionMode: (mode: CodeInsightsPermissionMode) => void
+  private readonly syncAdapterPermissionMode?: (mode: CodeInsightsPermissionMode) => void
   private readonly emitEnterPlanMode: () => void
   private readonly autoCanUseTool: PermissionToolHandler
   private readonly askUserQuestion: AskUserQuestionHandler
@@ -300,7 +300,7 @@ export class PermissionToolDispatcher {
     return this.planModeEntered
   }
 
-  syncPlanModeState(mode: RVInsightsPermissionMode): void {
+  syncPlanModeState(mode: CodeInsightsPermissionMode): void {
     this.planModeEntered = mode === 'plan'
   }
 

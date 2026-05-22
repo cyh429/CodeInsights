@@ -27,7 +27,7 @@ import {
   workspaceAttachedDirectoriesMapAtom,
   agentPendingFilesAtom,
 } from '@/atoms/agent-atoms'
-import type { FileEntry, AgentPendingFile } from '@rv-insights/shared'
+import type { FileEntry, AgentPendingFile } from '@codeinsights/shared'
 
 interface SidePanelProps {
   sessionId: string

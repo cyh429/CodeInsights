@@ -100,7 +100,7 @@ Service 的关键状态：
 - 将 SDK 原始消息转换为 shared `AgentStreamEvent`。
 - 维护 SDK session id、resume point、result subtype、usage。
 - 处理 SDK 层错误、resume 失败、timeout、abort。
-- 通过 in-process MCP 暴露 RV-Insights 宿主能力。
+- 通过 in-process MCP 暴露 CodeInsights 宿主能力。
 
 不负责：
 
@@ -237,7 +237,7 @@ interface AgentRuntimeErrorPayload {
 建议目录模型：
 
 ```text
-~/.rv-insights/
+~/.codeinsights/
   agent-workspaces/
     {workspace-slug}/
       workspace.json
@@ -259,7 +259,7 @@ interface AgentRuntimeErrorPayload {
 
 说明：
 
-- `workspace.json` 是 RV-Insights 应用配置。
+- `workspace.json` 是 CodeInsights 应用配置。
 - `runtime/` 是 Claude Code 可发现的 runtime 配置。
 - `sessions/{session-id}/cwd` 是每个会话默认工作目录。
 - `workspace-files/` 是工作区共享文件。
@@ -303,7 +303,7 @@ interface AgentRuntimeManifest {
 路径安全要求：
 
 - 所有 workspace/session path 必须先 `resolve`，再对已存在路径段做 `lstat`，拒绝 symlink 穿越。
-- 物化前确认目标仍在 `~/.rv-insights/agent-workspaces/{slug}` 真实路径内。
+- 物化前确认目标仍在 `~/.codeinsights/agent-workspaces/{slug}` 真实路径内。
 - 删除或清理 runtime snapshot 时只允许操作 manifest 管理的目录。
 - 用户附加目录不复制进 runtime，只记录引用和只读/读写权限。
 
@@ -315,7 +315,7 @@ interface AgentRuntimeManifest {
 - 合并 MCP servers。
 - 将 enabled Skills 链接或复制到 `.claude/skills`。
 - 将 enabled Plugins 物化为 runtime snapshot，并传给 SDK `options.plugins`。
-- 写入 `settings.json` 中 RV 必须控制的 env / MCP / plansDirectory。
+- 写入 `settings.json` 中 CodeInsights 必须控制的 env / MCP / plansDirectory。
 - 对用户配置做最小覆盖，避免重写整个 settings。
 
 happyclaw 可借鉴点：
@@ -324,7 +324,7 @@ happyclaw 可借鉴点：
 - DMI slash command 可由应用展开，非 DMI plugin command 交给 SDK。
 - 不为具体插件写死逻辑。
 
-RV-Insights 不应照搬点：
+CodeInsights 不应照搬点：
 
 - per-user SaaS runtime root。
 - Docker mount 路径。
@@ -353,7 +353,7 @@ sequenceDiagram
 
 Materializer 写文件原则：
 
-- 生成文件带 `generatedBy: "rv-insights"` 或注释说明，便于用户识别。
+- 生成文件带 `generatedBy: "codeinsights"` 或注释说明，便于用户识别。
 - 用户可编辑文件和应用生成文件分离，避免覆盖用户手写内容。
 - 每次物化计算 `sourceConfigHash`，配置未变化时跳过写入。
 - plugins 使用 snapshot，不直接从用户全局 plugin 目录执行。
@@ -361,8 +361,8 @@ Materializer 写文件原则：
 
 settings 合并策略：
 
-- RV 只管理明确白名单 key：`permissions`、`mcpServers` 引用、`enabledPlugins`、`plansDirectory`、`skipWebFetchPreflight`、必要 env。
-- 用户手写 key 不覆盖；冲突时写入 `.rv-insights-conflicts.json` 并发 `runtime_config_invalid`，不静默覆盖。
+- CodeInsights 只管理明确白名单 key：`permissions`、`mcpServers` 引用、`enabledPlugins`、`plansDirectory`、`skipWebFetchPreflight`、必要 env。
+- 用户手写 key 不覆盖；冲突时写入 `.codeinsights-conflicts.json` 并发 `runtime_config_invalid`，不静默覆盖。
 - `plansDirectory` 继续指向 session cwd 下的计划目录，确保旧 plan/exit-plan 行为可恢复。
 - 渠道临时 MCP，例如飞书群聊 `feishu_chat`，不写 workspace 级 manifest；作为 run-scoped MCP overlay 传入 Runner，并在 event source 中记录 channel target。
 
@@ -530,7 +530,7 @@ sequence 规则：
 
 ## 权限策略
 
-RV-Insights 不能照搬 happyclaw 的默认 `bypassPermissions`。
+CodeInsights 不能照搬 happyclaw 的默认 `bypassPermissions`。
 
 建议：
 
@@ -543,10 +543,10 @@ RV-Insights 不能照搬 happyclaw 的默认 `bypassPermissions`。
 
 - 当前 shared 类型里存在 `auto`、`bypassPermissions`、`plan` 等 SDK 接近命名。
 - UI 层建议展示 `safe / ask / allow-all / plan`，内部增加映射：
-  - `safe` -> SDK `auto` + RV 风险规则
+  - `safe` -> SDK `auto` + CodeInsights 风险规则
   - `ask` -> SDK `default` 或 RV `canUseTool` 全询问策略
   - `allow-all` -> SDK `bypassPermissions`，必须显式标红提示
-  - `plan` -> SDK plan mode + RV side effect 阻断
+  - `plan` -> SDK plan mode + CodeInsights side effect 阻断
 - 迁移初期不强行删除旧枚举，先增加 `AgentPermissionPolicy` 做兼容映射。
 
 实现上：
@@ -617,14 +617,14 @@ AskUser / Plan Mode：
 
 | 工具 | 能力 | 权限等级 | 备注 |
 | --- | --- | --- | --- |
-| `rv_memory_search` | 搜索 RV 记忆 | `read` | 返回摘要和引用 |
-| `rv_memory_append` | 写入记忆 | `host_side_effect` | 需要用户确认或 workspace allow |
-| `rv_workspace_search` | 搜索 workspace 文件 | `read` | 限制在允许目录 |
-| `rv_list_workspace_files` | 列文件树 | `read` | 支持分页 |
-| `rv_open_file` | 在 UI 中定位文件 | `host_side_effect` | Electron channel 可直接执行 |
-| `rv_send_channel_message` | 向外部渠道发送消息 | `host_side_effect` | 飞书/微信等需要审计 |
-| `rv_schedule_task` | 创建提醒/后台任务 | `host_side_effect` | 先只生成请求，不直接执行危险任务 |
-| `rv_pipeline_start` | 从 Agent 触发 Pipeline | `host_side_effect` | 后期接入 |
+| `codeinsights_memory_search` | 搜索 RV 记忆 | `read` | 返回摘要和引用 |
+| `codeinsights_memory_append` | 写入记忆 | `host_side_effect` | 需要用户确认或 workspace allow |
+| `codeinsights_workspace_search` | 搜索 workspace 文件 | `read` | 限制在允许目录 |
+| `codeinsights_list_workspace_files` | 列文件树 | `read` | 支持分页 |
+| `codeinsights_open_file` | 在 UI 中定位文件 | `host_side_effect` | Electron channel 可直接执行 |
+| `codeinsights_send_channel_message` | 向外部渠道发送消息 | `host_side_effect` | 飞书/微信等需要审计 |
+| `codeinsights_schedule_task` | 创建提醒/后台任务 | `host_side_effect` | 先只生成请求，不直接执行危险任务 |
+| `codeinsights_pipeline_start` | 从 Agent 触发 Pipeline | `host_side_effect` | 后期接入 |
 
 ## UI 目标
 

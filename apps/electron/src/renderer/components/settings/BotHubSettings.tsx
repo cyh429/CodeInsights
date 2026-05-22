@@ -16,12 +16,12 @@ import { FeishuSettings } from './FeishuSettings'
 import { DingTalkSettings } from './DingTalkSettings'
 import { WeChatSettings } from './WeChatSettings'
 import { BotDefaultSettings } from './BotDefaultSettings'
-import { RVInsightsLogoSettings } from './RVInsightsLogoSettings'
+import { CodeInsightsLogoSettings } from './CodeInsightsLogoSettings'
 import { CredentialStorageWarning } from './CredentialStorageWarning'
 import feishuLogo from '@/assets/bots/feishu.png'
 import dingtalkLogo from '@/assets/bots/dingding.png'
 import wechatLogo from '@/assets/bots/wechat.png'
-import rvInsightsLogo from '@/assets/models/rv-insights.png'
+import codeInsightsLogo from '@/assets/models/codeinsights.png'
 
 // ===== 类型 =====
 
@@ -69,7 +69,7 @@ const PLATFORMS: readonly BotPlatformDef[] = [
   {
     id: 'logos',
     name: '品牌素材',
-    iconSrc: rvInsightsLogo,
+    iconSrc: codeInsightsLogo,
     iconBgClass: 'bg-muted',
   },
 ] as const
@@ -172,7 +172,7 @@ function renderPlatformPanel(id: BotPlatformId): React.ReactElement {
     case 'defaults':
       return <BotDefaultSettings />
     case 'logos':
-      return <RVInsightsLogoSettings />
+      return <CodeInsightsLogoSettings />
   }
 }
 

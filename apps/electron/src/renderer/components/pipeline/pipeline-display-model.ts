@@ -5,7 +5,7 @@ import type {
   PipelineSessionMeta,
   PipelineSessionStatus,
   PipelineStateSnapshot,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export type PipelineDisplayTone =
   | 'neutral'
@@ -173,7 +173,7 @@ export function buildPipelineHeaderViewModel({
 
   return {
     title: session?.title ?? '新 Pipeline 会话',
-    eyebrow: 'RV Pipeline',
+    eyebrow: 'CodeInsights Pipeline',
     statusLabel: display.label,
     statusTone: display.tone,
     nodeLabel,

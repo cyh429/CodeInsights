@@ -1,4 +1,4 @@
-import type { Channel } from '@rv-insights/shared'
+import type { Channel } from '@codeinsights/shared'
 
 export const CODEX_LOCAL_AUTH_VALUE = '__local_codex_auth__'
 

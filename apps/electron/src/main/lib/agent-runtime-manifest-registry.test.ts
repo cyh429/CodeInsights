@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, symlinkSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import type { AgentWorkspace } from '@rv-insights/shared'
+import type { AgentWorkspace } from '@codeinsights/shared'
 import { AGENT_HOST_BRIDGE_READONLY_TOOLS, AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { buildAgentRuntimeManifest } from './agent-runtime-manifest-registry'
 
 let tempDir = ''
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rv-runtime-manifest-'))
+  tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-runtime-manifest-'))
 })
 
 afterEach(() => {
@@ -42,7 +42,7 @@ describe('buildAgentRuntimeManifest', () => {
       },
     }, null, 2))
     writeFileSync(join(workspaceRoot, '.claude-plugin', 'plugin.json'), JSON.stringify({
-      name: 'rv-insights-workspace-default',
+      name: 'codeinsights-workspace-default',
       version: '1.0.0',
     }, null, 2))
     writeFileSync(join(workspaceRoot, 'config.json'), JSON.stringify({
@@ -79,10 +79,10 @@ describe('buildAgentRuntimeManifest', () => {
       hash: expect.stringMatching(/^sha256:/),
     }])
     expect(manifest.enabledPlugins).toEqual([{
-      id: 'rv-insights-workspace-default',
-      name: 'rv-insights-workspace-default',
+      id: 'codeinsights-workspace-default',
+      name: 'codeinsights-workspace-default',
       sourcePath: join(workspaceRoot, '.claude-plugin'),
-      snapshotPath: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default'),
+      snapshotPath: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'codeinsights-workspace-default'),
       hash: expect.stringMatching(/^sha256:/),
       commands: [],
       enabled: true,

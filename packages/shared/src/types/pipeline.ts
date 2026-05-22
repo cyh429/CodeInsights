@@ -1,7 +1,7 @@
 /**
  * Pipeline 相关类型定义
  *
- * 定义 RV Pipeline 的会话元数据、记录、流式事件和 IPC 通道常量。
+ * 定义 CodeInsights Pipeline 的会话元数据、记录、流式事件和 IPC 通道常量。
  */
 
 /** Pipeline 工作流版本。缺省按 v1 处理，保证旧会话兼容。 */

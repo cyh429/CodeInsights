@@ -6,7 +6,7 @@ import type {
   PipelineStateSnapshot,
   PipelineStreamErrorPayload,
   PipelineStreamPayload,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { SessionIndicatorStatus } from './agent-atoms'
 
 export const pipelineSessionsAtom = atom<PipelineSessionMeta[]>([])

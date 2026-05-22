@@ -1,4 +1,4 @@
-import type { AgentMessage } from '@rv-insights/shared'
+import type { AgentMessage } from '@codeinsights/shared'
 
 export interface CompletionSignalOptions {
   stoppedByUser?: boolean

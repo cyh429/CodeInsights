@@ -1,9 +1,9 @@
 # electron-builder 配置
 # 文档: https://www.electron.build/configuration/configuration
 
-appId: com.rv-insights.app
-productName: RV-Insights
-copyright: Copyright © 2024-2025 RV-Insights
+appId: com.codeinsights.app
+productName: CodeInsights
+copyright: Copyright © 2024-2025 CodeInsights
 
 # Electron 版本（CI 环境 bun workspace 下无法自动检测，需显式指定）
 electronVersion: 39.5.1
@@ -49,11 +49,11 @@ files:
   - node_modules/@openai/codex-win32-arm64/**/*
   - node_modules/@openai/codex-win32-x64/**/*
   # 排除 workspace 包的 symlink（代码已被 esbuild/Vite 打包到 dist/ 中）
-  - "!node_modules/@rv-insights/**"
+  - "!node_modules/@codeinsights/**"
 
 # 通用额外资源
 extraResources:
-  # 默认 Skills 模板（首次启动时同步到 ~/.rv-insights/default-skills/）
+  # 默认 Skills 模板（首次启动时同步到 ~/.codeinsights/default-skills/）
   - from: default-skills
     to: default-skills
     filter:
@@ -61,9 +61,9 @@ extraResources:
   # 教程文件（教程查看器 + 欢迎对话使用）
   - from: ../../tutorial/tutorial.md
     to: tutorial.md
-  # RV-Insights 品牌 Logo 素材（品牌素材下载功能使用）
-  - from: resources/rv-insights-logos
-    to: rv-insights-logos
+  # CodeInsights 品牌 Logo 素材（品牌素材下载功能使用）
+  - from: resources/codeinsights-logos
+    to: codeinsights-logos
     filter:
       - "**/*"
 
@@ -122,4 +122,4 @@ nsis:
 publish:
   provider: github
   owner: zcxGGmu
-  repo: RV-Insights
+  repo: CodeInsights

@@ -1,6 +1,6 @@
 /**
- * Shared configuration for rv-insights
+ * Shared configuration for codeinsights
  */
 
 // Placeholder - will be expanded as needed
-export const APP_NAME = 'RV-Insights'
+export const APP_NAME = 'CodeInsights'

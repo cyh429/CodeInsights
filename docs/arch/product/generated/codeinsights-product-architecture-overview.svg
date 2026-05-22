@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" role="img" aria-labelledby="title desc">
+  <title id="title">CodeInsights 产品架构总览</title>
+  <desc id="desc">CodeInsights homepage architecture diagram generated from product source materials.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .title { fill: #0F172A; font-size: 28px; font-weight: 700; }
+    .subtitle { fill: #475569; font-size: 15px; }
+    .label { fill: #0F172A; font-size: 15px; font-weight: 650; }
+    .body { fill: #475569; font-size: 13px; }
+    .tiny { fill: #475569; font-size: 11px; }
+    .chip { fill: #0F172A; font-size: 12px; font-weight: 650; }
+  </style>
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.08"/>
+    </filter>
+    
+    
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#059669"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#D97706"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7C3AED"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#94A3B8"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="740" fill="#F8FAFC"/>
+
+  <text x="60" y="54" text-anchor="start" class="title">CodeInsights 产品架构总览</text>
+<text x="60" y="84" text-anchor="start" class="subtitle">运行时接入层 + 工程工作流层：不重写通用 Agent 内核，把成熟 coding agent 放进真实贡献流程。</text>
+
+  <rect x="60" y="126" width="240" height="102" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g>
+    <circle cx="96" cy="174" r="24" fill="#2563EB"/>
+    <circle cx="96" cy="174" r="26" fill="none" stroke="#2563EB" stroke-width="1" opacity="0.35"/>
+    <text x="96" y="178" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="750">User</text>
+  </g>
+  <text x="132" y="160" text-anchor="start" class="label">开源贡献者 / 维护者</text>
+  <text x="132" y="184" text-anchor="start" class="body">目标、判断、质量边界</text>
+
+  <rect x="430" y="116" width="340" height="124" rx="16" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(456 148)">
+    <rect x="0" y="-16" width="60" height="24" rx="12" fill="#2563EB" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#2563EB"/>
+    <text x="24" y="0" class="tiny" fill="#2563EB" font-weight="700">CORE</text>
+  </g>
+  <text x="456" y="182" text-anchor="start" class="title" font-size="28">CodeInsights</text>
+  <text x="456" y="210" text-anchor="start" class="subtitle">Runtime Access + Engineering Workflow</text>
+  <text x="456" y="230" text-anchor="start" class="tiny">本地优先工作台 / gate / artifacts / checkpoint</text>
+
+  <rect x="910" y="126" width="230" height="102" rx="16" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g>
+    <circle cx="946" cy="174" r="24" fill="#059669"/>
+    <circle cx="946" cy="174" r="26" fill="none" stroke="#059669" stroke-width="1" opacity="0.35"/>
+    <text x="946" y="178" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="750">OSS</text>
+  </g>
+  <text x="982" y="160" text-anchor="start" class="label">贡献材料就绪</text>
+  <text x="982" y="184" text-anchor="start" class="body">patch / PR notes / artifacts</text>
+
+  <line x1="300" y1="177" x2="420" y2="177" stroke="#2563EB" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <line x1="770" y1="177" x2="900" y2="177" stroke="#059669" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+
+  <path d="M 600 240 C 470 270 270 268 230 305" stroke="#2563EB" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 600 240 C 600 275 600 278 600 305" stroke="#059669" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M 600 240 C 735 270 945 268 970 305" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-purple)"/>
+
+  <rect x="60" y="306" width="330" height="268" rx="16" fill="#FFFFFF" stroke="#BFDBFE" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(86 340)">
+    <rect x="0" y="-16" width="114" height="24" rx="12" fill="#2563EB" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#2563EB"/>
+    <text x="24" y="0" class="tiny" fill="#2563EB" font-weight="700">AGENT MODE</text>
+  </g>
+  <text x="86" y="378" text-anchor="start" class="label" fill="#2563EB">完整运行时接入</text>
+  <text x="86" y="405" text-anchor="start" class="body">调用 agent 运行时，而不是把能力</text>
+<text x="86" y="423" text-anchor="start" class="body">弱化成普通聊天或薄工具层。</text>
+  <g transform="translate(86 455)">
+    <rect x="0" y="0" width="180" height="28" rx="14" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="90" y="18" text-anchor="middle" class="chip" fill="#2563EB">当前：Claude Agent SDK</text>
+  </g>
+  <g transform="translate(86 493)">
+    <rect x="0" y="0" width="140" height="28" rx="14" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" class="chip" fill="#2563EB">Anthropic 兼容渠道</text>
+  </g>
+  <g transform="translate(86 531)">
+    <rect x="0" y="0" width="188" height="28" rx="14" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+    <text x="94" y="18" text-anchor="middle" class="chip" fill="#475569">方向：更多 coding runtime</text>
+  </g>
+
+  <rect x="435" y="306" width="330" height="268" rx="16" fill="#FFFFFF" stroke="#A7F3D0" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(461 340)">
+    <rect x="0" y="-16" width="141" height="24" rx="12" fill="#059669" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#059669"/>
+    <text x="24" y="0" class="tiny" fill="#059669" font-weight="700">PIPELINE MODE</text>
+  </g>
+  <text x="461" y="378" text-anchor="start" class="label" fill="#059669">人类设计流程，AI 完成节点</text>
+  <text x="461" y="405" text-anchor="start" class="body">Explorer -&gt; Planner -&gt; Developer</text>
+<text x="461" y="423" text-anchor="start" class="body">-&gt; Reviewer -&gt; Tester</text>
+  <g transform="translate(461 455)">
+    <rect x="0" y="0" width="244" height="28" rx="14" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <text x="122" y="18" text-anchor="middle" class="chip" fill="#059669">Explorer / Planner / Tester</text>
+  </g>
+  <g transform="translate(461 493)">
+    <rect x="0" y="0" width="244" height="28" rx="14" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="122" y="18" text-anchor="middle" class="chip" fill="#2563EB">Developer / Reviewer: Codex</text>
+  </g>
+  <g transform="translate(461 531)">
+    <rect x="0" y="0" width="140" height="28" rx="14" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+    <text x="70" y="18" text-anchor="middle" class="chip" fill="#D97706">人工 gate + 返工闭环</text>
+  </g>
+
+  <rect x="810" y="306" width="330" height="268" rx="16" fill="#FFFFFF" stroke="#DDD6FE" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(836 340)">
+    <rect x="0" y="-16" width="150" height="24" rx="12" fill="#7C3AED" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#7C3AED"/>
+    <text x="24" y="0" class="tiny" fill="#7C3AED" font-weight="700">PLATFORM LAYER</text>
+  </g>
+  <text x="836" y="378" text-anchor="start" class="label" fill="#7C3AED">一站式贡献工作台</text>
+  <text x="836" y="405" text-anchor="start" class="body">工作区、权限、MCP、Skills、记录</text>
+<text x="836" y="423" text-anchor="start" class="body">和阶段产物都在同一处管理。</text>
+  <g transform="translate(836 455)">
+    <rect x="0" y="0" width="148" height="28" rx="14" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+    <text x="74" y="18" text-anchor="middle" class="chip" fill="#7C3AED">本地 JSON / JSONL</text>
+  </g>
+  <g transform="translate(836 493)">
+    <rect x="0" y="0" width="204" height="28" rx="14" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1"/>
+    <text x="102" y="18" text-anchor="middle" class="chip" fill="#7C3AED">artifacts / checkpoint</text>
+  </g>
+  <g transform="translate(836 531)">
+    <rect x="0" y="0" width="172" height="28" rx="14" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1"/>
+    <text x="86" y="18" text-anchor="middle" class="chip" fill="#D97706">safe / ask / allow</text>
+  </g>
+
+  <rect x="60" y="616" width="1080" height="96" rx="18" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <text x="92" y="650" text-anchor="start" class="label" fill="#0F172A">核心主张</text>
+  <text x="92" y="675" text-anchor="start" class="body" font-size="14">人类工程经验负责流程、边界和质量门禁；AI 负责节点内搜索、修改、审查支持和验证。</text>
+  <g transform="translate(918 636)">
+    <rect x="0" y="0" width="84" height="28" rx="14" fill="#FEF2F2" stroke="#FECACA" stroke-width="1"/>
+    <text x="42" y="18" text-anchor="middle" class="chip" fill="#DC2626">不自研通用内核</text>
+  </g>
+  <g transform="translate(918 672)">
+    <rect x="0" y="0" width="84" height="28" rx="14" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="1"/>
+    <text x="42" y="18" text-anchor="middle" class="chip" fill="#2563EB">复用成熟运行时</text>
+  </g>
+  
+</svg>

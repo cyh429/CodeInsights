@@ -4,7 +4,7 @@
  * 只包含纯函数，供 Bridge 拉取历史后转换为 Agent 可读上下文。
  */
 
-import type { FeishuChatMessage } from '@rv-insights/shared'
+import type { FeishuChatMessage } from '@codeinsights/shared'
 
 interface FeishuTextContent {
   text?: string

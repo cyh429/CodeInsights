@@ -3,7 +3,7 @@ import type {
   PipelineCommitterStageOutput,
   PipelinePatchWorkDocumentRef,
   PipelineTesterStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   buildCommitterPanelViewModel,
   collectCommitterPatchWorkRefs,

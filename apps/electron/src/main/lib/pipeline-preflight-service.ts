@@ -15,7 +15,7 @@ import type {
   PipelinePreflightResult,
   PipelinePreflightRuntimeKind,
   PipelinePreflightRuntimeStatus,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 interface CommandRunResult {
   status: number | null

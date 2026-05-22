@@ -1,4 +1,4 @@
-import type { TypedError } from '@rv-insights/shared'
+import type { TypedError } from '@codeinsights/shared'
 import { isTransientNetworkError } from '../error-patterns'
 
 export interface RetryableApiError {

@@ -1,14 +1,14 @@
 import { createHash } from 'node:crypto'
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
-import type { AgentRuntimeManifest, AgentWorkspace, WorkspaceMcpConfig } from '@rv-insights/shared'
+import type { AgentRuntimeManifest, AgentWorkspace, WorkspaceMcpConfig } from '@codeinsights/shared'
 import { buildAgentRuntimeManifest } from './agent-runtime-manifest-registry'
 import { materializePluginSnapshot } from './agent-plugin-catalog'
 import { AGENT_HOST_BRIDGE_VERSION } from './agent-host-mcp-server'
 import { getAgentSessionRuntimeManifestPath, getAgentSessionRuntimeCwdPath } from './config-paths'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 
-const SETTINGS_CONFLICT_FILE = '.rv-insights-conflicts.json'
+const SETTINGS_CONFLICT_FILE = '.codeinsights-conflicts.json'
 interface MaterializeAgentRuntimeInput {
   workspace: AgentWorkspace
   sessionId: string
@@ -157,7 +157,7 @@ function writeManagedSettingsFile(
       conflicts,
     }
     writeJsonTarget(manifest.workspaceRoot, conflictsPath, report)
-    throw new AgentRuntimeMaterializationError(`Runtime settings 存在 RV 管理字段冲突: ${conflicts.map((c) => c.key).join(', ')}`, conflictsPath)
+    throw new AgentRuntimeMaterializationError(`Runtime settings 存在 CodeInsights 管理字段冲突: ${conflicts.map((c) => c.key).join(', ')}`, conflictsPath)
   }
 
   writeJsonTarget(manifest.workspaceRoot, settingsPath, {
@@ -182,15 +182,15 @@ function writeRuntimeHostBridgeConfig(manifest: AgentRuntimeManifest): void {
 function buildHostBridgeConfig(manifest: AgentRuntimeManifest): Record<string, unknown> {
   return {
     enabled: manifest.hostBridge.enabled,
-    serverName: 'rv_host',
+    serverName: 'codeinsights_host',
     version: manifest.hostBridge.version ?? AGENT_HOST_BRIDGE_VERSION,
     tools: manifest.hostBridge.tools,
-    note: 'RV-Insights host bridge is injected as an in-process SDK MCP server for materialized sessions.',
+    note: 'CodeInsights host bridge is injected as an in-process SDK MCP server for materialized sessions.',
   }
 }
 
 function getHostBridgeConfigPath(manifest: AgentRuntimeManifest): string {
-  return join(manifest.claudeConfigDir, 'rv-host-bridge.json')
+  return join(manifest.claudeConfigDir, 'codeinsights-host-bridge.json')
 }
 
 function validateMaterializedAgentRuntime(manifest: AgentRuntimeManifest): boolean {
@@ -227,9 +227,9 @@ function validateMaterializedAgentRuntime(manifest: AgentRuntimeManifest): boole
 
 function writeRuntimeClaudeMd(manifest: AgentRuntimeManifest): void {
   const lines = [
-    '# RV-Insights Agent Runtime',
+    '# CodeInsights Agent Runtime',
     '',
-    '本文件由 RV-Insights 为当前 Agent workspace 自动生成。',
+    '本文件由 CodeInsights 为当前 Agent workspace 自动生成。',
     '',
     `- Workspace: ${manifest.workspaceSlug}`,
     `- Runtime root: ${manifest.runtimeRoot}`,

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { Channel } from '@rv-insights/shared'
+import type { Channel } from '@codeinsights/shared'
 import {
   CODEX_LOCAL_AUTH_VALUE,
   isPipelineCodexCompatibleChannel,

@@ -9,7 +9,7 @@ import type {
   EnvironmentCheckResult,
   RuntimeStatus,
   InstallerManifest,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 /**
  * 单个安装包的下载状态

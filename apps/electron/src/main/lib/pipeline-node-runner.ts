@@ -20,14 +20,14 @@ import type {
   PipelineStageOutput,
   PipelineStageOutputMap,
   PipelineStreamEvent,
-  RVInsightsPermissionMode,
+  CodeInsightsPermissionMode,
   SDKAssistantMessage,
   SDKContentBlock,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   SAFE_TOOLS,
   isAgentCompatibleProvider,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { CanUseToolOptions, PermissionResult } from './agent-permission-service'
 import { getChannelById, decryptApiKey } from './channel-manager'
 import {
@@ -84,7 +84,7 @@ export function resolveAgentRuntimePipelineRunnerV2Enabled(value?: string): bool
 }
 
 export const agentRuntimePipelineRunnerV2 = {
-  enabled: resolveAgentRuntimePipelineRunnerV2Enabled(process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2),
+  enabled: resolveAgentRuntimePipelineRunnerV2Enabled(process.env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2),
 }
 
 export interface PipelineNodeExecutionContext {
@@ -226,7 +226,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
   switch (node) {
     case 'explorer':
       return [
-        '你是 RV Pipeline 的 Explorer 节点。',
+        '你是 CodeInsights Pipeline 的 Explorer 节点。',
         '目标：基于用户需求快速梳理任务背景、代码入口和可执行方向。',
         '输出要求：给出简洁的探索结论、关键文件/模块、下一步建议。',
         '必须严格遵守结构化输出 schema，不要返回 schema 之外的字段。',
@@ -234,7 +234,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
       ].join('\n')
     case 'planner':
       return [
-        '你是 RV Pipeline 的 Planner 节点。',
+        '你是 CodeInsights Pipeline 的 Planner 节点。',
         '目标：输出可执行的开发与验证方案，避免空泛描述。',
         '输出要求：方案步骤、风险点、验证方式。',
         '必须严格遵守结构化输出 schema，不要返回 schema 之外的字段。',
@@ -242,7 +242,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
       ].join('\n')
     case 'developer':
       return [
-        '你是 RV Pipeline 的 Developer 节点。',
+        '你是 CodeInsights Pipeline 的 Developer 节点。',
         '目标：按计划直接完成代码实现和必要测试。',
         '输出要求：说明改动、验证结果、遗留风险。',
         '必须严格遵守结构化输出 schema，不要返回 schema 之外的字段。',
@@ -250,7 +250,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
       ].join('\n')
     case 'reviewer':
       return [
-        '你是 RV Pipeline 的 Reviewer 节点。',
+        '你是 CodeInsights Pipeline 的 Reviewer 节点。',
         '目标：审查本轮开发结果，给出明确通过/驳回结论。',
         '请仅围绕正确性、回归风险、测试缺口、实现质量给出判断。',
         '必须严格遵守结构化输出 schema，approved 字段必须是 boolean。',
@@ -258,7 +258,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
       ].join('\n')
     case 'tester':
       return [
-        '你是 RV Pipeline 的 Tester 节点。',
+        '你是 CodeInsights Pipeline 的 Tester 节点。',
         '目标：执行验证并输出测试结论。',
         '输出要求：运行了什么、结果如何、是否还有阻塞项。',
         '必须严格遵守结构化输出 schema，不要返回 schema 之外的字段。',
@@ -266,7 +266,7 @@ function buildSystemPrompt(node: PipelineNodeKind): string {
       ].join('\n')
     case 'committer':
       return [
-        '你是 RV Pipeline 的 Committer 节点。',
+        '你是 CodeInsights Pipeline 的 Committer 节点。',
         '目标：生成可审核的提交信息和 PR 草稿，不执行真实 commit、push 或创建 PR。',
         '输出要求：commit message、PR 标题、PR 正文、提交状态和风险说明。',
         '必须严格遵守结构化输出 schema，不要返回 schema 之外的字段。',
@@ -1084,7 +1084,7 @@ function readOptionalTestEvidence(
 }
 
 function buildStableReviewIssueId(index: number): string {
-  return `RV-REV-${String(index + 1).padStart(3, '0')}`
+  return `CI-REV-${String(index + 1).padStart(3, '0')}`
 }
 
 function readOptionalReviewIssues(
@@ -2256,7 +2256,7 @@ export function buildNodeExecutionResult(node: PipelineNodeKind, text: string): 
 }
 
 function permissionModeToSdk(
-  mode: RVInsightsPermissionMode,
+  mode: CodeInsightsPermissionMode,
 ): ClaudeAgentQueryOptions['sdkPermissionMode'] {
   if (mode === 'plan') return 'auto'
   return mode
@@ -2406,7 +2406,7 @@ function createV2ReadOnlyCanUseTool(): (
 export function buildPipelineNodeToolPermissionOptions(
   node: PipelineNodeKind,
   context: PipelineNodeExecutionContext,
-  permissionMode: RVInsightsPermissionMode,
+  permissionMode: CodeInsightsPermissionMode,
 ): PipelineNodeToolPermissionOptions {
   if (!isV2ReadOnlyNode(node, context)) {
     return {
@@ -2594,7 +2594,7 @@ export class ClaudePipelineNodeRunner implements PipelineNodeRunner {
     queryOptions: ClaudeAgentQueryOptions,
     model: string,
     cwd: string | undefined,
-    permissionMode: RVInsightsPermissionMode,
+    permissionMode: CodeInsightsPermissionMode,
   ): Promise<string> {
     let combinedOutput = ''
     const metadata: AgentRuntimeRunMetadata = {

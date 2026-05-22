@@ -5,7 +5,7 @@
 ## 目录模型
 
 ```text
-~/.rv-insights/
+~/.codeinsights/
   agent-workspaces/
     {workspace-slug}/
       workspace.json
@@ -42,16 +42,16 @@
   "workspaceId": "default",
   "workspaceSlug": "default",
   "sessionId": "agent-session-123",
-  "workspaceRoot": "/Users/zq/.rv-insights/agent-workspaces/default",
-  "runtimeRoot": "/Users/zq/.rv-insights/agent-workspaces/default/runtime",
-  "claudeConfigDir": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude",
-  "defaultCwd": "/Users/zq/.rv-insights/agent-workspaces/default/workspace-files",
-  "sessionCwd": "/Users/zq/.rv-insights/agent-workspaces/default/sessions/agent-session-123/cwd",
-  "mcpConfigPath": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/mcp.json",
-  "settingsPath": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude/settings.json",
-  "claudeMdPath": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/CLAUDE.md",
-  "skillsDir": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude/skills",
-  "pluginsDir": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude/plugins",
+  "workspaceRoot": "/Users/zq/.codeinsights/agent-workspaces/default",
+  "runtimeRoot": "/Users/zq/.codeinsights/agent-workspaces/default/runtime",
+  "claudeConfigDir": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude",
+  "defaultCwd": "/Users/zq/.codeinsights/agent-workspaces/default/workspace-files",
+  "sessionCwd": "/Users/zq/.codeinsights/agent-workspaces/default/sessions/agent-session-123/cwd",
+  "mcpConfigPath": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/mcp.json",
+  "settingsPath": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude/settings.json",
+  "claudeMdPath": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/CLAUDE.md",
+  "skillsDir": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude/skills",
+  "pluginsDir": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude/plugins",
   "settingsHash": "sha256:...",
   "mcpHash": "sha256:...",
   "skillsSnapshotHash": "sha256:...",
@@ -66,8 +66,8 @@
   "enabledSkills": [
     {
       "id": "review-skill",
-      "sourcePath": "/Users/zq/.rv-insights/agent-workspaces/default/skills/review-skill",
-      "snapshotPath": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude/skills/review-skill",
+      "sourcePath": "/Users/zq/.codeinsights/agent-workspaces/default/skills/review-skill",
+      "snapshotPath": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude/skills/review-skill",
       "materializeMode": "symlink",
       "hash": "sha256:..."
     }
@@ -76,7 +76,7 @@
     {
       "id": "local-plugin",
       "sourcePath": "/Users/zq/plugins/local-plugin",
-      "snapshotPath": "/Users/zq/.rv-insights/agent-workspaces/default/runtime/.claude/plugins/local-plugin",
+      "snapshotPath": "/Users/zq/.codeinsights/agent-workspaces/default/runtime/.claude/plugins/local-plugin",
       "hash": "sha256:..."
     }
   ],
@@ -88,7 +88,7 @@
   ],
   "hostBridge": {
     "enabled": true,
-    "tools": ["rv_workspace_search", "rv_memory_search", "rv_open_file"]
+    "tools": ["codeinsights_workspace_search", "codeinsights_memory_search", "codeinsights_open_file"]
   },
   "createdAt": "2026-05-17T10:00:00.000Z",
   "updatedAt": "2026-05-17T10:00:00.000Z",
@@ -99,7 +99,7 @@
 
 ## Settings 合并策略
 
-RV 只管理白名单 key：
+CodeInsights 只管理白名单 key：
 
 - `permissions`
 - `mcpServers`
@@ -111,7 +111,7 @@ RV 只管理白名单 key：
 规则：
 
 - 用户手写 key 不覆盖。
-- 白名单 key 冲突时写 `.rv-insights-conflicts.json`，并阻断 run。
+- 白名单 key 冲突时写 `.codeinsights-conflicts.json`，并阻断 run。
 - `plansDirectory` 指向 session cwd 内目录。
 - 飞书等 channel-scoped MCP 不写 workspace manifest，只作为 run overlay 传入 Runner。
 

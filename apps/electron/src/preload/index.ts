@@ -6,7 +6,7 @@
  */
 
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, PIPELINE_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS } from '@rv-insights/shared'
+import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, PIPELINE_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS } from '@codeinsights/shared'
 import { USER_PROFILE_IPC_CHANNELS, SETTINGS_IPC_CHANNELS, APP_ICON_IPC_CHANNELS } from '../types'
 import type {
   RuntimeStatus,
@@ -64,7 +64,7 @@ import type {
   GitHubReleaseListOptions,
   PermissionRequest,
   PermissionResponse,
-  RVInsightsPermissionMode,
+  CodeInsightsPermissionMode,
   AskUserRequest,
   AskUserResponse,
   ExitPlanModeResponse,
@@ -121,7 +121,7 @@ import type {
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
   PatchWorkManifest,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { UserProfile, AppSettings, QuickTaskSubmitInput, QuickTaskOpenSessionData } from '../types'
 import { QUICK_TASK_IPC_CHANNELS } from '../types'
 
@@ -525,7 +525,7 @@ export interface ElectronAPI {
   saveWorkspaceMcpConfig: (workspaceSlug: string, config: WorkspaceMcpConfig) => Promise<void>
 
   /** 测试 MCP 服务器连接 */
-  testMcpServer: (name: string, entry: import('@rv-insights/shared').McpServerEntry) => Promise<{ success: boolean; message: string }>
+  testMcpServer: (name: string, entry: import('@codeinsights/shared').McpServerEntry) => Promise<{ success: boolean; message: string }>
 
   /** 获取工作区 Skill 列表（含活跃和不活跃） */
   getWorkspaceSkills: (workspaceSlug: string) => Promise<SkillMeta[]>
@@ -566,10 +566,10 @@ export interface ElectronAPI {
   respondPermission: (response: PermissionResponse) => Promise<void>
 
   /** 获取工作区权限模式 */
-  getPermissionMode: (workspaceSlug: string) => Promise<RVInsightsPermissionMode>
+  getPermissionMode: (workspaceSlug: string) => Promise<CodeInsightsPermissionMode>
 
   /** 设置工作区权限模式 */
-  setPermissionMode: (workspaceSlug: string, mode: RVInsightsPermissionMode) => Promise<void>
+  setPermissionMode: (workspaceSlug: string, mode: CodeInsightsPermissionMode) => Promise<void>
 
   /** 获取全局记忆配置 */
   getMemoryConfig: () => Promise<MemoryConfig>
@@ -789,9 +789,9 @@ export interface ElectronAPI {
   // --- 多 Bot v2 API ---
 
   /** 获取多 Bot 配置 */
-  getFeishuMultiConfig: () => Promise<import('@rv-insights/shared').FeishuMultiBotConfig>
+  getFeishuMultiConfig: () => Promise<import('@codeinsights/shared').FeishuMultiBotConfig>
   /** 保存单个 Bot 配置 */
-  saveFeishuBotConfig: (input: import('@rv-insights/shared').FeishuBotConfigInput) => Promise<import('@rv-insights/shared').FeishuBotConfig>
+  saveFeishuBotConfig: (input: import('@codeinsights/shared').FeishuBotConfigInput) => Promise<import('@codeinsights/shared').FeishuBotConfig>
   /** 删除 Bot */
   removeFeishuBot: (botId: string) => Promise<boolean>
   /** 启动单个 Bot */
@@ -799,7 +799,7 @@ export interface ElectronAPI {
   /** 停止单个 Bot */
   stopFeishuBot: (botId: string) => Promise<void>
   /** 获取多 Bot 状态 */
-  getFeishuMultiStatus: () => Promise<import('@rv-insights/shared').FeishuMultiBridgeState>
+  getFeishuMultiStatus: () => Promise<import('@codeinsights/shared').FeishuMultiBridgeState>
 
   // ===== 钉钉集成 =====
 
@@ -821,9 +821,9 @@ export interface ElectronAPI {
   // --- 钉钉多 Bot v2 API ---
 
   /** 获取多 Bot 配置 */
-  getDingTalkMultiConfig: () => Promise<import('@rv-insights/shared').DingTalkMultiBotConfig>
+  getDingTalkMultiConfig: () => Promise<import('@codeinsights/shared').DingTalkMultiBotConfig>
   /** 保存单个 Bot 配置 */
-  saveDingTalkBotConfig: (input: import('@rv-insights/shared').DingTalkBotConfigInput) => Promise<import('@rv-insights/shared').DingTalkBotConfig>
+  saveDingTalkBotConfig: (input: import('@codeinsights/shared').DingTalkBotConfigInput) => Promise<import('@codeinsights/shared').DingTalkBotConfig>
   /** 删除 Bot */
   removeDingTalkBot: (botId: string) => Promise<boolean>
   /** 启动单个 Bot */
@@ -831,7 +831,7 @@ export interface ElectronAPI {
   /** 停止单个 Bot */
   stopDingTalkBot: (botId: string) => Promise<void>
   /** 获取多 Bot 状态 */
-  getDingTalkMultiStatus: () => Promise<import('@rv-insights/shared').DingTalkMultiBridgeState>
+  getDingTalkMultiStatus: () => Promise<import('@codeinsights/shared').DingTalkMultiBridgeState>
 
   // ===== 微信集成 =====
 
@@ -1370,7 +1370,7 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.SAVE_MCP_CONFIG, workspaceSlug, config)
   },
 
-  testMcpServer: (name: string, entry: import('@rv-insights/shared').McpServerEntry) => {
+  testMcpServer: (name: string, entry: import('@codeinsights/shared').McpServerEntry) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.TEST_MCP_SERVER, name, entry) as Promise<{ success: boolean; message: string }>
   },
 
@@ -1445,7 +1445,7 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_PERMISSION_MODE, workspaceSlug)
   },
 
-  setPermissionMode: (workspaceSlug: string, mode: RVInsightsPermissionMode) => {
+  setPermissionMode: (workspaceSlug: string, mode: CodeInsightsPermissionMode) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.SET_PERMISSION_MODE, workspaceSlug, mode)
   },
 
@@ -1752,7 +1752,7 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(FEISHU_IPC_CHANNELS.GET_MULTI_CONFIG)
   },
 
-  saveFeishuBotConfig: (input: import('@rv-insights/shared').FeishuBotConfigInput) => {
+  saveFeishuBotConfig: (input: import('@codeinsights/shared').FeishuBotConfigInput) => {
     return ipcRenderer.invoke(FEISHU_IPC_CHANNELS.SAVE_BOT_CONFIG, input)
   },
 
@@ -1842,7 +1842,7 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(DINGTALK_IPC_CHANNELS.GET_MULTI_CONFIG)
   },
 
-  saveDingTalkBotConfig: (input: import('@rv-insights/shared').DingTalkBotConfigInput) => {
+  saveDingTalkBotConfig: (input: import('@codeinsights/shared').DingTalkBotConfigInput) => {
     return ipcRenderer.invoke(DINGTALK_IPC_CHANNELS.SAVE_BOT_CONFIG, input)
   },
 

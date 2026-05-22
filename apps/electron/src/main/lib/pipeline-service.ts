@@ -29,8 +29,8 @@ import type {
   PipelineRemoteSubmissionSummary,
   PipelineChangedFileType,
   PatchWorkFileKind,
-} from '@rv-insights/shared'
-import { replayPipelineRecords } from '@rv-insights/shared'
+} from '@codeinsights/shared'
+import { replayPipelineRecords } from '@codeinsights/shared'
 import type { PipelineNodeRunner } from './pipeline-node-runner'
 import { PipelineCheckpointer } from './pipeline-checkpointer'
 import {
@@ -1359,7 +1359,7 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       claudeChannelId: meta.channelId,
       codexChannelId,
       workspaceId: meta.workspaceId,
-      codexBackend: process.env.RV_PIPELINE_CODEX_BACKEND === 'cli' ? 'cli' : 'sdk',
+      codexBackend: process.env.CODEINSIGHTS_PIPELINE_CODEX_BACKEND === 'cli' ? 'cli' : 'sdk',
       onEvent: (event) => {
         if (event.type === 'node_start') {
           appendPipelineRecord(meta.id, {

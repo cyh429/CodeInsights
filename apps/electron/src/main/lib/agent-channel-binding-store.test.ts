@@ -6,7 +6,7 @@ import { FileAgentChannelBindingStore } from './agent-channel-binding-store'
 
 describe('FileAgentChannelBindingStore', () => {
   test('upserts channel binding to JSON index and JSONL event log', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'rv-channel-store-'))
+    const dir = mkdtempSync(join(tmpdir(), 'codeinsights-channel-store-'))
     const store = new FileAgentChannelBindingStore(
       join(dir, 'bindings.json'),
       join(dir, 'bindings.events.jsonl'),
@@ -43,7 +43,7 @@ describe('FileAgentChannelBindingStore', () => {
   })
 
   test('removes binding and appends audit event', () => {
-    const dir = mkdtempSync(join(tmpdir(), 'rv-channel-store-'))
+    const dir = mkdtempSync(join(tmpdir(), 'codeinsights-channel-store-'))
     const store = new FileAgentChannelBindingStore(
       join(dir, 'bindings.json'),
       join(dir, 'bindings.events.jsonl'),

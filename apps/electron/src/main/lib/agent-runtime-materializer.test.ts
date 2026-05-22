@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentWorkspace } from '@rv-insights/shared'
+import type { AgentWorkspace } from '@codeinsights/shared'
 import {
   AgentRuntimeMaterializationError,
   hasMaterializedAgentRuntime,
@@ -13,7 +13,7 @@ import {
 let tempDir = ''
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rv-runtime-materializer-'))
+  tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-runtime-materializer-'))
 })
 
 afterEach(() => {
@@ -39,7 +39,7 @@ describe('materializeAgentRuntimeForNewSession', () => {
       },
     }, null, 2))
     writeFileSync(join(workspaceRoot, '.claude-plugin', 'plugin.json'), JSON.stringify({
-      name: 'rv-insights-workspace-default',
+      name: 'codeinsights-workspace-default',
       version: '1.0.0',
     }, null, 2))
 
@@ -53,10 +53,10 @@ describe('materializeAgentRuntimeForNewSession', () => {
     expect(manifest.sessionCwd).toBe(join(workspaceRoot, 'sessions', 'session-1', 'cwd'))
     expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'settings.json'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', 'mcp.json'))).toBe(true)
-    expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'))).toBe(true)
+    expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'codeinsights-host-bridge.json'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', 'CLAUDE.md'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'skills', 'review-skill', 'SKILL.md'))).toBe(true)
-    expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default', 'plugin.json'))).toBe(true)
+    expect(existsSync(join(workspaceRoot, 'runtime', '.claude', 'plugins', 'codeinsights-workspace-default', 'plugin.json'))).toBe(true)
     expect(existsSync(join(workspaceRoot, 'sessions', 'session-1', 'cwd', '.context'))).toBe(true)
     expect(JSON.parse(readFileSync(join(workspaceRoot, 'sessions', 'session-1', 'runtime-manifest.json'), 'utf-8'))).toMatchObject({
       manifestVersion: 1,
@@ -67,7 +67,7 @@ describe('materializeAgentRuntimeForNewSession', () => {
     expect(JSON.parse(readFileSync(join(workspaceRoot, 'runtime', '.claude', 'settings.json'), 'utf-8'))).toMatchObject({
       enabledPlugins: [{
         type: 'local',
-        path: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'rv-insights-workspace-default'),
+        path: join(workspaceRoot, 'runtime', '.claude', 'plugins', 'codeinsights-workspace-default'),
       }],
       plansDirectory: '.context',
       skipWebFetchPreflight: true,
@@ -83,15 +83,15 @@ describe('materializeAgentRuntimeForNewSession', () => {
         },
       },
     })
-    expect(JSON.parse(readFileSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'), 'utf-8'))).toMatchObject({
+    expect(JSON.parse(readFileSync(join(workspaceRoot, 'runtime', '.claude', 'codeinsights-host-bridge.json'), 'utf-8'))).toMatchObject({
       enabled: true,
-      serverName: 'rv_host',
+      serverName: 'codeinsights_host',
       version: expect.any(String),
       tools: [
-        'rv_workspace_search',
-        'rv_list_workspace_files',
-        'rv_memory_search',
-        'rv_open_file',
+        'codeinsights_workspace_search',
+        'codeinsights_list_workspace_files',
+        'codeinsights_memory_search',
+        'codeinsights_open_file',
       ],
     })
   })
@@ -111,7 +111,7 @@ describe('materializeAgentRuntimeForNewSession', () => {
       workspacesRoot: tempDir,
     })).toThrow(AgentRuntimeMaterializationError)
 
-    const conflictsPath = join(workspaceRoot, 'runtime', '.claude', '.rv-insights-conflicts.json')
+    const conflictsPath = join(workspaceRoot, 'runtime', '.claude', '.codeinsights-conflicts.json')
     expect(existsSync(conflictsPath)).toBe(true)
     expect(JSON.parse(readFileSync(conflictsPath, 'utf-8'))).toMatchObject({
       settingsPath: join(workspaceRoot, 'runtime', '.claude', 'settings.json'),
@@ -134,7 +134,7 @@ describe('materializeAgentRuntimeForNewSession', () => {
       workspacesRoot: tempDir,
     })).toThrow(AgentRuntimeMaterializationError)
 
-    const conflictsPath = join(workspaceRoot, 'sessions', 'session-1', 'cwd', '.claude', '.rv-insights-conflicts.json')
+    const conflictsPath = join(workspaceRoot, 'sessions', 'session-1', 'cwd', '.claude', '.codeinsights-conflicts.json')
     expect(JSON.parse(readFileSync(conflictsPath, 'utf-8'))).toMatchObject({
       settingsPath: join(workspaceRoot, 'sessions', 'session-1', 'cwd', '.claude', 'settings.json'),
       conflicts: [{ key: 'skipWebFetchPreflight', existing: false, desired: true }],
@@ -208,11 +208,11 @@ describe('materializeAgentRuntimeForNewSession', () => {
 
     expect(readMaterializedAgentRuntime('tamper', 'session-1', tempDir)).not.toBeNull()
 
-    writeFileSync(join(workspaceRoot, 'runtime', '.claude', 'rv-host-bridge.json'), JSON.stringify({
+    writeFileSync(join(workspaceRoot, 'runtime', '.claude', 'codeinsights-host-bridge.json'), JSON.stringify({
       enabled: true,
-      serverName: 'rv_host',
+      serverName: 'codeinsights_host',
       version: 'tampered',
-      tools: ['rv_workspace_search'],
+      tools: ['codeinsights_workspace_search'],
     }, null, 2))
 
     expect(readMaterializedAgentRuntime('tamper', 'session-1', tempDir)).toBeNull()

@@ -14,7 +14,7 @@ import { SettingsSection } from './primitives/SettingsSection'
 import { SettingsCard } from './primitives/SettingsCard'
 import { SettingsRow } from './primitives/SettingsRow'
 import { wechatBridgeStateAtom } from '@/atoms/wechat-atoms'
-import type { WeChatBridgeStatus } from '@rv-insights/shared'
+import type { WeChatBridgeStatus } from '@codeinsights/shared'
 
 /** 安全地用系统浏览器打开链接 */
 function openLink(url: string): void {
@@ -118,7 +118,7 @@ export function WeChatSettings(): React.ReactElement {
       {/* 连接状态 */}
       <SettingsSection
         title="微信集成"
-        description="扫码登录微信，在微信中控制 RV-Insights Agent"
+        description="扫码登录微信，在微信中控制 CodeInsights Agent"
       >
         <SettingsCard>
           <SettingsRow label="Bridge 状态">
@@ -233,7 +233,7 @@ export function WeChatSettings(): React.ReactElement {
               </div>
               <p className="pl-7 text-muted-foreground">
                 点击上方「扫码登录」，用微信扫描二维码。
-                这会将你的微信账号作为 Bot 接入 RV-Insights。
+                这会将你的微信账号作为 Bot 接入 CodeInsights。
               </p>
             </div>
 
@@ -244,8 +244,8 @@ export function WeChatSettings(): React.ReactElement {
                 <span className="font-medium text-foreground">自动连接</span>
               </div>
               <p className="pl-7 text-muted-foreground">
-                扫码成功后，RV-Insights 会自动建立长连接。
-                凭证会加密保存，下次启动 RV-Insights 时自动重连。
+                扫码成功后，CodeInsights 会自动建立长连接。
+                凭证会加密保存，下次启动 CodeInsights 时自动重连。
               </p>
             </div>
 
@@ -256,7 +256,7 @@ export function WeChatSettings(): React.ReactElement {
                 <span className="font-medium text-foreground">收发消息</span>
               </div>
               <p className="pl-7 text-muted-foreground">
-                连接成功后，通过微信发送消息即可与 RV-Insights Agent 交互。
+                连接成功后，通过微信发送消息即可与 CodeInsights Agent 交互。
                 支持文本、图片、文件等消息类型。
               </p>
             </div>

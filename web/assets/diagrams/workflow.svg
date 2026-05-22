@@ -1,6 +1,6 @@
 <svg width="1400" height="760" viewBox="0 0 1400 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">RV-Insights answer generation workflow</title>
-  <desc id="desc">A five-step workflow diagram showing how RV-Insights turns a user query into a concise answer.</desc>
+  <title id="title">CodeInsights answer generation workflow</title>
+  <desc id="desc">A five-step workflow diagram showing how CodeInsights turns a user query into a concise answer.</desc>
   <defs>
     <linearGradient id="bg" x1="120" y1="60" x2="1280" y2="680" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#FBFDFF"/>
@@ -65,7 +65,7 @@
     <path d="M438 270V302" stroke="#EA580C" stroke-width="4" stroke-linecap="round"/>
     <text x="372" y="372" fill="#0F172A" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="700">02</text>
     <text x="372" y="410" fill="#1E2F47" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700">Agent Decision</text>
-    <text x="372" y="444" fill="#607189" font-family="Arial, Helvetica, sans-serif" font-size="18">RVAgent decides</text>
+    <text x="372" y="444" fill="#607189" font-family="Arial, Helvetica, sans-serif" font-size="18">CodeInsights Agent decides</text>
     <text x="372" y="468" fill="#607189" font-family="Arial, Helvetica, sans-serif" font-size="18">whether retrieval</text>
     <text x="372" y="492" fill="#607189" font-family="Arial, Helvetica, sans-serif" font-size="18">is needed.</text>
   </g>

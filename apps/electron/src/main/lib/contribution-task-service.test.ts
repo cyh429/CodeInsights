@@ -12,19 +12,19 @@ import {
 } from './contribution-task-service'
 
 describe('contribution-task-service', () => {
-  const originalConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+  const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
   let tempConfigDir = ''
 
   beforeEach(() => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-contribution-task-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-contribution-task-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   })
 
   afterEach(() => {
     if (originalConfigDir == null) {
-      delete process.env.RV_INSIGHTS_CONFIG_DIR
+      delete process.env.CODEINSIGHTS_CONFIG_DIR
     } else {
-      process.env.RV_INSIGHTS_CONFIG_DIR = originalConfigDir
+      process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
     }
 
     rmSync(tempConfigDir, { recursive: true, force: true })

@@ -2,7 +2,7 @@ import type {
   PipelineNodeKind,
   PipelineVersion,
   PipelineStreamEvent,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   CodexCliPipelineNodeRunner,
   CodexSdkPipelineNodeRunner,

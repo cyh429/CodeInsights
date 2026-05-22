@@ -1,5 +1,5 @@
 import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
-import { AGENT_IPC_CHANNELS } from '@rv-insights/shared'
+import { AGENT_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   AgentAttachDirectoryInput,
   AgentGenerateTitleInput,
@@ -21,7 +21,7 @@ import type {
   PermissionResponse,
   RewindSessionInput,
   RewindSessionResult,
-  RVInsightsPermissionMode,
+  CodeInsightsPermissionMode,
   SDKMessage,
   SkillMeta,
   StopTaskInput,
@@ -29,7 +29,7 @@ import type {
   WorkspaceCapabilities,
   WorkspaceMcpConfig,
   MoveSessionToWorkspaceInput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   createAgentSession,
   deleteAgentSession,
@@ -341,7 +341,7 @@ export function registerAgentIpcHandlers(): void {
   // 测试 MCP 服务器连接
   ipcMain.handle(
     AGENT_IPC_CHANNELS.TEST_MCP_SERVER,
-    async (_, name: string, entry: import('@rv-insights/shared').McpServerEntry): Promise<{ success: boolean; message: string }> => {
+    async (_, name: string, entry: import('@codeinsights/shared').McpServerEntry): Promise<{ success: boolean; message: string }> => {
       const { validateMcpServer } = await import('../lib/mcp-validator')
       const result = await validateMcpServer(name, entry)
       return {
@@ -428,7 +428,7 @@ export function registerAgentIpcHandlers(): void {
   // 排队发送消息
   ipcMain.handle(
     AGENT_IPC_CHANNELS.QUEUE_MESSAGE,
-    async (event, input: import('@rv-insights/shared').AgentQueueMessageInput): Promise<string> => {
+    async (event, input: import('@codeinsights/shared').AgentQueueMessageInput): Promise<string> => {
       return queueAgentMessage(input, event.sender)
     }
   )
@@ -467,7 +467,7 @@ export function registerAgentIpcHandlers(): void {
         appendPermissionResolvedRuntimeEvent(sessionId, requestId, behavior)
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
-          payload: { kind: 'rv_insights_event', event: { type: 'permission_resolved', requestId, behavior } },
+          payload: { kind: 'codeinsights_event', event: { type: 'permission_resolved', requestId, behavior } },
         })
       }
     }
@@ -493,7 +493,7 @@ export function registerAgentIpcHandlers(): void {
   // 获取工作区权限模式
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_PERMISSION_MODE,
-    async (_, workspaceSlug: string): Promise<RVInsightsPermissionMode> => {
+    async (_, workspaceSlug: string): Promise<CodeInsightsPermissionMode> => {
       return getWorkspacePermissionMode(workspaceSlug)
     }
   )
@@ -501,7 +501,7 @@ export function registerAgentIpcHandlers(): void {
   // 设置工作区权限模式（同时更新运行中的活跃 session）
   ipcMain.handle(
     AGENT_IPC_CHANNELS.SET_PERMISSION_MODE,
-    async (_, workspaceSlug: string, mode: RVInsightsPermissionMode): Promise<void> => {
+    async (_, workspaceSlug: string, mode: CodeInsightsPermissionMode): Promise<void> => {
       const validModes = new Set<string>(['auto', 'bypassPermissions', 'plan'])
       if (!validModes.has(mode)) {
         throw new Error(`无效的权限模式: ${mode}`)
@@ -534,7 +534,7 @@ export function registerAgentIpcHandlers(): void {
         appendAskUserResolvedRuntimeEvent(sessionId, requestId, answers)
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
-          payload: { kind: 'rv_insights_event', event: { type: 'ask_user_resolved', requestId } },
+          payload: { kind: 'codeinsights_event', event: { type: 'ask_user_resolved', requestId } },
         })
       }
     }
@@ -557,7 +557,7 @@ export function registerAgentIpcHandlers(): void {
         // 通知渲染进程请求已处理
         event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
           sessionId,
-          payload: { kind: 'rv_insights_event', event: { type: 'exit_plan_mode_resolved', requestId: response.requestId } },
+          payload: { kind: 'codeinsights_event', event: { type: 'exit_plan_mode_resolved', requestId: response.requestId } },
         })
 
         // 如果用户选择了新的权限模式，通知渲染进程更新 UI
@@ -571,7 +571,7 @@ export function registerAgentIpcHandlers(): void {
           }
           event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
             sessionId,
-            payload: { kind: 'rv_insights_event', event: { type: 'permission_mode_changed', mode: targetMode } },
+            payload: { kind: 'codeinsights_event', event: { type: 'permission_mode_changed', mode: targetMode } },
           })
           console.log(`[IPC] ExitPlanMode 权限模式切换: ${targetMode}`)
         }
@@ -584,7 +584,7 @@ export function registerAgentIpcHandlers(): void {
   // 获取所有待处理的交互请求快照（渲染进程重载后恢复状态）
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_PENDING_REQUESTS,
-    async (): Promise<import('@rv-insights/shared').PendingRequestsSnapshot> => {
+    async (): Promise<import('@codeinsights/shared').PendingRequestsSnapshot> => {
       return {
         permissions: permissionService.getPendingRequests(),
         askUsers: askUserService.getPendingRequests(),
@@ -904,7 +904,7 @@ export function registerAgentIpcHandlers(): void {
     }
   )
 
-  // 在 RV-Insights 内置预览窗口打开附加目录文件（无工作区路径限制；
+  // 在 CodeInsights 内置预览窗口打开附加目录文件（无工作区路径限制；
   // 不支持的格式由 openFilePreview 内部 fallback 到系统默认应用）
   ipcMain.handle(
     AGENT_IPC_CHANNELS.OPEN_ATTACHED_FILE,

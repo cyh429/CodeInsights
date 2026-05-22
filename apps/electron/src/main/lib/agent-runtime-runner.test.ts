@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentStreamEnvelope, SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
+import type { AgentStreamEnvelope, SDKMessage, SDKSystemMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
 import {
@@ -365,7 +365,7 @@ function createRunInput(overrides: Partial<AgentRuntimeRunInput> = {}): AgentRun
     sessionId,
     prompt: '你好',
     model: 'claude-sonnet-4-6',
-    cwd: '/tmp/rv-insights',
+    cwd: '/tmp/codeinsights',
     sdkCliPath: '/tmp/claude',
     env: {},
     sdkPermissionMode: 'auto',
@@ -378,7 +378,7 @@ function createRunInput(overrides: Partial<AgentRuntimeRunInput> = {}): AgentRun
     sessionId,
     prompt: '你好',
     model: 'claude-sonnet-4-6',
-    cwd: '/tmp/rv-insights',
+    cwd: '/tmp/codeinsights',
     permissionMode: 'auto',
     queryOptions,
     ...overrides,

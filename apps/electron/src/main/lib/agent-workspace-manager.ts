@@ -2,8 +2,8 @@
  * Agent 工作区管理器
  *
  * 负责 Agent 工作区的 CRUD 操作。
- * - 工作区索引：~/.rv-insights/agent-workspaces.json（轻量元数据）
- * - 工作区目录：~/.rv-insights/agent-workspaces/{slug}/（Agent 的 cwd）
+ * - 工作区索引：~/.codeinsights/agent-workspaces.json（轻量元数据）
+ * - 工作区目录：~/.codeinsights/agent-workspaces/{slug}/（Agent 的 cwd）
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, cpSync, rmSync, mkdirSync, statSync, renameSync } from 'node:fs'
@@ -19,8 +19,8 @@ import {
   getDefaultSkillsDir,
   parseSkillVersion,
 } from './config-paths'
-import type { AgentWorkspace, WorkspaceMcpConfig, SkillMeta, SkillImportSource, OtherWorkspaceSkillsGroup, WorkspaceCapabilities, RVInsightsPermissionMode } from '@rv-insights/shared'
-import { migratePermissionMode } from '@rv-insights/shared'
+import type { AgentWorkspace, WorkspaceMcpConfig, SkillMeta, SkillImportSource, OtherWorkspaceSkillsGroup, WorkspaceCapabilities, CodeInsightsPermissionMode } from '@codeinsights/shared'
+import { migratePermissionMode } from '@codeinsights/shared'
 
 interface AgentWorkspacesIndex {
   version: number
@@ -149,7 +149,7 @@ export function getAgentWorkspace(id: string): AgentWorkspace | undefined {
   return index.workspaces.find((w) => w.id === id)
 }
 
-/** 将 ~/.rv-insights/default-skills/ 的内容逐个复制到工作区 skills/ 目录 */
+/** 将 ~/.codeinsights/default-skills/ 的内容逐个复制到工作区 skills/ 目录 */
 function copyDefaultSkills(workspaceSlug: string): void {
   const defaultDir = getDefaultSkillsDir()
   const targetDir = getWorkspaceSkillsDir(workspaceSlug)
@@ -284,7 +284,7 @@ export function ensureDefaultWorkspace(): AgentWorkspace {
 
 // ===== 默认 Skills 自动升级 =====
 
-/** 将所有工作区中版本过旧的默认 Skill 升级到 ~/.rv-insights/default-skills/ 的最新版本 */
+/** 将所有工作区中版本过旧的默认 Skill 升级到 ~/.codeinsights/default-skills/ 的最新版本 */
 export function upgradeDefaultSkillsInWorkspaces(): void {
   const defaultDir = getDefaultSkillsDir()
 
@@ -359,7 +359,7 @@ export function ensurePluginManifest(workspaceSlug: string, workspaceName: strin
   }
 
   const manifest = {
-    name: `rv-insights-workspace-${workspaceSlug}`,
+    name: `codeinsights-workspace-${workspaceSlug}`,
     version: '1.0.0',
   }
 
@@ -739,7 +739,7 @@ function isNewerVersion(a: string, b: string): boolean {
 // ===== 权限模式管理 =====
 
 interface WorkspaceConfig {
-  permissionMode?: RVInsightsPermissionMode
+  permissionMode?: CodeInsightsPermissionMode
   attachedDirectories?: string[]
 }
 
@@ -768,12 +768,12 @@ function writeWorkspaceConfig(workspaceSlug: string, config: WorkspaceConfig): v
 }
 
 /** 获取工作区权限模式，默认 'auto'，支持旧值自动迁移 */
-export function getWorkspacePermissionMode(workspaceSlug: string): RVInsightsPermissionMode {
+export function getWorkspacePermissionMode(workspaceSlug: string): CodeInsightsPermissionMode {
   const config = readWorkspaceConfig(workspaceSlug)
   return config.permissionMode ? migratePermissionMode(config.permissionMode) : 'auto'
 }
 
-export function setWorkspacePermissionMode(workspaceSlug: string, mode: RVInsightsPermissionMode): void {
+export function setWorkspacePermissionMode(workspaceSlug: string, mode: CodeInsightsPermissionMode): void {
   const config = readWorkspaceConfig(workspaceSlug)
   const updated: WorkspaceConfig = { ...config, permissionMode: mode }
   writeWorkspaceConfig(workspaceSlug, updated)

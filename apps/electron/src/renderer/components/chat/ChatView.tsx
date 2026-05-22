@@ -51,7 +51,7 @@ import type {
   ChatSendInput,
   FileAttachment,
   AttachmentSaveInput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 interface ChatViewProps {
   conversationId: string
@@ -424,8 +424,8 @@ function ChatViewInner({ conversationId }: ChatViewProps): React.ReactElement {
     const handler = (): void => {
       if (isStreaming) handleStop()
     }
-    window.addEventListener('rv-insights:stop-generation', handler)
-    return () => window.removeEventListener('rv-insights:stop-generation', handler)
+    window.addEventListener('codeinsights:stop-generation', handler)
+    return () => window.removeEventListener('codeinsights:stop-generation', handler)
   }, [isStreaming, handleStop])
 
   /** 删除消息 */

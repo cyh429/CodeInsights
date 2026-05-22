@@ -7,7 +7,7 @@ import { join } from 'node:path'
 import type {
   PipelineNodeKind,
   PipelineStreamEvent,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 mock.module('electron', () => ({
   safeStorage: {
@@ -78,8 +78,8 @@ function gitOrNull(repoRoot: string, args: string[]): string | null {
 
 function initializeGitRepo(repoRoot: string): void {
   git(repoRoot, ['init'])
-  git(repoRoot, ['config', 'user.name', 'RV Test'])
-  git(repoRoot, ['config', 'user.email', 'rv-test@example.com'])
+  git(repoRoot, ['config', 'user.name', 'CodeInsights Test'])
+  git(repoRoot, ['config', 'user.email', 'codeinsights-test@example.com'])
   mkdirSync(join(repoRoot, 'src'), { recursive: true })
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   git(repoRoot, ['add', 'src/index.ts'])
@@ -109,7 +109,7 @@ function createLongRunningCodexFixture(): {
   grandchildPidPath: string
   tempDir: string
 } {
-  const tempDir = mkdtempSync(join(tmpdir(), 'rv-codex-cli-abort-'))
+  const tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-cli-abort-'))
   const grandchildPidPath = join(tempDir, 'grandchild.pid')
   const grandchildPath = join(tempDir, 'grandchild.mjs')
   const codexPath = join(tempDir, 'fake-codex')
@@ -293,21 +293,21 @@ describe('codex-pipeline-node-runner', () => {
   test('resolvePipelineCodexChannelId 优先使用 settings 中的 Codex 渠道', () => {
     expect(resolvePipelineCodexChannelId(
       { pipelineCodexChannelId: 'settings-channel' },
-      { RV_PIPELINE_CODEX_CHANNEL_ID: 'env-channel' },
+      { CODEINSIGHTS_PIPELINE_CODEX_CHANNEL_ID: 'env-channel' },
     )).toBe('settings-channel')
   })
 
   test('resolvePipelineCodexChannelId 保留环境变量作为兼容 fallback', () => {
     expect(resolvePipelineCodexChannelId(
       {},
-      { RV_PIPELINE_CODEX_CHANNEL_ID: '  env-channel  ' },
+      { CODEINSIGHTS_PIPELINE_CODEX_CHANNEL_ID: '  env-channel  ' },
     )).toBe('env-channel')
   })
 
   test('resolvePipelineCodexChannelId 显式本机 auth 不回退旧环境变量', () => {
     expect(resolvePipelineCodexChannelId(
       { pipelineCodexChannelId: null },
-      { RV_PIPELINE_CODEX_CHANNEL_ID: 'env-channel' },
+      { CODEINSIGHTS_PIPELINE_CODEX_CHANNEL_ID: 'env-channel' },
     )).toBeUndefined()
   })
 
@@ -471,12 +471,12 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex CLI runner 在 v2 developer 后写入 dev.md 并回填文档 ref', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
     const previousGitDir = process.env.GIT_DIR
     const previousGitConfigCount = process.env.GIT_CONFIG_COUNT
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-dev-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-dev-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-dev-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-dev-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     process.env.GIT_DIR = '/__rv_bad_git_dir__'
     process.env.GIT_CONFIG_COUNT = '1'
     try {
@@ -543,8 +543,8 @@ describe('codex-pipeline-node-runner', () => {
         reviewIteration: 0,
       })
 
-      expect(executor.calls[0]?.env.GIT_DIR).toBe('/__rv_insights_git_disabled__')
-      expect(executor.calls[0]?.env.RV_INSIGHTS_GIT_DISABLED).toBe('1')
+      expect(executor.calls[0]?.env.GIT_DIR).toBe('/__codeinsights_git_disabled__')
+      expect(executor.calls[0]?.env.CODEINSIGHTS_GIT_DISABLED).toBe('1')
       expect(executor.calls[0]?.prompt).toContain('已接受开发方案（plan.md）')
       expect(result.stageOutput).toMatchObject({
         node: 'developer',
@@ -555,9 +555,9 @@ describe('codex-pipeline-node-runner', () => {
       expect(readFileSync(join(repoRoot, 'patch-work', 'dev.md'), 'utf-8')).toContain('写入 dev.md')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       if (previousGitDir === undefined) {
         delete process.env.GIT_DIR
@@ -575,10 +575,10 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex CLI runner 在 v2 tester 后写入 result.md 和排除 patch-work 的 patch-set', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     try {
       initializeGitRepo(repoRoot)
       writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
@@ -678,9 +678,9 @@ describe('codex-pipeline-node-runner', () => {
       expect(readFileSync(join(repoRoot, 'patch-work', 'patch-set', 'changes.patch'), 'utf-8')).not.toContain('patch-work')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -688,10 +688,10 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex CLI runner 在 v2 tester 中阻断 Git/PR 命令并回滚绝对路径 Git 污染', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-commit-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-commit-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-commit-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-commit-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     try {
       initializeGitRepo(repoRoot)
       const initialHead = git(repoRoot, ['rev-parse', 'HEAD'])
@@ -778,8 +778,8 @@ describe('codex-pipeline-node-runner', () => {
         }
         expect(gitBlocked).toBe(true)
         expect(prBlocked).toBe(true)
-        expect(input.env.RV_INSIGHTS_REAL_GIT).toBeUndefined()
-        expect(input.env.GIT_DIR).toBe('/__rv_insights_git_disabled__')
+        expect(input.env.CODEINSIGHTS_REAL_GIT).toBeUndefined()
+        expect(input.env.GIT_DIR).toBe('/__codeinsights_git_disabled__')
 
         let absoluteGitBlocked = false
         try {
@@ -797,15 +797,15 @@ describe('codex-pipeline-node-runner', () => {
           GIT_DIR: join(repoRoot, '.git'),
           GIT_WORK_TREE: repoRoot,
         }
-        execFileSync(realGitPath, ['-C', repoRoot, 'tag', 'rv-forbidden-tag'], {
+        execFileSync(realGitPath, ['-C', repoRoot, 'tag', 'codeinsights-forbidden-tag'], {
           env: bypassEnv,
           stdio: ['ignore', 'pipe', 'pipe'],
         })
-        execFileSync(realGitPath, ['-C', repoRoot, 'branch', 'rv-forbidden-branch'], {
+        execFileSync(realGitPath, ['-C', repoRoot, 'branch', 'codeinsights-forbidden-branch'], {
           env: bypassEnv,
           stdio: ['ignore', 'pipe', 'pipe'],
         })
-        execFileSync(realGitPath, ['-C', repoRoot, 'config', 'rv-insights.forbidden', 'true'], {
+        execFileSync(realGitPath, ['-C', repoRoot, 'config', 'codeinsights.forbidden', 'true'], {
           env: bypassEnv,
           stdio: ['ignore', 'pipe', 'pipe'],
         })
@@ -830,16 +830,16 @@ describe('codex-pipeline-node-runner', () => {
 
       expect(executor.calls[0]?.env.GIT_TERMINAL_PROMPT).toBe('0')
       expect(git(repoRoot, ['rev-parse', 'HEAD'])).toBe(initialHead)
-      expect(git(repoRoot, ['tag', '--list', 'rv-forbidden-tag'])).toBe('')
-      expect(git(repoRoot, ['branch', '--list', 'rv-forbidden-branch'])).toBe('')
-      expect(gitOrNull(repoRoot, ['config', '--local', '--get', 'rv-insights.forbidden'])).toBeNull()
+      expect(git(repoRoot, ['tag', '--list', 'codeinsights-forbidden-tag'])).toBe('')
+      expect(git(repoRoot, ['branch', '--list', 'codeinsights-forbidden-branch'])).toBe('')
+      expect(gitOrNull(repoRoot, ['config', '--local', '--get', 'codeinsights.forbidden'])).toBeNull()
       expect(git(repoRoot, ['diff', '--cached', '--name-only'])).toBe('')
       expect(existsSync(join(repoRoot, 'patch-work', 'result.md'))).toBe(false)
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -847,10 +847,10 @@ describe('codex-pipeline-node-runner', () => {
   }, 10_000)
 
   test('Codex CLI runner 在 v2 tester 中检测绝对路径 git reset --hard 丢弃补丁', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-reset-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-tester-reset-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-reset-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-tester-reset-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     try {
       initializeGitRepo(repoRoot)
       writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
@@ -934,9 +934,9 @@ describe('codex-pipeline-node-runner', () => {
       expect(existsSync(join(repoRoot, 'patch-work', 'result.md'))).toBe(false)
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -944,10 +944,10 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex CLI runner 在 v2 committer 中只生成 commit.md / pr.md 草稿且不创建提交', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-v2-committer-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-v2-committer-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-committer-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-v2-committer-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     try {
       initializeGitRepo(repoRoot)
       writeFileSync(join(repoRoot, 'CONTRIBUTING.md'), '# Contributing\n\n请使用 Conventional Commits。\n', 'utf-8')
@@ -1048,9 +1048,9 @@ describe('codex-pipeline-node-runner', () => {
       expect(git(repoRoot, ['diff', '--cached', '--name-only'])).toBe('')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -1093,7 +1093,7 @@ describe('codex-pipeline-node-runner', () => {
     const previousHome = process.env.HOME
     const previousUserProfile = process.env.USERPROFILE
     const previousCodexHome = process.env.CODEX_HOME
-    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-cli-api-key-home-'))
+    const tempHome = mkdtempSync(join(tmpdir(), 'codeinsights-codex-cli-api-key-home-'))
     const ambientCodexHome = join(tempHome, 'ambient-codex-home')
     process.env.HOME = tempHome
     process.env.USERPROFILE = tempHome
@@ -1117,7 +1117,7 @@ describe('codex-pipeline-node-runner', () => {
       expect(executor.calls[0]?.apiKey).toBeUndefined()
       expect(executor.calls[0]?.env.CODEX_API_KEY).toBe('codex-env-key')
       expect(executor.calls[0]?.env.CODEX_HOME).not.toBe(ambientCodexHome)
-      expect(executor.calls[0]?.env.CODEX_HOME).toContain('rv-codex-home-')
+      expect(executor.calls[0]?.env.CODEX_HOME).toContain('codeinsights-codex-home-')
       expect(executor.calls[0]?.env.CODEX_THREAD_ID).toBeUndefined()
       expect(executor.calls[0]?.env.ANTHROPIC_AUTH_TOKEN).toBeUndefined()
     } finally {
@@ -1210,7 +1210,7 @@ describe('codex-pipeline-node-runner', () => {
     const previousHome = process.env.HOME
     const previousUserProfile = process.env.USERPROFILE
     const previousCodexHome = process.env.CODEX_HOME
-    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-api-key-home-'))
+    const tempHome = mkdtempSync(join(tmpdir(), 'codeinsights-codex-sdk-api-key-home-'))
     const ambientCodexHome = join(tempHome, 'ambient-codex-home')
     process.env.HOME = tempHome
     process.env.USERPROFILE = tempHome
@@ -1248,7 +1248,7 @@ describe('codex-pipeline-node-runner', () => {
       expect(sdkOptions[0]?.env?.CODEX_API_KEY).toBe('codex-env-key')
       expect(sdkOptions[0]?.env?.OPENAI_API_KEY).toBe('openai-env-key')
       expect(sdkOptions[0]?.env?.CODEX_HOME).not.toBe(ambientCodexHome)
-      expect(sdkOptions[0]?.env?.CODEX_HOME).toContain('rv-codex-home-')
+      expect(sdkOptions[0]?.env?.CODEX_HOME).toContain('codeinsights-codex-home-')
       expect(sdkOptions[0]?.env?.CODEX_THREAD_ID).toBeUndefined()
       expect(sdkOptions[0]?.env?.ANTHROPIC_AUTH_TOKEN).toBeUndefined()
     } finally {
@@ -1292,16 +1292,16 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex SDK runner v2 无渠道时优先使用 native auth 并隔离 ambient CODEX_API_KEY', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
     const previousHome = process.env.HOME
     const previousCodexHome = process.env.CODEX_HOME
     const previousCodexKey = process.env.CODEX_API_KEY
     const previousCodexThreadId = process.env.CODEX_THREAD_ID
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-native-auth-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-native-auth-repo-'))
-    const nativeHome = mkdtempSync(join(tmpdir(), 'rv-codex-native-home-'))
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-sdk-native-auth-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-sdk-native-auth-repo-'))
+    const nativeHome = mkdtempSync(join(tmpdir(), 'codeinsights-codex-native-home-'))
     const nativeCodexHome = join(nativeHome, 'custom-codex-home')
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     process.env.HOME = nativeHome
     process.env.CODEX_HOME = nativeCodexHome
     process.env.CODEX_API_KEY = 'ambient-codex-key'
@@ -1377,14 +1377,14 @@ describe('codex-pipeline-node-runner', () => {
       expect(env?.CODEX_HOME).toBe(nativeCodexHome)
       expect(env?.CODEX_API_KEY).toBeUndefined()
       expect(env?.CODEX_THREAD_ID).toBeUndefined()
-      expect(env?.GIT_DIR).toBe('/__rv_insights_git_disabled__')
-      expect(env?.GIT_CONFIG_GLOBAL).toContain('rv-codex-home-')
-      expect(env?.PATH).toContain('rv-codex-command-guard-')
+      expect(env?.GIT_DIR).toBe('/__codeinsights_git_disabled__')
+      expect(env?.GIT_CONFIG_GLOBAL).toContain('codeinsights-codex-home-')
+      expect(env?.PATH).toContain('codeinsights-codex-command-guard-')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       if (previousHome === undefined) {
         delete process.env.HOME
@@ -1417,7 +1417,7 @@ describe('codex-pipeline-node-runner', () => {
     const previousUserProfile = process.env.USERPROFILE
     const previousCodexHome = process.env.CODEX_HOME
     const previousCodexKey = process.env.CODEX_API_KEY
-    const tempHome = mkdtempSync(join(tmpdir(), 'rv-codex-no-auth-home-'))
+    const tempHome = mkdtempSync(join(tmpdir(), 'codeinsights-codex-no-auth-home-'))
     process.env.HOME = tempHome
     process.env.USERPROFILE = tempHome
     delete process.env.CODEX_API_KEY
@@ -1511,12 +1511,12 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex SDK runner 在返回后若 signal 已中止则不写 dev.md 或发送 node_complete', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    const tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-abort-config-'))
-    const repoRoot = mkdtempSync(join(tmpdir(), 'rv-codex-sdk-abort-repo-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    const tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-codex-sdk-abort-config-'))
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-sdk-abort-repo-'))
     const controller = new AbortController()
     const events: PipelineStreamEvent[] = []
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
     try {
       initializeGitRepo(repoRoot)
       createContributionTask({
@@ -1583,9 +1583,9 @@ describe('codex-pipeline-node-runner', () => {
       expect(existsSync(join(repoRoot, 'patch-work', 'dev.md'))).toBe(false)
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
       rmSync(tempConfigDir, { recursive: true, force: true })
       rmSync(repoRoot, { recursive: true, force: true })
@@ -1593,8 +1593,8 @@ describe('codex-pipeline-node-runner', () => {
   })
 
   test('Codex SDK runner 会读取 OpenAI 兼容渠道配置', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    process.env.RV_INSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'rv-codex-openai-channel-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    process.env.CODEINSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'codeinsights-codex-openai-channel-'))
     try {
       const channel = createChannel({
         name: 'OpenAI 渠道',
@@ -1642,16 +1642,16 @@ describe('codex-pipeline-node-runner', () => {
       expect(threadOptions[0]?.model).toBe('gpt-5.4')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
     }
   })
 
   test('Codex SDK runner 会读取 Custom OpenAI 兼容渠道配置', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    process.env.RV_INSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'rv-codex-custom-channel-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    process.env.CODEINSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'codeinsights-codex-custom-channel-'))
     try {
       const channel = createChannel({
         name: 'Custom 渠道',
@@ -1698,16 +1698,16 @@ describe('codex-pipeline-node-runner', () => {
       expect(threadOptions[0]?.model).toBe('custom-codex-model')
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
     }
   })
 
   test('Codex SDK runner 明确拒绝非 OpenAI 兼容渠道', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    process.env.RV_INSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'rv-codex-channel-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    process.env.CODEINSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'codeinsights-codex-channel-'))
     try {
       const channel = createChannel({
         name: 'Claude 渠道',
@@ -1731,16 +1731,16 @@ describe('codex-pipeline-node-runner', () => {
       )
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
     }
   })
 
   test('Codex CLI runner 明确拒绝已禁用的 OpenAI 兼容渠道', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    process.env.RV_INSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'rv-codex-cli-disabled-channel-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    process.env.CODEINSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'codeinsights-codex-cli-disabled-channel-'))
     try {
       const channel = createChannel({
         name: '禁用 CLI OpenAI 渠道',
@@ -1767,16 +1767,16 @@ describe('codex-pipeline-node-runner', () => {
       expect(executor.calls).toHaveLength(0)
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
     }
   })
 
   test('Codex SDK runner 明确拒绝已禁用的 OpenAI 兼容渠道', async () => {
-    const previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-    process.env.RV_INSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'rv-codex-disabled-channel-'))
+    const previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+    process.env.CODEINSIGHTS_CONFIG_DIR = mkdtempSync(join(tmpdir(), 'codeinsights-codex-disabled-channel-'))
     try {
       const channel = createChannel({
         name: '禁用 OpenAI 渠道',
@@ -1800,9 +1800,9 @@ describe('codex-pipeline-node-runner', () => {
       )
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.RV_INSIGHTS_CONFIG_DIR
+        delete process.env.CODEINSIGHTS_CONFIG_DIR
       } else {
-        process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+        process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
       }
     }
   })

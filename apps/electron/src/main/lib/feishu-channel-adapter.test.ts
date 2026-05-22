@@ -3,18 +3,18 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createAgentStreamEnvelope, type AgentRuntimeEvent, type AgentStreamEnvelope } from '@rv-insights/shared'
+import { createAgentStreamEnvelope, type AgentRuntimeEvent, type AgentStreamEnvelope } from '@codeinsights/shared'
 
-const originalChannelsV2Env = process.env.RV_AGENT_RUNTIME_CHANNELS_V2
-delete process.env.RV_AGENT_RUNTIME_CHANNELS_V2
+const originalChannelsV2Env = process.env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2
+delete process.env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2
 
 const agentChannelModule = await import('./agent-channel')
 const { FeishuChannelAdapter } = await import('./feishu-channel-adapter')
 
 if (originalChannelsV2Env == null) {
-  delete process.env.RV_AGENT_RUNTIME_CHANNELS_V2
+  delete process.env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2
 } else {
-  process.env.RV_AGENT_RUNTIME_CHANNELS_V2 = originalChannelsV2Env
+  process.env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2 = originalChannelsV2Env
 }
 
 const {
@@ -28,7 +28,7 @@ function assertChannelsV2ImportFlag(
   envValue: string | undefined,
   expectedEnabled: boolean,
 ): void {
-  const tempDir = mkdtempSync(join(tmpdir(), 'rv-agent-channel-env-'))
+  const tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-agent-channel-env-'))
   const testPath = join(tempDir, 'agent-channel-env.test.ts')
   writeFileSync(testPath, `
 import { expect, test } from 'bun:test'
@@ -42,12 +42,12 @@ test('channels v2 import flag', async () => {
   try {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
-      RV_INSIGHTS_CONFIG_DIR: tempDir,
+      CODEINSIGHTS_CONFIG_DIR: tempDir,
     }
     if (envValue === undefined) {
-      delete env.RV_AGENT_RUNTIME_CHANNELS_V2
+      delete env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2
     } else {
-      env.RV_AGENT_RUNTIME_CHANNELS_V2 = envValue
+      env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2 = envValue
     }
     execFileSync(process.execPath, ['test', testPath], {
       cwd: process.cwd(),

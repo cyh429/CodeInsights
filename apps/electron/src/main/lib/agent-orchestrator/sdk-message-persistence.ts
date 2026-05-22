@@ -1,4 +1,4 @@
-import type { SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
+import type { SDKMessage, SDKSystemMessage } from '@codeinsights/shared'
 
 export interface SdkMessageAccumulationOptions {
   channelModelId?: string

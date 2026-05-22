@@ -5,8 +5,8 @@
  */
 
 import * as React from 'react'
-import { highlightToTokens } from '@rv-insights/core'
-import type { HighlightToken } from '@rv-insights/core'
+import { highlightToTokens } from '@codeinsights/core'
+import type { HighlightToken } from '@codeinsights/core'
 import { cn } from '@/lib/utils'
 import { inferLanguageFromPath } from '../tool-utils'
 import { CollapsibleResult } from './collapsible-result'

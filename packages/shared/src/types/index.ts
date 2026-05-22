@@ -1,5 +1,5 @@
 /**
- * Shared type definitions for rv-insights
+ * Shared type definitions for codeinsights
  */
 
 // Placeholder types - will be expanded as needed

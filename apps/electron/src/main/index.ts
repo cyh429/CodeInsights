@@ -1,12 +1,14 @@
 import { app, BrowserWindow, Menu, screen, shell } from 'electron'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { basename, dirname, join } from 'path'
+import { cpSync, existsSync, mkdirSync } from 'fs'
 
 // Dev 与正式版使用独立的 userData 目录，避免共享 Chromium SingletonLock 导致 dev 启动被静默退出
 // 必须在任何会读取 userData 路径的模块加载之前执行
 if (!app.isPackaged) {
-  app.setPath('userData', join(app.getPath('appData'), '@rv-insights/electron-dev'))
+  app.setPath('userData', join(app.getPath('appData'), '@codeinsights/electron-dev'))
 }
+
+migrateLegacyUserData()
 
 // 单实例锁：防止重复启动同一个版本（dev/prod 因 userData 已隔离，互不影响）
 if (!app.requestSingleInstanceLock()) {
@@ -57,6 +59,34 @@ import { wechatBridge } from './lib/wechat-bridge'
 import { getWeChatConfig } from './lib/wechat-config'
 import { createQuickTaskWindow, toggleQuickTaskWindow, destroyQuickTaskWindow } from './lib/quick-task-window'
 import { registerGlobalShortcut, unregisterAllGlobalShortcuts } from './lib/global-shortcut-service'
+
+function migrateLegacyUserData(): void {
+  const currentUserData = app.getPath('userData')
+  if (existsSync(currentUserData)) return
+
+  const legacyCandidates = app.isPackaged
+    ? [
+        join(app.getPath('appData'), 'RV-Insights'),
+        join(app.getPath('appData'), 'rv-insights'),
+      ]
+    : [join(app.getPath('appData'), '@rv-insights/electron-dev')]
+
+  const legacyUserData = legacyCandidates.find((candidate) => existsSync(candidate))
+  if (!legacyUserData) return
+
+  const skippedProfileFiles = new Set(['SingletonLock', 'SingletonCookie', 'SingletonSocket'])
+  try {
+    mkdirSync(dirname(currentUserData), { recursive: true })
+    cpSync(legacyUserData, currentUserData, {
+      recursive: true,
+      errorOnExist: false,
+      filter: (source) => !skippedProfileFiles.has(basename(source)),
+    })
+    console.log(`[配置] 已迁移旧 Electron userData: ${legacyUserData} -> ${currentUserData}`)
+  } catch (error) {
+    console.warn('[配置] 迁移旧 Electron userData 失败，将使用新的 profile:', error)
+  }
+}
 
 // ===== Bridge 注册（新增 Bridge 只需在此添加一个 registerBridge 调用） =====
 
@@ -236,7 +266,7 @@ app.whenReady().then(async () => {
   // 必须在其他初始化之前执行，确保环境变量正确加载
   await initializeRuntime()
 
-  // 同步默认 Skills 模板到 ~/.rv-insights/default-skills/
+  // 同步默认 Skills 模板到 ~/.codeinsights/default-skills/
   seedDefaultSkills()
 
   // 升级所有工作区中版本过旧的默认 Skills

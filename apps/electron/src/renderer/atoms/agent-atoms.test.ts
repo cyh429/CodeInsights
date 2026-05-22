@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { createStore } from 'jotai/vanilla'
-import { createAgentStreamEnvelope, type SDKMessage } from '@rv-insights/shared'
+import { createAgentStreamEnvelope, type SDKMessage } from '@codeinsights/shared'
 import type { AgentStreamState } from './agent-atoms'
 import {
   agentAttachedDirectoriesMapAtom,
@@ -148,9 +148,9 @@ describe('agent runtime envelope reducer', () => {
     ].reduce(applyAgentEvent, initial)
 
     const envelopes = [
-      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 0, source: 'rv_insights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_scheduled', attempt: 1, maxAttempts: 3, reason: 'network', delayMs: 1000 } }),
-      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 1, source: 'rv_insights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_attempt', attemptData } }),
-      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 2, source: 'rv_insights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_cleared' } }),
+      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 0, source: 'codeinsights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_scheduled', attempt: 1, maxAttempts: 3, reason: 'network', delayMs: 1000 } }),
+      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 1, source: 'codeinsights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_attempt', attemptData } }),
+      createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 2, source: 'codeinsights', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'retry_cleared' } }),
       createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 3, source: 'claude_sdk', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'compact_started' } }),
       createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 4, source: 'claude_sdk', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'compact_completed' } }),
       createAgentStreamEnvelope({ sessionId: 'session-a', runId: 'run-a', sequence: 5, source: 'claude_sdk', createdAt: '2026-05-18T00:00:00.000Z', event: { type: 'agent_task_started', taskId: 'task-1', toolCallId: 'tool-1', description: '检查代码' } }),
@@ -169,7 +169,7 @@ describe('agent runtime envelope reducer', () => {
       sessionId: 'session-a',
       runId: 'run-a',
       sequence: 0,
-      source: 'rv_insights',
+      source: 'codeinsights',
       createdAt: '2026-05-18T00:00:00.000Z',
       event: { type: 'retry_scheduled', attempt: 1, maxAttempts: 3, reason: 'network', delayMs: 1000 },
     }))

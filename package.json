@@ -1,6 +1,6 @@
 {
-  "name": "rv-insights",
-  "version": "0.1.0",
+  "name": "codeinsights",
+  "version": "0.1.1",
   "description": "The next gen ai software with general agents",
   "type": "module",
   "private": true,
@@ -9,10 +9,10 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "bun run --filter='@rv-insights/electron' dev",
-    "electron:dev": "bun run --filter='@rv-insights/electron' dev",
-    "electron:build": "bun run --filter='@rv-insights/electron' build",
-    "electron:start": "bun run --filter='@rv-insights/electron' start",
+    "dev": "bun run --filter='@codeinsights/electron' dev",
+    "electron:dev": "bun run --filter='@codeinsights/electron' dev",
+    "electron:build": "bun run --filter='@codeinsights/electron' build",
+    "electron:start": "bun run --filter='@codeinsights/electron' start",
     "build": "bun run --filter='*' build",
     "typecheck": "bun run --filter='*' typecheck",
     "test": "bun test"

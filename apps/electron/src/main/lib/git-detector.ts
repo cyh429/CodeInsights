@@ -6,7 +6,7 @@
 
 import { execSync, spawnSync } from 'child_process'
 import { existsSync } from 'fs'
-import type { GitRuntimeStatus, GitRepoStatus } from '@rv-insights/shared'
+import type { GitRuntimeStatus, GitRepoStatus } from '@codeinsights/shared'
 
 /**
  * 从系统 PATH 查找 Git

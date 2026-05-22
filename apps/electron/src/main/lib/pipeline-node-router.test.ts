@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test'
-import type { PipelineNodeKind } from '@rv-insights/shared'
+import type { PipelineNodeKind } from '@codeinsights/shared'
 
 mock.module('electron', () => ({
   safeStorage: {

@@ -564,7 +564,7 @@ Xint Code 明显把重点放在：
 
 ---
 
-## 八、对 RV-Insights 的直接启发
+## 八、对 CodeInsights 的直接启发
 
 如果把 Xint Code 当成竞品/参考系，它最值得借鉴的不是“并行 AI agents”这句宣传语，而是以下五点：
 

@@ -5,7 +5,7 @@
  */
 
 import { atom } from 'jotai'
-import type { WeChatBridgeState } from '@rv-insights/shared'
+import type { WeChatBridgeState } from '@codeinsights/shared'
 
 /** 微信 Bridge 连接状态 */
 export const wechatBridgeStateAtom = atom<WeChatBridgeState>({

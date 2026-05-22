@@ -8,7 +8,7 @@
 import * as React from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { RefreshCw, Loader2, CheckCircle2, AlertCircle, Info, Terminal, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
-import type { EnvironmentCheckResult, RuntimeStatus } from '@rv-insights/shared'
+import type { EnvironmentCheckResult, RuntimeStatus } from '@codeinsights/shared'
 import {
   SettingsSection,
   SettingsCard,
@@ -29,9 +29,9 @@ import { VersionHistory } from './VersionHistory'
 declare const __APP_VERSION__: string
 const APP_VERSION = __APP_VERSION__
 
-const GITHUB_RELEASES_URL = 'https://github.com/zcxGGmu/RV-Insights/releases'
-const PROJECT_URL = 'https://github.com/zcxGGmu/RV-Insights'
-const PRODUCT_HOMEPAGE_URL = 'https://zcxggmu.github.io/RV-Insights'
+const GITHUB_RELEASES_URL = 'https://github.com/zcxGGmu/CodeInsights/releases'
+const PROJECT_URL = 'https://github.com/zcxGGmu/CodeInsights'
+const PRODUCT_HOMEPAGE_URL = 'https://zcxggmu.github.io/CodeInsights'
 
 /** 更新状态卡片 */
 function UpdateCard(): React.ReactElement | null {
@@ -39,7 +39,7 @@ function UpdateCard(): React.ReactElement | null {
   const status = useAtomValue(updateStatusAtom)
   const [checking, setChecking] = React.useState(false)
   const [showReleaseNotes, setShowReleaseNotes] = React.useState(false)
-  const [release, setRelease] = React.useState<import('@rv-insights/shared').GitHubRelease | null>(null)
+  const [release, setRelease] = React.useState<import('@codeinsights/shared').GitHubRelease | null>(null)
 
   // updater 不可用时不渲染
   if (!available) return null
@@ -418,7 +418,7 @@ function ShellEnvironmentCard(): React.ReactElement | null {
 export function AboutSettings(): React.ReactElement {
   return (
     <SettingsSection
-      title="关于 RV-Insights"
+      title="关于 CodeInsights"
       description="集成 Agent 工作流的开源软件贡献平台"
     >
       <SettingsCard>

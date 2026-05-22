@@ -12,7 +12,7 @@ import type {
   FeishuBotBridgeState,
   FeishuTestResult,
   FeishuBotConfig,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { FeishuBridge } from './feishu-bridge'
 import { getFeishuMultiBotConfig, getFeishuBotById, getDecryptedBotAppSecret } from './feishu-config'
 

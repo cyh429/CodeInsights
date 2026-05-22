@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelineSessionMeta, PipelineStateSnapshot } from '@rv-insights/shared'
+import type { PipelineSessionMeta, PipelineStateSnapshot } from '@codeinsights/shared'
 import {
   buildPipelineGateViewModel,
   buildPipelineFailureViewModel,
@@ -62,7 +62,7 @@ describe('pipeline display model', () => {
 
     expect(viewModel).toEqual({
       title: '优化 Pipeline UI',
-      eyebrow: 'RV Pipeline',
+      eyebrow: 'CodeInsights Pipeline',
       statusLabel: '节点失败',
       statusTone: 'failed',
       nodeLabel: '审查',

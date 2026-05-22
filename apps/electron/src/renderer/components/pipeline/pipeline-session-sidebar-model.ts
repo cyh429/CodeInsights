@@ -1,4 +1,4 @@
-import type { PipelineNodeKind, PipelineSessionMeta, PipelineSessionStatus } from '@rv-insights/shared'
+import type { PipelineNodeKind, PipelineSessionMeta, PipelineSessionStatus } from '@codeinsights/shared'
 import type { PipelineSidebarViewMode } from '@/atoms/pipeline-atoms'
 import {
   buildDateSidebarSections,

@@ -1,5 +1,5 @@
 export const agentRuntimeManifestV1 = {
-  enabled: typeof process !== 'undefined' && process.env?.RV_AGENT_RUNTIME_MANIFEST_V1 === '1',
+  enabled: typeof process !== 'undefined' && process.env?.CODEINSIGHTS_AGENT_RUNTIME_MANIFEST_V1 === '1',
 } as const
 
 export interface AgentRuntimeManifestMcpServer {

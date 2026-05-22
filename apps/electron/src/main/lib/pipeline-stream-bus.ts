@@ -1,9 +1,9 @@
-import { PIPELINE_IPC_CHANNELS } from '@rv-insights/shared'
+import { PIPELINE_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
   PipelineStreamPayload,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { PipelineServiceCallbacks } from './pipeline-service'
 
 export interface PipelineStreamTarget {

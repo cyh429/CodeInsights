@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import type { AgentWorkspace, AgentSessionMeta } from '@rv-insights/shared'
+import type { AgentWorkspace, AgentSessionMeta } from '@codeinsights/shared'
 
 interface MoveSessionDialogProps {
   open: boolean

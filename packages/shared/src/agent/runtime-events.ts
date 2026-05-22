@@ -7,8 +7,8 @@ import type {
   DangerLevel,
   ExitPlanModeRequest,
   PermissionRequest,
-  RVInsightsEvent,
-  RVInsightsPermissionMode,
+  CodeInsightsEvent,
+  CodeInsightsPermissionMode,
   RetryAttempt,
   SDKAssistantMessage,
   SDKResultMessage,
@@ -27,11 +27,13 @@ export const agentRuntimeEventsV2 = {
 
 export type AgentEventSource =
   | 'claude_sdk'
-  | 'rv_insights'
+  | 'codeinsights'
   | 'permission_service'
   | 'ask_user_service'
   | 'runtime_service'
   | 'event_log'
+
+type LegacyAgentEventSource = 'rv_insights'
 
 export type AgentRuntimeRiskLevel = DangerLevel
 
@@ -55,7 +57,7 @@ export interface AgentRuntimeUsagePayload {
 }
 
 export type AgentRuntimeEvent =
-  | { type: 'run_started'; model: string; cwd: string; permissionMode: RVInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode }
+  | { type: 'run_started'; model: string; cwd: string; permissionMode: CodeInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode }
   | { type: 'sdk_session'; sdkSessionId: string; resumeFrom?: string }
   | { type: 'assistant_delta'; messageId: string; delta: string; parentToolUseId?: string }
   | { type: 'assistant_message'; messageId: string; contentBlocks: unknown[]; status: 'complete' | 'error'; parentToolUseId?: string }
@@ -318,7 +320,9 @@ export function adaptAgentEventToRuntimeEvent(event: AgentEvent): AgentRuntimeEv
 }
 
 export function adaptAgentStreamPayloadToRuntimeEvents(payload: AgentStreamPayload): AgentRuntimeEvent[] {
-  if (payload.kind === 'rv_insights_event') return adaptRVInsightsEventToRuntimeEvent(payload.event)
+  if (payload.kind === 'codeinsights_event' || payload.kind === 'rv_insights_event') {
+    return adaptCodeInsightsEventToRuntimeEvent(payload.event)
+  }
   return adaptSDKMessageToRuntimeEvents(payload.message)
 }
 
@@ -367,7 +371,7 @@ export function adaptSDKMessageToRuntimeEvents(message: SDKMessage): AgentRuntim
   return []
 }
 
-export function adaptRVInsightsEventToRuntimeEvent(event: RVInsightsEvent): AgentRuntimeEvent[] {
+export function adaptCodeInsightsEventToRuntimeEvent(event: CodeInsightsEvent): AgentRuntimeEvent[] {
   switch (event.type) {
     case 'permission_request':
       return [adaptPermissionRequest(event.request)]
@@ -553,8 +557,8 @@ function adaptTaskUsage(usage?: { totalTokens: number }): AgentRuntimeUsagePaylo
   return { inputTokens: usage.totalTokens }
 }
 
-function isKnownEventSource(source: string): source is AgentEventSource {
-  return ['claude_sdk', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
+function isKnownEventSource(source: string): source is AgentEventSource | LegacyAgentEventSource {
+  return ['claude_sdk', 'codeinsights', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
 }
 
 function isSDKAssistantMessage(message: SDKMessage): message is SDKAssistantMessage {

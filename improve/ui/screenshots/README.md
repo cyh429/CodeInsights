@@ -1,6 +1,6 @@
 # UI Screenshots
 
-本目录保存 RV-Insights 客户端 UI 优化阶段的审计与验收截图。
+本目录保存 CodeInsights 客户端 UI 优化阶段的审计与验收截图。
 
 ## Pipeline UI-3
 

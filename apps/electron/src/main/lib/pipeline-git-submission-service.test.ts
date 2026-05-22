@@ -31,8 +31,8 @@ function git(repoRoot: string, args: string[]): string {
 
 function setupGitRepo(repoRoot: string): void {
   git(repoRoot, ['init'])
-  git(repoRoot, ['config', 'user.name', 'RV Test'])
-  git(repoRoot, ['config', 'user.email', 'rv-test@example.com'])
+  git(repoRoot, ['config', 'user.name', 'CodeInsights Test'])
+  git(repoRoot, ['config', 'user.email', 'codeinsights-test@example.com'])
   mkdirSync(join(repoRoot, 'src'), { recursive: true })
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   git(repoRoot, ['add', 'src/index.ts'])
@@ -47,7 +47,7 @@ describe('pipeline-git-submission-service', () => {
   let repoRoot = ''
 
   beforeEach(() => {
-    repoRoot = mkdtempSync(join(tmpdir(), 'rv-patch-set-repo-'))
+    repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-patch-set-repo-'))
     setupGitRepo(repoRoot)
   })
 
@@ -109,7 +109,7 @@ describe('pipeline-git-submission-service', () => {
   })
 
   test('非 Git 仓库不能生成 patch-set 草稿', () => {
-    const notRepo = mkdtempSync(join(tmpdir(), 'rv-not-git-'))
+    const notRepo = mkdtempSync(join(tmpdir(), 'codeinsights-not-git-'))
     try {
       expect(() => buildPipelinePatchSetDraft({
         repositoryRoot: notRepo,
@@ -167,7 +167,7 @@ describe('pipeline-git-submission-service', () => {
   })
 
   test('读取 CONTRIBUTING 时拒绝指向仓库外的 symlink', () => {
-    const outsideDir = mkdtempSync(join(tmpdir(), 'rv-contributing-secret-'))
+    const outsideDir = mkdtempSync(join(tmpdir(), 'codeinsights-contributing-secret-'))
     try {
       const outsideSecret = join(outsideDir, 'CONTRIBUTING.md')
       writeFileSync(outsideSecret, '# Secret\n\nLOCAL_SECRET_TOKEN=should-not-leak\n', 'utf-8')

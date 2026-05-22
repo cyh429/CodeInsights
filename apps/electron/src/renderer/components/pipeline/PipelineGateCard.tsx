@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { PipelineGateRequest, PipelineVersion } from '@rv-insights/shared'
+import type { PipelineGateRequest, PipelineVersion } from '@codeinsights/shared'
 import { AlertTriangle, CheckCircle2, RotateCcw, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

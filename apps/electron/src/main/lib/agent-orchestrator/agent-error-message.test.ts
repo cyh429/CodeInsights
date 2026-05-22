@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { TypedError } from '@rv-insights/shared'
+import type { TypedError } from '@codeinsights/shared'
 import {
   createCatchErrorSDKMessage,
   createRetryExhaustedSDKMessage,

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentMessage, AgentProviderAdapter, AgentQueryInput, AgentSendInput, SDKAssistantMessage, SDKMessage, SDKResultMessage } from '@rv-insights/shared'
+import type { AgentMessage, AgentProviderAdapter, AgentQueryInput, AgentSendInput, SDKAssistantMessage, SDKMessage, SDKResultMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from '../adapters/claude-agent-adapter'
 import type { AgentOrchestrator as AgentOrchestratorInstance, SessionCallbacks } from '../agent-orchestrator'
 
@@ -60,8 +60,8 @@ let currentConfigDir: string | undefined
 
 beforeEach(() => {
   agentRuntimeRunnerV2.enabled = false
-  currentConfigDir = mkdtempSync(join(tmpdir(), 'rv-completion-signal-'))
-  process.env.RV_INSIGHTS_CONFIG_DIR = currentConfigDir
+  currentConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-completion-signal-'))
+  process.env.CODEINSIGHTS_CONFIG_DIR = currentConfigDir
 })
 
 afterEach(() => {
@@ -69,7 +69,7 @@ afterEach(() => {
   if (currentConfigDir) {
     rmSync(currentConfigDir, { recursive: true, force: true })
   }
-  delete process.env.RV_INSIGHTS_CONFIG_DIR
+  delete process.env.CODEINSIGHTS_CONFIG_DIR
   currentConfigDir = undefined
 })
 

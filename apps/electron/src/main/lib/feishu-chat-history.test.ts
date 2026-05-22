@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { FeishuChatMessage } from '@rv-insights/shared'
+import type { FeishuChatMessage } from '@codeinsights/shared'
 import {
   formatFeishuChatHistoryContext,
   parseFeishuChatMessageContent,
@@ -7,9 +7,9 @@ import {
 
 describe('feishu-chat-history', () => {
   test('解析文本消息内容', () => {
-    const result = parseFeishuChatMessageContent('text', JSON.stringify({ text: '你好 RV' }))
+    const result = parseFeishuChatMessageContent('text', JSON.stringify({ text: '你好 CodeInsights' }))
 
-    expect(result).toBe('你好 RV')
+    expect(result).toBe('你好 CodeInsights')
   })
 
   test('解析富文本消息标题和文本行，忽略非文本节点', () => {

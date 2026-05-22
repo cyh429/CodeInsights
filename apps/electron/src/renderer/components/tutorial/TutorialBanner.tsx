@@ -76,8 +76,8 @@ export function TutorialBanner(): React.ReactElement | null {
             <GraduationCap size={20} className="text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">RV-Insights 使用教程</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">了解 RV-Insights 的全部功能和使用技巧</p>
+            <h3 className="text-sm font-semibold text-foreground">CodeInsights 使用教程</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">了解 CodeInsights 的全部功能和使用技巧</p>
           </div>
         </div>
 

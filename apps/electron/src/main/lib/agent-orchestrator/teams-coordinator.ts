@@ -1,4 +1,4 @@
-import type { AgentProviderAdapter, SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
+import type { AgentProviderAdapter, SDKMessage, SDKSystemMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from '../adapters/claude-agent-adapter'
 import {
   findTeamLeadInboxPath,

@@ -18,13 +18,13 @@ import type {
   PipelineRecordsSearchResult,
   PipelineSessionMeta,
   PipelineVersion,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   applyPipelineRecord,
   buildPipelineSessionStatePatch,
   createInitialPipelineState,
   createPipelineStateFromSessionMeta,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   getPipelineSessionRecordsPath,
   getPipelineSessionsDir,

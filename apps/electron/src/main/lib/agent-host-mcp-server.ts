@@ -1,26 +1,26 @@
 import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs'
 import { basename, join, relative, resolve } from 'node:path'
-import type { AgentRuntimeManifest } from '@rv-insights/shared'
+import type { AgentRuntimeManifest } from '@codeinsights/shared'
 import { getMemoryConfig } from './memory-service'
 import { addMemory, formatSearchResult, searchMemory } from './memos-client'
 
-export const AGENT_HOST_MCP_SERVER_NAME = 'rv_host'
+export const AGENT_HOST_MCP_SERVER_NAME = 'codeinsights_host'
 
 export const AGENT_HOST_BRIDGE_TOOLS = [
-  'rv_workspace_search',
-  'rv_list_workspace_files',
-  'rv_memory_search',
-  'rv_open_file',
-  'rv_memory_append',
-  'rv_send_channel_message',
-  'rv_schedule_task',
+  'codeinsights_workspace_search',
+  'codeinsights_list_workspace_files',
+  'codeinsights_memory_search',
+  'codeinsights_open_file',
+  'codeinsights_memory_append',
+  'codeinsights_send_channel_message',
+  'codeinsights_schedule_task',
 ] as const
 
 export const AGENT_HOST_BRIDGE_READONLY_TOOLS = [
-  'rv_workspace_search',
-  'rv_list_workspace_files',
-  'rv_memory_search',
-  'rv_open_file',
+  'codeinsights_workspace_search',
+  'codeinsights_list_workspace_files',
+  'codeinsights_memory_search',
+  'codeinsights_open_file',
 ] as const satisfies readonly AgentHostBridgeToolName[]
 
 export const AGENT_HOST_BRIDGE_VERSION = '2026-05-18.1'
@@ -119,8 +119,8 @@ export async function createAgentHostMcpServer(
     version: '1.0.0',
     tools: [
       sdk.tool(
-        'rv_workspace_search',
-        'Search text files in the current RV-Insights workspace runtime. Only reads workspace/session/additional directories allowed by the runtime manifest.',
+        'codeinsights_workspace_search',
+        'Search text files in the current CodeInsights workspace runtime. Only reads workspace/session/additional directories allowed by the runtime manifest.',
         {
           query: z.string().min(1).describe('Search query'),
           root: z.string().optional().describe('Optional path or label under the allowed roots'),
@@ -130,8 +130,8 @@ export async function createAgentHostMcpServer(
         { annotations: { readOnlyHint: true } },
       ),
       sdk.tool(
-        'rv_list_workspace_files',
-        'List files in the current RV-Insights workspace runtime. Only lists allowed workspace/session/additional directories.',
+        'codeinsights_list_workspace_files',
+        'List files in the current CodeInsights workspace runtime. Only lists allowed workspace/session/additional directories.',
         {
           root: z.string().optional().describe('Optional path or label under the allowed roots'),
           maxDepth: z.number().int().min(0).max(MAX_DEPTH).optional(),
@@ -141,8 +141,8 @@ export async function createAgentHostMcpServer(
         { annotations: { readOnlyHint: true } },
       ),
       sdk.tool(
-        'rv_memory_search',
-        'Search RV-Insights long-term memory when memory is enabled.',
+        'codeinsights_memory_search',
+        'Search CodeInsights long-term memory when memory is enabled.',
         {
           query: z.string().min(1).describe('Search query'),
           limit: z.number().int().min(1).max(20).optional(),
@@ -151,8 +151,8 @@ export async function createAgentHostMcpServer(
         { annotations: { readOnlyHint: true } },
       ),
       sdk.tool(
-        'rv_open_file',
-        'Read a text file from the allowed RV-Insights runtime roots.',
+        'codeinsights_open_file',
+        'Read a text file from the allowed CodeInsights runtime roots.',
         {
           path: z.string().min(1).describe('File path under an allowed root'),
           maxBytes: z.number().int().min(1).max(MAX_FILE_BYTES).optional(),
@@ -161,8 +161,8 @@ export async function createAgentHostMcpServer(
         { annotations: { readOnlyHint: true } },
       ),
       sdk.tool(
-        'rv_memory_append',
-        'Append a meaningful exchange to RV-Insights long-term memory when memory is enabled.',
+        'codeinsights_memory_append',
+        'Append a meaningful exchange to CodeInsights long-term memory when memory is enabled.',
         {
           userMessage: z.string().min(1),
           assistantMessage: z.string().optional(),
@@ -172,8 +172,8 @@ export async function createAgentHostMcpServer(
         async (args) => runHostBridgeTool(() => handleMemoryAppend(context, args)),
       ),
       sdk.tool(
-        'rv_send_channel_message',
-        'Send a message through an RV-Insights external channel when a channel adapter is available.',
+        'codeinsights_send_channel_message',
+        'Send a message through an CodeInsights external channel when a channel adapter is available.',
         {
           channel: z.string().min(1),
           target: z.string().min(1),
@@ -182,8 +182,8 @@ export async function createAgentHostMcpServer(
         async (args) => runHostBridgeTool(() => handleSendChannelMessage(context, args)),
       ),
       sdk.tool(
-        'rv_schedule_task',
-        'Schedule a follow-up task through RV-Insights when a scheduler adapter is available.',
+        'codeinsights_schedule_task',
+        'Schedule a follow-up task through CodeInsights when a scheduler adapter is available.',
         {
           title: z.string().min(1),
           prompt: z.string().min(1),
@@ -289,7 +289,7 @@ export async function handleMemorySearch(
   const search = context.dependencies?.memorySearch ?? searchMemory
   const format = context.dependencies?.formatMemorySearchResult ?? formatSearchResult
   const result = await search(
-    { apiKey: config.apiKey, userId: config.userId?.trim() || 'rv-insights-user', baseUrl: config.baseUrl },
+    { apiKey: config.apiKey, userId: config.userId?.trim() || 'codeinsights-user', baseUrl: config.baseUrl },
     input.query,
     input.limit,
   )
@@ -306,7 +306,7 @@ export async function handleMemoryAppend(
   }
   const append = context.dependencies?.memoryAppend ?? addMemory
   await append(
-    { apiKey: config.apiKey, userId: config.userId?.trim() || 'rv-insights-user', baseUrl: config.baseUrl },
+    { apiKey: config.apiKey, userId: config.userId?.trim() || 'codeinsights-user', baseUrl: config.baseUrl },
     input,
   )
   return textResult('Memory stored successfully.')

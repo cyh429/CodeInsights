@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { linkSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
-import type { RVInsightsPermissionMode } from '@rv-insights/shared'
+import type { CodeInsightsPermissionMode } from '@codeinsights/shared'
 import type { PermissionResult, CanUseToolOptions } from '../agent-permission-service'
 import type { ExitPlanPermissionResult } from '../agent-exit-plan-service'
 import {
@@ -12,7 +12,7 @@ import {
   type PermissionToolHandler,
 } from './permission-tool-dispatcher'
 
-const TEST_AGENT_CWD = resolve('/tmp/rv-insights-session')
+const TEST_AGENT_CWD = resolve('/tmp/codeinsights-session')
 
 interface ToolCall {
   toolName: string
@@ -37,10 +37,10 @@ interface DispatcherFixture {
   autoCalls: ToolCall[]
   askCalls: SignalCall[]
   exitCalls: SignalCall[]
-  modeUpdates: RVInsightsPermissionMode[]
-  syncedModes: RVInsightsPermissionMode[]
+  modeUpdates: CodeInsightsPermissionMode[]
+  syncedModes: CodeInsightsPermissionMode[]
   enterPlanEvents: () => number
-  currentMode: () => RVInsightsPermissionMode
+  currentMode: () => CodeInsightsPermissionMode
 }
 
 function createToolOptions(overrides: Partial<CanUseToolOptions> = {}): CanUseToolOptions {
@@ -53,7 +53,7 @@ function createToolOptions(overrides: Partial<CanUseToolOptions> = {}): CanUseTo
 }
 
 function createFixture(
-  initialMode: RVInsightsPermissionMode,
+  initialMode: CodeInsightsPermissionMode,
   handlers: DispatcherHandlers = {},
 ): DispatcherFixture {
   let currentMode = initialMode
@@ -61,8 +61,8 @@ function createFixture(
   const autoCalls: ToolCall[] = []
   const askCalls: SignalCall[] = []
   const exitCalls: SignalCall[] = []
-  const modeUpdates: RVInsightsPermissionMode[] = []
-  const syncedModes: RVInsightsPermissionMode[] = []
+  const modeUpdates: CodeInsightsPermissionMode[] = []
+  const syncedModes: CodeInsightsPermissionMode[] = []
 
   const dispatcher = new PermissionToolDispatcher({
     initialPermissionMode: initialMode,
@@ -135,7 +135,7 @@ describe('PermissionToolDispatcher', () => {
   })
 
   test('AskUserQuestion 不受权限模式影响，始终走交互式问答处理', async () => {
-    for (const mode of ['auto', 'plan', 'bypassPermissions'] satisfies RVInsightsPermissionMode[]) {
+    for (const mode of ['auto', 'plan', 'bypassPermissions'] satisfies CodeInsightsPermissionMode[]) {
       const fixture = createFixture(mode)
       const input = { questions: [{ question: '继续吗？', options: [] }] }
       const options = createToolOptions()
@@ -403,7 +403,7 @@ describe('PermissionToolDispatcher', () => {
   })
 
   test('isPlanMarkdownPathAllowed 拒绝 .context 内 symlink 逃逸', () => {
-    const tempRoot = mkdtempSync(resolve(tmpdir(), 'rv-insights-permission-'))
+    const tempRoot = mkdtempSync(resolve(tmpdir(), 'codeinsights-permission-'))
     try {
       const agentCwd = resolve(tempRoot, 'session')
       const planDir = resolve(agentCwd, '.context')
@@ -422,7 +422,7 @@ describe('PermissionToolDispatcher', () => {
   })
 
   test('isPlanMarkdownPathAllowed 拒绝 .context 内 broken symlink 文件逃逸', () => {
-    const tempRoot = mkdtempSync(resolve(tmpdir(), 'rv-insights-permission-'))
+    const tempRoot = mkdtempSync(resolve(tmpdir(), 'codeinsights-permission-'))
     try {
       const agentCwd = resolve(tempRoot, 'session')
       const planDir = resolve(agentCwd, '.context')
@@ -439,7 +439,7 @@ describe('PermissionToolDispatcher', () => {
   })
 
   test('isPlanMarkdownPathAllowed 拒绝 .context 内 hardlink 文件逃逸', () => {
-    const tempRoot = mkdtempSync(resolve(tmpdir(), 'rv-insights-permission-'))
+    const tempRoot = mkdtempSync(resolve(tmpdir(), 'codeinsights-permission-'))
     try {
       const agentCwd = resolve(tempRoot, 'session')
       const planDir = resolve(agentCwd, '.context')

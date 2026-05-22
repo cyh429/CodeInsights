@@ -1,5 +1,5 @@
 <svg width="1400" height="920" viewBox="0 0 1400 920" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="arch-title arch-desc">
-  <title id="arch-title">RV-Insights v2.2 System Architecture</title>
+  <title id="arch-title">CodeInsights v2.2 System Architecture</title>
   <desc id="arch-desc">Four-layer architecture: User Interface, Orchestration, Agent Capabilities (dual SDK), and Tools/Infrastructure.</desc>
   <defs>
     <linearGradient id="abg" x1="0" y1="0" x2="1400" y2="920" gradientUnits="userSpaceOnUse">

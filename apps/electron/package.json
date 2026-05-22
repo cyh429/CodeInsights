@@ -1,7 +1,7 @@
 {
-  "name": "@rv-insights/electron",
-  "version": "0.0.99",
-  "description": "RV-Insights next gen ai software with general agents - Electron App",
+  "name": "@codeinsights/electron",
+  "version": "0.0.100",
+  "description": "CodeInsights next gen ai software with general agents - Electron App",
   "main": "dist/main.cjs",
   "author": {
     "name": "ErlichLiu",
@@ -59,9 +59,9 @@
     "@langchain/core": "1.1.44",
     "@langchain/langgraph": "1.3.0",
     "@larksuiteoapi/node-sdk": "^1.59.0",
-    "@rv-insights/core": "workspace:*",
-    "@rv-insights/shared": "workspace:*",
-    "@rv-insights/ui": "workspace:*",
+    "@codeinsights/core": "workspace:*",
+    "@codeinsights/shared": "workspace:*",
+    "@codeinsights/ui": "workspace:*",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-context-menu": "^2.2.16",
@@ -142,5 +142,5 @@
   "build": {
     "extends": "electron-builder.yml"
   },
-  "rv-insights": {}
+  "codeinsights": {}
 }

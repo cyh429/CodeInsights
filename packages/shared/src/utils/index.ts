@@ -1,5 +1,5 @@
 /**
- * Shared utility functions for rv-insights
+ * Shared utility functions for codeinsights
  */
 
 // Placeholder - will be expanded as needed

@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { DINGTALK_IPC_CHANNELS, FEISHU_IPC_CHANNELS, WECHAT_IPC_CHANNELS } from '@rv-insights/shared'
+import { DINGTALK_IPC_CHANNELS, FEISHU_IPC_CHANNELS, WECHAT_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   DingTalkBotConfigInput,
   DingTalkBridgeState,
@@ -21,7 +21,7 @@ import type {
   FeishuUpdateBindingInput,
   WeChatBridgeState,
   WeChatConfig,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   getDingTalkConfig,
   getDingTalkMultiBotConfig,

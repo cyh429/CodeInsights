@@ -23,7 +23,7 @@ import {
   selectedPromptIdAtom,
   defaultPromptIdAtom,
 } from '@/atoms/system-prompt-atoms'
-import type { SystemPrompt, SystemPromptCreateInput, SystemPromptUpdateInput } from '@rv-insights/shared'
+import type { SystemPrompt, SystemPromptCreateInput, SystemPromptUpdateInput } from '@codeinsights/shared'
 
 /** 防抖保存延迟 (ms) */
 const DEBOUNCE_DELAY = 500

@@ -12,17 +12,17 @@
 
 import { randomUUID } from 'node:crypto'
 import type {
-  RVInsightsPermissionMode,
+  CodeInsightsPermissionMode,
   PermissionRequest,
   DangerLevel,
   AskUserRequest,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   SAFE_TOOLS,
   isSafeBashCommand,
   isDangerousCommand,
   hasDangerousStructure,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 /** SDK PermissionBehavior */
 type PermissionBehavior = 'allow' | 'deny'

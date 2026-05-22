@@ -4,7 +4,7 @@
  * 只包含纯函数，Bridge 继续负责 Bot open_id 获取、缓存和消息发送副作用。
  */
 
-import type { FeishuGroupMember, FeishuMention } from '@rv-insights/shared'
+import type { FeishuGroupMember, FeishuMention } from '@codeinsights/shared'
 
 export interface FeishuMentionTarget {
   name: string

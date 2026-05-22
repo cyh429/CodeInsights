@@ -18,5 +18,5 @@ export function resolvePipelineCodexChannelId(
   }
 
   return normalizePipelineCodexChannelId(settings.pipelineCodexChannelId)
-    ?? normalizePipelineCodexChannelId(env.RV_PIPELINE_CODEX_CHANNEL_ID)
+    ?? normalizePipelineCodexChannelId(env.CODEINSIGHTS_PIPELINE_CODEX_CHANNEL_ID)
 }

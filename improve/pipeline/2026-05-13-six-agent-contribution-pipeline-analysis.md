@@ -1,8 +1,8 @@
-# RV-Insights 六 Agent 开源贡献 Pipeline 完善分析
+# CodeInsights 六 Agent 开源贡献 Pipeline 完善分析
 
 > 日期：2026-05-13
 > 范围：当前仓库真实实现、README / tutorial / 历史改进文档、Pipeline 主进程、共享类型、渲染层 UI。
-> 目标：对照目标工作流 `explorer / planner / developer / reviewer / tester / committer`，分析当前 RV-Insights 还需要哪些完善和优化。
+> 目标：对照目标工作流 `explorer / planner / developer / reviewer / tester / committer`，分析当前 CodeInsights 还需要哪些完善和优化。
 
 ## 当前实现进度
 
@@ -24,14 +24,14 @@
 - Phase 6 已完成并提交：commit `fab7f906f546e619157286ffb6fe40c869f1d3e2`（`feat(pipeline): 完成 Phase 6 提交材料草稿闭环`）。Committer Draft-Only 已读取 accepted `result.md`、`patch-set/*`、CONTRIBUTING 和 Git 状态，只生成并登记 `commit.md` / `pr.md`；`CommitterPanel` 通过结构化 patch-work IPC 展示提交材料、测试证据、blocker 和风险；`submission_review` 在 Phase 6 仅允许保存提交材料，不执行真实 commit / push / PR；CONTRIBUTING 读取会拒绝仓库外 symlink，committer schema/parser 仅接受 `draft_only` / `blocked`。
 - Phase 7 已完成并提交：commit `d6da8380dc69e179c24d542d4a73cd1be90216cc`（`feat(pipeline): 完成 Phase 7 受控本地提交闭环`）。受控本地 Commit Gate 已实现。Git service 新增 `validateCommitPreconditions` 与受控 staging policy，用户明确选择 `local_commit` 后才执行 `git add` / `git commit`；staging 默认排除 `patch-work/**`，使用 literal pathspec 防止特殊文件名扩大 stage 范围，且若 `patch-work/**` 已进入 Git index 会阻止提交；提交前会只读校验 `commit.md` / `pr.md` checksum；commit hash、operation id、文件列表和排除项会写入 Contribution events 并回填 committer stage output；`CommitterPanel` 已展示本地 commit 候选、排除项、测试结论和提交结果。
 - Phase 8 已完成并作为本轮单独提交：commit `906834a0`（`feat(pipeline): 完成 Phase 8 远端 PR 受控集成`）。独立 `remote_write_confirmation` 高风险 gate、受控 `git push` + `gh draft PR`、远端结果回填、operation id 幂等、push 成功 / PR 失败可恢复、错误脱敏和 `patch-work` 远端防护均已落地。
-- 当前版本状态：`@rv-insights/shared` 为 `0.1.33`，`@rv-insights/electron` 为 `0.0.58`。
+- 当前版本状态：`@codeinsights/shared` 为 `0.1.33`，`@codeinsights/electron` 为 `0.0.58`。
 - 当前分支状态：`base/pipeline-v0` 相对 `origin/base/pipeline-v0` ahead 16 commits；未执行 push / PR。
 - 当前已知验证状态：Phase 8 核心聚焦测试 65 pass、周边兼容测试 147 pass、`bun run typecheck`、`git diff --check`、`bun install --frozen-lockfile --dry-run` 已通过；全量 `bun test` 最新结果为 387 pass / 1 fail / 1 error，失败仍位于 `apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts` 的 Electron named export 测试环境问题，未指向 Phase 1/2/3/4/5/6/7/8 或后续 bugfix 改动。
 - 当前未完成 / 可选增强：尚未执行真实远端 push / PR；低风险预填 PR 页面、GitHub API 创建 PR 路径、远端 preflight 细粒度 UI、已有 PR 同步 / 更新流程尚未实现；README / AGENTS.md 尚未同步最新 Pipeline v2 状态，需用户明确允许后再修改。
 
 ## 结论
 
-当前 RV-Insights 已经有一个可运行的 Pipeline 底座，并在 Phase 2 增加了 v2 六节点骨架；Phase 3 已接入 explorer 任务选择、planner 文档审核和 patch-work 结构化读取，Phase 4 已接入 Developer 文档审核与 Reviewer issue loop，Phase 5 已接入 Tester 测试报告、测试证据和 patch-set 草稿，Phase 6 已接入 Committer Draft-Only，Phase 7 已接入受控本地 commit gate，Phase 8 已接入受控远端 PR gate：
+当前 CodeInsights 已经有一个可运行的 Pipeline 底座，并在 Phase 2 增加了 v2 六节点骨架；Phase 3 已接入 explorer 任务选择、planner 文档审核和 patch-work 结构化读取，Phase 4 已接入 Developer 文档审核与 Reviewer issue loop，Phase 5 已接入 Tester 测试报告、测试证据和 patch-set 草稿，Phase 6 已接入 Committer Draft-Only，Phase 7 已接入受控本地 commit gate，Phase 8 已接入受控远端 PR gate：
 
 - LangGraph v2 编排：`explorer -> planner -> developer -> developer document gate -> reviewer -> tester -> committer`
 - 人工 gate、checkpoint、stream event、JSONL 记录和阶段 artifact 已具备
@@ -202,7 +202,7 @@ START
 `pipeline-artifact-service.ts` 当前将产物写入配置目录：
 
 ```text
-~/.rv-insights/pipeline-artifacts/{sessionId}/
+~/.codeinsights/pipeline-artifacts/{sessionId}/
 ```
 
 每个阶段生成：
@@ -873,7 +873,7 @@ PipelineView
 建议新增：
 
 ```text
-~/.rv-insights/
+~/.codeinsights/
 ├── contribution-tasks.json
 └── contribution-tasks/
     └── {taskId}.jsonl
@@ -1279,7 +1279,7 @@ const PIPELINE_NODE_RUNTIME = {
 
 这样 UI、preflight、README 和测试都能对齐。
 
-如果产品强要求“底层调用完整 CLI 运行时”，需要把 `RV_PIPELINE_CODEX_BACKEND=cli` 从 fallback 变成默认，或者在设置里显式展示“Codex SDK / Codex CLI”并由用户选择。
+如果产品强要求“底层调用完整 CLI 运行时”，需要把 `CODEINSIGHTS_PIPELINE_CODEX_BACKEND=cli` 从 fallback 变成默认，或者在设置里显式展示“Codex SDK / Codex CLI”并由用户选择。
 
 ### 5. 每个节点输出固定文件和结构化 summary
 
@@ -1505,7 +1505,7 @@ And Pipeline 标记 completed
 
 ### 风险 2：patch-work 与真实代码仓库边界不清
 
-当前 Agent cwd 是 `~/.rv-insights/agent-workspaces/{slug}/{sessionId}`，附加目录才可能是目标仓库。目标要求“指定代码仓库”和 `./patch-work/`，必须明确真正的 repository root，否则文件会写错地方。
+当前 Agent cwd 是 `~/.codeinsights/agent-workspaces/{slug}/{sessionId}`，附加目录才可能是目标仓库。目标要求“指定代码仓库”和 `./patch-work/`，必须明确真正的 repository root，否则文件会写错地方。
 
 ### 风险 3：文档审核不能只是文本反馈
 
@@ -1727,13 +1727,13 @@ export interface PipelinePreflightResult {
 推荐策略：
 
 - MVP 默认使用 `new_branch`，启动前要求工作区干净或用户确认。
-- 后续支持 `git_worktree`，路径放在 `~/.rv-insights/contribution-worktrees/{taskId}`，但 `patch-work` 仍映射到贡献仓库工作树内。
+- 后续支持 `git_worktree`，路径放在 `~/.codeinsights/contribution-worktrees/{taskId}`，但 `patch-work` 仍映射到贡献仓库工作树内。
 - 如果当前仓库有未提交改动，禁止 developer/tester 自动修改源码，除非用户明确选择“在当前改动基础上继续”。
 - 每个 `ContributionTask` 记录 `baseCommit` 和 `workingBranch`，用于 patch-set 和恢复。
 
 ### `patch-work` 不应默认进入贡献补丁
 
-目标要求方案、报告和结果放在 `./patch-work/`，但这些文件大多数是 RV-Insights 工作流材料，不一定适合提交给上游社区。这里需要明确边界。
+目标要求方案、报告和结果放在 `./patch-work/`，但这些文件大多数是 CodeInsights 工作流材料，不一定适合提交给上游社区。这里需要明确边界。
 
 建议规则：
 

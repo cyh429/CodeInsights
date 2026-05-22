@@ -38,7 +38,7 @@ describe('pipeline-preflight-service', () => {
   let extraDirs: string[] = []
 
   beforeEach(() => {
-    tempRoot = mkdtempSync(join(tmpdir(), 'rv-preflight-'))
+    tempRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-'))
     extraDirs = []
   })
 
@@ -64,7 +64,7 @@ describe('pipeline-preflight-service', () => {
 
   test('干净 Git 仓库返回仓库信息、runtime 和包管理器', async () => {
     initRepo(tempRoot)
-    const cliRoot = mkdtempSync(join(tmpdir(), 'rv-preflight-cli-'))
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
     extraDirs.push(cliRoot)
     const claudePath = createFakeCli(cliRoot, 'claude')
     const codexPath = createFakeCli(cliRoot, 'codex')
@@ -108,7 +108,7 @@ describe('pipeline-preflight-service', () => {
 
   test('CLI resolver 抛错时返回 blocker 而不是中断 preflight', async () => {
     initRepo(tempRoot)
-    const cliRoot = mkdtempSync(join(tmpdir(), 'rv-preflight-cli-'))
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
     extraDirs.push(cliRoot)
     const claudePath = createFakeCli(cliRoot, 'claude')
 
@@ -131,7 +131,7 @@ describe('pipeline-preflight-service', () => {
 
   test('仓库存在冲突时返回 blocker', async () => {
     initRepo(tempRoot)
-    const cliRoot = mkdtempSync(join(tmpdir(), 'rv-preflight-cli-'))
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
     extraDirs.push(cliRoot)
     const claudePath = createFakeCli(cliRoot, 'claude')
     const codexPath = createFakeCli(cliRoot, 'codex')

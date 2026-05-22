@@ -1,8 +1,8 @@
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { app } from 'electron'
-import type { ProviderType } from '@rv-insights/shared'
-import { normalizeAnthropicBaseUrlForSdk } from '@rv-insights/core'
+import type { ProviderType } from '@codeinsights/shared'
+import { normalizeAnthropicBaseUrlForSdk } from '@codeinsights/core'
 import { getSdkConfigDir } from '../config-paths'
 import { getEffectiveProxyUrl } from '../proxy-settings-service'
 import { getRuntimeStatus } from '../runtime-init'
@@ -163,7 +163,7 @@ export async function buildSdkEnv(
  * 再沿父目录 `@anthropic-ai/` 找到同级的平台子包。
  *
  * 多种策略降级：createRequire → 全局 require → cwd/node_modules 手动查找
- * 打包环境下：asar 内的路径需要转换为 asar.unpacked 路径（即便 RV-Insights 当前 `asar: false`
+ * 打包环境下：asar 内的路径需要转换为 asar.unpacked 路径（即便 CodeInsights 当前 `asar: false`
  * 兜底不伤人）。
  */
 export function resolveSDKCliPath(deps: ResolveSDKCliPathDeps = {}): string {

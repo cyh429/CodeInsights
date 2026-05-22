@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { allPendingPermissionRequestsAtom, agentStreamingStatesAtom, finalizeStreamingActivities } from '@/atoms/agent-atoms'
 import { cn } from '@/lib/utils'
 import { getBannerToneForPermission } from './agent-ui-model'
-import type { DangerLevel } from '@rv-insights/shared'
+import type { DangerLevel } from '@codeinsights/shared'
 
 /** 危险等级对应的图标颜色 */
 const DANGER_ICON_STYLES: Record<DangerLevel, string> = {

@@ -17,7 +17,7 @@ import type {
   PipelineSessionMeta,
   PipelineStateSnapshot,
   PipelineTesterStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { draftSessionIdsAtom } from '@/atoms/draft-session-atoms'
 import {
   clearPipelineLiveOutputForSession,

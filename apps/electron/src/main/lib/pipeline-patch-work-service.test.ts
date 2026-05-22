@@ -32,7 +32,7 @@ describe('pipeline-patch-work-service', () => {
   let extraDirs: string[] = []
 
   beforeEach(() => {
-    repoRoot = mkdtempSync(join(tmpdir(), 'rv-patch-work-repo-'))
+    repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-patch-work-repo-'))
     extraDirs = []
   })
 
@@ -204,7 +204,7 @@ describe('pipeline-patch-work-service', () => {
   })
 
   test('拒绝 patch-work 目录自身软链到仓库外', () => {
-    const outsideDir = mkdtempSync(join(tmpdir(), 'rv-patch-work-outside-'))
+    const outsideDir = mkdtempSync(join(tmpdir(), 'codeinsights-patch-work-outside-'))
     extraDirs.push(outsideDir)
     symlinkSync(outsideDir, join(repoRoot, 'patch-work'))
 
@@ -236,7 +236,7 @@ describe('pipeline-patch-work-service', () => {
   })
 
   test('拒绝 manifest 软链且不会把仓库外内容复制到 bak', () => {
-    const outsideDir = mkdtempSync(join(tmpdir(), 'rv-patch-work-secret-'))
+    const outsideDir = mkdtempSync(join(tmpdir(), 'codeinsights-patch-work-secret-'))
     extraDirs.push(outsideDir)
     const secretPath = join(outsideDir, 'secret.txt')
     writeFileSync(secretPath, 'SECRET-DATA', 'utf-8')
@@ -262,7 +262,7 @@ describe('pipeline-patch-work-service', () => {
     })
 
     for (const companionName of ['manifest.json.tmp', 'manifest.json.bak']) {
-      const outsideDir = mkdtempSync(join(tmpdir(), `rv-patch-work-${companionName}-`))
+      const outsideDir = mkdtempSync(join(tmpdir(), `codeinsights-patch-work-${companionName}-`))
       extraDirs.push(outsideDir)
       const outsidePath = join(outsideDir, 'outside.txt')
       writeFileSync(outsidePath, 'SECRET-DATA', 'utf-8')
@@ -297,7 +297,7 @@ describe('pipeline-patch-work-service', () => {
   })
 
   test('拒绝父目录中的软链，且不会先在仓库外创建目录', () => {
-    const outsideDir = mkdtempSync(join(tmpdir(), 'rv-patch-work-linked-parent-'))
+    const outsideDir = mkdtempSync(join(tmpdir(), 'codeinsights-patch-work-linked-parent-'))
     extraDirs.push(outsideDir)
     initializePatchWork({
       contributionTaskId: 'task-1',

@@ -49,7 +49,7 @@ export default function App(): React.ReactElement {
   const handleOnboardingComplete = async () => {
     try {
       const meta = await window.electronAPI.createPipelineSession(
-        '欢迎使用 RV Pipeline',
+        '欢迎使用 CodeInsights Pipeline',
         undefined,
         undefined,
         CONTRIBUTION_PIPELINE_VERSION,

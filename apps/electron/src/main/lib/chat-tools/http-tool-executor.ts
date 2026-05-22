@@ -5,8 +5,8 @@
  * 支持 URL/Body 模板占位符替换、超时控制、响应路径提取。
  */
 
-import type { ToolCall, ToolResult } from '@rv-insights/core'
-import type { ChatToolMeta, ChatToolHttpConfig } from '@rv-insights/shared'
+import type { ToolCall, ToolResult } from '@codeinsights/core'
+import type { ChatToolMeta, ChatToolHttpConfig } from '@codeinsights/shared'
 import { getChatToolsConfig } from '../chat-tool-config'
 
 /** HTTP 请求超时（30 秒） */

@@ -3,7 +3,7 @@ import type {
   PipelineNodeKind,
   PipelineRecord,
   PipelineStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   PIPELINE_NODE_ORDER,
   getPipelineNodeLabel,

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelineRecord } from '@rv-insights/shared'
+import type { PipelineRecord } from '@codeinsights/shared'
 import {
   buildPipelineReviewComparison,
 } from './pipeline-review-comparison-model'

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentRuntimeManifest } from '@rv-insights/shared'
+import type { AgentRuntimeManifest } from '@codeinsights/shared'
 import {
   AGENT_HOST_BRIDGE_TOOLS,
   handleListWorkspaceFiles,
@@ -18,17 +18,17 @@ let tempDir = ''
 let previousConfigDir: string | undefined
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rv-host-mcp-'))
-  previousConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
-  process.env.RV_INSIGHTS_CONFIG_DIR = join(tempDir, 'config')
-  mkdirSync(process.env.RV_INSIGHTS_CONFIG_DIR, { recursive: true })
+  tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-host-mcp-'))
+  previousConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+  process.env.CODEINSIGHTS_CONFIG_DIR = join(tempDir, 'config')
+  mkdirSync(process.env.CODEINSIGHTS_CONFIG_DIR, { recursive: true })
 })
 
 afterEach(() => {
   if (previousConfigDir === undefined) {
-    delete process.env.RV_INSIGHTS_CONFIG_DIR
+    delete process.env.CODEINSIGHTS_CONFIG_DIR
   } else {
-    process.env.RV_INSIGHTS_CONFIG_DIR = previousConfigDir
+    process.env.CODEINSIGHTS_CONFIG_DIR = previousConfigDir
   }
   if (tempDir) rmSync(tempDir, { recursive: true, force: true })
 })
@@ -36,13 +36,13 @@ afterEach(() => {
 describe('agent host MCP bridge handlers', () => {
   test('声明稳定的内置工具列表', () => {
     expect(AGENT_HOST_BRIDGE_TOOLS).toEqual([
-      'rv_workspace_search',
-      'rv_list_workspace_files',
-      'rv_memory_search',
-      'rv_open_file',
-      'rv_memory_append',
-      'rv_send_channel_message',
-      'rv_schedule_task',
+      'codeinsights_workspace_search',
+      'codeinsights_list_workspace_files',
+      'codeinsights_memory_search',
+      'codeinsights_open_file',
+      'codeinsights_memory_append',
+      'codeinsights_send_channel_message',
+      'codeinsights_schedule_task',
     ])
   })
 
@@ -95,7 +95,7 @@ describe('agent host MCP bridge handlers', () => {
 
   test('记忆未启用时返回保守错误，不发起外部请求', async () => {
     const manifest = createManifest()
-    writeFileSync(join(process.env.RV_INSIGHTS_CONFIG_DIR!, 'memory.json'), JSON.stringify({
+    writeFileSync(join(process.env.CODEINSIGHTS_CONFIG_DIR!, 'memory.json'), JSON.stringify({
       enabled: false,
       apiKey: '',
       userId: '',
@@ -108,7 +108,7 @@ describe('agent host MCP bridge handlers', () => {
 
   test('记忆启用时通过注入依赖执行 search 和 append', async () => {
     const manifest = createManifest()
-    writeFileSync(join(process.env.RV_INSIGHTS_CONFIG_DIR!, 'memory.json'), JSON.stringify({
+    writeFileSync(join(process.env.CODEINSIGHTS_CONFIG_DIR!, 'memory.json'), JSON.stringify({
       enabled: true,
       apiKey: 'test-key',
       userId: 'user-1',

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" role="img" aria-labelledby="title desc">
+  <title id="title">CodeInsights 运行时接入边界</title>
+  <desc id="desc">CodeInsights homepage architecture diagram generated from product source materials.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .title { fill: #F0F6FC; font-size: 28px; font-weight: 700; }
+    .subtitle { fill: #8B949E; font-size: 15px; }
+    .label { fill: #F0F6FC; font-size: 15px; font-weight: 650; }
+    .body { fill: #8B949E; font-size: 13px; }
+    .tiny { fill: #8B949E; font-size: 11px; }
+    .chip { fill: #F0F6FC; font-size: 12px; font-weight: 650; }
+  </style>
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.45"/>
+    </filter>
+    
+    
+    <radialGradient id="glow-blue" cx="30%" cy="28%" r="45%">
+      <stop offset="0%" stop-color="#58A6FF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#58A6FF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-purple" cx="72%" cy="62%" r="40%">
+      <stop offset="0%" stop-color="#BC8CFF" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#BC8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58A6FF"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3FB950"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#F78166"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#BC8CFF"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6E7681"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="740" fill="#0D1117"/>
+  <rect width="1200" height="740" fill="url(#glow-blue)"/>
+  <rect width="1200" height="740" fill="url(#glow-purple)"/>
+
+  <text x="60" y="54" text-anchor="start" class="title">运行时接入边界</text>
+<text x="60" y="84" text-anchor="start" class="subtitle">连接成熟 coding agent，不重写它们：CodeInsights 负责工作区、权限、记录和编排。</text>
+
+  <rect x="60" y="130" width="260" height="470" rx="16" fill="#161B22" stroke="#FF7B72" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(88 166)">
+    <rect x="0" y="-16" width="87" height="24" rx="12" fill="#FF7B72" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#FF7B72"/>
+    <text x="24" y="0" class="tiny" fill="#FF7B72" font-weight="700">WHY NOT</text>
+  </g>
+  <text x="88" y="205" text-anchor="start" class="label" fill="#FF7B72">通用内核 / Skills 堆叠的不稳定层</text>
+  <rect x="88" y="244" width="204" height="70" rx="12" fill="#311416" stroke="#FF7B72" stroke-width="1.4" opacity="1"/>
+  <text x="110" y="270" text-anchor="start" class="label" font-size="14">自研通用 Agent 内核</text>
+  <text x="110" y="292" text-anchor="start" class="tiny">持续追逐模型和 CLI 变化</text>
+  <rect x="88" y="334" width="204" height="70" rx="12" fill="#321A16" stroke="#F78166" stroke-width="1.4" opacity="1"/>
+  <text x="110" y="360" text-anchor="start" class="label" font-size="14">只堆 Skills</text>
+  <text x="110" y="382" text-anchor="start" class="tiny">依赖语义稳定和任务边界</text>
+  <rect x="88" y="424" width="204" height="70" rx="12" fill="#1F2937" stroke="#30363D" stroke-width="1.4" opacity="1"/>
+  <text x="110" y="450" text-anchor="start" class="label" font-size="14">单 Agent 长任务</text>
+  <text x="110" y="472" text-anchor="start" class="tiny">过程难审计，返工成本高</text>
+  <text x="88" y="542" text-anchor="start" class="body">CodeInsights 的选择：</text>
+<text x="88" y="560" text-anchor="start" class="body">把专业运行时放进工程流程。</text>
+
+  <path d="M 320 366 C 355 366 370 366 400 366" stroke="#6E7681" stroke-width="2" fill="none" marker-end="url(#arrow-gray)" stroke-dasharray="6 5"/>
+
+  <rect x="410" y="120" width="370" height="500" rx="22" fill="#161B22" stroke="#58A6FF" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <rect x="434" y="154" width="322" height="430" rx="18" fill="#0D2847" stroke="#58A6FF" stroke-width="1.6" stroke-dasharray="8 6" opacity="0.95"/>
+  <g transform="translate(460 185)">
+    <rect x="0" y="-16" width="204" height="24" rx="12" fill="#58A6FF" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#58A6FF"/>
+    <text x="24" y="0" class="tiny" fill="#58A6FF" font-weight="700">CODEINSIGHTS BOUNDARY</text>
+  </g>
+  <text x="460" y="224" text-anchor="start" class="label" fill="#58A6FF" font-size="18">接入层，不实现通用 Agent 内核</text>
+  <text x="460" y="252" text-anchor="start" class="body">保留底层运行时能力；CodeInsights 只管理工程外壳。</text>
+  <rect x="460" y="292" width="250" height="46" rx="10" fill="#161B22" stroke="#30363D" stroke-width="1.4" opacity="1"/>
+  <text x="480" y="321" text-anchor="start" class="body" font-size="13">Workspace: cwd / project files</text>
+  <rect x="460" y="354" width="250" height="46" rx="10" fill="#161B22" stroke="#30363D" stroke-width="1.4" opacity="1"/>
+  <text x="480" y="383" text-anchor="start" class="body" font-size="13">MCP / Skills: 可选增强层</text>
+  <rect x="460" y="416" width="250" height="46" rx="10" fill="#161B22" stroke="#F78166" stroke-width="1.4" opacity="1"/>
+  <text x="480" y="445" text-anchor="start" class="body" font-size="13">Permission policy + human confirm</text>
+  <rect x="460" y="478" width="250" height="46" rx="10" fill="#161B22" stroke="#BC8CFF" stroke-width="1.4" opacity="1"/>
+  <text x="480" y="507" text-anchor="start" class="body" font-size="13">Local records: JSONL / artifacts</text>
+  <text x="460" y="558" text-anchor="start" class="tiny">完整运行时调用：stream / tools / terminal / file ops / permission requests</text>
+
+  <rect x="870" y="112" width="270" height="520" rx="16" fill="#161B22" stroke="#3FB950" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(900 150)">
+    <rect x="0" y="-16" width="186" height="24" rx="12" fill="#3FB950" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#3FB950"/>
+    <text x="24" y="0" class="tiny" fill="#3FB950" font-weight="700">CONNECTED RUNTIMES</text>
+  </g>
+  <text x="900" y="188" text-anchor="start" class="label" fill="#3FB950">成熟 coding agent 运行时</text>
+  <g>
+    <circle cx="928" cy="246" r="25" fill="#D97757"/>
+    <circle cx="928" cy="246" r="27" fill="none" stroke="#D97757" stroke-width="1" opacity="0.35"/>
+    <text x="928" y="250" text-anchor="middle" fill="#FFFFFF" font-size="9" font-weight="750">Claude</text>
+  </g>
+  <text x="970" y="236" text-anchor="start" class="label" font-size="14">当前 Agent 模式</text>
+  <text x="970" y="258" text-anchor="start" class="body">Claude Agent SDK</text>
+  <g>
+    <circle cx="928" cy="328" r="24" fill="#58A6FF"/>
+    <circle cx="928" cy="328" r="26" fill="none" stroke="#58A6FF" stroke-width="1" opacity="0.35"/>
+    <text x="928" y="332" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="750">API</text>
+  </g>
+  <text x="970" y="318" text-anchor="start" class="label" font-size="14">Anthropic 兼容渠道</text>
+  <text x="970" y="340" text-anchor="start" class="body">按版本标注支持范围</text>
+  <g>
+    <circle cx="928" cy="410" r="25" fill="#10A37F"/>
+    <circle cx="928" cy="410" r="27" fill="none" stroke="#10A37F" stroke-width="1" opacity="0.35"/>
+    <text x="928" y="414" text-anchor="middle" fill="#FFFFFF" font-size="9" font-weight="750">Codex</text>
+  </g>
+  <text x="970" y="400" text-anchor="start" class="label" font-size="14">Pipeline 节点</text>
+  <text x="970" y="422" text-anchor="start" class="body">Developer / Reviewer</text>
+  <g>
+    <circle cx="928" cy="492" r="24" fill="#6E7681"/>
+    <circle cx="928" cy="492" r="26" fill="none" stroke="#6E7681" stroke-width="1" opacity="0.35"/>
+    <text x="928" y="496" text-anchor="middle" fill="#FFFFFF" font-size="10" font-weight="750">Next</text>
+  </g>
+  <text x="970" y="482" text-anchor="start" class="label" font-size="14">路线图</text>
+  <text x="970" y="504" text-anchor="start" class="body">Codex Agent / Custom Runtime</text>
+
+  <path d="M 756 246 C 806 246 822 246 872 246" stroke="#58A6FF" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 756 328 C 806 328 822 328 872 328" stroke="#58A6FF" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 756 410 C 806 410 822 410 872 410" stroke="#3FB950" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M 756 492 C 806 492 822 492 872 492" stroke="#6E7681" stroke-width="2" fill="none" marker-end="url(#arrow-gray)" stroke-dasharray="7 5"/>
+
+  <rect x="60" y="650" width="1080" height="54" rx="16" fill="#161B22" stroke="#30363D" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <text x="88" y="684" text-anchor="start" class="body" font-size="14">上游 agent 升级后，CodeInsights 在已接入运行时范围内优先继承能力，减少二次封装适配成本。</text>
+  
+</svg>

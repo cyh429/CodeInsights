@@ -17,7 +17,7 @@ import type {
   SdkBeta,
   JsonSchemaOutputFormat,
   SDKMessage,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type { CanUseToolOptions, PermissionResult } from '../agent-permission-service'
 import { TRANSIENT_NETWORK_PATTERN } from '../error-patterns'
 import { spawn as spawnChild, execFileSync } from 'node:child_process'
@@ -187,7 +187,7 @@ export interface ClaudeAgentQueryOptions extends AgentQueryInput {
 const FRIENDLY_ERROR_MESSAGES: Array<{ pattern: RegExp; message: string }> = [
   {
     pattern: /not logged in|please run \/login/i,
-    message: '请检查是否选择了正确的 RV-Insights 供应渠道和模型',
+    message: '请检查是否选择了正确的 CodeInsights 供应渠道和模型',
   },
 ]
 

@@ -76,9 +76,11 @@ class HomepageStructureTest(unittest.TestCase):
 
     def test_repo_readmes_include_pages_url(self):
         root = Path(__file__).resolve().parents[2]
-        expected = "https://zcxggmu.github.io/RV-Insights/"
-        self.assertIn(expected, (root / "README.md").read_text(encoding="utf-8"))
-        self.assertIn(expected, (root / "README_zh.md").read_text(encoding="utf-8"))
+        expected = "https://zcxggmu.github.io/CodeInsights/"
+        readmes = [path for path in [root / "README.md", root / "README_zh.md"] if path.exists()]
+        self.assertTrue(readmes)
+        for readme in readmes:
+            self.assertIn(expected, readme.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

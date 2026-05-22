@@ -3,9 +3,9 @@
 下次启动 Codex 后，可以直接发送下面这段提示词。
 
 ```text
-请继续 RV-Insights 的 Agent 模式重构工作。
+请继续 CodeInsights 的 Agent 模式重构工作。
 
-项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
+项目路径：/Users/zq/Desktop/ai-projs/posp/CodeInsights
 
 必须先阅读：
 - tasks/lessons.md
@@ -32,29 +32,29 @@
 - 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证：Agent 输入区可选择 `Runner v2` / `Legacy`，选择持久化到 settings。
 
 当前版本：
-- @rv-insights/shared：0.1.41
-- @rv-insights/electron：0.0.99
+- @codeinsights/shared：0.1.41
+- @codeinsights/electron：0.0.99
 
 当前已完成的默认化状态：
 - 默认 Agent 对话走 Runner v2。
-- `RV_AGENT_RUNTIME_RUNNER_V2=0/false/off/no/disabled` 可显式回到旧 Agent 主循环。
+- `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0/false/off/no/disabled` 可显式回到旧 Agent 主循环。
 - 桌面 Agent 输入区可手动选择后续发送走 `Runner v2` 或 `Legacy`；env 显式关闭仍优先硬回滚旧主循环。
 - 默认 Pipeline Claude 节点走 Pipeline Runner v2。
-- `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0/false/off/no/disabled` 可显式回到 Pipeline legacy adapter。
+- `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0/false/off/no/disabled` 可显式回到 Pipeline legacy adapter。
 - 默认 `agentRuntimeChannelsV2` 开启。
-- `RV_AGENT_RUNTIME_CHANNELS_V2=0/false/off/no/disabled` 可显式回到旧 Feishu bridge 路径。
+- `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=0/false/off/no/disabled` 可显式回到旧 Feishu bridge 路径。
 
 阶段 14B 关键证据：
-- Agent 默认 session：`073783b3-27ae-49ec-b516-92de146e6572`，未设置 `RV_AGENT_RUNTIME_RUNNER_V2`，日志确认走 Runner v2。
-- Agent 显式关闭回滚 session：`70bf7de8-043a-49c2-81c4-28e49f15ff96`，`RV_AGENT_RUNTIME_RUNNER_V2=0`，日志确认走旧 Agent 主循环。
-- 默认 Electron Pipeline 深水位 session：`a70c02d0-ff2f-4283-b121-cd963771fd9f`，未设置 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2`，日志确认 explorer / planner 使用 `InProcessAgentRuntimeRunner`，最终到 committer/completed。
+- Agent 默认 session：`073783b3-27ae-49ec-b516-92de146e6572`，未设置 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2`，日志确认走 Runner v2。
+- Agent 显式关闭回滚 session：`70bf7de8-043a-49c2-81c4-28e49f15ff96`，`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0`，日志确认走旧 Agent 主循环。
+- 默认 Electron Pipeline 深水位 session：`a70c02d0-ff2f-4283-b121-cd963771fd9f`，未设置 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2`，日志确认 explorer / planner 使用 `InProcessAgentRuntimeRunner`，最终到 committer/completed。
 - 默认深水位 run 已复验 Git guard：HEAD / refs / index / local config 未被污染，staged diff 为空，commit / PR 仅生成 draft。
 - 默认深水位 run 的 patch-work 完整写入：`explorer/report-001.md`、`selected-task.md`、`plan.md`、`test-plan.md`、`dev.md`、`review.md`、`result.md`、`commit.md`、`pr.md`、`patch-set/*`。
 - 默认深水位 run 的 `test-evidence.json` 全部 passed。
-- 显式关闭回滚 session：`1112d7fc-ab4b-4e4b-bedf-193533a7daec`，`RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0`，日志确认 explorer 使用 `legacy adapter`，随后手动 stop 到 `terminated`。
+- 显式关闭回滚 session：`1112d7fc-ab4b-4e4b-bedf-193533a7daec`，`CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0`，日志确认 explorer 使用 `legacy adapter`，随后手动 stop 到 `terminated`。
 
 当前仍未完成：
-- 飞书入口与飞书群聊 MCP 仍受缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 阻塞；阶段 14C 不声明真实飞书通过，不能伪造通过。
+- 飞书入口与飞书群聊 MCP 仍受缺少 `~/.codeinsights/feishu.json` 与 `~/.codeinsights-dev/feishu.json` 阻塞；阶段 14C 不声明真实飞书通过，不能伪造通过。
 - 删除旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容是更晚阶段事项；当前不能删除。
 
 当前工作树注意事项：

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelineExplorerReportRef } from '@rv-insights/shared'
+import type { PipelineExplorerReportRef } from '@codeinsights/shared'
 import {
   buildExplorerTaskBoardViewModel,
   resolveExplorerTaskSelection,

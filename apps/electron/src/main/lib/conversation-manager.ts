@@ -2,8 +2,8 @@
  * 对话管理器
  *
  * 负责对话的 CRUD 操作和消息持久化。
- * - 对话索引：~/.rv-insights/conversations.json（轻量元数据）
- * - 消息存储：~/.rv-insights/conversations/{id}.jsonl（JSONL 格式，逐行追加）
+ * - 对话索引：~/.codeinsights/conversations.json（轻量元数据）
+ * - 消息存储：~/.codeinsights/conversations/{id}.jsonl（JSONL 格式，逐行追加）
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, unlinkSync } from 'node:fs'
@@ -15,7 +15,7 @@ import {
   getConversationMessagesPath,
 } from './config-paths'
 import { deleteConversationAttachments, deleteAttachment } from './attachment-service'
-import type { ConversationMeta, ChatMessage, RecentMessagesResult, MessageSearchResult } from '@rv-insights/shared'
+import type { ConversationMeta, ChatMessage, RecentMessagesResult, MessageSearchResult } from '@codeinsights/shared'
 import { buildSearchSnippet, findFirstJsonlMatch } from './jsonl-search'
 
 /**

@@ -45,7 +45,7 @@ import {
 import { settingsTabAtom, settingsOpenAtom } from '@/atoms/settings-tab'
 import { appModeAtom } from '@/atoms/app-mode'
 import { chatToolsAtom } from '@/atoms/chat-tool-atoms'
-import type { McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@rv-insights/shared'
+import type { McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@codeinsights/shared'
 import { SettingsSection, SettingsCard, SettingsRow, SettingsSegmentedControl, SettingsInput } from './primitives'
 import { McpServerForm } from './McpServerForm'
 import { getSettingsDeleteDialogCopy } from './settings-ui-model'
@@ -154,8 +154,8 @@ export function AgentSettings(): React.ReactElement {
     )
   }
 
-  /** 配置目录名称：开发模式用 .rv-insights-dev，正式版用 .rv-insights */
-  const configDirName = import.meta.env.DEV ? '.rv-insights-dev' : '.rv-insights'
+  /** 配置目录名称：开发模式用 .codeinsights-dev，正式版用 .codeinsights */
+  const configDirName = import.meta.env.DEV ? '.codeinsights-dev' : '.codeinsights'
 
   /** 构建 MCP 配置提示词 */
   const buildMcpPrompt = (): string => {
@@ -472,7 +472,7 @@ ${skillList}
         onClick={() => handleConfigViaChat(buildMcpPrompt())}
       >
         <MessageSquare size={14} />
-        <span>跟 RV-Insights Agent 对话完成配置</span>
+        <span>跟 CodeInsights Agent 对话完成配置</span>
       </Button>
 
       {/* 区块二：Skills（只读） */}
@@ -525,7 +525,7 @@ ${skillList}
           onClick={() => handleConfigViaChat(buildSkillPrompt())}
         >
           <MessageSquare size={14} />
-          <span>跟 RV-Insights Agent 对话完成配置</span>
+          <span>跟 CodeInsights Agent 对话完成配置</span>
         </Button>
       </SettingsSection>
 

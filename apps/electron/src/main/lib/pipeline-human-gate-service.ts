@@ -1,7 +1,7 @@
 import type {
   PipelineGateRequest,
   PipelineGateResponse,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 interface PendingPipelineGate {
   request: PipelineGateRequest

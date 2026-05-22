@@ -16,7 +16,7 @@ afterEach(() => {
 })
 
 function createTempJsonl(lines: string[]): string {
-  const dir = mkdtempSync(join(tmpdir(), 'rv-insights-search-'))
+  const dir = mkdtempSync(join(tmpdir(), 'codeinsights-search-'))
   tempDirs.push(dir)
   const filePath = join(dir, 'messages.jsonl')
   writeFileSync(filePath, lines.join('\n'), 'utf-8')

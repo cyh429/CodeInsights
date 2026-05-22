@@ -1,17 +1,17 @@
 import type { WebContents } from 'electron'
-import { AGENT_IPC_CHANNELS } from '@rv-insights/shared'
+import { AGENT_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   AgentStreamCompletePayload,
   AgentStreamEnvelope,
   AgentStreamEvent,
   AgentStreamPayload,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 const CHANNELS_V2_DISABLED_VALUES = new Set(['0', 'false', 'off', 'no', 'disabled'])
 const CHANNELS_V2_ENABLED_VALUES = new Set(['1', 'true', 'on', 'yes', 'enabled'])
 
 export function resolveAgentRuntimeChannelsV2Enabled(
-  value = process.env.RV_AGENT_RUNTIME_CHANNELS_V2,
+  value = process.env.CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2,
 ): boolean {
   if (value === undefined) return true
   const normalized = value.trim().toLowerCase()

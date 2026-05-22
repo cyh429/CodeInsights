@@ -1,4 +1,4 @@
-name: Deploy RV-Insights Homepage
+name: Deploy CodeInsights Homepage
 
 on:
   push:

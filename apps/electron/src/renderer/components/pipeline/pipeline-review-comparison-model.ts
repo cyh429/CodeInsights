@@ -1,7 +1,7 @@
 import type {
   PipelineGateAction,
   PipelineRecord,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export type PipelineReviewTone = 'success' | 'warning'
 

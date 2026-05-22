@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { PipelineExplorerReportRef } from '@rv-insights/shared'
+import type { PipelineExplorerReportRef } from '@codeinsights/shared'
 
 export interface ExplorerTaskItemViewModel {
   reportId: string

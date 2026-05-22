@@ -2,7 +2,7 @@
 
 ## 0. 使用说明
 
-本文是 `2026-05-16-client-ui-visual-spec.md` 的工程执行清单，用于后续按阶段跟踪 RV-Insights 客户端 UI 优化进度。
+本文是 `2026-05-16-client-ui-visual-spec.md` 的工程执行清单，用于后续按阶段跟踪 CodeInsights 客户端 UI 优化进度。
 
 参考规范：
 
@@ -54,7 +54,7 @@ Markdown checkbox 不原生支持 `[~]` / `[!]`，如工具不识别，可在任
 | 验证层级 | 适用范围 | 必做项 |
 | --- | --- | --- |
 | Static | 文档、CSS、轻量 class 调整 | `git diff --check` |
-| Type | TSX / TS / Tailwind class 变更 | `bun run --filter='@rv-insights/electron' typecheck` |
+| Type | TSX / TS / Tailwind class 变更 | `bun run --filter='@codeinsights/electron' typecheck` |
 | Focused | 组件行为、状态映射、交互逻辑 | 相关 `bun test <file>` 或手动路径 |
 | Visual | 页面结构、主题、状态色、文本溢出 | Electron / Vite 实机截图 |
 | A11y | icon-only、表单、Dialog、树、Tab | 键盘路径、aria、contrast |
@@ -234,7 +234,7 @@ git diff --check
 ### 4.7 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -251,7 +251,7 @@ git diff --check
 - 涉及文件：`globals.css`、`tailwind.config.js`、`components/ui/*` 基础 primitive、`components/settings/primitives/*`、`apps/electron/package.json`、`bun.lock`、primitive 截图。
 - token 新增 / 映射：新增 surface / text / border / focus / status / radius / shadow / motion alias，并在 Tailwind 中暴露 `surface-*`、`text-*`、`status-*`、`rounded-card/control/panel`、`shadow-card/panel/modal`、`duration-fast/normal/slow/exit`。
 - 裸色值清理：本阶段触达 primitive 已迁移到 semantic token；`globals.css` 中既有主题色、shell gradient、代码块和特殊主题覆盖仍保留，作为后续主题治理范围。
-- 验证结果：`bun run --filter='@rv-insights/electron' typecheck` 通过；`bun run --filter='@rv-insights/electron' build:renderer` 通过，仅保留既有 chunk size warning；`bun install --frozen-lockfile --dry-run` 通过；`git diff --check` 通过。
+- 验证结果：`bun run --filter='@codeinsights/electron' typecheck` 通过；`bun run --filter='@codeinsights/electron' build:renderer` 通过，仅保留既有 chunk size warning；`bun install --frozen-lockfile --dry-run` 通过；`git diff --check` 通过。
 - 截图路径：`improve/ui/screenshots/primitives-light-default-desktop.png`、`improve/ui/screenshots/primitives-dark-default-desktop.png`、`improve/ui/screenshots/primitives-ocean-status-desktop.png`。
 - 残留风险：页面级 Pipeline / Agent / AppShell 仍有大量局部 class 和状态色，需要 UI-2 到 UI-4 按阶段迁移；本阶段未重排页面结构、未新增 IPC / public API / shared type。
 
@@ -303,7 +303,7 @@ git diff --check
 ### 5.6 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -328,7 +328,7 @@ git diff --check
 - 状态 indicator 改动：Pipeline waiting 映射为 blocked，node / recovery failed 映射为 failed；Agent stream error / retry failed 映射为 failed；Tab / Sidebar 统一使用 running / waiting / success / danger token 细线，blocked 和 failed 提供 tooltip / title。
 - 键盘路径结果：Tab close button 改为真实 button 且不再嵌套在 tab 激活 button 内；Conversation / Agent / Pipeline 侧栏行补 Enter / Space 激活，并限制为仅在行容器自身聚焦时触发，避免子按钮键盘事件冒泡误选中会话；icon-only 操作补 `aria-label` 与 focus-visible ring。
 - 截图路径：`improve/ui/screenshots/appshell-light-multi-tab-desktop.png`、`improve/ui/screenshots/appshell-dark-background-running-desktop.png`、`improve/ui/screenshots/appshell-forest-blocked-desktop.png`。
-- 验证：`bun run --filter='@rv-insights/electron' typecheck`、`bun test apps/electron/src/renderer/atoms/pipeline-atoms.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/pipeline/pipeline-session-sidebar-model.test.ts`、`bun install --frozen-lockfile --dry-run`、`git diff --check`。
+- 验证：`bun run --filter='@codeinsights/electron' typecheck`、`bun test apps/electron/src/renderer/atoms/pipeline-atoms.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/pipeline/pipeline-session-sidebar-model.test.ts`、`bun install --frozen-lockfile --dry-run`、`git diff --check`。
 - 未覆盖窗口尺寸：本阶段截图为 desktop 1280x720；移动 / 更窄窗口只做设计约束和人工观察，细分响应式矩阵留到 UI-7 总体验收。
 
 ## 6. 阶段 UI-3：Pipeline 工作台
@@ -401,7 +401,7 @@ git diff --check
 ### 6.9 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -426,7 +426,7 @@ git diff --check
 - Gate 类型覆盖：通用 PipelineGateCard、Explorer task selection、Planner / Developer document review、Reviewer issue、Tester result、Committer panel 均改为更明确的审核面板层级；Approve / Reject / Rerun / Request changes 使用更清楚的语义权重。
 - 手动路径结果：已采集 light / dark / slate-light 桌面截图；截图通过 localhost 临时预览采集，浏览器安全策略拒绝直接打开 `data:` / `file:` URL。
 - 截图路径：`improve/ui/screenshots/pipeline-ui3-light-desktop.png`、`improve/ui/screenshots/pipeline-ui3-dark-desktop.png`、`improve/ui/screenshots/pipeline-ui3-slate-light-desktop.png`。
-- 验证：`bun test apps/electron/src/renderer/components/pipeline/pipeline-display-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts` 通过，25 pass；`bun run --filter='@rv-insights/electron' typecheck` 通过；`git diff --check` 与 `git diff --cached --check` 通过；代码复审无阻塞问题。
+- 验证：`bun test apps/electron/src/renderer/components/pipeline/pipeline-display-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts` 通过，25 pass；`bun run --filter='@codeinsights/electron' typecheck` 通过；`git diff --check` 与 `git diff --cached --check` 通过；代码复审无阻塞问题。
 - 未覆盖状态：本阶段重点覆盖 Pipeline 主面板和 v2 右侧 panel 的视觉状态，未进入 Agent 消息 / 工具活动 / 权限交互改造；这些留到 UI-4。
 - 残留风险：极窄窗口、更多特殊主题和跨页面一致性仍需 UI-7 总体验收统一扫尾；当前工作区可能仍有 `.DS_Store` 与 `improve/ui/.2026-05-16-client-ui-visual-spec.md.swp` 本地噪声，不属于 UI-3 成果。
 
@@ -500,7 +500,7 @@ git diff --check
 ### 7.9 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -530,7 +530,7 @@ git diff --check
 - 手动路径结果：通过临时 renderer harness 采集普通消息 / 工具成功、permission 等待、PlanMode + ExitPlanMode 三类状态；harness 已删除，不纳入提交。
 - 截图路径：`improve/ui/screenshots/agent-ui4-light-empty-desktop.png`、`improve/ui/screenshots/agent-ui4-dark-permission-desktop.png`、`improve/ui/screenshots/agent-ui4-ocean-planmode-desktop.png`。
 - 审查修复：Composer 锁定现在进入 `handleSend` 守卫，Permission / AskUser / ExitPlan 都会锁住发送、粘贴、拖拽和附件入口；多个 banner 同屏时只有最高优先级横幅响应全局快捷键；AskUser 多问题提交要求全部问题已回答。
-- 验证：`bun test apps/electron/src/renderer/components/agent/agent-ui-model.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts apps/electron/src/renderer/hooks/agent-session-refresh-controller.test.ts` 通过，11 pass；`bun run --filter='@rv-insights/electron' typecheck` 通过；`bun install --frozen-lockfile --dry-run` 通过；`git diff --check` 通过。
+- 验证：`bun test apps/electron/src/renderer/components/agent/agent-ui-model.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts apps/electron/src/renderer/hooks/agent-session-refresh-controller.test.ts` 通过，11 pass；`bun run --filter='@codeinsights/electron' typecheck` 通过；`bun install --frozen-lockfile --dry-run` 通过；`git diff --check` 通过。
 - 未覆盖状态：未用真实 Agent SDK 远端调用采集 AskUser 提交后的恢复截图；本阶段没有改 Agent SDK 编排、权限服务、IPC、shared type 或持久化语义。
 - 残留风险：真实 Agent SDK 远端 AskUser 恢复路径未采集截图；UI-7 以组件状态、banner 交互模型和完整客户端抽样审计作为收口依据。
 
@@ -600,7 +600,7 @@ git diff --check
 ### 8.9 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -626,7 +626,7 @@ git diff --check
 - 涉及文件：`SettingsDialog.tsx`、`SettingsPanel.tsx`、`ChannelSettings.tsx`、`ChannelForm.tsx`、`AgentSettings.tsx`、`McpServerForm.tsx`、Settings primitives、`settings-ui-model.ts`、`apps/electron/package.json`、`bun.lock`。
 - 表单覆盖：SettingsInput / Select / Toggle 补 label / helper / error 语义；新增 SettingsTextarea；ChannelForm API Key、Base URL、模型列表和 MCP command/env/header 反馈就近展示。
 - 危险操作覆盖：渠道删除、MCP 删除、Skill 删除统一 AlertDialog，说明影响范围，loading 防重复点击，失败留在 dialog 内 inline 展示。
-- 验证结果：Settings 聚焦测试 7 pass；`bun run --filter='@rv-insights/electron' typecheck` 通过；`git diff --check` 通过；已采集 light / dark / slate 截图。
+- 验证结果：Settings 聚焦测试 7 pass；`bun run --filter='@codeinsights/electron' typecheck` 通过；`git diff --check` 通过；已采集 light / dark / slate 截图。
 - 截图路径：`settings-light-channel-form-desktop.png`、`settings-dark-validation-error-desktop.png`、`settings-slate-danger-dialog-desktop.png`、`settings-slate-update-desktop.png`。
 - 残留风险：低频 Feishu / DingTalk / WeChat / BotHub 集成设置仍保留部分历史状态色 class；UI-7 确认这些状态均有文本标签辅助，不作为本轮主题 token 阻塞项。
 
@@ -687,7 +687,7 @@ git diff --check
 ### 9.8 验证
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -715,7 +715,7 @@ git diff --check
 - 涉及文件：`WelcomeEmptyState.tsx`、`OnboardingView.tsx`、`ChatInput.tsx`、`ChatToolBlock.tsx`、`FileBrowser.tsx`、`ui6-view-model.ts`、`ui6-view-model.test.ts`、`apps/electron/package.json`、`bun.lock`。
 - 长尾页面覆盖：Welcome 空态改为 3 个直接动作并说明 Chat 隐藏回退定位；Onboarding 去除渐变 hero 并前置 Windows 环境问题；Chat composer / tool block 收敛到 token 与 Agent 状态色；File Browser 增加 tree / treeitem / group 语义、键盘展开折叠、路径 chip、删除完整路径确认和失败反馈。
 - 键盘路径结果：File Browser treeitem 支持 focus、Enter / Space 选择或展开、ArrowRight / ArrowLeft 展开折叠；行内添加与更多操作可通过 focus-visible 显示；删除确认保留 cancel 路径。
-- 验证结果：UI-6 聚焦测试 4 pass、`bun run --filter='@rv-insights/electron' typecheck`、`bun install --frozen-lockfile --dry-run`、`git diff --check` 均通过；代码审查发现的 ARIA tree 结构、Welcome 文案和 hover-only 按钮问题已修复。
+- 验证结果：UI-6 聚焦测试 4 pass、`bun run --filter='@codeinsights/electron' typecheck`、`bun install --frozen-lockfile --dry-run`、`git diff --check` 均通过；代码审查发现的 ARIA tree 结构、Welcome 文案和 hover-only 按钮问题已修复。
 - 截图路径：`welcome-light-first-run-desktop.png`、`welcome-dark-config-missing-desktop.png`、`chat-slate-message-list-desktop.png`、`chat-slate-tool-activity-desktop.png`、`file-browser-forest-selected-desktop.png`、`file-browser-forest-delete-confirm-desktop.png`。
 - 残留风险：真实 Electron 首次启动仍依赖本地 settings / workspace 状态，UI-7 需要在完整客户端里扫一遍 Welcome / Chat / File Browser 与 AppShell 的组合路径。
 
@@ -750,7 +750,7 @@ git diff --check
 ### 10.3 总体验收命令
 
 ```bash
-bun run --filter='@rv-insights/electron' typecheck
+bun run --filter='@codeinsights/electron' typecheck
 git diff --check
 ```
 
@@ -792,7 +792,7 @@ bun test
 - 完成日期：2026-05-16。
 - 完成阶段：UI-0 到 UI-7 全部完成。
 - 未完成阶段：无。
-- 验证命令：`bun test apps/electron/src/renderer/components/ui6-view-model.test.ts apps/electron/src/renderer/components/app-shell/sidebar-section-model.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/tabs/tab-close-confirm-model.test.ts` 通过，11 pass；`bun run --filter='@rv-insights/electron' typecheck` 通过；`git diff --check` 通过。
+- 验证命令：`bun test apps/electron/src/renderer/components/ui6-view-model.test.ts apps/electron/src/renderer/components/app-shell/sidebar-section-model.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/tabs/tab-close-confirm-model.test.ts` 通过，11 pass；`bun run --filter='@codeinsights/electron' typecheck` 通过；`git diff --check` 通过。
 - 截图目录：`improve/ui/screenshots/`，已覆盖 Pipeline、Agent、AppShell、Settings、Welcome、Chat 回退、File Browser 的 light / dark / 特殊主题组合；Chat 回退 light/dark 与 File Browser light/dark 以 token 复用、既有特殊主题截图和 UI-7 手动路径审计收口。
 - P0 / P1 残留：无阻塞残留；真实 Agent SDK AskUser 提交后恢复截图未补采，按 UI-4 组件状态和 UI-7 风险说明接受。
 - 已知风险：低频集成设置页仍有少量历史状态色 class，但均带文本状态或图标辅助；代码 diff / terminal 输出保留红绿语义色作为内容语义，不作为主题 token 回归。
@@ -865,7 +865,7 @@ bun test
 ### 14.1 下次启动提示词
 
 ```text
-你正在 RV-Insights 仓库继续推进全客户端 UI 优化。
+你正在 CodeInsights 仓库继续推进全客户端 UI 优化。
 
 请先阅读并遵守：
 - AGENTS.md
@@ -889,7 +889,7 @@ bun test
 12. UI-7「全局验收与收尾」已完成并提交：33b8ccec，test(ui): 完成客户端 UI 视觉验收收口。
 13. 已完成：UI-0、UI-1、UI-2、UI-3、UI-4、UI-5、UI-6、UI-7。未完成：无。
 14. UI-7 已完成：阶段 Review、P0/P1 关闭矩阵、主题矩阵、icon-only 可访问性、状态色辅助表达、键盘路径、长文本 / 长路径溢出和截图矩阵已收口。
-15. UI-7 验证通过：bun test apps/electron/src/renderer/components/ui6-view-model.test.ts apps/electron/src/renderer/components/app-shell/sidebar-section-model.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/tabs/tab-close-confirm-model.test.ts；bun run --filter='@rv-insights/electron' typecheck；git diff --check。
+15. UI-7 验证通过：bun test apps/electron/src/renderer/components/ui6-view-model.test.ts apps/electron/src/renderer/components/app-shell/sidebar-section-model.test.ts apps/electron/src/renderer/atoms/tab-atoms.test.ts apps/electron/src/renderer/components/tabs/tab-close-confirm-model.test.ts；bun run --filter='@codeinsights/electron' typecheck；git diff --check。
 16. 当前工作区可能存在未提交临时文件 improve/ui/.2026-05-16-client-ui-visual-spec.md.swp，以及 .DS_Store 修改；它们不是 UI 阶段成果，不要纳入提交，先确认来源并保护用户变更。
 
 请从当前完成状态继续：
@@ -899,6 +899,6 @@ bun test
 4. 如果用户要求继续 UI 优化，先在 tasks/todo.md 写新的专项计划并 check-in，再开始实现。可选后续专项包括：真实 Electron 截图复核、File Browser 完整 roving tabindex / typeahead、低频集成设置页 token 化、窄窗口矩阵、或新的产品功能 UI。
 5. 本轮仍遵守 Jotai、Radix/shadcn 风格组件、Lucide 图标、现有主题 token、本地 JSON/JSONL 存储的约束。
 6. 不新增 public API / IPC / shared type，除非单独评审；不修改 README / AGENTS，除非用户明确允许。
-7. 新专项完成后运行 bun run --filter='@rv-insights/electron' typecheck、相关 focused tests 或手动路径验证、git diff --check；按需要补充截图或在 Review 中说明覆盖依据。
+7. 新专项完成后运行 bun run --filter='@codeinsights/electron' typecheck、相关 focused tests 或手动路径验证、git diff --check；按需要补充截图或在 Review 中说明覆盖依据。
 8. 新专项完成后更新 checklist 或新增对应 improve/ui 跟踪文档，并在 tasks/todo.md 追加 Review；单独提交，不执行 push / PR，除非用户明确要求。
 ```

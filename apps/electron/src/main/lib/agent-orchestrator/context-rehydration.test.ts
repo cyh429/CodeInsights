@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { SDKMessage } from '@rv-insights/shared'
+import type { SDKMessage } from '@codeinsights/shared'
 import {
   MAX_CONTEXT_MESSAGES,
   buildContextPromptFromSDKMessages,
@@ -119,7 +119,7 @@ describe('context-rehydration', () => {
       messages: [userMessage('历史'), userMessage('当前问题')],
       sessionHint: {
         agentCwd: '/tmp/workspace',
-        configDirName: '.rv-insights-test',
+        configDirName: '.codeinsights-test',
       },
     })
 
@@ -127,7 +127,7 @@ describe('context-rehydration', () => {
     expect(result.prompt).toContain('<session_info>')
     expect(result.prompt).toContain('Session ID: session-1')
     expect(result.prompt).toContain('Session CWD: /tmp/workspace')
-    expect(result.prompt).toContain('~/.rv-insights-test/agent-sessions/session-1.jsonl')
+    expect(result.prompt).toContain('~/.codeinsights-test/agent-sessions/session-1.jsonl')
   })
 
   test('完整 prompt 格式保持与旧上下文回填一致', () => {
@@ -144,12 +144,12 @@ describe('context-rehydration', () => {
       ],
       sessionHint: {
         agentCwd: '/tmp/workspace',
-        configDirName: '.rv-insights-test',
+        configDirName: '.codeinsights-test',
       },
     })
 
     expect(result.prompt).toBe(
-      '<conversation_history>\n<session_info>\nSession ID: session-1\nSession CWD: /tmp/workspace\nNote: 上方为近期对话摘要。如需更多上下文，可读取 ~/.rv-insights-test/agent-sessions/session-1.jsonl 获取完整历史。\n</session_info>\n\n[user]: 上一轮问题\n[assistant]: 上一轮回答\n  工具活动: [tool: Read: /tmp/a.ts]\n</conversation_history>\n\n动态上下文\n\n当前问题',
+      '<conversation_history>\n<session_info>\nSession ID: session-1\nSession CWD: /tmp/workspace\nNote: 上方为近期对话摘要。如需更多上下文，可读取 ~/.codeinsights-test/agent-sessions/session-1.jsonl 获取完整历史。\n</session_info>\n\n[user]: 上一轮问题\n[assistant]: 上一轮回答\n  工具活动: [tool: Read: /tmp/a.ts]\n</conversation_history>\n\n动态上下文\n\n当前问题',
     )
   })
 

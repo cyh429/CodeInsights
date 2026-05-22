@@ -27,15 +27,15 @@ mock.module('./channel-manager', () => ({
   decryptApiKey: () => 'test-api-key',
 }))
 
-const originalPipelineRunnerV2Env = process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
-delete process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+const originalPipelineRunnerV2Env = process.env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+delete process.env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2
 
 const pipelineNodeRunnerModule = await import('./pipeline-node-runner')
 
 if (originalPipelineRunnerV2Env == null) {
-  delete process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+  delete process.env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2
 } else {
-  process.env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = originalPipelineRunnerV2Env
+  process.env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = originalPipelineRunnerV2Env
 }
 
 const {
@@ -70,7 +70,7 @@ function assertPipelineRunnerV2ImportFlag(
   envValue: string | undefined,
   expectedEnabled: boolean,
 ): void {
-  const tempDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-runner-env-'))
+  const tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-runner-env-'))
   const testPath = join(tempDir, 'pipeline-runner-env.test.ts')
   writeFileSync(testPath, `
 import { expect, mock, test } from 'bun:test'
@@ -96,12 +96,12 @@ test('pipeline runner v2 import flag', async () => {
   try {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
-      RV_INSIGHTS_CONFIG_DIR: tempDir,
+      CODEINSIGHTS_CONFIG_DIR: tempDir,
     }
     if (envValue === undefined) {
-      delete env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2
+      delete env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2
     } else {
-      env.RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = envValue
+      env.CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2 = envValue
     }
     execFileSync(process.execPath, ['test', testPath], {
       cwd: process.cwd(),
@@ -116,8 +116,8 @@ test('pipeline runner v2 import flag', async () => {
 
 function initializeGitRepo(repoRoot: string): void {
   git(repoRoot, ['init'])
-  git(repoRoot, ['config', 'user.name', 'RV Test'])
-  git(repoRoot, ['config', 'user.email', 'rv-test@example.com'])
+  git(repoRoot, ['config', 'user.name', 'CodeInsights Test'])
+  git(repoRoot, ['config', 'user.email', 'codeinsights-test@example.com'])
   mkdirSync(join(repoRoot, 'src'), { recursive: true })
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   git(repoRoot, ['add', 'src/index.ts'])
@@ -125,21 +125,21 @@ function initializeGitRepo(repoRoot: string): void {
 }
 
 describe('pipeline-node-runner', () => {
-  const originalConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+  const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
   let tempConfigDir = ''
   let repoRoot = ''
 
   beforeEach(() => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-node-runner-config-'))
-    repoRoot = mkdtempSync(join(tmpdir(), 'rv-pipeline-node-runner-repo-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-node-runner-config-'))
+    repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-node-runner-repo-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   })
 
   afterEach(() => {
     if (originalConfigDir == null) {
-      delete process.env.RV_INSIGHTS_CONFIG_DIR
+      delete process.env.CODEINSIGHTS_CONFIG_DIR
     } else {
-      process.env.RV_INSIGHTS_CONFIG_DIR = originalConfigDir
+      process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
     }
     rmSync(tempConfigDir, { recursive: true, force: true })
     rmSync(repoRoot, { recursive: true, force: true })
@@ -190,7 +190,7 @@ describe('pipeline-node-runner', () => {
       },
     }, '默认工作区')
 
-    expect(prompts.systemPrompt).toContain('你是 RV Pipeline 的 Developer 节点。')
+    expect(prompts.systemPrompt).toContain('你是 CodeInsights Pipeline 的 Developer 节点。')
     expect(prompts.systemPrompt).toContain('输出要求')
     expect(prompts.systemPrompt).not.toContain('实现搜索分页')
     expect(prompts.userPrompt).toContain('用户需求：实现搜索分页')
@@ -1536,7 +1536,7 @@ describe('pipeline-node-runner', () => {
       issues: ['缺少 Developer UI 状态测试'],
       structuredIssues: [
         {
-          id: 'RV-REV-001',
+          id: 'CI-REV-001',
           severity: 'major',
           category: 'test_gap',
           title: '缺少 Developer UI 状态测试',
@@ -1565,7 +1565,7 @@ describe('pipeline-node-runner', () => {
       approved: false,
       structuredIssues: [
         {
-          id: 'RV-REV-001',
+          id: 'CI-REV-001',
           severity: 'major',
           status: 'open',
         },

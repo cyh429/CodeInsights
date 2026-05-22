@@ -22,7 +22,7 @@ import type {
   PipelineStageOutputMap,
   PipelineStateSnapshot,
   PipelineVersion,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type {
   PipelineNodeExecutionContext,
   PipelineNodeExecutionResult,

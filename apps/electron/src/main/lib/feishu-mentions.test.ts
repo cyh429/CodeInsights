@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { FeishuGroupMember, FeishuMention } from '@rv-insights/shared'
+import type { FeishuGroupMember, FeishuMention } from '@codeinsights/shared'
 import {
   convertMentionNamesToAtTags,
   extractFeishuMentionOpenId,
@@ -31,12 +31,12 @@ describe('feishu-mentions', () => {
   test('列出可匹配 mention 目标并过滤 @所有人', () => {
     const mentions: FeishuMention[] = [
       { key: '@_user_1', id: 'all', name: '所有人' },
-      { key: '@_user_2', id: { open_id: 'ou_bot' }, name: 'RV Bot' },
+      { key: '@_user_2', id: { open_id: 'ou_bot' }, name: 'CodeInsights Bot' },
       { key: '@_user_3', id: { union_id: 'on_user' }, name: 'No OpenId' },
     ]
 
     expect(listFeishuMentionTargets(mentions)).toEqual([
-      { name: 'RV Bot', openId: 'ou_bot' },
+      { name: 'CodeInsights Bot', openId: 'ou_bot' },
     ])
   })
 
@@ -96,14 +96,14 @@ describe('feishu-mentions', () => {
 
   test('转换时排除 Bot 自身成员', () => {
     const members: FeishuGroupMember[] = [
-      { openId: 'ou_bot', name: 'RV Bot' },
+      { openId: 'ou_bot', name: 'CodeInsights Bot' },
       { openId: 'ou_alice', name: 'Alice' },
     ]
 
-    const result = convertMentionNamesToAtTags('@RV Bot 和 @Alice', members, {
+    const result = convertMentionNamesToAtTags('@CodeInsights Bot 和 @Alice', members, {
       botOpenId: 'ou_bot',
     })
 
-    expect(result).toBe('@RV Bot 和 <at id=ou_alice>Alice</at>')
+    expect(result).toBe('@CodeInsights Bot 和 <at id=ou_alice>Alice</at>')
   })
 })

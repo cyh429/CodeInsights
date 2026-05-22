@@ -1,8 +1,8 @@
 {
-  "name": "@rv-insights/shared",
-  "version": "0.1.41",
+  "name": "@codeinsights/shared",
+  "version": "0.1.42",
   "license": "Apache-2.0",
-  "description": "Shared types, configs and utilities for rv-insights",
+  "description": "Shared types, configs and utilities for codeinsights",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

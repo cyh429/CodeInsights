@@ -32,7 +32,7 @@ import type {
   PatchWorkManifest,
   PatchWorkNodeKind,
   PipelineExplorerReportRef,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { readJsonFileSafe } from './safe-file'
 
 interface PatchWorkInitInput {

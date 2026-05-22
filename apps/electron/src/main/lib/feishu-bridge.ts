@@ -27,8 +27,8 @@ import type {
   FeishuChatMessage,
   FeishuUpdateBindingInput,
   FeishuBotConfig,
-} from '@rv-insights/shared'
-import { FEISHU_IPC_CHANNELS, AGENT_IPC_CHANNELS } from '@rv-insights/shared'
+} from '@codeinsights/shared'
+import { FEISHU_IPC_CHANNELS, AGENT_IPC_CHANNELS } from '@codeinsights/shared'
 import { getDecryptedBotAppSecret } from './feishu-config'
 import { agentEventBus, runAgentHeadless, stopAgent, isAgentSessionActive } from './agent-service'
 import { createAgentSession, listAgentSessions, getAgentSessionMeta } from './agent-session-manager'
@@ -68,7 +68,7 @@ import {
   isFeishuOpenIdMentioned,
   listFeishuMentionTargets,
 } from './feishu-mentions'
-import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope } from '@rv-insights/shared'
+import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope } from '@codeinsights/shared'
 import { agentRuntimeChannelsV2 } from './agent-channel'
 import { agentChannelBindingStore } from './agent-channel-binding-store'
 import { FeishuChannelAdapter } from './feishu-channel-adapter'
@@ -361,7 +361,7 @@ class FeishuBridge {
           const chatId = this.sessionToChat.get(binding.sessionId)
           if (!chatId) return
           const prefix = this.resolveContextPrefix(chatId)
-          await this.sendMessage(chatId, `${prefix}需要在 RV-Insights 桌面端处理权限请求：${toolName}`)
+          await this.sendMessage(chatId, `${prefix}需要在 CodeInsights 桌面端处理权限请求：${toolName}`)
         },
         sendError: async (chatId, message) => {
           const prefix = this.resolveContextPrefix(chatId)
@@ -814,14 +814,14 @@ class FeishuBridge {
     }
 
     if (!workspaceId) {
-      await this.sendMessage(chatId, '请先在 RV-Insights 设置中创建工作区。')
+      await this.sendMessage(chatId, '请先在 CodeInsights 设置中创建工作区。')
       return
     }
 
     // 渠道/模型：Bot 配置 > 应用设置
     const channelId = this.botConfig.defaultChannelId ?? appSettings.agentChannelId
     if (!channelId) {
-      await this.sendMessage(chatId, '请先在 RV-Insights Agent 设置中选择渠道。')
+      await this.sendMessage(chatId, '请先在 CodeInsights Agent 设置中选择渠道。')
       return
     }
 
@@ -1343,7 +1343,7 @@ class FeishuBridge {
       }
     }
 
-    // RV-Insights 内部事件处理：错误等
+    // CodeInsights 内部事件处理：错误等
     if (payload.kind === 'sdk_message' && payload.message.type === 'assistant') {
       const aMsg = payload.message as { error?: { message: string } }
       if (aMsg.error) {
@@ -1405,7 +1405,7 @@ class FeishuBridge {
     if (payload.kind === 'sdk_message') return 'claude_sdk'
     if (event.type === 'permission_requested' || event.type === 'permission_resolved') return 'permission_service'
     if (event.type === 'ask_user_requested' || event.type === 'ask_user_resolved') return 'ask_user_service'
-    return 'rv_insights'
+    return 'codeinsights'
   }
 
   /** 飞书发起的会话完成：发送完整回复到飞书 */
@@ -1456,7 +1456,7 @@ class FeishuBridge {
     const sessions = await listAgentSessions()
     const session = sessions.find((s) => s.id === sessionId)
     const title = session?.title ?? '未命名会话'
-    const preview = '任务已完成，请在 RV-Insights 中查看详情。'
+    const preview = '任务已完成，请在 CodeInsights 中查看详情。'
 
     // 发送通知卡片到飞书
     const card = buildNotificationCard(title, preview, [], 0)

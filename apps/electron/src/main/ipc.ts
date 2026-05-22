@@ -7,7 +7,7 @@
 import { ipcMain, shell, dialog, BrowserWindow, app } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { IPC_CHANNELS, CHAT_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS } from '@rv-insights/shared'
+import { IPC_CHANNELS, CHAT_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   RuntimeStatus,
   GitRepoStatus,
@@ -35,7 +35,7 @@ import type {
   ChatToolInfo,
   ChatToolState,
   ChatToolMeta,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { getRuntimeStatus, getGitRepoStatus, reinitializeRuntime } from './lib/runtime-init'
 import { registerUpdaterIpc } from './lib/updater/updater-ipc'
 import {
@@ -120,7 +120,7 @@ export function resolveAppIconPath(variantId: string): string | null {
   if (!variantId || variantId === 'default') {
     return join(resourcesDir, 'icon.png')
   }
-  return join(resourcesDir, 'rv-insights-logos', `rv-insights-${variantId}.png`)
+  return join(resourcesDir, 'codeinsights-logos', `codeinsights-${variantId}.png`)
 }
 
 export function registerIpcHandlers(): void {
@@ -577,7 +577,7 @@ export function registerIpcHandlers(): void {
       try {
         const { searchMemory } = await import('./lib/memos-client')
         const result = await searchMemory(
-          { apiKey: config.apiKey, userId: config.userId?.trim() || 'rv-insights-user', baseUrl: config.baseUrl },
+          { apiKey: config.apiKey, userId: config.userId?.trim() || 'codeinsights-user', baseUrl: config.baseUrl },
           'test connection',
           1,
         )
@@ -652,7 +652,7 @@ export function registerIpcHandlers(): void {
         try {
           const { searchMemory } = await import('./lib/memos-client')
           const result = await searchMemory(
-            { apiKey: config.apiKey, userId: config.userId?.trim() || 'rv-insights-user', baseUrl: config.baseUrl },
+            { apiKey: config.apiKey, userId: config.userId?.trim() || 'codeinsights-user', baseUrl: config.baseUrl },
             'test connection',
             1,
           )

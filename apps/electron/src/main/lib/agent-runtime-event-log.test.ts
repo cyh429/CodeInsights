@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { SDKMessage } from '@rv-insights/shared'
+import type { SDKMessage } from '@codeinsights/shared'
 
 mock.module('electron', () => ({
   app: {
@@ -36,15 +36,15 @@ const {
 let currentConfigDir: string | undefined
 
 beforeEach(() => {
-  currentConfigDir = mkdtempSync(join(tmpdir(), 'rv-agent-event-log-'))
-  process.env.RV_INSIGHTS_CONFIG_DIR = currentConfigDir
+  currentConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-agent-event-log-'))
+  process.env.CODEINSIGHTS_CONFIG_DIR = currentConfigDir
 })
 
 afterEach(() => {
   if (currentConfigDir) {
     rmSync(currentConfigDir, { recursive: true, force: true })
   }
-  delete process.env.RV_INSIGHTS_CONFIG_DIR
+  delete process.env.CODEINSIGHTS_CONFIG_DIR
   currentConfigDir = undefined
 })
 
@@ -159,7 +159,7 @@ describe('Agent runtime event log', () => {
     })
 
     writer.appendStreamPayload({
-      kind: 'rv_insights_event',
+      kind: 'codeinsights_event',
       event: {
         type: 'permission_request',
         request: {
@@ -175,7 +175,7 @@ describe('Agent runtime event log', () => {
     appendPermissionResolvedRuntimeEvent(sessionId, 'permission-1', 'allow')
 
     writer.appendStreamPayload({
-      kind: 'rv_insights_event',
+      kind: 'codeinsights_event',
       event: {
         type: 'ask_user_request',
         request: {
@@ -189,7 +189,7 @@ describe('Agent runtime event log', () => {
     appendAskUserResolvedRuntimeEvent(sessionId, 'ask-1', { answer: '继续' })
 
     writer.appendStreamPayload({
-      kind: 'rv_insights_event',
+      kind: 'codeinsights_event',
       event: {
         type: 'exit_plan_mode_request',
         request: {
@@ -223,12 +223,12 @@ describe('Agent runtime event log', () => {
       permissionMode: 'plan',
     })
 
-    writer.appendRuntimeEvent('rv_insights', {
+    writer.appendRuntimeEvent('codeinsights', {
       type: 'plan_mode_entered',
       reason: 'manual-plan-mode',
     })
     writer.appendStreamPayload({
-      kind: 'rv_insights_event',
+      kind: 'codeinsights_event',
       event: {
         type: 'exit_plan_mode_request',
         request: {

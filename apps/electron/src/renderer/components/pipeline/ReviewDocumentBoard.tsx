@@ -3,7 +3,7 @@ import type {
   PipelineDeveloperStageOutput,
   PipelinePatchWorkDocumentRef,
   PipelinePlannerStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export interface ReviewDocumentItemViewModel {
   displayName: string

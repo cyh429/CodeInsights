@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentMessage } from '@rv-insights/shared'
+import type { AgentMessage } from '@codeinsights/shared'
 import {
   buildCompletionOptions,
   sendCompletionSignal,

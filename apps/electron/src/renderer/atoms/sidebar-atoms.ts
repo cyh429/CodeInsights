@@ -15,7 +15,7 @@ export const sidebarViewModeAtom = atom<SidebarViewMode>('active')
 
 /** 工作区列表高度（px），用户可拖拽调整，持久化到 localStorage */
 export const workspaceListHeightAtom = atomWithStorage<number>(
-  'rv-insights-workspace-list-height',
+  'codeinsights-workspace-list-height',
   120,
 )
 
@@ -26,18 +26,18 @@ export const workspaceListHeightAtom = atomWithStorage<number>(
  * 负值表示未初始化，运行时首次渲染按容器高度的 40% 计算初始值。
  */
 export const agentSidebarTopHeightAtom = atomWithStorage<number>(
-  'rv-insights-agent-sidebar-top-height',
+  'codeinsights-agent-sidebar-top-height',
   -1,
 )
 
 /** AppShell 左侧导航栏宽度（px），Agent / Pipeline 模式共用。 */
 export const appShellLeftSidebarWidthAtom = atomWithStorage<number>(
-  'rv-insights-app-shell-left-sidebar-width',
+  'codeinsights-app-shell-left-sidebar-width',
   280,
 )
 
 /** AppShell 右侧文件面板宽度（px）。 */
 export const appShellRightPanelWidthAtom = atomWithStorage<number>(
-  'rv-insights-app-shell-right-panel-width',
+  'codeinsights-app-shell-right-panel-width',
   320,
 )

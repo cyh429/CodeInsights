@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { PIPELINE_IPC_CHANNELS } from '@rv-insights/shared'
+import { PIPELINE_IPC_CHANNELS } from '@codeinsights/shared'
 import { PipelineStreamBus, type PipelineStreamTarget } from './pipeline-stream-bus'
 
 class FakePipelineStreamTarget implements PipelineStreamTarget {

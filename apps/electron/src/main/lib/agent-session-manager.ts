@@ -2,8 +2,8 @@
  * Agent 会话管理器
  *
  * 负责 Agent 会话的 CRUD 操作和消息持久化。
- * - 会话索引：~/.rv-insights/agent-sessions.json（轻量元数据）
- * - 消息存储：~/.rv-insights/agent-sessions/{id}.jsonl（JSONL 格式，逐行追加）
+ * - 会话索引：~/.codeinsights/agent-sessions.json（轻量元数据）
+ * - 消息存储：~/.codeinsights/agent-sessions/{id}.jsonl（JSONL 格式，逐行追加）
  *
  * 照搬 conversation-manager.ts 的模式。
  */
@@ -34,7 +34,7 @@ import {
 if (!process.env.CLAUDE_CONFIG_DIR) {
   process.env.CLAUDE_CONFIG_DIR = getSdkConfigDir()
 }
-import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope } from '@codeinsights/shared'
 import { getConversationMessages } from './conversation-manager'
 import { clearNanoBananaAgentHistory } from './chat-tools/nano-banana-mcp'
 import { copyTreeWithoutSymlinks } from './agent-session-copy'
@@ -557,7 +557,7 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
 
   // 2.5 确定目标消息所属的 SDK session ID
   // 当会话经历过 "session not found" 恢复后，sdkSessionId 会被替换为新的，
-  // 但旧消息仍保留在 RV-Insights JSONL 中，其 session_id 指向旧的 SDK session。
+  // 但旧消息仍保留在 CodeInsights JSONL 中，其 session_id 指向旧的 SDK session。
   // 这里从 JSONL 中查找目标消息的实际 session_id，确保 fork 调用使用正确的 SDK session。
   let forkSourceSdkSessionId = sourceMeta.sdkSessionId
   if (upToMessageUuid) {
@@ -596,7 +596,7 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
     }
   }
 
-  // 4. 创建 RV-Insights 新会话，立即设置 sdkSessionId
+  // 4. 创建 CodeInsights 新会话，立即设置 sdkSessionId
   const forkTitle = `${sourceMeta.title} (fork)`
   const newMeta = createAgentSession(
     forkTitle,
@@ -717,11 +717,11 @@ export function truncateSDKMessages(id: string, upToUuidInclusive: string): SDKM
 /**
  * 从 SDK session JSONL 中查找指定 assistant message 之后最近的 user message UUID
  *
- * SDK session JSONL（~/.rv-insights/sdk-config/projects/...）中的消息都带有 uuid，
- * 但 RV-Insights 自己构造的 user message 没有 uuid。此函数直接读取 SDK 的 JSONL
+ * SDK session JSONL（~/.codeinsights/sdk-config/projects/...）中的消息都带有 uuid，
+ * 但 CodeInsights 自己构造的 user message 没有 uuid。此函数直接读取 SDK 的 JSONL
  * 来解析 rewindFiles 所需的 user message UUID。
  *
- * 对于 fork 会话：RV-Insights JSONL 中的 UUID 来自**源会话**（fork 时直接复制），
+ * 对于 fork 会话：CodeInsights JSONL 中的 UUID 来自**源会话**（fork 时直接复制），
  * 而 forked SDK JSONL 中的 UUID 已被重映射。因此 fork 会话需要搜索**源**
  * SDK JSONL 来匹配 assistant UUID。通过 forkSourceSdkSessionId 参数指定。
  *
@@ -752,7 +752,7 @@ export function resolveUserUuidFromSDK(
         } catch { return false }
       })
       if (!hasUuidAsField) {
-        // RV-Insights JSONL 中的 UUID 来自源会话，forked JSONL 中已重映射
+        // CodeInsights JSONL 中的 UUID 来自源会话，forked JSONL 中已重映射
         const sourceFilePath = findSdkSessionJsonl(forkSourceSdkSessionId, projectDir)
         if (sourceFilePath) {
           console.log(`[Agent 会话] resolveUserUuid: fork 会话 UUID 不匹配（非 .uuid 字段），切换到源会话 ${forkSourceSdkSessionId}`)
@@ -832,7 +832,7 @@ function findSdkSessionJsonl(sdkSessionId: string, _projectDir?: string): string
   const sdkConfigDir = getSdkConfigDir()
 
   // 遍历所有项目目录查找匹配的 session JSONL
-  // （SDK 的目录命名规则与 RV-Insights 不完全一致，直接遍历最可靠）
+  // （SDK 的目录命名规则与 CodeInsights 不完全一致，直接遍历最可靠）
   const projectsDir = join(sdkConfigDir, 'projects')
   if (existsSync(projectsDir)) {
     for (const dir of readdirSync(projectsDir)) {

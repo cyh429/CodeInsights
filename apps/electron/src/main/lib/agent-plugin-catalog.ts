@@ -6,7 +6,7 @@ import type {
   AgentPluginCommandIndexEntry,
   AgentPluginEnabledRef,
   AgentRuntimeManifestPlugin,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { readJsonFileSafe, writeJsonFileAtomic } from './safe-file'
 
 interface WorkspacePluginConfig {
@@ -305,7 +305,7 @@ function parseCommandFrontmatter(content: string): { name?: string; description?
     const raw = line.slice(colonIdx + 1).trim().replace(/^["']|["']$/g, '')
     if (key === 'name' && raw) metadata.name = raw
     if (key === 'description' && raw) metadata.description = raw
-    if ((key === 'dmi' || key === 'rv-dmi') && raw === 'true') metadata.dmi = true
+    if ((key === 'dmi' || key === 'codeinsights-dmi') && raw === 'true') metadata.dmi = true
   }
 
   return metadata

@@ -51,10 +51,10 @@
 - [x] 阶段 11 清理旧路径已完成并提交。
 - [x] 阶段 12 真实交互补跑与 Runner v2 默认化准备已完成并提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`
 - [x] 阶段 13 Runner v2 默认化证据补齐已完成到可审计状态；代码侧补强已提交：`328b3c96 feat(agent): 补齐阶段13 Runner v2 等价证据`；追加修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`；Plan Mode 退出证据补强已提交：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`；Watchdog / Teams auto-resume 证据补强已提交：`b3d0517e fix(agent): 补强阶段13 Watchdog 与 Teams auto-resume 证据`；Pipeline planner fallback 证据补强已提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`；Pipeline 与 Codex guard 收尾证据已提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
-- [x] 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`；`agentRuntimeRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚。
-- [x] 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`；`agentRuntimePipelineRunnerV2` 默认开启且可通过 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 显式回滚到 Pipeline legacy adapter。
-- [x] 阶段 14C Channels v2 默认化已完成代码侧评估：按用户指示不再以飞书真实配置为阻塞，`agentRuntimeChannelsV2` 默认开启且可通过 `RV_AGENT_RUNTIME_CHANNELS_V2=0` 显式回滚到旧 Feishu bridge 路径；本阶段不声明飞书真实入口或群聊 MCP 已通过。
-- [x] 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证：Agent 输入区新增 Runner 链路切换按钮，后续发送可选择 `Runner v2` 或 `Legacy`；`RV_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
+- [x] 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`；`agentRuntimeRunnerV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚。
+- [x] 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`；`agentRuntimePipelineRunnerV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 显式回滚到 Pipeline legacy adapter。
+- [x] 阶段 14C Channels v2 默认化已完成代码侧评估：按用户指示不再以飞书真实配置为阻塞，`agentRuntimeChannelsV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=0` 显式回滚到旧 Feishu bridge 路径；本阶段不声明飞书真实入口或群聊 MCP 已通过。
+- [x] 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证：Agent 输入区新增 Runner 链路切换按钮，后续发送可选择 `Runner v2` 或 `Legacy`；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
 
 下一步建议：
 
@@ -118,7 +118,7 @@
 - [x] 阶段 13 Runner v2 代码侧等价证据、真实 Electron Agent 交互证据、Pipeline 深水位真实 UI run 和 Codex guard 收尾证据均已完成。
 - [x] 阶段 14C 后当前开关状态：`agentRuntimeRunnerV2` 默认开启且可显式关闭；`agentRuntimePipelineRunnerV2` 默认开启且可显式关闭；`agentRuntimeChannelsV2` 默认开启且可显式关闭。
 - [x] 开关实现位置已确认：`agent-runtime-types.ts`、`pipeline-node-runner.ts`、`agent-channel.ts`；三者均默认开启并保留显式关闭回滚。
-- [!] 飞书配置仍缺失：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 均不存在；按用户指示，本阶段不以此阻塞 Channels v2 默认开关。
+- [!] 飞书配置仍缺失：`~/.codeinsights/feishu.json` 与 `~/.codeinsights-dev/feishu.json` 均不存在；按用户指示，本阶段不以此阻塞 Channels v2 默认开关。
 
 ### 分批策略
 
@@ -142,7 +142,7 @@
 - [x] `bun run typecheck`
 - [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts`
 - [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [x] `env -i HOME=/tmp/rv-clean-home-stage14-post USERPROFILE=/tmp/rv-clean-home-stage14-post TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] `env -i HOME=/tmp/codeinsights-clean-home-stage14-post USERPROFILE=/tmp/codeinsights-clean-home-stage14-post TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
 - [x] Electron 桌面壳真实 Agent 默认发送复核：session `073783b3-27ae-49ec-b516-92de146e6572` 走 Runner v2 并完成。
 - [x] 显式关闭 Runner v2 的 Electron Agent 发送回归：session `70bf7de8-043a-49c2-81c4-28e49f15ff96` 走旧主循环并完成。
 - [x] `git diff --check`
@@ -170,7 +170,7 @@
 - [x] `bun run typecheck`
 - [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts`
 - [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [x] `env -i HOME=/tmp/rv-clean-home-stage14b-final USERPROFILE=/tmp/rv-clean-home-stage14b-final TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] `env -i HOME=/tmp/codeinsights-clean-home-stage14b-final USERPROFILE=/tmp/codeinsights-clean-home-stage14b-final TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
 - [x] Electron 桌面壳真实 Pipeline 默认深水位 run：session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 走 Runner v2 并完成到 committer。
 - [x] 显式关闭 Pipeline Runner v2 的 Electron 回归：session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认走 `legacy adapter`，随后手动 stop 到 `terminated`。
 - [x] `git diff --check`
@@ -198,12 +198,12 @@
 - [x] `bun test apps/electron/src/main/lib/feishu-channel-adapter.test.ts apps/electron/src/main/lib/agent-channel-binding-store.test.ts`
 - [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts apps/electron/src/main/lib/agent-channel-binding-store.test.ts`
 - [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [x] `ls -l ~/.rv-insights/feishu.json ~/.rv-insights-dev/feishu.json` 确认两者仍不存在；本阶段按用户指示不以飞书真实配置为阻塞。
+- [x] `ls -l ~/.codeinsights/feishu.json ~/.codeinsights-dev/feishu.json` 确认两者仍不存在；本阶段按用户指示不以飞书真实配置为阻塞。
 - [x] `git diff --check`
 
 ### 阶段 14C 回滚
 
-- [x] 显式设置 `RV_AGENT_RUNTIME_CHANNELS_V2=0` / `false` / `off` / `no` / `disabled` 可回到旧 Feishu bridge 路径。
+- [x] 显式设置 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=0` / `false` / `off` / `no` / `disabled` 可回到旧 Feishu bridge 路径。
 - [x] 旧 Feishu bridge 代码保留，不删除旧外部渠道路径。
 - [x] 旧 Agent 主循环、Pipeline legacy adapter 和旧 session JSONL 兼容仍保留。
 - [x] 如默认化后聚焦验证失败，回滚本阶段默认开关改动，保留阶段 14A / 14B 默认化成果。
@@ -224,10 +224,10 @@
 - [x] 在 `tasks/todo.md` 先写阶段计划并确认范围。
 - [x] 扩展共享契约：`AgentSendInput.runtimeRunnerMode` 支持 `runner-v2` / `legacy`。
 - [x] 扩展应用设置：`AppSettings.agentRuntimeRunnerMode` 持久化用户选择，默认保持 `runner-v2`。
-- [x] 主进程新增 per-run 解析：默认 Runner v2，未显式设置 env 时 UI 选择 Legacy 可走旧主循环；`RV_AGENT_RUNTIME_RUNNER_V2=0` 时强制 Legacy，显式开启值强制 Runner v2。
+- [x] 主进程新增 per-run 解析：默认 Runner v2，未显式设置 env 时 UI 选择 Legacy 可走旧主循环；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 时强制 Legacy，显式开启值强制 Runner v2。
 - [x] Runtime event log 的 `run_started` 记录可选 `runnerMode`，日志输出本次实际链路。
 - [x] Agent 输入区底部工具栏新增链路切换按钮，运行中禁用，切换只影响后续发送。
-- [x] 递增受影响包版本：`@rv-insights/shared@0.1.41`，`@rv-insights/electron@0.0.99`。
+- [x] 递增受影响包版本：`@codeinsights/shared@0.1.41`，`@codeinsights/electron@0.0.99`。
 - [x] 更新阶段 Review、baseline 和 next-session prompt。
 
 ### 阶段 15 验证矩阵
@@ -239,7 +239,7 @@
 ### 阶段 15 回滚
 
 - [x] UI 选择 `Legacy` 可回到旧 Agent 主循环。
-- [x] 显式设置 `RV_AGENT_RUNTIME_RUNNER_V2=0` / `false` / `off` / `no` / `disabled` 仍强制旧 Agent 主循环。
+- [x] 显式设置 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` / `false` / `off` / `no` / `disabled` 仍强制旧 Agent 主循环。
 - [x] 旧 Agent 主循环代码保留，不删除旧 retry / Watchdog / Teams / SDKMessage 兼容路径。
 - [x] Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容均未触碰。
 
@@ -262,8 +262,8 @@
 - [x] 补跑最小 Pipeline 真实 UI run；已到 explorer/task_selection gate、planner、developer、reviewer、tester 和 committer draft，sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc`。
 - [x] 修复 Pipeline planner 自然语言 fallback 并提交：`6171f164 fix(agent): 补强阶段13 Pipeline planner fallback 证据`。
 - [x] 补强 Codex Pipeline runner auth 隔离、strict schema 递归校验、reviewer 空字符串保守拒绝、Git guard 环境隔离与 clean-env 单测稳定性，并提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`。
-- [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`。
-- [x] 递增 `@rv-insights/electron` patch 版本到 `0.0.95` 并同步 lockfile workspace 版本。
+- [!] 补跑飞书入口和飞书群聊 MCP；当前本机缺少 `~/.codeinsights/feishu.json` 与 `~/.codeinsights-dev/feishu.json`。
+- [x] 递增 `@codeinsights/electron` patch 版本到 `0.0.95` 并同步 lockfile workspace 版本。
 - [x] 提交阶段 13 追加修复：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
 - [x] 提交阶段 13 Plan Mode 退出证据补强：`acc769f1 fix(agent): 补强阶段13 Plan Mode 退出证据`。
 
@@ -280,7 +280,7 @@
 - [x] `bun run typecheck`
 - [x] `bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`
 - [x] `bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-human-gate-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
-- [x] `env -i HOME=/tmp/rv-clean-home-full-3 USERPROFILE=/tmp/rv-clean-home-full-3 TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
+- [x] `env -i HOME=/tmp/codeinsights-clean-home-full-3 USERPROFILE=/tmp/codeinsights-clean-home-full-3 TMPDIR=/tmp PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin SHELL=/bin/zsh /opt/homebrew/bin/bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`
 - [x] `git diff --check`
 - [x] Electron 桌面壳真实交互：Runner v2 发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind 已通过。
 - [x] 最小 Pipeline 真实 UI run 已进入 developer / reviewer / tester / committer draft，并复验 Git guard 与 tester 证据保守判定。
@@ -319,7 +319,7 @@
 - [x] 将 SDK env 测试入口调整为统一 `agent-sdk-env.ts` 门面。
 - [x] 复核 shared runtime event adapter，暂不删除公共导出的旧 `AgentEvent` adapter。
 - [x] 保留 `agentRuntimeRunnerV2`、`agentRuntimePipelineRunnerV2`、`agentRuntimeChannelsV2` 默认关闭回滚点。
-- [x] 递增 `@rv-insights/electron` patch 版本并同步 lockfile。
+- [x] 递增 `@codeinsights/electron` patch 版本并同步 lockfile。
 
 ### 验收
 
@@ -382,7 +382,7 @@
 ### 阶段 0 首轮说明
 
 - 证据文件：`docs/agent-refactor/baseline-runs/2026-05-17-round-1.md`
-- 已确认本机开发配置目录为 `~/.rv-insights-dev/`，当前有 1 个 DeepSeek Agent 渠道、1 个默认 workspace、4 条 Agent session metadata、3 个 SDKMessage JSONL transcript。
+- 已确认本机开发配置目录为 `~/.codeinsights-dev/`，当前有 1 个 DeepSeek Agent 渠道、1 个默认 workspace、4 条 Agent session metadata、3 个 SDKMessage JSONL transcript。
 - 已用存量 JSONL 固化首条消息、错误恢复样例、WebSearch tool activity、result 终态和旧 session 多轮 resume 行为。
 - 当前环境缺少实时 Electron 桌面交互、workspace MCP server、飞书配置和若干权限/AskUser 样例；这些场景已记录输入、预期 UI、预期存储、预期终态和待补跑状态，后续触碰相关边界前必须补跑。
 
@@ -431,7 +431,7 @@
 - 已新增 `AgentStreamEnvelope`、`AgentRuntimeEvent`、`AgentRuntimeErrorPayload`、`AgentEventSource`、默认关闭的 `agentRuntimeEventsV2` feature flag。
 - 已新增 envelope 创建、schema guard / validator、终态识别、旧 `AgentEvent` / `AgentStreamPayload` / `SDKMessage` 到 runtime event 的 adapter，以及 event replay reducer 测试骨架。
 - 已通过 `packages/shared/src/agent/index.ts` 和 `packages/shared/src/index.ts` 导出新契约；旧 `AgentEvent`、旧 `AgentStreamPayload`、旧 IPC 默认行为和旧 Renderer reducer 均保留。
-- `@rv-insights/shared` patch 版本已从 `0.1.33` 提升到 `0.1.34`。
+- `@codeinsights/shared` patch 版本已从 `0.1.33` 提升到 `0.1.34`。
 - 本阶段没有修改 `apps/electron` 运行路径、Renderer UI、布局、样式、文案、入口、按钮行为或交互路径。
 - 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts packages/shared/src/utils/pipeline-state.test.ts packages/shared/src/utils/capabilities-diff.test.ts`；`bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
 - 全量 `bun test` 曾在 412 pass 后出现一次 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；单独重跑该失败文件通过，本阶段 shared contract 改动未触碰该路径。
@@ -480,7 +480,7 @@
 - 旧 Orchestrator 路径已双写 `run_started`、`sdk_session`、assistant/tool、`usage_updated`、`run_completed` / `run_failed` / `run_stopped`。
 - 权限与 AskUser 生命周期已记录 requested/resolved；resolved 只在 IPC handler 旁路写 events JSONL，原 Renderer `STREAM_EVENT` 行为保持不变。
 - shadow compare 仅写主进程开发日志，当前检测 per-run sequence 缺口和内存/落盘 replay 终态差异，不在 UI 展示。
-- `@rv-insights/shared` patch 版本从 `0.1.34` 提升到 `0.1.35`；`@rv-insights/electron` patch 版本从 `0.0.78` 提升到 `0.0.79`。
+- `@codeinsights/shared` patch 版本从 `0.1.34` 提升到 `0.1.35`；`@codeinsights/electron` patch 版本从 `0.0.78` 提升到 `0.0.79`。
 - 本阶段没有修改 Renderer、布局、样式、文案、入口、按钮行为或交互路径；客户端 UI 零可见变化。
 - 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts`；`git diff --check`。
 - [!] 全量 `bun test` 仍在 412 pass 后复现既有 test runner / Electron named export 问题：`Export named 'BrowserWindow' not found in module .../electron/index.js`；本阶段相关聚焦测试单独运行通过。
@@ -577,7 +577,7 @@
 - 本阶段不创建 `runtime/`、不写 `runtime-manifest.json`、不改变 `agentCwd`、不接入 Runner / Orchestrator / Renderer；旧 session cwd 与 resume 行为保持原路径。
 - 路径安全已覆盖：workspace 内路径必须保持在 workspace root 内；已存在路径段用 `lstat` 拒绝 symlink；已存在目标再用 `realpath` 复验；additional directories 只保存引用，不复制也不解析成 runtime 内容。
 - 单元测试覆盖旧 MCP、Skill、plugin manifest、attached directories、缺失配置、hash 稳定性、workspace slug traversal、plugin name traversal、入口文件 symlink、nested Skill symlink 和 `skills-inactive` symlink 拒绝。
-- `@rv-insights/shared` patch 版本从 `0.1.35` 提升到 `0.1.36`；`@rv-insights/electron` patch 版本从 `0.0.80` 提升到 `0.0.81`。
+- `@codeinsights/shared` patch 版本从 `0.1.35` 提升到 `0.1.36`；`@codeinsights/electron` patch 版本从 `0.0.80` 提升到 `0.0.81`。
 - 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；客户端 UI 零可见变化。
 - 代码审查发现并已修复：shared barrel 顶层访问 `process` 的浏览器兼容风险、workspace slug traversal、plugin manifest name 进入 snapshot path 的路径风险，并补充对应回归测试。
 
@@ -596,7 +596,7 @@
 - [x] 物化 plugins snapshot 打桩或最小实现。
 - [x] 写入 `runtime-manifest.json`。
 - [x] settings 只覆盖白名单 key。
-- [x] 冲突写 `.rv-insights-conflicts.json` 并阻断 run。
+- [x] 冲突写 `.codeinsights-conflicts.json` 并阻断 run。
 - [x] materialize 失败阻断 run，并通过现有 preflight error 通道返回配置错误。
 
 ### 验收
@@ -623,13 +623,13 @@
 - 新增 `apps/electron/src/main/lib/agent-runtime-materializer.ts` 与聚焦测试，基于阶段 4 manifest 写入 runtime root、session cwd、session `runtime-manifest.json`、settings、MCP、CLAUDE.md、Skill snapshot 和 plugin snapshot。
 - 新 session 创建时会先 materialize runtime，再写入 session index；materialize 失败不会留下可见 session metadata。
 - Orchestrator 只在检测到 `sessions/{session-id}/runtime-manifest.json` 时切到 `sessions/{session-id}/cwd`，旧 session 没有 manifest 时继续使用旧 `agent-workspaces/{slug}/{sessionId}` cwd 和既有 resume 行为。
-- settings 合并只管理白名单字段；若 `plansDirectory` / `skipWebFetchPreflight` 等 RV 管理字段已有冲突值，会写 `runtime/.claude/.rv-insights-conflicts.json` 并阻断 run。
+- settings 合并只管理白名单字段；若 `plansDirectory` / `skipWebFetchPreflight` 等 CodeInsights 管理字段已有冲突值，会写 `runtime/.claude/.codeinsights-conflicts.json` 并阻断 run。
 - materialized runtime 判定不只看文件存在，会校验 manifest 普通文件、sessionId、workspaceSlug、sessionCwd 和 manifest path，避免旧 session 被残留文件误切到新 cwd。
 - materializer 同时写入 runtime settings 与实际 SDK project settings（`sessions/{session-id}/cwd/.claude/settings.json`），Orchestrator 对 materialized session 跳过旧 settings 写入 block，避免绕过冲突检查。
 - 路径安全延续阶段 4 策略：workspace 内已存在路径段拒绝 symlink，写入目标必须保持在 workspace root 内；runtime 写入目标若是 symlink 会被拒绝。
 - 代码审查发现并已修复：manifest 存在性误判、session cwd project settings 覆盖风险、fork 源 cwd symlink 递归复制风险，并补充对应回归测试。
 - 本阶段未修改 Renderer、UI 样式、文案、入口或交互路径；未默认启用 Runner v2。
-- `@rv-insights/shared` patch 版本从 `0.1.36` 提升到 `0.1.37`；`@rv-insights/electron` patch 版本从 `0.0.81` 提升到 `0.0.82`，并同步 `bun.lock`。
+- `@codeinsights/shared` patch 版本从 `0.1.36` 提升到 `0.1.37`；`@codeinsights/electron` patch 版本从 `0.0.81` 提升到 `0.0.82`，并同步 `bun.lock`。
 
 ## 阶段 6：插件系统原生化
 
@@ -650,7 +650,7 @@
 ### 验收
 
 - [x] 启用/禁用插件后 Runner `options.plugins` 正确变化。
-- [x] 删除插件只删除 RV snapshot，不删除用户源目录。
+- [x] 删除插件只删除 CodeInsights snapshot，不删除用户源目录。
 - [x] 插件能力不绕过权限。
 - [x] UI 无可见变化，沿用现有设置入口。
 
@@ -672,26 +672,26 @@
 - 已新增 plugin catalog / enabled refs 类型，`config.json.pluginCatalog` 记录可导入本地 plugin，`config.json.enabledPlugins` 控制启用状态；缺省仍兼容旧 `.claude-plugin/plugin.json`。
 - 已新增 plugin snapshot materializer：materialized runtime 会复制 plugin source 到 `runtime/.claude/plugins/{pluginId}`，manifest 记录 `sourcePath`、`snapshotPath`、`hash`、`sourceType`、`commands` 和 `enabled`。
 - snapshot 前后校验 hash，source 内符号链接会被拒绝；snapshot 失败会阻断 materialize，不会回退到用户全局 plugin 目录。
-- 已建立 plugin command index，扫描 plugin `commands/*.md` 与 `.claude/commands/*.md`；frontmatter `dmi: true` / `rv-dmi: true` 的 slash command 由应用层展开，其他 command 保留给 SDK。
-- `agent-orchestrator.ts` 在已有 runtime manifest 的 session 下直接复用 materialized runtime；新 session 无 manifest 时先物化，再把 SDK `queryOptions.plugins` 指向 RV snapshot，旧 session 继续使用旧 workspace plugin 路径。
+- 已建立 plugin command index，扫描 plugin `commands/*.md` 与 `.claude/commands/*.md`；frontmatter `dmi: true` / `codeinsights-dmi: true` 的 slash command 由应用层展开，其他 command 保留给 SDK。
+- `agent-orchestrator.ts` 在已有 runtime manifest 的 session 下直接复用 materialized runtime；新 session 无 manifest 时先物化，再把 SDK `queryOptions.plugins` 指向 CodeInsights snapshot，旧 session 继续使用旧 workspace plugin 路径。
 - 代码审查后补强：DMI 展开改为优先读取 snapshot，plugin catalog 导入前对 `config.json` 写目标做 symlink 防护，避免运行期绕过 snapshot 或污染 workspace 配置。
 - 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；没有默认启用 Runner v2。
-- `@rv-insights/shared` patch 版本从 `0.1.37` 提升到 `0.1.38`；`@rv-insights/electron` patch 版本从 `0.0.82` 提升到 `0.0.83`。
+- `@codeinsights/shared` patch 版本从 `0.1.37` 提升到 `0.1.38`；`@codeinsights/electron` patch 版本从 `0.0.82` 提升到 `0.0.83`。
 
 ## 阶段 7：内置 MCP Bridge
 
-目标：把 RV 宿主能力以 MCP 工具暴露给 Claude Code。
+目标：把 CodeInsights 宿主能力以 MCP 工具暴露给 Claude Code。
 
 ### 任务
 
 - [x] 新增 `agent-host-mcp-server.ts`。
-- [x] 实现 `rv_workspace_search`。
-- [x] 实现 `rv_list_workspace_files`。
-- [x] 实现 `rv_memory_search`。
-- [x] 实现 `rv_open_file`。
-- [x] 实现 `rv_memory_append`。
-- [x] 实现 `rv_send_channel_message`。
-- [x] 实现 `rv_schedule_task`。
+- [x] 实现 `codeinsights_workspace_search`。
+- [x] 实现 `codeinsights_list_workspace_files`。
+- [x] 实现 `codeinsights_memory_search`。
+- [x] 实现 `codeinsights_open_file`。
+- [x] 实现 `codeinsights_memory_append`。
+- [x] 实现 `codeinsights_send_channel_message`。
+- [x] 实现 `codeinsights_schedule_task`。
 - [x] 所有工具入参 runtime schema 校验。
 - [x] side effect 工具不声明 readOnlyHint，不默认 bypass 权限。
 - [x] 工具失败返回结构化错误。
@@ -699,7 +699,7 @@
 
 ### 验收
 
-- [x] Materialized session 会注入 `rv_host` in-process MCP server，默认暴露只读 `rv_*` 宿主工具；side-effect handlers 已实现但不默认注册。
+- [x] Materialized session 会注入 `codeinsights_host` in-process MCP server，默认暴露只读 `rv_*` 宿主工具；side-effect handlers 已实现但不默认注册。
 - [x] 工具调用继续走 SDK MCP/tool 事件路径，不新增 Renderer 可见协议。
 - [x] side effect 工具不设置只读注解，保留现有 SDK `canUseTool` 权限路径。
 - [x] 工具只能访问 manifest 允许的 workspace/session/additional directory path。
@@ -719,14 +719,14 @@
 
 ### 阶段 7 完成说明
 
-- 新增 `apps/electron/src/main/lib/agent-host-mcp-server.ts` 与聚焦测试，定义 `rv_host` in-process MCP server 和 7 个 host bridge handler。
-- `rv_workspace_search`、`rv_list_workspace_files`、`rv_open_file` 只读取 manifest 允许的 session cwd、workspace-files 和 additional directory；拒绝符号链接逃逸、范围外路径和非文本读取。
-- `rv_memory_search`、`rv_memory_append` 复用 MemOS 底层客户端；记忆未启用或缺少 API Key 时返回明确错误，不发起外部请求。`rv_memory_append` 已实现但不在默认 hostBridge 工具清单中注册。
-- `rv_send_channel_message`、`rv_schedule_task` 默认返回“未注入 adapter”的保守错误；只有未来 channel adapter / scheduler 显式注入后才会执行 side effect，且不在默认 hostBridge 工具清单中注册。
-- Runtime manifest 的 `hostBridge.tools` 现在由只读默认工具列表生成，记录 `version` / `configHash`，并纳入 `sourceConfigHash` / `runtimeHash`；materializer 会写入 `runtime/.claude/rv-host-bridge.json` 作为审计元数据，恢复已物化 session 时会校验该产物未被篡改。
-- `agent-orchestrator.ts` 仅在 materialized session manifest 存在且 `hostBridge.enabled` 时注入 `rv_host` MCP server；event log / Runner v2 会记录同一个 manifest `runtimeHash`，并拒绝外部 `customMcpServers` 覆盖内置 `rv_host`。旧 session、Renderer 和默认 Runner v2 开关均未改变。
+- 新增 `apps/electron/src/main/lib/agent-host-mcp-server.ts` 与聚焦测试，定义 `codeinsights_host` in-process MCP server 和 7 个 host bridge handler。
+- `codeinsights_workspace_search`、`codeinsights_list_workspace_files`、`codeinsights_open_file` 只读取 manifest 允许的 session cwd、workspace-files 和 additional directory；拒绝符号链接逃逸、范围外路径和非文本读取。
+- `codeinsights_memory_search`、`codeinsights_memory_append` 复用 MemOS 底层客户端；记忆未启用或缺少 API Key 时返回明确错误，不发起外部请求。`codeinsights_memory_append` 已实现但不在默认 hostBridge 工具清单中注册。
+- `codeinsights_send_channel_message`、`codeinsights_schedule_task` 默认返回“未注入 adapter”的保守错误；只有未来 channel adapter / scheduler 显式注入后才会执行 side effect，且不在默认 hostBridge 工具清单中注册。
+- Runtime manifest 的 `hostBridge.tools` 现在由只读默认工具列表生成，记录 `version` / `configHash`，并纳入 `sourceConfigHash` / `runtimeHash`；materializer 会写入 `runtime/.claude/codeinsights-host-bridge.json` 作为审计元数据，恢复已物化 session 时会校验该产物未被篡改。
+- `agent-orchestrator.ts` 仅在 materialized session manifest 存在且 `hostBridge.enabled` 时注入 `codeinsights_host` MCP server；event log / Runner v2 会记录同一个 manifest `runtimeHash`，并拒绝外部 `customMcpServers` 覆盖内置 `codeinsights_host`。旧 session、Renderer 和默认 Runner v2 开关均未改变。
 - 本阶段没有修改 Renderer、UI 样式、文案、入口或交互路径；没有默认启用 Runner v2。
-- `@rv-insights/electron` patch 版本从 `0.0.83` 提升到 `0.0.84`；`@rv-insights/shared` patch 版本从 `0.1.38` 提升到 `0.1.39`。
+- `@codeinsights/electron` patch 版本从 `0.0.83` 提升到 `0.0.84`；`@codeinsights/shared` patch 版本从 `0.1.38` 提升到 `0.1.39`。
 
 ## 阶段 8：Renderer 切新 Reducer
 
@@ -768,7 +768,7 @@
 - `AgentStreamEnvelope` replay state 现在能恢复 `pendingPermissionRequests`、`pendingAskUserRequests`、`pendingExitPlanRequests` 和 `planModeActive`，Renderer 会从 event log/envelope 回填 pending 交互状态。
 - 新增 shadow compare helper 与聚焦测试，覆盖 runtime reducer 和旧 reducer 的可见 view model 一致性。
 - 本阶段没有改变 UI 布局、样式、文案、入口或按钮行为；`SDKMessageRenderer` 仍保留为 transcript/debug 兼容路径。
-- 已升级 `@rv-insights/shared` 到 `0.1.40`、`@rv-insights/electron` 到 `0.0.85`，并同步 `bun.lock`。
+- 已升级 `@codeinsights/shared` 到 `0.1.40`、`@codeinsights/electron` 到 `0.0.85`，并同步 `bun.lock`。
 - 验证通过：`bun run typecheck`；`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts`；`git diff --check`。
 - 人工补跑阶段 0 核心基线仍未完成：当前没有启动 Electron 桌面壳做发送、停止、权限 approve/deny、AskUser、Plan Mode、旧 session resume 的真实交互验证，因此这部分仍保留为后续缺口。
 
@@ -800,7 +800,7 @@
 
 - [x] `bun run typecheck`
 - [x] `bun test` channel adapter fixture。
-- [!] 人工飞书发送、完成、权限 pending：当前本机不存在 `~/.rv-insights/feishu.json`，无法补跑真实飞书入口。
+- [!] 人工飞书发送、完成、权限 pending：当前本机不存在 `~/.codeinsights/feishu.json`，无法补跑真实飞书入口。
 - [x] `git diff --check`
 
 ### 回滚
@@ -813,12 +813,12 @@
 - 新增 `apps/electron/src/main/lib/agent-channel.ts`，定义 `AgentChannel`、`AgentChannelRunContext`、`agentRuntimeChannelsV2` feature flag 和 `ElectronAgentChannel`；Electron adapter 只包装现有 IPC payload 转发，不改变 Renderer 可见行为。
 - 新增 `apps/electron/src/main/lib/agent-channel-binding-store.ts`，使用 `agent-channel-bindings.json` 与 `agent-channel-bindings.events.jsonl` 保存 channel session binding 和审计事件，继续保持本地 JSON / JSONL 存储。
 - 新增 `apps/electron/src/main/lib/feishu-channel-adapter.ts`，Feishu adapter 只消费 `AgentStreamEnvelope`，不再直接解析 SDKMessage 内部结构；assistant delta 节流输出，run completed 拼接最终 Markdown，permission requested 默认 `queue_to_desktop`。
-- `feishu-bridge.ts` 仅在 `RV_AGENT_RUNTIME_CHANNELS_V2=1` 时使用新 Feishu channel adapter；旧 Feishu bridge 和旧 `feishu-bindings-{botId}.json` 持久化继续保留，客户端 UI 零可见变化。
+- `feishu-bridge.ts` 仅在 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=1` 时使用新 Feishu channel adapter；旧 Feishu bridge 和旧 `feishu-bindings-{botId}.json` 持久化继续保留，客户端 UI 零可见变化。
 - 飞书群聊 `feishu_chat` MCP 仍通过 `customMcpServers` 作为 run overlay 传给 Agent，不写入 workspace runtime manifest。
 - 新增聚焦测试覆盖 channel binding store upsert/remove、Feishu adapter delta/final Markdown/permission queue 策略，并保留 Runner fixture 作为 runtime event contract 回归。
-- `@rv-insights/electron` patch 版本从 `0.0.85` 提升到 `0.0.86`，并同步 `bun.lock`。
+- `@codeinsights/electron` patch 版本从 `0.0.85` 提升到 `0.0.86`，并同步 `bun.lock`。
 - 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-channel-binding-store.test.ts apps/electron/src/main/lib/feishu-channel-adapter.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
-- 本轮未启动 Electron 桌面壳补跑真实 Agent 发送；当前本机不存在 `~/.rv-insights/feishu.json`，真实飞书入口、飞书群聊 MCP 和权限 pending 仍保留为后续可用环境验证缺口。
+- 本轮未启动 Electron 桌面壳补跑真实 Agent 发送；当前本机不存在 `~/.codeinsights/feishu.json`，真实飞书入口、飞书群聊 MCP 和权限 pending 仍保留为后续可用环境验证缺口。
 
 ## 阶段 10：Pipeline 复用 Runner
 
@@ -838,7 +838,7 @@
 
 ### 验收
 
-- [x] Agent 与 Pipeline Claude 执行入口可通过 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 统一到 AgentRuntimeRunner。
+- [x] Agent 与 Pipeline Claude 执行入口可通过 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 统一到 AgentRuntimeRunner。
 - [x] Pipeline UI 无变化。
 - [x] Pipeline checkpoint / gate 行为不变。
 - [x] Patch-work 防护不回退。
@@ -852,7 +852,7 @@
 
 ### 回滚
 
-- [x] 关闭 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2`。
+- [x] 关闭 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2`。
 - [x] Pipeline 回到旧 `pipeline-node-runner.ts` adapter query 路径。
 
 ### 阶段 10 完成说明
@@ -862,8 +862,8 @@
 - `pipeline-node-runner.ts` 移除了本地重复的 SDK env / CLI path 构建，复用 `agent-sdk-env` 中的 `buildSdkEnv()` 和 `resolveSDKCliPath()`。
 - Pipeline 的 LangGraph checkpoint、human gate、PipelineStreamEvent、结构化 JSON schema、patch-work 文档写入、tester 证据保守判定、read-only 工具防护和现有 UI 行为均保持在 Pipeline 边界内。
 - Runtime event 到 Pipeline 输出的合并按 messageId 处理，避免 `assistant_delta` 与完整 `assistant_message` 重复追加导致结构化 JSON 污染。
-- 默认 RuntimeRunner 采用延迟动态加载，只在 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 路径需要时创建。
-- `@rv-insights/electron` patch 版本从 `0.0.86` 提升到 `0.0.87`，并同步 `bun.lock`。
+- 默认 RuntimeRunner 采用延迟动态加载，只在 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=1` 路径需要时创建。
+- `@codeinsights/electron` patch 版本从 `0.0.86` 提升到 `0.0.87`，并同步 `bun.lock`。
 - 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/pipeline-node-runner.test.ts apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`git diff --check`。
 - 代码审查发现的 delta / complete 重复合并、metadata 判别约束和默认 Runner 懒加载问题已修复，并补充回归测试。
 - 本轮未启动 Electron 桌面壳补跑真实最小 Pipeline；真实 Pipeline / 渠道交互仍记录为后续可用环境验证缺口。
@@ -877,14 +877,14 @@
 - [x] 阶段 1-11 均已完成并保留回滚点。
 - [x] 客户端 UI 零可见变化约束仍有效。
 - [x] 可启动 Electron 桌面壳，并有可用 Agent 兼容渠道/API Key。
-- [!] 如要验证飞书入口，需要本机存在有效 `~/.rv-insights/feishu.json` 或明确记录缺失原因；本机正式和 dev 配置目录均缺少飞书配置。
+- [!] 如要验证飞书入口，需要本机存在有效 `~/.codeinsights/feishu.json` 或明确记录缺失原因；本机正式和 dev 配置目录均缺少飞书配置。
 
 ### 任务
 
 - [~] 补跑 Agent 发送、停止、同会话并发、旧 session resume；已补跑发送和 pending-stop，旧 session resume 仍依赖存量 JSONL，未重新发送。
 - [x] 补跑权限 approve / deny、AskUser、Plan Mode 进入与退出。
 - [!] 补跑附件、additional directory、fork、rewind；本轮未完整跑模型闭环，继续保留为后续缺口。
-- [x] 补跑 materialized runtime 下 `rv_host` 只读 MCP 工具真实可见性。
+- [x] 补跑 materialized runtime 下 `codeinsights_host` 只读 MCP 工具真实可见性。
 - [!] 补跑 Skill / Plugin snapshot 在真实 Agent 对话中的可见性；本轮仅通过 materialized runtime 日志确认 host bridge 和 runtime cwd，未单独证明 Skill / Plugin snapshot 被模型使用。
 - [!] 补跑飞书入口和飞书群聊 MCP；本机缺少飞书配置，明确阻塞，不伪造通过。
 - [!] 补跑最小 Pipeline 真实运行，确认 Pipeline UI、human gate、patch-work 防护仍正常；本轮未启动新 Pipeline 真实任务，继续依赖聚焦测试。
@@ -916,10 +916,10 @@
 
 - 完成提交：`0e37e500 feat(agent): 完成阶段12真实交互补跑与Runner v2 stop加固`。
 - 新增真实交互证据：`baseline-runs/2026-05-18-stage-12.md`。
-- 真实 Electron Agent 已补跑默认发送、pending-stop、权限 approve/deny、AskUser、Plan Mode 和 materialized runtime 下 `rv_host` 只读 MCP 可见性。
+- 真实 Electron Agent 已补跑默认发送、pending-stop、权限 approve/deny、AskUser、Plan Mode 和 materialized runtime 下 `codeinsights_host` 只读 MCP 可见性。
 - 发现并修复 stop 正常结束终态缺口：旧主循环和 Runner v2 在用户 stop 后如果 iterator / runner 正常结束，都会补写 `run_stopped` 并发送 `stoppedByUser` completion。
 - 本阶段不默认开启任何 feature flag，不删除旧 Agent 主循环，不做 UI 改版。
-- `@rv-insights/electron` patch 版本从 `0.0.88` 提升到 `0.0.89`；本阶段 `bun.lock` 无 diff。
+- `@codeinsights/electron` patch 版本从 `0.0.88` 提升到 `0.0.89`；本阶段 `bun.lock` 无 diff。
 - 验证通过：`bun run typecheck`；Agent / Runtime / Renderer 聚焦测试 37 pass；Pipeline / human gate / patch-work / Codex runner 聚焦测试 81 pass；`git diff --check`。
 
 ## 阶段 13：Runner v2 默认化证据补齐

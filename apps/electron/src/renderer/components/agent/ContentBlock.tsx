@@ -34,7 +34,7 @@ import type {
   SDKUserMessage,
   SDKToolResultBlock,
   SDKSystemMessage,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 // ===== useToolResult Hook =====
 

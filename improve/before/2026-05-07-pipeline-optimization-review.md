@@ -2,7 +2,7 @@
 
 ## 1. 背景
 
-本文基于当前 `rv-pipeline` 的现有实现做一次面向工程落地的优化审查，重点覆盖：
+本文基于当前 `codeinsights-pipeline` 的现有实现做一次面向工程落地的优化审查，重点覆盖：
 
 - 主进程 Pipeline 编排与恢复链路
 - Pipeline 状态持久化与前端状态同步
@@ -36,7 +36,7 @@
 涉及文件：
 
 - `apps/electron/src/main/lib/pipeline-graph.ts`
-- `docs/pipeline/2026-05-06-rv-pipeline-design.md`
+- `docs/pipeline/2026-05-06-codeinsights-pipeline-design.md`
 
 当前问题：
 

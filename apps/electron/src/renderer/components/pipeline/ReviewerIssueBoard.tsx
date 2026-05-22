@@ -4,7 +4,7 @@ import type {
   PipelineReviewIssue,
   PipelineReviewIssueSeverity,
   PipelineReviewerStageOutput,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 interface ReviewerIssueItemViewModel extends PipelineReviewIssue {
   severityLabel: string
@@ -75,7 +75,7 @@ function documentViewModel(document: PipelinePatchWorkDocumentRef | undefined): 
 
 function fallbackIssues(issues: string[]): PipelineReviewIssue[] {
   return issues.map((issue, index) => ({
-    id: `RV-REV-${String(index + 1).padStart(3, '0')}`,
+    id: `CI-REV-${String(index + 1).padStart(3, '0')}`,
     severity: 'major',
     category: 'correctness',
     title: issue,

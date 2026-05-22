@@ -653,7 +653,7 @@ interface PipelineStageArtifactRecord {
 
 ### 6.4 Pipeline artifact 目录真正落地
 
-当前 `~/.rv-insights/pipeline-artifacts/` 已预留，但没有形成稳定消费路径。
+当前 `~/.codeinsights/pipeline-artifacts/` 已预留，但没有形成稳定消费路径。
 
 建议每个 session 目录下保存：
 

@@ -1,5 +1,5 @@
-import type { AgentWorkspace, Channel } from '@rv-insights/shared'
-import { isAgentCompatibleProvider } from '@rv-insights/shared'
+import type { AgentWorkspace, Channel } from '@codeinsights/shared'
+import { isAgentCompatibleProvider } from '@codeinsights/shared'
 import type { SettingsTab } from '@/atoms/settings-tab'
 
 export interface PipelineRunConfig {

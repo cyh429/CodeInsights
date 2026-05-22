@@ -1,7 +1,7 @@
 /**
  * 第三方安装包（Git、Node.js 等）相关类型
  *
- * RV-Insights 通过 rv-insights-api 的 /installers/manifest 接口拿到可安装的第三方工具清单，
+ * CodeInsights 通过 codeinsights-api 的 /installers/manifest 接口拿到可安装的第三方工具清单，
  * 让 Windows 用户一键下载并自动拉起官方安装程序。
  */
 

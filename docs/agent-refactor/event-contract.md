@@ -28,7 +28,7 @@ interface AgentStreamEnvelope {
 建议路径：
 
 ```text
-~/.rv-insights/
+~/.codeinsights/
   agent-sessions/
     {session-id}.sdk.jsonl       # SDKMessage 原始 transcript
     {session-id}.events.jsonl    # AgentStreamEnvelope 可重放事件

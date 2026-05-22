@@ -2,7 +2,7 @@
  * 附件存储服务
  *
  * 负责文件附件的本地存储、读取和删除。
- * 存储路径：~/.rv-insights/attachments/{conversationId}/{uuid}.ext
+ * 存储路径：~/.codeinsights/attachments/{conversationId}/{uuid}.ext
  *
  * - 保存：base64 解码 → 写入文件
  * - 读取：文件 → base64 编码（用于 API 发送）
@@ -24,7 +24,7 @@ import type {
   AttachmentSaveInput,
   AttachmentSaveResult,
   FileDialogResult,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 /** 支持的图片 MIME 类型 */
 const IMAGE_MIME_TYPES = new Set([
@@ -99,7 +99,7 @@ export function getMimeType(ext: string): string {
  * 保存附件到本地
  *
  * 将 base64 编码的文件数据解码后写入
- * ~/.rv-insights/attachments/{conversationId}/{uuid}.ext
+ * ~/.codeinsights/attachments/{conversationId}/{uuid}.ext
  *
  * @param input 保存附件参数
  * @returns 保存结果，包含附件元信息
@@ -137,8 +137,8 @@ export function saveAttachment(input: AttachmentSaveInput): AttachmentSaveResult
  * 读取附件并返回 base64 编码
  *
  * 支持两种路径格式：
- * 1. 相对路径 {conversationId}/{uuid}.ext → 解析到 ~/.rv-insights/attachments/
- * 2. 绝对路径（Agent 工作区附件）→ 需在 ~/.rv-insights/ 目录下，直接读取
+ * 1. 相对路径 {conversationId}/{uuid}.ext → 解析到 ~/.codeinsights/attachments/
+ * 2. 绝对路径（Agent 工作区附件）→ 需在 ~/.codeinsights/ 目录下，直接读取
  *
  * @param localPath 相对路径或绝对路径
  * @returns base64 编码的文件数据
@@ -147,7 +147,7 @@ export function readAttachmentAsBase64(localPath: string): string {
   let fullPath: string
 
   if (isAbsolute(localPath)) {
-    // 绝对路径：验证在 ~/.rv-insights/ 目录下，防止路径穿越
+    // 绝对路径：验证在 ~/.codeinsights/ 目录下，防止路径穿越
     const configDir = getConfigDir()
     const normalized = normalize(localPath)
     if (!normalized.startsWith(configDir)) {
@@ -187,7 +187,7 @@ export function deleteAttachment(localPath: string): void {
 /**
  * 删除对话的全部附件
  *
- * 删除整个 ~/.rv-insights/attachments/{conversationId}/ 目录。
+ * 删除整个 ~/.codeinsights/attachments/{conversationId}/ 目录。
  *
  * @param conversationId 对话 ID
  */

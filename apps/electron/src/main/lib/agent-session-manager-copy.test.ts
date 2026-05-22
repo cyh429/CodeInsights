@@ -7,7 +7,7 @@ import { copyTreeWithoutSymlinks } from './agent-session-copy'
 let tempDir = ''
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rv-session-copy-'))
+  tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-session-copy-'))
 })
 
 afterEach(() => {

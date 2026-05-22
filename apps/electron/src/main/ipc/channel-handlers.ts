@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { CHANNEL_IPC_CHANNELS } from '@rv-insights/shared'
+import { CHANNEL_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   Channel,
   ChannelCreateInput,
@@ -7,7 +7,7 @@ import type {
   ChannelTestResult,
   FetchModelsInput,
   FetchModelsResult,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import {
   listChannels,
   createChannel,

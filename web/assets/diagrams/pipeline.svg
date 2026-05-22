@@ -1,5 +1,5 @@
 <svg width="1400" height="510" viewBox="0 14 1400 510" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pipe-title pipe-desc">
-  <title id="pipe-title">RV-Insights 5-Agent Pipeline</title>
+  <title id="pipe-title">CodeInsights 5-Agent Pipeline</title>
   <desc id="pipe-desc">Five-stage agent pipeline with human review gates: Explorer, Planner, Developer-Reviewer iteration, and Tester.</desc>
   <defs>
     <linearGradient id="pbg" x1="0" y1="0" x2="1400" y2="600" gradientUnits="userSpaceOnUse">

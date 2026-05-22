@@ -96,14 +96,14 @@ import { useOpenSession } from '@/hooks/useOpenSession'
 import { AgentSessionProvider } from '@/contexts/session-context'
 import { draftSessionIdsAtom } from '@/atoms/draft-session-atoms'
 import { sendWithCmdEnterAtom } from '@/atoms/shortcut-atoms'
-import type { AgentSendInput, AgentMessage, AgentPendingFile, ModelOption, SDKMessage } from '@rv-insights/shared'
+import type { AgentSendInput, AgentMessage, AgentPendingFile, ModelOption, SDKMessage } from '@codeinsights/shared'
 import { fileToBase64 } from '@/lib/file-utils'
 import { buildAgentComposerState, buildAgentRunnerModeControl, getActiveAgentBanner, hasPendingAgentInteraction } from './agent-ui-model'
 
 // ===== 思考模式 Hover Popover =====
 
 interface AgentThinkingPopoverProps {
-  agentThinking: import('@rv-insights/shared').ThinkingConfig | undefined
+  agentThinking: import('@codeinsights/shared').ThinkingConfig | undefined
   onToggle: () => void
 }
 
@@ -310,9 +310,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
 
   // 检查 Agent 渠道列表中是否存在可用的模型（渠道 enabled + 模型 enabled）
   const hasAvailableModel = React.useMemo(() => {
-    // RV-Insights 官方渠道（商业版）：只要 enabled 且有可用模型，直接视为可用
-    const rvInsightsOfficial = globalChannels.find((c) => c.id === 'rv-insights-official')
-    if (rvInsightsOfficial?.enabled && rvInsightsOfficial.models.some((m) => m.enabled)) return true
+    // CodeInsights 官方渠道（商业版）：只要 enabled 且有可用模型，直接视为可用
+    const codeInsightsOfficial = globalChannels.find((c) => c.id === 'codeinsights-official')
+    if (codeInsightsOfficial?.enabled && codeInsightsOfficial.models.some((m) => m.enabled)) return true
     // 其他渠道：需在 agentChannelIds 白名单中
     if (!agentChannelIds || agentChannelIds.length === 0) return false
     return globalChannels.some(
@@ -832,7 +832,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       const localUuid = crypto.randomUUID()
 
       // 1. 立即注入 liveMessages（作为普通用户消息显示）
-      const syntheticMsg: import('@rv-insights/shared').SDKMessage = {
+      const syntheticMsg: import('@codeinsights/shared').SDKMessage = {
         type: 'user',
         uuid: localUuid,
         message: {
@@ -840,7 +840,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         },
         parent_tool_use_id: null,
         _createdAt: Date.now(),
-      } as unknown as import('@rv-insights/shared').SDKMessage
+      } as unknown as import('@codeinsights/shared').SDKMessage
 
       store.set(liveMessagesMapAtom, (prev) => {
         const map = new Map(prev)
@@ -1080,7 +1080,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     const localUuid = crypto.randomUUID()
 
     // 1. 立即注入合成用户消息（/compact 气泡立刻可见，与普通发送路径一致）
-    const syntheticMsg: import('@rv-insights/shared').SDKMessage = {
+    const syntheticMsg: import('@codeinsights/shared').SDKMessage = {
       type: 'user',
       uuid: localUuid,
       message: {
@@ -1088,7 +1088,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       },
       parent_tool_use_id: null,
       _createdAt: streamStartedAt,
-    } as unknown as import('@rv-insights/shared').SDKMessage
+    } as unknown as import('@codeinsights/shared').SDKMessage
 
     store.set(liveMessagesMapAtom, (prev) => {
       const map = new Map(prev)
@@ -1312,8 +1312,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     const handler = (): void => {
       if (streaming) handleStop()
     }
-    window.addEventListener('rv-insights:stop-generation', handler)
-    return () => window.removeEventListener('rv-insights:stop-generation', handler)
+    window.addEventListener('codeinsights:stop-generation', handler)
+    return () => window.removeEventListener('codeinsights:stop-generation', handler)
   }, [streaming, handleStop])
 
   // 监听快捷键系统分发的 focus-input 事件（Cmd+L）
@@ -1322,8 +1322,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       const proseMirror = document.querySelector('[data-input-mode="agent"] .ProseMirror') as HTMLElement | null
       proseMirror?.focus()
     }
-    window.addEventListener('rv-insights:focus-input', handler)
-    return () => window.removeEventListener('rv-insights:focus-input', handler)
+    window.addEventListener('codeinsights:focus-input', handler)
+    return () => window.removeEventListener('codeinsights:focus-input', handler)
   }, [])
 
   const hasTextInput = inputContent.trim().length > 0

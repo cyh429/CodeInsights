@@ -1,4 +1,4 @@
-import type { PipelineNodeKind, PipelineRecord } from '@rv-insights/shared'
+import type { PipelineNodeKind, PipelineRecord } from '@codeinsights/shared'
 import {
   buildPipelineRecordGroups,
   buildPipelineRecordViewModel,

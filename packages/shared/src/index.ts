@@ -1,5 +1,5 @@
 /**
- * @rv-insights/shared - Shared types, configs and utilities
+ * @codeinsights/shared - Shared types, configs and utilities
  */
 
 export * from './types/index'

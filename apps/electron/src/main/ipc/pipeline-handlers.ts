@@ -1,5 +1,5 @@
 import { ipcMain, shell } from 'electron'
-import { PIPELINE_IPC_CHANNELS } from '@rv-insights/shared'
+import { PIPELINE_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   PipelineArtifactContentInput,
   PipelineExplorerReportRef,
@@ -20,7 +20,7 @@ import type {
   PipelineStateSnapshot,
   PipelineVersion,
   PatchWorkManifest,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { getPipelineService } from '../lib/pipeline-service'
 import { pipelineStreamBus } from '../lib/pipeline-stream-bus'
 

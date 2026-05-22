@@ -8,7 +8,7 @@
  *   左侧：Paperclip 附件按钮、ModelSelector、ThinkingButton、SpeechButton、ContextSettingsPopover、ClearContextButton
  *   右侧：Send/Stop 按钮
  * - 拖放文件支持（onDragOver/onDragLeave/onDrop）
- * - 监听 rv-insights:clear-context 和 rv-insights:focus-input 自定义事件
+ * - 监听 codeinsights:clear-context 和 codeinsights:focus-input 自定义事件
  * - 卡片式容器样式
  */
 
@@ -217,8 +217,8 @@ export function ChatInput({ conversationId, streaming, pendingAttachments, onSet
     const handler = (): void => {
       onClearContext?.()
     }
-    window.addEventListener('rv-insights:clear-context', handler)
-    return () => window.removeEventListener('rv-insights:clear-context', handler)
+    window.addEventListener('codeinsights:clear-context', handler)
+    return () => window.removeEventListener('codeinsights:clear-context', handler)
   }, [onClearContext])
 
   // 监听快捷键系统分发的 focus-input 事件（Cmd+L）
@@ -228,8 +228,8 @@ export function ChatInput({ conversationId, streaming, pendingAttachments, onSet
       const proseMirror = document.querySelector('[data-input-mode="chat"] .ProseMirror') as HTMLElement | null
       proseMirror?.focus()
     }
-    window.addEventListener('rv-insights:focus-input', handler)
-    return () => window.removeEventListener('rv-insights:focus-input', handler)
+    window.addEventListener('codeinsights:focus-input', handler)
+    return () => window.removeEventListener('codeinsights:focus-input', handler)
   }, [])
 
   return (

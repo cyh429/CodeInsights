@@ -8,8 +8,8 @@
  * 提供统一接口获取启用的工具定义和系统提示词。
  */
 
-import type { ToolDefinition, ToolParameterProperty } from '@rv-insights/core'
-import type { ChatToolInfo, ChatToolMeta } from '@rv-insights/shared'
+import type { ToolDefinition, ToolParameterProperty } from '@codeinsights/core'
+import type { ChatToolInfo, ChatToolMeta } from '@codeinsights/shared'
 import { getChatToolsConfig } from './chat-tool-config'
 import {
   MEMORY_TOOL_META,

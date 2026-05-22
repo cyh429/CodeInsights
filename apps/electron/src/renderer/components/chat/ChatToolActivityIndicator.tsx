@@ -8,7 +8,7 @@
 
 import * as React from 'react'
 import { ChatToolBlock } from './ChatToolBlock'
-import type { ChatToolActivity } from '@rv-insights/shared'
+import type { ChatToolActivity } from '@codeinsights/shared'
 
 interface MergedActivity {
   toolName: string

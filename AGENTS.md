@@ -14,14 +14,14 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## 项目概述
 
-RV-Insights 是一个集成 Agent 工作流的开源软件贡献平台，采用 Electron 桌面应用架构。当前公开主入口为 `Pipeline | Agent`，旧 `chat` 代码仅作为隐藏回退保留。
+CodeInsights 是一个集成 Agent 工作流的开源软件贡献平台，采用 Electron 桌面应用架构。当前公开主入口为 `Pipeline | Agent`，旧 `chat` 代码仅作为隐藏回退保留。
 
 ## Monorepo 结构
 
 Bun workspace monorepo：
 
 ```
-RV-Insights/
+CodeInsights/
 ├── packages/
 │   ├── shared/     # 共享类型、IPC 通道常量、配置、工具函数 (v0.1.18)
 │   ├── core/       # AI Provider 适配器、代码高亮服务 (v0.2.9)
@@ -34,30 +34,30 @@ RV-Insights/
             └── renderer/   # React UI (Vite + Tailwind + Radix UI)
 ```
 
-**包命名规范**：`@rv-insights/*` 作用域（`@rv-insights/core`、`@rv-insights/shared`、`@rv-insights/ui`、`@rv-insights/electron`）
+**包命名规范**：`@codeinsights/*` 作用域（`@codeinsights/core`、`@codeinsights/shared`、`@codeinsights/ui`、`@codeinsights/electron`）
 
 **依赖管理**：package.json 中使用 `workspace:*` 引用内部包
 
 ### 包职责详解
 
-#### @rv-insights/shared (v0.1.18)
+#### @codeinsights/shared (v0.1.18)
 - **导出模块**：`./types`、`./config`、`./utils`
 - **补充说明**：`permission-rules` 当前通过包根 re-export 暴露，不存在 `./constants/permission-rules` 子路径导出
 - **关键类型**：`AgentMessage`、`ChatMessage`、`PipelineSessionMeta`、`PipelineRecord`、`Channel`、`PermissionRequest`
 - **依赖**：无运行时依赖（仅 TypeScript）
 
-#### @rv-insights/core (v0.2.9)
+#### @codeinsights/core (v0.2.9)
 - **导出模块**：`./providers`、`./highlight`、`./types`、`./utils`
 - **关键功能**：Provider 适配器注册表、代码高亮（Shiki）
-- **依赖**：`@rv-insights/shared`、`shiki`
+- **依赖**：`@codeinsights/shared`、`shiki`
 - **Peer 依赖**：`@anthropic-ai/claude-agent-sdk`、`@anthropic-ai/sdk`、`@modelcontextprotocol/sdk`
 
-#### @rv-insights/ui (v0.1.3)
+#### @codeinsights/ui (v0.1.3)
 - **关键组件**：共享 React UI 组件库
-- **依赖**：`@rv-insights/core`、`beautiful-mermaid`、`shiki`、Radix UI
+- **依赖**：`@codeinsights/core`、`beautiful-mermaid`、`shiki`、Radix UI
 - **Peer 依赖**：`react@^18.3.0`、`react-dom@^18.3.0`
 
-#### @rv-insights/electron (v0.0.1)
+#### @codeinsights/electron (v0.0.1)
 - **职责**：Electron 桌面应用主体，集成所有包
 - **关键依赖**：
   - `@anthropic-ai/claude-agent-sdk@0.2.123` - Agent SDK
@@ -147,7 +147,7 @@ bun run generate:icons    # 生成应用图标
 
 类型定义 → 主进程处理 → Preload 桥接 → 渲染进程调用：
 
-1. **类型 & 常量**：`@rv-insights/shared` 定义 IPC 通道名称常量和请求/响应类型
+1. **类型 & 常量**：`@codeinsights/shared` 定义 IPC 通道名称常量和请求/响应类型
 2. **主进程处理**：`main/ipc.ts`（57KB）注册 `ipcMain.handle()` 处理器，调用 `main/lib/` 服务
 3. **Preload 桥接**：`preload/index.ts` 通过 `contextBridge.exposeInMainWorld` 暴露类型安全的 API
 4. **渲染进程**：通过 `window.electronAPI.*` 调用，Jotai atoms 中封装调用逻辑
@@ -216,7 +216,7 @@ bun run generate:icons    # 生成应用图标
 | 服务 | 职责 |
 |------|------|
 | `runtime-init.ts` | 运行时初始化：Shell 环境、Bun、Git 检测（`bun-finder.ts`、`git-detector.ts`、`shell-env.ts`） |
-| `config-paths.ts` | 配置路径管理：`~/.rv-insights/` 目录结构 |
+| `config-paths.ts` | 配置路径管理：`~/.codeinsights/` 目录结构 |
 | `user-profile-service.ts` | 用户档案持久化 |
 | `settings-service.ts` | 应用设置持久化（主题等） |
 | `updater/` | 自动更新：Electron Updater 集成 |
@@ -293,10 +293,10 @@ bun run generate:icons    # 生成应用图标
 | `PipelineListenersInitializer` | 挂载 `useGlobalPipelineListeners`，全局 Pipeline IPC 监听 |
 | `UpdaterInitializer` | 订阅主进程推送的自动更新状态变化事件 |
 
-### 本地文件存储（`~/.rv-insights/`）
+### 本地文件存储（`~/.codeinsights/`）
 
 ```
-~/.rv-insights/
+~/.codeinsights/
 ├── channels.json           # 渠道配置（API Key 经 safeStorage 加密）
 ├── conversations.json      # 对话索引（元数据，轻量）
 ├── conversations/          # 消息存储
@@ -354,7 +354,7 @@ bun run generate:icons    # 生成应用图标
     - node_modules/@anthropic-ai/claude-agent-sdk-darwin-arm64/**/*
     - node_modules/@anthropic-ai/claude-agent-sdk-darwin-x64/**/*
     - node_modules/@anthropic-ai/claude-agent-sdk-win32-x64/**/*
-    - "!node_modules/@rv-insights/**"
+    - "!node_modules/@codeinsights/**"
   ```
 - SDK 主包和同级平台子包会被复制到 `app/node_modules/@anthropic-ai/`，Node.js 的模块解析能从 `app/dist/main.cjs` 找到
 - `agent-orchestrator.ts` / `pipeline-node-runner.ts` 中 `resolveSDKCliPath()` 解析到 SDK 主包入口后，沿 `..` 到 `@anthropic-ai/` 同级目录，再拼 `claude-agent-sdk-${platform}-${arch}/{claude|claude.exe}` 得到 binary 路径
@@ -446,7 +446,7 @@ React UI 更新
 ### 关键设计
 
 - **SDK 调用**：`sdk.query({ prompt, options: { apiKey, model, permissionMode, cwd, abortController } })`
-- **事件转换**：`convertSDKMessage()`（`@rv-insights/shared`）将 SDK 原始消息转为统一的 `AgentEvent` 类型
+- **事件转换**：`convertSDKMessage()`（`@codeinsights/shared`）将 SDK 原始消息转为统一的 `AgentEvent` 类型
 - **工具匹配**：`packages/shared/src/agent/tool-matching.ts` — 无状态 `ToolIndex` + `extractToolStarts` / `extractToolResults` 解析工具调用
 - **状态管理**：`applyAgentEvent()` 纯函数更新 `AgentStreamState`，支持流式增量更新
 - **全局 IPC 监听**：`useGlobalAgentListeners`（`renderer/hooks/`）在 `main.tsx` 顶层挂载，通过 `useStore()` 直接操作 atoms，永不销毁。确保页面切换（如设置页）时流式输出、权限请求不丢失
@@ -473,9 +473,9 @@ React UI 更新
   - `options.env` 回退为"替换"
   - **SDK 包结构重构**：删除 `cli.js`，改为平台 native binary（通过 `@anthropic-ai/claude-agent-sdk-{platform}-{arch}` optionalDependency 分发），ripgrep 编译进 binary
   - 详见上方"打包配置注意事项"段落
-- `0.2.120`: `query()` 省略 `settingSources` 时默认加载所有来源（RV-Insights 已显式传 `['user', 'project']`，不受影响）
+- `0.2.120`: `query()` 省略 `settingSources` 时默认加载所有来源（CodeInsights 已显式传 `['user', 'project']`，不受影响）
 
-### 共享类型（`@rv-insights/shared`）
+### 共享类型（`@codeinsights/shared`）
 
 - `AgentEvent`：Agent 事件（text / tool_start / tool_result / done / error）
 - `AgentSessionMeta`：会话元数据（id / title / channelId / workspaceId）
@@ -493,7 +493,7 @@ React UI 更新
 - **Agent SDK**：`@anthropic-ai/claude-agent-sdk`
 - **MCP 集成**：Model Context Protocol 用于外部数据源
 - **凭证存储**：AES-256-GCM 加密
-- **配置位置**：`~/.rv-insights/`（类似 `~/.craft-agent/`）
+- **配置位置**：`~/.codeinsights/`（类似 `~/.craft-agent/`）
 
 ## Pipeline 集成现状
 

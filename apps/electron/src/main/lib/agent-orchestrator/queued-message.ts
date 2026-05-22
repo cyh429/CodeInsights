@@ -1,4 +1,4 @@
-import type { SDKMessage, SDKUserMessageInput } from '@rv-insights/shared'
+import type { SDKMessage, SDKUserMessageInput } from '@codeinsights/shared'
 
 export interface CreateQueuedUserMessageInputOptions {
   sessionId: string

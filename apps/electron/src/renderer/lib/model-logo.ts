@@ -106,8 +106,8 @@ import StepDarkLogo from '@/assets/models/step_dark.png'
 // MiniMax
 import MiniMaxLogo from '@/assets/models/minimax.png'
 
-// RV-Insights
-import RVInsightsLogo from '@/assets/models/rv-insights.png'
+// CodeInsights
+import CodeInsightsLogo from '@/assets/models/codeinsights.png'
 
 // Cohere
 import CohereLogo from '@/assets/models/cohere.png'
@@ -118,7 +118,7 @@ import EmbeddingLogo from '@/assets/models/embedding.png'
 
 // ===== 供应商类型 =====
 
-import type { ProviderType } from '@rv-insights/shared'
+import type { ProviderType } from '@codeinsights/shared'
 
 // ===== 正则匹配映射 =====
 
@@ -251,7 +251,7 @@ const PROVIDER_LOGO_MAP: Record<ProviderType, string> = {
  * 优先级高于 ProviderType，用于识别用户通过兼容格式接入的实际供应商。
  */
 const URL_LOGO_MAP: Array<[RegExp, string]> = [
-  [/proma\.cool/i, RVInsightsLogo],
+  [/codeinsights\.cool/i, CodeInsightsLogo],
   [/moonshot\.cn|kimi/i, MoonshotLogo],
   [/bigmodel\.cn|zhipuai/i, ZhipuLogo],
   [/minimax/i, MiniMaxLogo],
@@ -342,7 +342,7 @@ export function getChannelLogo(baseUrl: string): string {
  * 优先返回别名（name !== id），未找到则返回原始 modelId。
  * 用于将 SDK 返回的 model ID 转为用户友好的显示名称。
  */
-export function resolveModelDisplayName(modelId: string, channels: import('@rv-insights/shared').Channel[]): string {
+export function resolveModelDisplayName(modelId: string, channels: import('@codeinsights/shared').Channel[]): string {
   for (const channel of channels) {
     for (const model of channel.models) {
       if (model.id === modelId && model.name && model.name !== model.id) {
@@ -354,4 +354,4 @@ export function resolveModelDisplayName(modelId: string, channels: import('@rv-i
 }
 
 /** 默认模型图标 */
-export { DefaultLogo, RVInsightsLogo }
+export { DefaultLogo, CodeInsightsLogo }

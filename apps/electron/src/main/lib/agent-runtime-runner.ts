@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import type { AgentRuntimeEvent, AgentStreamEnvelope, SDKAssistantMessage, SDKMessage } from '@rv-insights/shared'
+import type { AgentRuntimeEvent, AgentStreamEnvelope, SDKAssistantMessage, SDKMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { extractErrorDetails, friendlyErrorMessage, isPromptTooLongError, mapSDKErrorToTypedError, shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
 import type { PermissionResult } from './agent-permission-service'

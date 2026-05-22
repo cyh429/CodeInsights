@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { PipelineSessionMeta, PipelineStateSnapshot } from '@rv-insights/shared'
+import type { PipelineSessionMeta, PipelineStateSnapshot } from '@codeinsights/shared'
 import { Activity, GitBranch, Radar, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buildPipelineHeaderViewModel, type PipelineDisplayTone } from './pipeline-display-model'

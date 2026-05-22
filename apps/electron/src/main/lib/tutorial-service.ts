@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto'
 import { app } from 'electron'
 import { createConversation, appendMessage } from './conversation-manager'
 import { getConversationAttachmentsDir } from './config-paths'
-import type { ConversationMeta, FileAttachment, ChatMessage } from '@rv-insights/shared'
+import type { ConversationMeta, FileAttachment, ChatMessage } from '@codeinsights/shared'
 
 /**
  * 获取教程文件路径
@@ -67,11 +67,11 @@ export function createWelcomeConversation(): ConversationMeta | null {
 
   try {
     // 1. 创建对话
-    const meta = createConversation('了解 RV-Insights')
+    const meta = createConversation('了解 CodeInsights')
 
     // 2. 保存教程文件为附件
     const attachmentId = randomUUID()
-    const attachmentFilename = 'RV-Insights 使用教程.md'
+    const attachmentFilename = 'CodeInsights 使用教程.md'
     const localPath = `${meta.id}/${attachmentId}.md`
     const dir = getConversationAttachmentsDir(meta.id)
     const fullPath = join(dir, `${attachmentId}.md`)
@@ -93,7 +93,7 @@ export function createWelcomeConversation(): ConversationMeta | null {
     const userMessage: ChatMessage = {
       id: randomUUID(),
       role: 'user',
-      content: '请帮我了解 RV-Insights 的功能和使用方式，我附上了完整的使用教程作为参考。',
+      content: '请帮我了解 CodeInsights 的功能和使用方式，我附上了完整的使用教程作为参考。',
       createdAt: now,
       attachments: [attachment],
     }
@@ -103,9 +103,9 @@ export function createWelcomeConversation(): ConversationMeta | null {
     const assistantMessage: ChatMessage = {
       id: randomUUID(),
       role: 'assistant',
-      content: `你好，欢迎使用 RV-Insights！我已经阅读了当前版本的完整教程。你可以从下面这些问题开始快速了解项目：
+      content: `你好，欢迎使用 CodeInsights！我已经阅读了当前版本的完整教程。你可以从下面这些问题开始快速了解项目：
 
-- RV-Insights 可以做什么？
+- CodeInsights 可以做什么？
 - 如何配置 Pipeline 和 Agent 需要的渠道？
 - Pipeline 和 Agent 的区别是什么？
 - 现在为什么默认主入口是 Pipeline？
@@ -114,7 +114,7 @@ export function createWelcomeConversation(): ConversationMeta | null {
 
 直接输入你的问题并发送吧！`,
       createdAt: now + 1,
-      model: 'RV-Insights',
+      model: 'CodeInsights',
     }
     appendMessage(meta.id, assistantMessage)
 

@@ -4,7 +4,7 @@ import type {
   PipelineReviewResultRecord,
   PipelineStageArtifactRecord,
   PipelineStreamEvent,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 function buildNodeOutputRecord(
   sessionId: string,

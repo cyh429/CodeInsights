@@ -1,8 +1,8 @@
 {
-  "name": "@rv-insights/ui",
-  "version": "0.1.3",
+  "name": "@codeinsights/ui",
+  "version": "0.1.4",
   "license": "Apache-2.0",
-  "description": "Shared UI components for rv-insights",
+  "description": "Shared UI components for codeinsights",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -22,7 +22,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@rv-insights/core": "workspace:*",
+    "@codeinsights/core": "workspace:*",
     "beautiful-mermaid": "^0.1.3",
     "shiki": "^3.22.0"
   }

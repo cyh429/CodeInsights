@@ -77,7 +77,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           )}
 
           <div className="text-center">
-            <h1 className="text-3xl font-semibold tracking-tight">欢迎使用 RV-Insights</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">欢迎使用 CodeInsights</h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               完成基础环境和模型渠道配置后，直接从 Pipeline 或 Agent 开始工作。
             </p>
@@ -135,7 +135,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <div className="mb-6 text-center">
             <h2 className="text-2xl font-semibold mb-2">先检查一下环境</h2>
             <p className="text-sm text-muted-foreground">
-              RV-Insights 在 Windows 上需要 Git Bash 或 WSL 才能执行命令
+              CodeInsights 在 Windows 上需要 Git Bash 或 WSL 才能执行命令
             </p>
           </div>
 
@@ -170,7 +170,7 @@ export function OnboardingView({ onComplete }: OnboardingViewProps) {
           <SheetHeader className="px-6 pt-6 pb-4 border-b">
             <SheetTitle className="flex items-center gap-2">
               <GraduationCap size={18} className="text-primary" />
-              RV-Insights 使用教程
+              CodeInsights 使用教程
             </SheetTitle>
           </SheetHeader>
           <ScrollArea className="h-[calc(100vh-80px)]">

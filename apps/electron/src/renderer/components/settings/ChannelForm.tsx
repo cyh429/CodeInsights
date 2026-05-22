@@ -32,7 +32,7 @@ import { Input } from '@/components/ui/input'
 import {
   PROVIDER_DEFAULT_URLS,
   PROVIDER_LABELS,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import type {
   Channel,
   ChannelCreateInput,
@@ -40,7 +40,7 @@ import type {
   ChannelTestResult,
   FetchModelsResult,
   ProviderType,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   AlertDialog,

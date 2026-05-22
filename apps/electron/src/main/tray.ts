@@ -12,8 +12,8 @@ function getTrayIconPath(): string {
   // dev: __dirname/resources（build:resources 拷贝产物）
   // prod: process.resourcesPath（electron-builder extraResources 产物）
   const resourcesDir = app.isPackaged
-    ? join(process.resourcesPath, 'rv-insights-logos')
-    : join(__dirname, 'resources/rv-insights-logos')
+    ? join(process.resourcesPath, 'codeinsights-logos')
+    : join(__dirname, 'resources/codeinsights-logos')
   return join(resourcesDir, 'iconTemplate.png')
 }
 
@@ -53,19 +53,19 @@ export function createTray(): Tray | null {
     tray = new Tray(image)
 
     // 设置 tooltip
-    tray.setToolTip('RV-Insights')
+    tray.setToolTip('CodeInsights')
 
     // 创建右键菜单
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: '显示 RV-Insights',
+        label: '显示 CodeInsights',
         click: () => showMainWindow()
       },
       {
         type: 'separator'
       },
       {
-        label: '退出 RV-Insights',
+        label: '退出 CodeInsights',
         click: () => {
           app.quit()
         }

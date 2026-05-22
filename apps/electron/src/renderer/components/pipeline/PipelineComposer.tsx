@@ -1,5 +1,5 @@
 import * as React from 'react'
-import type { PipelineSessionStatus } from '@rv-insights/shared'
+import type { PipelineSessionStatus } from '@codeinsights/shared'
 import { Activity, Play, Rocket, Square, SquareTerminal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -197,7 +197,7 @@ export function PipelineComposer({
         id="pipeline-task-input"
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="输入要交给 RV Pipeline 的任务"
+        placeholder="输入要交给 CodeInsights Pipeline 的任务"
         className="mt-3 min-h-36 w-full resize-y rounded-panel border border-border-subtle/70 bg-background/70 px-3 py-3 text-sm leading-6 text-text-primary shadow-inner outline-none transition-[border-color,box-shadow,background-color] duration-normal placeholder:text-text-tertiary focus:border-status-running-border focus:bg-background/85 focus:ring-2 focus:ring-focus"
       />
       <div className="mt-3 flex gap-2">

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelineSessionMeta, PipelineSessionStatus } from '@rv-insights/shared'
+import type { PipelineSessionMeta, PipelineSessionStatus } from '@codeinsights/shared'
 import {
   buildPipelineSidebarSessionSummary,
   buildPipelineSidebarSections,

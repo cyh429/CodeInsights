@@ -13,7 +13,7 @@ import {
 describe('agent-ui-model', () => {
   test('header meta exposes workspace, model, permission and active state', () => {
     const meta = buildAgentHeaderMeta({
-      workspaceName: 'rv-insights',
+      workspaceName: 'codeinsights',
       modelName: 'Claude Sonnet',
       permissionMode: 'plan',
       streaming: true,
@@ -21,7 +21,7 @@ describe('agent-ui-model', () => {
     })
 
     expect(meta).toEqual([
-      { key: 'workspace', label: '工作区', value: 'rv-insights', tone: 'neutral' },
+      { key: 'workspace', label: '工作区', value: 'codeinsights', tone: 'neutral' },
       { key: 'model', label: '模型', value: 'Claude Sonnet', tone: 'neutral' },
       { key: 'permission', label: '权限', value: 'Plan', tone: 'waiting' },
       { key: 'state', label: '状态', value: '规划中', tone: 'waiting' },

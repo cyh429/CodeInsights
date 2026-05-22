@@ -14,9 +14,9 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { PROVIDER_LABELS, isAgentCompatibleProvider } from '@rv-insights/shared'
-import type { Channel } from '@rv-insights/shared'
-import { getChannelLogo, RVInsightsLogo } from '@/lib/model-logo'
+import { PROVIDER_LABELS, isAgentCompatibleProvider } from '@codeinsights/shared'
+import type { Channel } from '@codeinsights/shared'
+import { getChannelLogo, CodeInsightsLogo } from '@/lib/model-logo'
 import { agentChannelIdAtom, agentModelIdAtom, agentChannelIdsAtom } from '@/atoms/agent-atoms'
 import { pipelineCodexChannelIdAtom } from '@/atoms/pipeline-atoms'
 import { channelsAtom } from '@/atoms/chat-atoms'
@@ -255,7 +255,7 @@ export function ChannelSettings(): React.ReactElement {
       >
         <CredentialStorageWarning scopeLabel="模型配置与渠道凭证" />
         <SettingsCard>
-          <RVInsightsProviderCard />
+          <CodeInsightsProviderCard />
         </SettingsCard>
         {loading ? (
           <div className="text-sm text-muted-foreground py-8 text-center">加载中...</div>
@@ -325,7 +325,7 @@ export function ChannelSettings(): React.ReactElement {
         description="启用 Agent 模式可用的供应商，支持同时开启多个渠道，在 Agent 模式下可直接切换"
       >
         <SettingsCard>
-          <RVInsightsProviderCard />
+          <CodeInsightsProviderCard />
         </SettingsCard>
         {loading ? (
           <div className="text-sm text-muted-foreground py-8 text-center">加载中...</div>
@@ -480,18 +480,18 @@ function AgentProviderRow({ channel, enabled, onToggle }: AgentProviderRowProps)
   )
 }
 
-// ===== RV-Insights 官方供应商推广卡片 =====
+// ===== CodeInsights 官方供应商推广卡片 =====
 
-function RVInsightsProviderCard(): React.ReactElement {
+function CodeInsightsProviderCard(): React.ReactElement {
   const handleDownload = (): void => {
-    window.open('http://proma.cool/download', '_blank')
+    window.open('https://codeinsights.cool/download', '_blank')
   }
 
   return (
     <SettingsRow
-      label="RV-Insights"
-      icon={<img src={RVInsightsLogo} alt="RV-Insights" className="w-8 h-8 rounded" />}
-      description="RV-Insights 官方供应｜稳定｜靠谱｜丝滑｜简单｜优惠套餐｜可用于 Agent"
+      label="CodeInsights"
+      icon={<img src={CodeInsightsLogo} alt="CodeInsights" className="w-8 h-8 rounded" />}
+      description="CodeInsights 官方供应｜稳定｜靠谱｜丝滑｜简单｜优惠套餐｜可用于 Agent"
     >
       <Button size="sm" variant="outline" className="gap-1.5" onClick={handleDownload}>
         <ExternalLink size={13} />

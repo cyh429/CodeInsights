@@ -1,14 +1,14 @@
 /**
  * Chat 工具配置服务
  *
- * 管理 ~/.rv-insights/chat-tools.json 的读写。
+ * 管理 ~/.codeinsights/chat-tools.json 的读写。
  * 存储工具开关状态和非记忆工具的凭据。
  * 记忆凭据保留在 memory.json（Chat + Agent 共用）。
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { getChatToolsConfigPath } from './config-paths'
-import type { ChatToolsFileConfig, ChatToolState, ChatToolMeta } from '@rv-insights/shared'
+import type { ChatToolsFileConfig, ChatToolState, ChatToolMeta } from '@codeinsights/shared'
 
 /** 默认配置 */
 const DEFAULT_CONFIG: ChatToolsFileConfig = {

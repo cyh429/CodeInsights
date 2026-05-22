@@ -1,4 +1,4 @@
-# RV-Insights Pipeline v2 阶段开发跟踪清单
+# CodeInsights Pipeline v2 阶段开发跟踪清单
 
 > 日期：2026-05-13
 > 适用范围：六 Agent 开源贡献 Pipeline v2。
@@ -128,8 +128,8 @@ Pipeline v2 总体完成前必须满足：
 **开发任务**
 
 - [x] 新增 `ContributionTask` 共享类型，包含 task id、session id、repo root、branch、mode、status、patchWorkDir。
-- [x] 新增贡献任务索引服务，使用 `~/.rv-insights/contribution-tasks.json`。
-- [x] 新增贡献任务 JSONL event 存储：`~/.rv-insights/contribution-tasks/{taskId}.jsonl`。
+- [x] 新增贡献任务索引服务，使用 `~/.codeinsights/contribution-tasks.json`。
+- [x] 新增贡献任务 JSONL event 存储：`~/.codeinsights/contribution-tasks/{taskId}.jsonl`。
 - [x] 新增 `pipeline-preflight-service.ts`。
 - [x] preflight 检查 Git root、branch、remote、未提交变更、冲突、Claude CLI、Codex CLI、Git、包管理器。
 - [x] 新增 `pipeline-patch-work-service.ts`。
@@ -673,11 +673,11 @@ Pipeline v2 总体完成前必须满足：
 - [x] Phase 0：规格冻结与测试骨架。
 - [x] Phase 1：Preflight、ContributionTask、PatchWork 基础。
 - [x] Phase 1 已提交，提交范围不包含 `patch-work/**`，也没有前端功能变更。
-- [x] Phase 1 已递增受影响 package patch version：`@rv-insights/shared`、`@rv-insights/electron`。
+- [x] Phase 1 已递增受影响 package patch version：`@codeinsights/shared`、`@codeinsights/electron`。
 - [x] Phase 1 验证已记录：阶段测试、v1 graph 兼容测试、`bun run typecheck`、`git diff --check`、`bun install --frozen-lockfile --dry-run` 通过。
 - [x] Phase 2：Shared v2 类型与六节点状态机骨架。
 - [x] Phase 2 已提交，提交范围不包含 `patch-work/**`，未开启真实 commit / push / PR 能力。
-- [x] Phase 2 已递增受影响 package patch version：`@rv-insights/shared`、`@rv-insights/electron`。
+- [x] Phase 2 已递增受影响 package patch version：`@codeinsights/shared`、`@codeinsights/electron`。
 - [x] Phase 2 验证已记录：阶段测试、补充 service/runner 测试、代码审查复核、`bun run typecheck`、`git diff --check`、`bun install --frozen-lockfile --dry-run` 通过。
 - [x] Phase 3：Explorer 任务选择与 Planner 文档审核。
 - [x] Phase 3 已实现 patch-work manifest / 文件 / explorer reports / select-task IPC 与 preload 契约。
@@ -721,7 +721,7 @@ Pipeline v2 总体完成前必须满足：
 - [x] Phase 8 已加固远端安全：实际 push URL 脱敏展示、`gh pr create --repo owner/repo`、拒绝 base/default 分支直推、校验 remote base branch、校验 `patch-work/**` 不在待推送 tree / history、错误统一脱敏。
 - [x] Phase 8 已实现远端结果回填、失败审计、PR 已存在恢复和 push succeeded / PR failed 的 `pushed` 可重试状态。
 - [x] Phase 8 已单独提交，commit `906834a0`（`feat(pipeline): 完成 Phase 8 远端 PR 受控集成`）。
-- [x] 当前 `@rv-insights/shared` 版本为 `0.1.33`，`@rv-insights/electron` 版本为 `0.0.58`。
+- [x] 当前 `@codeinsights/shared` 版本为 `0.1.33`，`@codeinsights/electron` 版本为 `0.0.58`。
 
 ### 未完成
 
@@ -757,7 +757,7 @@ Phase 8 已完成并作为本轮单独提交。后续建议优先修复既有全
 ## 后续启动提示词
 
 ```text
-你正在 RV-Insights 仓库继续开发 Pipeline v2 六 Agent 开源贡献工作流。
+你正在 CodeInsights 仓库继续开发 Pipeline v2 六 Agent 开源贡献工作流。
 
 请先阅读并遵守：
 - AGENTS.md
@@ -770,7 +770,7 @@ Phase 8 已完成并作为本轮单独提交。后续建议优先修复既有全
 1. Phase 0-6 已完成并分别提交，Phase 6 commit 为 fab7f906f546e619157286ffb6fe40c869f1d3e2。
 2. Phase 7 已完成并提交，commit 为 d6da8380dc69e179c24d542d4a73cd1be90216cc；已实现受控本地 Commit Gate，支持 local_commit 人工确认、受控 staging、默认排除 patch-work/**、operation id 幂等、commit hash 回填和 CommitterPanel 状态展示。
 3. Phase 8 已完成并作为本轮单独提交，commit 为 906834a0；已实现独立 remote_write_confirmation 高风险 gate、受控 git push + gh draft PR、远端结果回填、operation id 幂等、push 成功/PR 失败可恢复、错误脱敏和 patch-work tree/range 远端防护。
-4. 当前 @rv-insights/shared 版本为 0.1.33，@rv-insights/electron 版本为 0.0.58。
+4. 当前 @codeinsights/shared 版本为 0.1.33，@codeinsights/electron 版本为 0.0.58。
 5. 当前分支 base/pipeline-v0 相对 origin/base/pipeline-v0 ahead 16 commits；未 push，未创建 PR。
 6. 当前已知验证状态：Phase 8 核心聚焦测试 65 pass、周边兼容测试 147 pass、bun run typecheck、git diff --check、bun install --frozen-lockfile --dry-run 已通过；全量 bun test 最新结果为 387 pass / 1 fail / 1 error，失败仍为既有 completion-signal.test.ts Electron named export 测试环境问题。
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { PipelineReviewerStageOutput } from '@rv-insights/shared'
+import type { PipelineReviewerStageOutput } from '@codeinsights/shared'
 import { buildReviewerIssueBoardViewModel } from './ReviewerIssueBoard'
 
 describe('ReviewerIssueBoard', () => {
@@ -11,7 +11,7 @@ describe('ReviewerIssueBoard', () => {
       issues: ['缺少 UI 状态测试', '风险说明不完整'],
       structuredIssues: [
         {
-          id: 'RV-REV-001',
+          id: 'CI-REV-001',
           severity: 'major',
           category: 'test_gap',
           title: '缺少 UI 状态测试',
@@ -19,7 +19,7 @@ describe('ReviewerIssueBoard', () => {
           status: 'open',
         },
         {
-          id: 'RV-REV-002',
+          id: 'CI-REV-002',
           severity: 'minor',
           category: 'maintainability',
           title: '风险说明不完整',
@@ -53,7 +53,7 @@ describe('ReviewerIssueBoard', () => {
     })
     expect(viewModel.groups.map((group) => group.severity)).toEqual(['major', 'minor'])
     expect(viewModel.groups[0]?.issues[0]).toMatchObject({
-      id: 'RV-REV-001',
+      id: 'CI-REV-001',
       statusLabel: '待修复',
     })
     expect(viewModel.reviewContent).toContain('不通过')
@@ -76,7 +76,7 @@ describe('ReviewerIssueBoard', () => {
     expect(viewModel.groups).toHaveLength(1)
     expect(viewModel.groups[0]?.severity).toBe('major')
     expect(viewModel.groups[0]?.issues[0]).toMatchObject({
-      id: 'RV-REV-001',
+      id: 'CI-REV-001',
       title: '缺少验证命令',
       statusLabel: '待修复',
     })

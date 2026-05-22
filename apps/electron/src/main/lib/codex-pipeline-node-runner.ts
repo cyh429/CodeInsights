@@ -9,7 +9,7 @@ import type {
   PipelineNodeKind,
   PipelineStreamEvent,
   ProviderType,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { getEffectiveProxyUrl } from './proxy-settings-service'
 import { decryptApiKey, getChannelById } from './channel-manager'
 import {
@@ -331,7 +331,7 @@ function withRemoteWriteGuards(
   remotes.forEach((remote, index) => {
     const configIndex = baseIndex + index
     guarded[`GIT_CONFIG_KEY_${configIndex}`] = `remote.${remote}.pushurl`
-    guarded[`GIT_CONFIG_VALUE_${configIndex}`] = 'file:///__rv_insights_remote_writes_disabled__'
+    guarded[`GIT_CONFIG_VALUE_${configIndex}`] = 'file:///__codeinsights_remote_writes_disabled__'
   })
   guarded.GIT_CONFIG_COUNT = String(baseIndex + remotes.length)
   return guarded
@@ -340,7 +340,7 @@ function withRemoteWriteGuards(
 function gitGuardShellScript(): string {
   return [
     '#!/bin/sh',
-    'echo "RV-Insights Pipeline v2 禁止 Codex 节点直接执行 git；请依赖 Pipeline 提供的结构化上下文和 patch-set 服务。" >&2',
+    'echo "CodeInsights Pipeline v2 禁止 Codex 节点直接执行 git；请依赖 Pipeline 提供的结构化上下文和 patch-set 服务。" >&2',
     'exit 126',
     '',
   ].join('\n')
@@ -349,7 +349,7 @@ function gitGuardShellScript(): string {
 function gitGuardCmdScript(): string {
   return [
     '@echo off',
-    'echo RV-Insights Pipeline v2 禁止 Codex 节点直接执行 git；请依赖 Pipeline 提供的结构化上下文和 patch-set 服务。 1>&2',
+    'echo CodeInsights Pipeline v2 禁止 Codex 节点直接执行 git；请依赖 Pipeline 提供的结构化上下文和 patch-set 服务。 1>&2',
     'exit /b 126',
     '',
   ].join('\r\n')
@@ -358,7 +358,7 @@ function gitGuardCmdScript(): string {
 function blockedCliShellScript(command: string): string {
   return [
     '#!/bin/sh',
-    `echo "RV-Insights Pipeline v2 禁止执行 ${command}" >&2`,
+    `echo "CodeInsights Pipeline v2 禁止执行 ${command}" >&2`,
     'exit 126',
     '',
   ].join('\n')
@@ -367,7 +367,7 @@ function blockedCliShellScript(command: string): string {
 function blockedCliCmdScript(command: string): string {
   return [
     '@echo off',
-    `echo RV-Insights Pipeline v2 禁止执行 ${command} 1>&2`,
+    `echo CodeInsights Pipeline v2 禁止执行 ${command} 1>&2`,
     'exit /b 126',
     '',
   ].join('\r\n')
@@ -383,7 +383,7 @@ async function createCodexCommandGuard(
     delete guarded.CODEX_API_KEY
   }
   const originalPath = guarded.PATH ?? process.env.PATH ?? ''
-  const guardHome = await mkdtemp(join(tmpdir(), 'rv-codex-home-'))
+  const guardHome = await mkdtemp(join(tmpdir(), 'codeinsights-codex-home-'))
   const gitConfigPath = join(guardHome, '.gitconfig')
   const isolatedCodexHome = options.auth.kind === 'native' && options.auth.codexHome
     ? options.auth.codexHome
@@ -398,7 +398,7 @@ async function createCodexCommandGuard(
 
   const guardedGitEnv: Record<string, string> = {}
   if (repositoryRoot) {
-    guardDir = await mkdtemp(join(tmpdir(), 'rv-codex-command-guard-'))
+    guardDir = await mkdtemp(join(tmpdir(), 'codeinsights-codex-command-guard-'))
     const gitShellPath = join(guardDir, 'git')
     const gitCmdPath = join(guardDir, 'git.cmd')
     await writeFile(gitShellPath, gitGuardShellScript(), 'utf-8')
@@ -413,8 +413,8 @@ async function createCodexCommandGuard(
       await chmod(shellPath, 0o755)
     }
 
-    guardedGitEnv.GIT_DIR = '/__rv_insights_git_disabled__'
-    guardedGitEnv.RV_INSIGHTS_GIT_DISABLED = '1'
+    guardedGitEnv.GIT_DIR = '/__codeinsights_git_disabled__'
+    guardedGitEnv.CODEINSIGHTS_GIT_DISABLED = '1'
     guardedGitEnv.PATH = [guardDir, originalPath].filter(Boolean).join(delimiter)
   }
 
@@ -456,7 +456,7 @@ function sanitizeCodexGitEnvironment(env: Record<string, string>): Record<string
     'GIT_INDEX_FILE',
     'GIT_ASKPASS',
     'SSH_ASKPASS',
-    'RV_INSIGHTS_REAL_GIT',
+    'CODEINSIGHTS_REAL_GIT',
   ]) {
     delete sanitized[key]
   }
@@ -686,7 +686,7 @@ function buildCodexPrompt(
     prompts.systemPrompt,
     '',
     '执行要求：',
-    '- 你正在作为 Codex 执行 RV Pipeline 节点。',
+    '- 你正在作为 Codex 执行 CodeInsights Pipeline 节点。',
     '- 请完成节点职责后，只返回符合 JSON Schema 的最终 JSON 对象。',
     '- 不要在最终响应中添加 Markdown fence、解释文字或 schema 外字段。',
     '',
@@ -878,7 +878,7 @@ export class SpawnCodexCliExecutor implements CodexCliExecutor {
   async run(input: CodexCliRunInput): Promise<CodexCliRunResult> {
     assertCodexCliRunNotAborted(input.signal)
 
-    const tempDir = await mkdtemp(join(tmpdir(), 'rv-pipeline-codex-'))
+    const tempDir = await mkdtemp(join(tmpdir(), 'codeinsights-pipeline-codex-'))
     const schemaPath = join(tempDir, 'schema.json')
     const outputPath = join(tempDir, 'final-response.json')
     let handleAbort: (() => void) | undefined

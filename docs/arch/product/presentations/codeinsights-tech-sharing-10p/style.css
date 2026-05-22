@@ -1,0 +1,690 @@
+/* CodeInsights technical sharing deck. Scoped to this deck only. */
+
+:root {
+  --ci-blue: #58a6ff;
+  --ci-green: #3fb950;
+  --ci-orange: #f0883e;
+  --ci-purple: #bc8cff;
+  --ci-red: #f85149;
+  --ci-cyan: #39c5cf;
+  --ci-ink-panel: rgba(255, 255, 255, 0.045);
+  --ci-ink-panel-strong: rgba(255, 255, 255, 0.075);
+}
+
+html,
+body,
+.deck,
+.slide {
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .slide {
+  padding: 56px 72px;
+  justify-content: center;
+}
+
+.tpl-codeinsights-tech .slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(88, 166, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(63, 185, 80, 0.055), transparent 34%),
+    radial-gradient(circle at 84% 16%, rgba(240, 136, 62, 0.10), transparent 24%);
+  opacity: 0.8;
+}
+
+.tpl-codeinsights-tech .slide > * {
+  position: relative;
+  z-index: 1;
+}
+
+.tpl-codeinsights-tech .kicker {
+  margin: 0 0 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  line-height: 1.2;
+  color: var(--text-3);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.tpl-codeinsights-tech .h1 {
+  margin: 0;
+  max-width: 980px;
+  font-size: 64px;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .h2 {
+  margin: 0;
+  max-width: 980px;
+  font-size: 42px;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .h3 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .lede {
+  max-width: 900px;
+  margin: 20px 0 0;
+  font-size: 21px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.tpl-codeinsights-tech .accent-blue { color: var(--ci-blue); }
+.tpl-codeinsights-tech .accent-green { color: var(--ci-green); }
+.tpl-codeinsights-tech .accent-orange { color: var(--ci-orange); }
+.tpl-codeinsights-tech .accent-purple { color: var(--ci-purple); }
+.tpl-codeinsights-tech .accent-red { color: var(--ci-red); }
+.tpl-codeinsights-tech .accent-cyan { color: var(--ci-cyan); }
+
+.tpl-codeinsights-tech .mono {
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.tpl-codeinsights-tech .pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-2);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .cover-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.72fr);
+  gap: 56px;
+  align-items: center;
+}
+
+.tpl-codeinsights-tech .equation-card {
+  padding: 26px;
+  border: 1px solid rgba(88, 166, 255, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(88, 166, 255, 0.10), rgba(255, 255, 255, 0.035)),
+    rgba(255, 255, 255, 0.05);
+}
+
+.tpl-codeinsights-tech .eq-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.tpl-codeinsights-tech .eq-row span {
+  font-family: var(--font-mono, monospace);
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.tpl-codeinsights-tech .eq-row b {
+  color: var(--text-1);
+  font-size: 18px;
+}
+
+.tpl-codeinsights-tech .eq-op {
+  padding: 10px 0;
+  color: var(--ci-blue);
+  font-family: var(--font-mono, monospace);
+  font-size: 28px;
+  line-height: 1;
+  text-align: center;
+}
+
+.tpl-codeinsights-tech .eq-result {
+  padding: 18px;
+  border-radius: 8px;
+  background: rgba(63, 185, 80, 0.11);
+  border: 1px solid rgba(63, 185, 80, 0.28);
+  color: var(--text-1);
+  font-size: 20px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.tpl-codeinsights-tech .layout-two {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 34px;
+  align-items: center;
+}
+
+.tpl-codeinsights-tech .layout-two.wide-left {
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+}
+
+.tpl-codeinsights-tech .grid-3,
+.tpl-codeinsights-tech .grid-4,
+.tpl-codeinsights-tech .grid-5 {
+  display: grid;
+  gap: 16px;
+}
+
+.tpl-codeinsights-tech .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tpl-codeinsights-tech .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tpl-codeinsights-tech .grid-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+.tpl-codeinsights-tech .card,
+.tpl-codeinsights-tech .statement,
+.tpl-codeinsights-tech .diagram-frame,
+.tpl-codeinsights-tech .stage,
+.tpl-codeinsights-tech .risk-card,
+.tpl-codeinsights-tech .runtime-panel,
+.tpl-codeinsights-tech .principle {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: var(--ci-ink-panel);
+  box-shadow: none;
+}
+
+.tpl-codeinsights-tech .card {
+  min-height: 142px;
+  padding: 18px 20px;
+}
+
+.tpl-codeinsights-tech .card h4 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.tpl-codeinsights-tech .card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+
+.tpl-codeinsights-tech .statement {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.tpl-codeinsights-tech .statement .label {
+  margin: 0 0 10px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  color: var(--text-3);
+  text-transform: uppercase;
+}
+
+.tpl-codeinsights-tech .statement p {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.48;
+  color: var(--text-1);
+}
+
+.tpl-codeinsights-tech .diagram-frame {
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tpl-codeinsights-tech .diagram-frame img {
+  width: 100%;
+  max-height: 430px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.tpl-codeinsights-tech .diagram-frame.dark img {
+  background: #0b1220;
+}
+
+.tpl-codeinsights-tech .diagram-large img {
+  max-height: 500px;
+}
+
+.tpl-codeinsights-tech .callout {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--ci-orange);
+  background: rgba(240, 136, 62, 0.08);
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.tpl-codeinsights-tech .compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.tpl-codeinsights-tech .compare .box {
+  min-height: 250px;
+  padding: 22px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tpl-codeinsights-tech .compare .box:first-child {
+  border-color: rgba(248, 81, 73, 0.32);
+}
+
+.tpl-codeinsights-tech .compare .box:last-child {
+  border-color: rgba(63, 185, 80, 0.34);
+}
+
+.tpl-codeinsights-tech .compare h3 {
+  margin: 0 0 16px;
+  font-size: 24px;
+}
+
+.tpl-codeinsights-tech .bullets {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tpl-codeinsights-tech .bullets li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  margin: 12px 0;
+  color: var(--text-2);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.tpl-codeinsights-tech .dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--ci-blue);
+}
+
+.tpl-codeinsights-tech .dot.green { background: var(--ci-green); }
+.tpl-codeinsights-tech .dot.orange { background: var(--ci-orange); }
+.tpl-codeinsights-tech .dot.purple { background: var(--ci-purple); }
+.tpl-codeinsights-tech .dot.red { background: var(--ci-red); }
+.tpl-codeinsights-tech .dot.cyan { background: var(--ci-cyan); }
+
+.tpl-codeinsights-tech .flow-bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tpl-codeinsights-tech .flow-step {
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  position: relative;
+}
+
+.tpl-codeinsights-tech .flow-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  width: 12px;
+  height: 1px;
+  background: rgba(88, 166, 255, 0.55);
+}
+
+.tpl-codeinsights-tech .flow-step span {
+  display: block;
+  margin-bottom: 22px;
+  color: var(--ci-blue);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tpl-codeinsights-tech .flow-step b {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-1);
+  font-size: 24px;
+}
+
+.tpl-codeinsights-tech .flow-step small {
+  display: block;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.tpl-codeinsights-tech .risk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.tpl-codeinsights-tech .risk-card {
+  min-height: 220px;
+  padding: 22px;
+}
+
+.tpl-codeinsights-tech .risk-tag {
+  display: inline-flex;
+  margin-bottom: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--ci-blue);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.tpl-codeinsights-tech .risk-tag.red {
+  background: rgba(248, 81, 73, 0.13);
+  color: var(--ci-red);
+}
+
+.tpl-codeinsights-tech .risk-tag.orange {
+  background: rgba(240, 136, 62, 0.13);
+  color: var(--ci-orange);
+}
+
+.tpl-codeinsights-tech .risk-tag.purple {
+  background: rgba(188, 140, 255, 0.13);
+  color: var(--ci-purple);
+}
+
+.tpl-codeinsights-tech .risk-card h4 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+
+.tpl-codeinsights-tech .risk-card p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.tpl-codeinsights-tech .thesis-list,
+.tpl-codeinsights-tech .layer-stack,
+.tpl-codeinsights-tech .done-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.tpl-codeinsights-tech .thesis-list > div,
+.tpl-codeinsights-tech .layer-stack > div,
+.tpl-codeinsights-tech .done-stack > div {
+  display: grid;
+  grid-template-columns: 118px 1fr;
+  align-items: start;
+  gap: 16px;
+  padding: 15px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tpl-codeinsights-tech .thesis-list b,
+.tpl-codeinsights-tech .done-stack b {
+  color: var(--text-1);
+  font-size: 17px;
+}
+
+.tpl-codeinsights-tech .thesis-list span,
+.tpl-codeinsights-tech .done-stack span {
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tpl-codeinsights-tech .layer-stack > div {
+  grid-template-columns: 22px 140px 1fr;
+}
+
+.tpl-codeinsights-tech .layer-stack b {
+  color: var(--text-1);
+  font-size: 16px;
+}
+
+.tpl-codeinsights-tech .layer-stack em {
+  color: var(--text-2);
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.tpl-codeinsights-tech .stage {
+  min-height: 148px;
+  padding: 16px;
+}
+
+.tpl-codeinsights-tech .stage .num,
+.tpl-codeinsights-tech .principle .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.16);
+  color: var(--ci-blue);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tpl-codeinsights-tech .stage h4,
+.tpl-codeinsights-tech .principle h4 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.tpl-codeinsights-tech .stage p,
+.tpl-codeinsights-tech .principle p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tpl-codeinsights-tech .runtime-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.tpl-codeinsights-tech .runtime-panel {
+  padding: 16px 18px;
+  background: var(--ci-ink-panel-strong);
+}
+
+.tpl-codeinsights-tech .runtime-panel.highlight {
+  border-color: rgba(88, 166, 255, 0.42);
+  background: rgba(88, 166, 255, 0.085);
+}
+
+.tpl-codeinsights-tech .runtime-panel .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 9px;
+}
+
+.tpl-codeinsights-tech .runtime-panel h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.tpl-codeinsights-tech .runtime-panel .tag {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--ci-blue);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
+
+.tpl-codeinsights-tech .runtime-panel p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.tpl-codeinsights-tech .rail {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.tpl-codeinsights-tech .trust-strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.tpl-codeinsights-tech .trust-item {
+  min-height: 102px;
+  padding: 13px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tpl-codeinsights-tech .trust-item b {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.tpl-codeinsights-tech .trust-item span {
+  display: block;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tpl-codeinsights-tech .trust-strip.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tpl-codeinsights-tech .trust-strip.compact .trust-item {
+  min-height: 94px;
+}
+
+.tpl-codeinsights-tech .final-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.tpl-codeinsights-tech .principle {
+  min-height: 240px;
+  padding: 22px;
+}
+
+.tpl-codeinsights-tech .final-grid.punch .principle {
+  min-height: 230px;
+  padding: 24px;
+  border-color: rgba(88, 166, 255, 0.18);
+}
+
+.tpl-codeinsights-tech .closing-line {
+  padding: 18px 22px;
+  border-left: 3px solid var(--ci-blue);
+  background: rgba(88, 166, 255, 0.08);
+  color: var(--text-1);
+  font-size: 24px;
+  font-family: var(--font-mono, monospace);
+}
+
+.tpl-codeinsights-tech .deck-footer {
+  left: 72px;
+  right: 72px;
+  bottom: 22px;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech .footer-help {
+  position: fixed;
+  right: 18px;
+  bottom: 12px;
+  z-index: 20;
+  pointer-events: none;
+  color: rgba(180, 190, 210, 0.58);
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.tpl-codeinsights-tech strong {
+  color: var(--text-1);
+}
+
+.tpl-codeinsights-tech .small {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-3);
+}
+
+@media (max-width: 900px) {
+  .tpl-codeinsights-tech .slide {
+    padding: 42px 34px;
+  }
+
+  .tpl-codeinsights-tech .h1 {
+    font-size: 46px;
+  }
+
+  .tpl-codeinsights-tech .h2 {
+    font-size: 34px;
+  }
+
+  .tpl-codeinsights-tech .layout-two,
+  .tpl-codeinsights-tech .layout-two.wide-left,
+  .tpl-codeinsights-tech .cover-grid,
+  .tpl-codeinsights-tech .compare,
+  .tpl-codeinsights-tech .flow-bar,
+  .tpl-codeinsights-tech .risk-grid,
+  .tpl-codeinsights-tech .grid-3,
+  .tpl-codeinsights-tech .grid-4,
+  .tpl-codeinsights-tech .grid-5,
+  .tpl-codeinsights-tech .rail,
+  .tpl-codeinsights-tech .trust-strip,
+  .tpl-codeinsights-tech .final-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tpl-codeinsights-tech .flow-step::after {
+    display: none;
+  }
+}

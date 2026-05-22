@@ -50,7 +50,7 @@ import { UserAvatar } from '@/components/chat/UserAvatar'
 import { WorkspaceSelector } from '@/components/agent/WorkspaceSelector'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
-import type { PipelineSessionMeta, WorkspaceCapabilities } from '@rv-insights/shared'
+import type { PipelineSessionMeta, WorkspaceCapabilities } from '@codeinsights/shared'
 import type { SessionIndicatorStatus } from '@/atoms/agent-atoms'
 import {
   buildPipelineSidebarSections,

@@ -17,7 +17,7 @@ import type {
   TaskItem,
   ParsedMailboxMessage,
   AgentTeamData,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 const TEAMS_DIR = join(homedir(), '.claude', 'teams')
 const TASKS_DIR = join(homedir(), '.claude', 'tasks')

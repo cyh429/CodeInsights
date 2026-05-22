@@ -4,7 +4,7 @@ import type {
   PipelinePatchWorkDocumentRef,
   PipelineTesterStageOutput,
   PipelineTestEvidence,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 
 export interface TesterPatchWorkDocumentViewModel {
   displayName: string

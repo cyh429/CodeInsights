@@ -12,7 +12,7 @@ import {
 let tempDir = ''
 
 beforeEach(() => {
-  tempDir = mkdtempSync(join(tmpdir(), 'rv-plugin-catalog-'))
+  tempDir = mkdtempSync(join(tmpdir(), 'codeinsights-plugin-catalog-'))
 })
 
 afterEach(() => {

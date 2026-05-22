@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentProviderAdapter, AgentQueryInput, SDKMessage, SDKSystemMessage } from '@rv-insights/shared'
+import type { AgentProviderAdapter, AgentQueryInput, SDKMessage, SDKSystemMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from '../adapters/claude-agent-adapter'
 import {
   TeamsCoordinator,

@@ -13,19 +13,19 @@ import {
 } from './pipeline-session-manager'
 
 describe('pipeline-session-manager', () => {
-  const originalConfigDir = process.env.RV_INSIGHTS_CONFIG_DIR
+  const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
   let tempConfigDir = ''
 
   beforeEach(() => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), 'rv-pipeline-session-'))
-    process.env.RV_INSIGHTS_CONFIG_DIR = tempConfigDir
+    tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-session-'))
+    process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   })
 
   afterEach(() => {
     if (originalConfigDir == null) {
-      delete process.env.RV_INSIGHTS_CONFIG_DIR
+      delete process.env.CODEINSIGHTS_CONFIG_DIR
     } else {
-      process.env.RV_INSIGHTS_CONFIG_DIR = originalConfigDir
+      process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
     }
 
     rmSync(tempConfigDir, { recursive: true, force: true })

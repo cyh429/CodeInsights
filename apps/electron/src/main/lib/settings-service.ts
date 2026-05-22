@@ -2,7 +2,7 @@
  * 应用设置服务
  *
  * 管理应用设置（主题模式等）的读写。
- * 存储在 ~/.rv-insights/settings.json
+ * 存储在 ~/.codeinsights/settings.json
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'

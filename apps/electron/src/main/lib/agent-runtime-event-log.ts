@@ -12,16 +12,16 @@ import {
   type AgentRuntimeReplayState,
   type AgentStreamEnvelope,
   type AgentStreamPayload,
-  type RVInsightsPermissionMode,
+  type CodeInsightsPermissionMode,
   type SDKMessage,
-} from '@rv-insights/shared'
+} from '@codeinsights/shared'
 import { appendAgentRuntimeEvents, getAgentSessionRuntimeEvents } from './agent-session-manager'
 
 export interface AgentRuntimeRunStartInput {
   sessionId: string
   model: string
   cwd: string
-  permissionMode: RVInsightsPermissionMode
+  permissionMode: CodeInsightsPermissionMode
   runtimeHash?: string
   resumeFrom?: string
   runnerMode?: AgentRuntimeRunnerMode
@@ -107,7 +107,7 @@ export function appendExitPlanModeResolvedRuntimeEvent(
   action: 'approve_auto' | 'approve_edit',
   feedback?: string,
 ): void {
-  getActiveAgentRuntimeEventLogWriter(sessionId)?.appendRuntimeEvent('rv_insights', {
+  getActiveAgentRuntimeEventLogWriter(sessionId)?.appendRuntimeEvent('codeinsights', {
     type: 'plan_mode_exited',
     requestId,
     decision: 'approved',
@@ -219,5 +219,5 @@ function resolveSource(payload: AgentStreamPayload, event: AgentRuntimeEvent): A
   if (payload.kind === 'sdk_message') return 'claude_sdk'
   if (event.type.startsWith('permission_')) return 'permission_service'
   if (event.type.startsWith('ask_user_')) return 'ask_user_service'
-  return 'rv_insights'
+  return 'codeinsights'
 }

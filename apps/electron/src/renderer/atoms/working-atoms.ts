@@ -6,7 +6,7 @@
  */
 
 import { atom } from 'jotai'
-import type { AgentSessionMeta } from '@rv-insights/shared'
+import type { AgentSessionMeta } from '@codeinsights/shared'
 import {
   agentSessionsAtom,
   agentSessionIndicatorMapAtom,

@@ -48,8 +48,8 @@ import { createAgentSessionRefreshController } from './agent-session-refresh-con
 import type { AgentStreamState } from '@/atoms/agent-atoms'
 import type { NotificationSoundType } from '@/types/settings'
 import { toast } from 'sonner'
-import type { AgentSessionMeta, AgentStreamEvent, AgentStreamCompletePayload, AgentEvent, AgentStreamPayload, SDKAssistantMessage, SDKUserMessage, SDKSystemMessage, SDKContentBlock, SDKUserContentBlock, AgentStreamEnvelope, AgentRuntimeEvent } from '@rv-insights/shared'
-import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope, replayAgentStreamEnvelopes, type AgentRuntimeReplayState } from '@rv-insights/shared'
+import type { AgentSessionMeta, AgentStreamEvent, AgentStreamCompletePayload, AgentEvent, AgentStreamPayload, SDKAssistantMessage, SDKUserMessage, SDKSystemMessage, SDKContentBlock, SDKUserContentBlock, AgentStreamEnvelope, AgentRuntimeEvent } from '@codeinsights/shared'
+import { adaptAgentStreamPayloadToRuntimeEvents, createAgentStreamEnvelope, replayAgentStreamEnvelopes, type AgentRuntimeReplayState } from '@codeinsights/shared'
 
 /** 触发右侧文件浏览器自动定位的写入类工具集合 */
 const WRITE_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'NotebookEdit', 'Update'])
@@ -77,7 +77,7 @@ function inferContextWindow(model?: string): number | undefined {
 }
 
 function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
-  if (payload.kind === 'rv_insights_event') {
+  if (payload.kind === 'codeinsights_event' || payload.kind === 'rv_insights_event') {
     const evt = payload.event
     switch (evt.type) {
       case 'permission_request':
@@ -283,7 +283,7 @@ function resolveRuntimeSource(payload: AgentStreamPayload, event: AgentRuntimeEv
   if (payload.kind === 'sdk_message') return 'claude_sdk'
   if (event.type.startsWith('permission_')) return 'permission_service'
   if (event.type.startsWith('ask_user_')) return 'ask_user_service'
-  return 'rv_insights'
+  return 'codeinsights'
 }
 
 export function useGlobalAgentListeners(): void {
@@ -671,14 +671,14 @@ export function useGlobalAgentListeners(): void {
               return next
             })
             // 同步更新权限模式选择器（per-session）
-            store.set(agentPermissionModeMapAtom, (prev: Map<string, import('@rv-insights/shared').RVInsightsPermissionMode>) => {
+            store.set(agentPermissionModeMapAtom, (prev: Map<string, import('@codeinsights/shared').CodeInsightsPermissionMode>) => {
               const next = new Map(prev)
               next.set(sessionId, 'plan')
               return next
             })
           } else if (event.type === 'permission_mode_changed') {
             // 权限模式变更（如 Plan 模式退出时切换到完全自动）
-            store.set(agentPermissionModeMapAtom, (prev: Map<string, import('@rv-insights/shared').RVInsightsPermissionMode>) => {
+            store.set(agentPermissionModeMapAtom, (prev: Map<string, import('@codeinsights/shared').CodeInsightsPermissionMode>) => {
               const next = new Map(prev)
               next.set(sessionId, event.mode)
               return next

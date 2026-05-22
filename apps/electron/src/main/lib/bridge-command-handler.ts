@@ -8,8 +8,8 @@
  */
 
 import { BrowserWindow } from 'electron'
-import type { AgentStreamPayload } from '@rv-insights/shared'
-import { AGENT_IPC_CHANNELS } from '@rv-insights/shared'
+import type { AgentStreamPayload } from '@codeinsights/shared'
+import { AGENT_IPC_CHANNELS } from '@codeinsights/shared'
 import { createAgentSession, listAgentSessions, getAgentSessionMeta } from './agent-session-manager'
 import {
   listAgentWorkspacesByUpdatedAt,
@@ -265,7 +265,7 @@ export class BridgeCommandHandler {
     const settings = getSettings()
     const channelId = settings.agentChannelId
     if (!channelId) {
-      await this.send(chatId, '请先在 RV-Insights 设置中选择 Agent 渠道。', contextData)
+      await this.send(chatId, '请先在 CodeInsights 设置中选择 Agent 渠道。', contextData)
       return
     }
 
@@ -554,7 +554,7 @@ export class BridgeCommandHandler {
     const settings = getSettings()
     const channelId = settings.agentChannelId
     if (!channelId) {
-      await this.send(chatId, '请先在 RV-Insights 设置中选择 Agent 渠道。', contextData)
+      await this.send(chatId, '请先在 CodeInsights 设置中选择 Agent 渠道。', contextData)
       return
     }
 
@@ -564,7 +564,7 @@ export class BridgeCommandHandler {
     if (!binding) {
       const result = this.ensureBinding(chatId)
       if (!result) {
-        await this.send(chatId, '请先在 RV-Insights 设置中选择 Agent 渠道。', contextData)
+        await this.send(chatId, '请先在 CodeInsights 设置中选择 Agent 渠道。', contextData)
         return
       }
       binding = result
