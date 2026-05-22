@@ -1,5 +1,6 @@
 import type {
   AgentRuntimeEvent,
+  AgentRuntimeRunnerMode,
   AgentStreamEnvelope,
   RVInsightsPermissionMode,
   SDKMessage,
@@ -11,19 +12,54 @@ import type { TeamsCoordinator, TeamsCoordinatorDeps } from './agent-orchestrato
 const RUNNER_V2_DISABLED_VALUES = new Set(['0', 'false', 'off', 'no', 'disabled'])
 const RUNNER_V2_ENABLED_VALUES = new Set(['1', 'true', 'on', 'yes', 'enabled'])
 
+type AgentRuntimeRunnerV2EnvOverride = 'enabled' | 'disabled' | null
+
+function resolveAgentRuntimeRunnerV2EnvOverride(
+  value = process.env.RV_AGENT_RUNTIME_RUNNER_V2,
+): AgentRuntimeRunnerV2EnvOverride {
+  if (value === undefined) return null
+  const normalized = value.trim().toLowerCase()
+  if (normalized === '') return null
+  if (RUNNER_V2_DISABLED_VALUES.has(normalized)) return 'disabled'
+  if (RUNNER_V2_ENABLED_VALUES.has(normalized)) return 'enabled'
+  return null
+}
+
 export function resolveAgentRuntimeRunnerV2Enabled(
   value = process.env.RV_AGENT_RUNTIME_RUNNER_V2,
 ): boolean {
-  if (value === undefined) return true
-  const normalized = value.trim().toLowerCase()
-  if (normalized === '') return true
-  if (RUNNER_V2_DISABLED_VALUES.has(normalized)) return false
-  if (RUNNER_V2_ENABLED_VALUES.has(normalized)) return true
-  return true
+  return resolveAgentRuntimeRunnerV2EnvOverride(value) !== 'disabled'
 }
 
 export const agentRuntimeRunnerV2 = {
   enabled: resolveAgentRuntimeRunnerV2Enabled(),
+}
+
+export type AgentRuntimeRunnerModeResolutionSource = 'default' | 'request' | 'env-disabled' | 'env-enabled'
+
+export interface AgentRuntimeRunnerModeResolution {
+  mode: AgentRuntimeRunnerMode
+  source: AgentRuntimeRunnerModeResolutionSource
+}
+
+export function resolveAgentRuntimeRunnerModeForRun(input: {
+  requestedMode?: AgentRuntimeRunnerMode
+  envValue?: string
+} = {}): AgentRuntimeRunnerModeResolution {
+  const envOverride = resolveAgentRuntimeRunnerV2EnvOverride(input.envValue)
+  if (envOverride === 'disabled') {
+    return { mode: 'legacy', source: 'env-disabled' }
+  }
+  if (envOverride === 'enabled') {
+    return { mode: 'runner-v2', source: 'env-enabled' }
+  }
+  if (input.requestedMode === 'legacy' || input.requestedMode === 'runner-v2') {
+    return { mode: input.requestedMode, source: 'request' }
+  }
+  return {
+    mode: agentRuntimeRunnerV2.enabled ? 'runner-v2' : 'legacy',
+    source: 'default',
+  }
 }
 
 export interface AgentRuntimePipelineMetadata {
@@ -48,6 +84,7 @@ export interface AgentRuntimeRunInput {
   resumeFrom?: string
   runtimeHash?: string
   channelModelId?: string
+  runnerMode?: AgentRuntimeRunnerMode
   metadata?: AgentRuntimeRunMetadata
   abortSignal?: AbortSignal
 }

@@ -30,6 +30,7 @@ import {
   agentEffortAtom,
   agentMaxBudgetUsdAtom,
   agentMaxTurnsAtom,
+  agentRuntimeRunnerModeAtom,
   agentSettingsReadyAtom,
 } from './atoms/agent-atoms'
 import { updateStatusAtom, initializeUpdater } from './atoms/updater'
@@ -143,6 +144,7 @@ function AgentSettingsInitializer(): null {
   const setEffort = useSetAtom(agentEffortAtom)
   const setMaxBudget = useSetAtom(agentMaxBudgetUsdAtom)
   const setMaxTurns = useSetAtom(agentMaxTurnsAtom)
+  const setRuntimeRunnerMode = useSetAtom(agentRuntimeRunnerModeAtom)
   const setPipelineCodexChannelId = useSetAtom(pipelineCodexChannelIdAtom)
 
   const setAgentSettingsReady = useSetAtom(agentSettingsReadyAtom)
@@ -231,6 +233,9 @@ function AgentSettingsInitializer(): null {
       }
       if (settings.agentMaxTurns != null) {
         setMaxTurns(settings.agentMaxTurns)
+      }
+      if (settings.agentRuntimeRunnerMode === 'legacy' || settings.agentRuntimeRunnerMode === 'runner-v2') {
+        setRuntimeRunnerMode(settings.agentRuntimeRunnerMode)
       }
 
       const pipelineCodexChannel = settings.pipelineCodexChannelId

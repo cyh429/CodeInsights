@@ -19,6 +19,7 @@
 - docs/agent-refactor/baseline-runs/2026-05-22-stage-14A.md
 - docs/agent-refactor/baseline-runs/2026-05-22-stage-14B.md
 - docs/agent-refactor/baseline-runs/2026-05-22-stage-14C.md
+- docs/agent-refactor/baseline-runs/2026-05-22-stage-15.md
 - docs/agent-refactor/next-session-prompt.md
 
 当前已完成并提交：
@@ -28,14 +29,16 @@
 - 阶段 14A Agent Runner v2 默认化已提交：88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化
 - 阶段 14B Pipeline Runner v2 默认化已提交：be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化
 - 阶段 14C Channels v2 默认化已按用户指示排除飞书真实入口阻塞后完成代码侧评估。
+- 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证：Agent 输入区可选择 `Runner v2` / `Legacy`，选择持久化到 settings。
 
 当前版本：
-- @rv-insights/shared：0.1.40
-- @rv-insights/electron：0.0.98
+- @rv-insights/shared：0.1.41
+- @rv-insights/electron：0.0.99
 
 当前已完成的默认化状态：
 - 默认 Agent 对话走 Runner v2。
 - `RV_AGENT_RUNTIME_RUNNER_V2=0/false/off/no/disabled` 可显式回到旧 Agent 主循环。
+- 桌面 Agent 输入区可手动选择后续发送走 `Runner v2` 或 `Legacy`；env 显式关闭仍优先硬回滚旧主循环。
 - 默认 Pipeline Claude 节点走 Pipeline Runner v2。
 - `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0/false/off/no/disabled` 可显式回到 Pipeline legacy adapter。
 - 默认 `agentRuntimeChannelsV2` 开启。

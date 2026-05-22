@@ -3,6 +3,7 @@ import type { AgentStreamEnvelope, SDKMessage, SDKSystemMessage } from '@rv-insi
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
 import {
+  resolveAgentRuntimeRunnerModeForRun,
   resolveAgentRuntimeRunnerV2Enabled,
   type AgentRuntimeRunInput,
 } from './agent-runtime-types'
@@ -25,6 +26,35 @@ describe('agentRuntimeRunnerV2 feature flag', () => {
     for (const value of ['1', 'true', 'TRUE', 'on', 'yes', 'enabled']) {
       expect(resolveAgentRuntimeRunnerV2Enabled(value)).toBe(true)
     }
+  })
+
+  test('每次发送可选择 Runner v2 或旧 Agent 主循环', () => {
+    expect(resolveAgentRuntimeRunnerModeForRun({ envValue: undefined })).toEqual({
+      mode: 'runner-v2',
+      source: 'default',
+    })
+    expect(resolveAgentRuntimeRunnerModeForRun({ requestedMode: 'legacy', envValue: undefined })).toEqual({
+      mode: 'legacy',
+      source: 'request',
+    })
+    expect(resolveAgentRuntimeRunnerModeForRun({ requestedMode: 'runner-v2', envValue: undefined })).toEqual({
+      mode: 'runner-v2',
+      source: 'request',
+    })
+  })
+
+  test('env 显式关闭时硬回滚旧 Agent 主循环', () => {
+    expect(resolveAgentRuntimeRunnerModeForRun({ requestedMode: 'runner-v2', envValue: '0' })).toEqual({
+      mode: 'legacy',
+      source: 'env-disabled',
+    })
+  })
+
+  test('env 显式开启时强制 Runner v2', () => {
+    expect(resolveAgentRuntimeRunnerModeForRun({ requestedMode: 'legacy', envValue: '1' })).toEqual({
+      mode: 'runner-v2',
+      source: 'env-enabled',
+    })
   })
 })
 

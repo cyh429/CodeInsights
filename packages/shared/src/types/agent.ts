@@ -712,6 +712,9 @@ export interface WorkspaceCapabilities {
 
 // ===== Agent 发送输入 =====
 
+/** Agent Runtime Runner 执行链路 */
+export type AgentRuntimeRunnerMode = 'runner-v2' | 'legacy'
+
 /**
  * Agent 发送消息的输入参数
  */
@@ -738,6 +741,8 @@ export interface AgentSendInput {
   mentionedMcpServers?: string[]
   /** 渲染进程生成的流式开始时间戳，主进程原样回传到 STREAM_COMPLETE，确保竞态保护比较的是同一个值 */
   startedAt?: number
+  /** 本次发送使用的 Agent Runtime Runner 链路 */
+  runtimeRunnerMode?: AgentRuntimeRunnerMode
 }
 
 // ===== Agent 队列消息 =====

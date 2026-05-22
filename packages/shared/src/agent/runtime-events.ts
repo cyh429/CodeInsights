@@ -2,6 +2,7 @@ import type {
   AgentEvent,
   AgentEventUsage,
   AgentStreamPayload,
+  AgentRuntimeRunnerMode,
   AskUserRequest,
   DangerLevel,
   ExitPlanModeRequest,
@@ -54,7 +55,7 @@ export interface AgentRuntimeUsagePayload {
 }
 
 export type AgentRuntimeEvent =
-  | { type: 'run_started'; model: string; cwd: string; permissionMode: RVInsightsPermissionMode; runtimeHash: string }
+  | { type: 'run_started'; model: string; cwd: string; permissionMode: RVInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode }
   | { type: 'sdk_session'; sdkSessionId: string; resumeFrom?: string }
   | { type: 'assistant_delta'; messageId: string; delta: string; parentToolUseId?: string }
   | { type: 'assistant_message'; messageId: string; contentBlocks: unknown[]; status: 'complete' | 'error'; parentToolUseId?: string }
@@ -149,6 +150,13 @@ export function validateAgentRuntimeEvent(event: AgentRuntimeEvent): string[] {
       requireString(errors, event.cwd, 'run_started.cwd')
       requireString(errors, event.permissionMode, 'run_started.permissionMode')
       requireString(errors, event.runtimeHash, 'run_started.runtimeHash')
+      if (
+        event.runnerMode !== undefined
+        && event.runnerMode !== 'runner-v2'
+        && event.runnerMode !== 'legacy'
+      ) {
+        errors.push('run_started.runnerMode 非法')
+      }
       break
     case 'sdk_session':
       requireString(errors, event.sdkSessionId, 'sdk_session.sdkSessionId')

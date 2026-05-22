@@ -8,6 +8,7 @@ import {
   validateAgentStreamEnvelope,
   type AgentEventSource,
   type AgentRuntimeEvent,
+  type AgentRuntimeRunnerMode,
   type AgentRuntimeReplayState,
   type AgentStreamEnvelope,
   type AgentStreamPayload,
@@ -23,6 +24,7 @@ export interface AgentRuntimeRunStartInput {
   permissionMode: RVInsightsPermissionMode
   runtimeHash?: string
   resumeFrom?: string
+  runnerMode?: AgentRuntimeRunnerMode
 }
 
 export interface AgentRuntimeEventLogWriter {
@@ -50,6 +52,7 @@ export function startAgentRuntimeEventLogRun(input: AgentRuntimeRunStartInput): 
     cwd: input.cwd,
     permissionMode: input.permissionMode,
     runtimeHash: input.runtimeHash ?? 'legacy-orchestrator',
+    runnerMode: input.runnerMode ?? 'legacy',
   })
   if (input.resumeFrom) {
     writer.appendRuntimeEvent('runtime_service', {

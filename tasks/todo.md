@@ -8,7 +8,7 @@
 - [x] 阶段 13 Pipeline 深水位真实 UI run 已补齐：sessionId `342a6f0f-bea1-40eb-9396-378685bfaadc` 已到 developer / reviewer / tester / committer draft，写入完整 `patch-work` 与 `patch-set`，并复验 Git guard、HEAD / refs / index / config 和 tester evidence。
 - [x] 阶段 13 Codex Pipeline runner 收尾补强已完成并提交：`10356a3a fix(agent): 收尾阶段13 Pipeline 与 Codex guard 证据`，覆盖 Codex auth 隔离、strict schema 递归校验、reviewer 空字符串保守拒绝、Git guard 环境隔离和 clean-env 测试稳定性。
 - [x] 阶段 13 文档交接曾同步提交：`353c5c53 docs(agent): 同步阶段13最新状态并更新继续开发提示词`；本节为 2026-05-22 文档状态再同步。
-- [x] 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.98`。
+- [x] 当前版本：`@rv-insights/shared@0.1.41`，`@rv-insights/electron@0.0.99`。
 - [x] 已定位 `bunx electron . --remote-debugging-port=9334` 立即退出原因：已有 9333 Electron 实例持有 `requestSingleInstanceLock()`，新进程被单实例锁退出；结束旧实例后 9334 CDP 可连接。
 - [!] 飞书入口与飞书群聊 MCP 仍阻塞：本机缺少 `~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json`，不能伪造通过。
 - [x] 阶段 14A 已实施并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。默认 Agent 对话走 Runner v2，`RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
@@ -17,8 +17,31 @@
 - [!] 若后续需要声明飞书真实可用，再真实补跑 `agentRuntimeChannelsV2` 飞书入口与飞书群聊 MCP；无配置时继续明确记录真实飞书阻塞。
 - [x] 阶段 14A 默认化前后已跑完整聚焦验证与真实 Electron 交互复核，并继续保留旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge、旧 session JSONL 兼容。
 - [x] 阶段 14C 已按用户指示排除飞书真实入口阻塞后完成代码侧默认化：默认 Channels v2 开启，`RV_AGENT_RUNTIME_CHANNELS_V2=0` 可回到旧 Feishu bridge 路径。
+- [x] 阶段 15 已完成 Agent Runner 链路手动切换：Agent 输入区可选择 `Runner v2` / `Legacy`，选择持久化到 settings，env 显式关闭仍硬回滚旧主循环。
 - [!] 2026-05-22 本轮复查：`~/.rv-insights/feishu.json` 与 `~/.rv-insights-dev/feishu.json` 仍不存在；未进入阶段 14C，未修改 `agentRuntimeChannelsV2` 默认策略。
 - [x] 2026-05-22 用户明确指示暂不考虑飞书问题；阶段 14C 改为评估无飞书真实入口验收下的 `agentRuntimeChannelsV2` 默认开启和显式关闭回滚，不声称飞书入口或群聊 MCP 已通过。
+
+## 2026-05-22 Agent 重构阶段 15：Agent Runner 链路手动切换计划
+
+- [x] 范围确认：本阶段只为桌面 Agent 输入区增加 Runner 链路选择；不删除旧 Agent 主循环，不改变 Pipeline Runner、Channels v2 或飞书路径。
+- [x] UI 位置：在 Agent 输入区底部工具栏靠左、权限模式与思考按钮之间增加紧凑链路切换控件，支持 `Runner v2` 与 `Legacy` 两条链路。
+- [x] 契约设计：扩展 `AgentSendInput`，允许渲染进程把本次选择的 runner mode 传给主进程；主进程根据本次选择决定进入 `InProcessAgentRuntimeRunner` 或旧内联主循环。
+- [x] 回滚约束：保留 `RV_AGENT_RUNTIME_RUNNER_V2=0` 环境变量硬回滚；显式关闭 env 时即使 UI 选择 Runner v2 也必须走旧主循环。
+- [x] 持久化：把用户选择保存到 settings，重启后恢复；默认值保持当前默认链路 `Runner v2`。
+- [x] 可审计性：运行日志和 runtime event log 记录本次实际链路，便于证明某次会话走的是 Runner v2 还是旧主循环。
+- [x] TDD：先补纯函数/契约测试，覆盖默认 Runner v2、UI 选择 Legacy、env 关闭硬回滚和 run_started 中的 runner mode。
+- [x] 实现 UI、settings 类型、preload/IPC 类型、主进程分支选择与必要文案；同步递增受影响包 patch 版本。
+- [x] 验证：运行 `bun run typecheck`、Agent runtime/orchestrator/event log/renderer 聚焦测试、`git diff --check`；本阶段未删除旧路径，也未触碰 Pipeline / Channels 执行路径。
+- [x] 阶段 15 完成后更新 Review 和 Agent 重构 checklist，单独提交，不纳入 `.DS_Store`、`improve/`、`patch-work/` 或无关文件。
+
+## 2026-05-22 Agent 重构阶段 15：Review
+
+- 已在 Agent 输入区底部工具栏的权限模式与思考按钮之间增加链路切换按钮，当前显示 `Runner v2` 或 `Legacy`；运行中按钮禁用，切换只影响后续发送。
+- 已扩展 `AgentSendInput.runtimeRunnerMode` 与 `AppSettings.agentRuntimeRunnerMode`，渲染进程发送消息时透传本次选择，并把用户选择持久化到 settings。
+- 主进程新增 per-run 链路解析：默认走 `Runner v2`；未显式设置 env 时 UI 选择 `Legacy` 可走旧 Agent 主循环；`RV_AGENT_RUNTIME_RUNNER_V2=0` / `false` / `off` / `no` / `disabled` 仍硬回滚旧主循环，显式开启值仍强制 Runner v2。
+- Runtime event log 的 `run_started` 新增可选 `runnerMode` 字段，运行日志也输出 `Runtime Runner 链路: ...`，可审计每次会话实际链路。
+- 版本已递增：`@rv-insights/shared@0.1.41`，`@rv-insights/electron@0.0.99`。
+- 验证通过：`bun run typecheck`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/renderer/components/agent/agent-ui-model.test.ts apps/electron/src/renderer/atoms/agent-atoms.test.ts packages/shared/src/agent/runtime-events.test.ts`，58 pass。
 
 ## 2026-05-22 Agent 重构阶段 14C：Channels v2 非飞书默认化计划
 

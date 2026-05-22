@@ -1,5 +1,5 @@
 import type { ActivityStatus } from '@/atoms/agent-atoms'
-import type { DangerLevel } from '@rv-insights/shared'
+import type { AgentRuntimeRunnerMode, DangerLevel } from '@rv-insights/shared'
 
 export type AgentBannerTone = 'neutral' | 'waiting' | 'danger' | 'planning'
 
@@ -70,6 +70,34 @@ export function getToolActivityTone(status: ActivityStatus): 'running' | 'succes
   if (status === 'error') return 'danger'
   if (status === 'completed') return 'success'
   return 'neutral'
+}
+
+export interface AgentRunnerModeControlState {
+  label: string
+  description: string
+  nextMode: AgentRuntimeRunnerMode
+  disabled: boolean
+}
+
+export function buildAgentRunnerModeControl(
+  mode: AgentRuntimeRunnerMode,
+  streaming: boolean,
+): AgentRunnerModeControlState {
+  if (mode === 'legacy') {
+    return {
+      label: 'Legacy',
+      description: '旧主循环',
+      nextMode: 'runner-v2',
+      disabled: streaming,
+    }
+  }
+
+  return {
+    label: 'Runner v2',
+    description: '重构链路',
+    nextMode: 'legacy',
+    disabled: streaming,
+  }
 }
 
 export interface AgentComposerStateInput {

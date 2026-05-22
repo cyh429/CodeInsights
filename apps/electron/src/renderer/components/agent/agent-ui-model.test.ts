@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   buildAgentComposerState,
+  buildAgentRunnerModeControl,
   buildAgentHeaderMeta,
   formatPermissionMode,
   getActiveAgentBanner,
@@ -46,6 +47,22 @@ describe('agent-ui-model', () => {
     expect(getToolActivityTone('backgrounded')).toBe('waiting')
     expect(getToolActivityTone('completed')).toBe('success')
     expect(getToolActivityTone('error')).toBe('danger')
+  })
+
+  test('runner mode control exposes current mode and next toggle target', () => {
+    expect(buildAgentRunnerModeControl('runner-v2', false)).toEqual({
+      label: 'Runner v2',
+      description: '重构链路',
+      nextMode: 'legacy',
+      disabled: false,
+    })
+
+    expect(buildAgentRunnerModeControl('legacy', true)).toEqual({
+      label: 'Legacy',
+      description: '旧主循环',
+      nextMode: 'runner-v2',
+      disabled: true,
+    })
   })
 
   test('composer keeps a stable disabled reason while interaction banners are active', () => {

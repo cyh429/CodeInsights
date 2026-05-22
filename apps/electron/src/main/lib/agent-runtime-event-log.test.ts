@@ -57,6 +57,7 @@ describe('Agent runtime event log', () => {
       cwd: '/tmp/workspace',
       permissionMode: 'auto',
       resumeFrom: 'sdk-session-1',
+      runnerMode: 'legacy',
     })
 
     const assistant: SDKMessage = {
@@ -73,6 +74,7 @@ describe('Agent runtime event log', () => {
     expect(existsSync(getAgentSessionEventsPath(sessionId))).toBe(true)
     expect(events.map((event) => event.sequence)).toEqual([0, 1, 2])
     expect(events.map((event) => event.event.type)).toEqual(['run_started', 'sdk_session', 'assistant_message'])
+    expect(events[0]?.event).toMatchObject({ type: 'run_started', runnerMode: 'legacy' })
     expect(events.every((event) => event.runId === writer.runId)).toBe(true)
   })
 

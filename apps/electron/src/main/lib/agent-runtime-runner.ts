@@ -72,6 +72,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
       cwd: input.cwd,
       permissionMode: input.permissionMode,
       runtimeHash: input.runtimeHash ?? 'in-process-runner',
+      runnerMode: input.runnerMode ?? 'runner-v2',
     }, 'runtime_service')
     if (runStarted) yield runStarted
 

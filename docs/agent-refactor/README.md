@@ -39,7 +39,8 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。未设置 `RV_AGENT_RUNTIME_RUNNER_V2` 时默认走 Runner v2，显式 `RV_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
 - 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`。未设置 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2` 时默认走 Pipeline Runner v2，显式 `RV_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 可回到 Pipeline legacy adapter。
 - 阶段 14C Channels v2 默认化已按用户指示排除飞书真实入口阻塞后完成代码侧评估。未设置 `RV_AGENT_RUNTIME_CHANNELS_V2` 时默认走 Channels v2，显式 `RV_AGENT_RUNTIME_CHANNELS_V2=0` 可回到旧 Feishu bridge 路径。
-- 当前版本：`@rv-insights/shared@0.1.40`，`@rv-insights/electron@0.0.98`。
+- 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证。Agent 输入区底部工具栏可在后续发送前选择 `Runner v2` 或 `Legacy`，并通过 settings 持久化；`RV_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
+- 当前版本：`@rv-insights/shared@0.1.41`，`@rv-insights/electron@0.0.99`。
 - 默认 Agent 对话、默认 Pipeline Claude 节点和默认 Channels v2 入口现在均走 v2 路径，三者均保留显式 env 关闭回滚。
 - 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
@@ -77,8 +78,8 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 6. **权限默认保守**
    happyclaw 在容器/多租户边界下大量使用 `bypassPermissions`。RV-Insights 是本地桌面应用，必须保留 `safe / ask / allow-all / plan` 等用户可见权限策略，不能简单跳过权限。
 
-7. **客户端 UI 零可见变化**
-   本次 Agent 模式重构是运行时、事件、存储和渠道边界重构，不是客户端界面改版。除非用户另行确认，任何阶段都不得改变 Electron 客户端的布局、视觉样式、文案、入口位置、按钮行为和交互流程。Renderer 迁移只能在幕后替换事件 reducer，最终 view model 必须与旧路径一致。
+7. **客户端 UI 默认不变，显式确认后例外**
+   本次 Agent 模式重构主体是运行时、事件、存储和渠道边界重构，不是客户端界面改版。除非用户另行确认，任何阶段都不得改变 Electron 客户端的布局、视觉样式、文案、入口位置、按钮行为和交互流程。阶段 15 的 Runner 链路切换按钮属于用户明确确认后的例外。
 
 ## 不照搬项
 
@@ -137,7 +138,7 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 
 ## UI 不变约束
 
-后续实现必须满足：
+除用户明确确认的 UI 暴露阶段外，后续实现必须满足：
 
 - `AgentView`、`AgentHeader`、`AgentMessages`、`AgentInput`、权限横幅、AskUser 横幅、右侧文件面板的可见布局不变。
 - 不新增可见按钮、tab、面板、banner、状态 chip 或说明文案。
@@ -145,3 +146,4 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - 不改变用户发送、停止、审批权限、回答 AskUser、切换 session、打开文件面板的操作路径。
 - 新旧 reducer 双跑期间只允许开发日志记录差异，不在 UI 上展示调试信息。
 - 如果某阶段必须暴露新状态，只能先写入文档并单独征求用户确认。
+- 阶段 15 已按用户确认暴露 Runner 链路切换按钮；后续新增可见状态仍需单独确认。

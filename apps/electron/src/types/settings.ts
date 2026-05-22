@@ -4,7 +4,7 @@
  * 主题模式、IPC 通道等设置相关定义。
  */
 
-import type { EnvironmentCheckResult, RVInsightsPermissionMode, ThinkingConfig, AgentEffort } from '@rv-insights/shared'
+import type { EnvironmentCheckResult, RVInsightsPermissionMode, ThinkingConfig, AgentEffort, AgentRuntimeRunnerMode } from '@rv-insights/shared'
 
 /** 通知音场景类型 */
 export type NotificationSoundType = 'taskComplete' | 'permissionRequest' | 'exitPlanMode'
@@ -80,6 +80,8 @@ export interface AppSettings {
   agentMaxBudgetUsd?: number
   /** Agent 最大轮次（0 或 undefined = SDK 默认） */
   agentMaxTurns?: number
+  /** Agent Runtime Runner 执行链路 */
+  agentRuntimeRunnerMode?: AgentRuntimeRunnerMode
   /** Pipeline Codex 节点使用的 OpenAI / Custom 渠道 ID；null 表示显式使用本机 Codex auth / CODEX_API_KEY */
   pipelineCodexChannelId?: string | null
   /** 教程推荐横幅是否已关闭 */

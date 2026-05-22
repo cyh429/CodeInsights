@@ -18,7 +18,7 @@ import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta } from '@rv-insights/shared'
+import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta, AgentRuntimeRunnerMode } from '@rv-insights/shared'
 import { SAFE_TOOLS, isAgentRuntimeTerminalEvent } from '@rv-insights/shared'
 import type { PermissionRequest, RVInsightsPermissionMode, AskUserRequest, ExitPlanModeRequest } from '@rv-insights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
@@ -70,7 +70,7 @@ import {
   type AgentRuntimeEventLogWriter,
 } from './agent-runtime-event-log'
 import { InProcessAgentRuntimeRunner } from './agent-runtime-runner'
-import { agentRuntimeRunnerV2 } from './agent-runtime-types'
+import { resolveAgentRuntimeRunnerModeForRun } from './agent-runtime-types'
 import {
   AgentRuntimeMaterializationError,
   getMaterializedAgentRuntimeCwd,
@@ -866,9 +866,13 @@ export class AgentOrchestrator {
         ?? (workspaceSlug
           ? getWorkspacePermissionMode(workspaceSlug)
           : (appSettings.agentPermissionMode ?? 'auto'))
+      const runnerModeResolution = resolveAgentRuntimeRunnerModeForRun({
+        requestedMode: input.runtimeRunnerMode ?? appSettings.agentRuntimeRunnerMode,
+      })
       // 注册到 Map，支持运行中动态切换
       this.sessionPermissionModes.set(sessionId, initialPermissionMode)
       console.log(`[Agent 编排] 权限模式: ${initialPermissionMode}${permissionModeOverride ? '（外部覆盖）' : ''}`)
+      console.log(`[Agent 编排] Runtime Runner 链路: ${runnerModeResolution.mode} (${runnerModeResolution.source})`)
 
       /** 读取当前会话的实时权限模式（支持运行中切换） */
       const getPermissionMode = (): RVInsightsPermissionMode =>
@@ -881,6 +885,7 @@ export class AgentOrchestrator {
         permissionMode: initialPermissionMode,
         resumeFrom: existingSdkSessionId,
         runtimeHash: materializedRuntimeManifest?.runtimeHash,
+        runnerMode: runnerModeResolution.mode,
       })
 
       // 始终创建 auto 权限回调（运行中可能切换到 auto）
@@ -1056,7 +1061,7 @@ export class AgentOrchestrator {
 
       console.log(`[Agent 编排] 开始通过 Adapter 遍历事件流...`)
 
-      if (agentRuntimeRunnerV2.enabled) {
+      if (runnerModeResolution.mode === 'runner-v2') {
         await this.runWithRuntimeRunnerV2({
           sessionId,
           prompt: finalPrompt,
@@ -1070,6 +1075,7 @@ export class AgentOrchestrator {
           callbacks,
           streamStartedAt,
           runtimeHash: materializedRuntimeManifest?.runtimeHash,
+          runnerMode: runnerModeResolution.mode,
         })
         return
       }
@@ -1690,6 +1696,7 @@ export class AgentOrchestrator {
     callbacks: SessionCallbacks
     streamStartedAt: number
     runtimeHash?: string
+    runnerMode?: AgentRuntimeRunnerMode
   }): Promise<void> {
     console.log(`[Agent 编排] agentRuntimeRunnerV2 已启用，切换到 InProcessAgentRuntimeRunner`)
     const runner = new InProcessAgentRuntimeRunner({
@@ -1724,6 +1731,7 @@ export class AgentOrchestrator {
       resumeFrom: input.resumeFrom,
       channelModelId: input.channelModelId,
       runtimeHash: input.runtimeHash ?? 'in-process-runner-v2',
+      runnerMode: input.runnerMode,
     })) {
       if (!this.activeSessions.has(input.sessionId) && isAgentRuntimeTerminalEvent(envelope.event)) {
         continue

@@ -16,7 +16,7 @@
 import * as React from 'react'
 import { useAtom, useAtomValue, useSetAtom, useStore } from 'jotai'
 import { toast } from 'sonner'
-import { Bot, CornerDownLeft, Square, Settings, Paperclip, FolderPlus, X, Copy, Check, Brain, Map as MapIcon, Sparkles } from 'lucide-react'
+import { Bot, CornerDownLeft, Square, Settings, Paperclip, FolderPlus, X, Copy, Check, Brain, Map as MapIcon, Sparkles, GitBranch } from 'lucide-react'
 import { AgentMessages } from './AgentMessages'
 import { AgentHeader } from './AgentHeader'
 import { ContextUsageBadge } from './ContextUsageBadge'
@@ -66,6 +66,7 @@ import {
   workspaceAttachedDirectoriesMapAtom,
   liveMessagesMapAtom,
   agentThinkingAtom,
+  agentRuntimeRunnerModeAtom,
   stoppedByUserSessionsAtom,
   agentPlanModeSessionsAtom,
   agentPermissionModeMapAtom,
@@ -97,7 +98,7 @@ import { draftSessionIdsAtom } from '@/atoms/draft-session-atoms'
 import { sendWithCmdEnterAtom } from '@/atoms/shortcut-atoms'
 import type { AgentSendInput, AgentMessage, AgentPendingFile, ModelOption, SDKMessage } from '@rv-insights/shared'
 import { fileToBase64 } from '@/lib/file-utils'
-import { buildAgentComposerState, getActiveAgentBanner, hasPendingAgentInteraction } from './agent-ui-model'
+import { buildAgentComposerState, buildAgentRunnerModeControl, getActiveAgentBanner, hasPendingAgentInteraction } from './agent-ui-model'
 
 // ===== 思考模式 Hover Popover =====
 
@@ -203,6 +204,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const agentChannelIds = useAtomValue(agentChannelIdsAtom)
   const setAgentChannelIds = useSetAtom(agentChannelIdsAtom)
   const [agentThinking, setAgentThinking] = useAtom(agentThinkingAtom)
+  const [runtimeRunnerMode, setRuntimeRunnerMode] = useAtom(agentRuntimeRunnerModeAtom)
   const setSettingsOpen = useSetAtom(settingsOpenAtom)
   const setDraftSessionIds = useSetAtom(draftSessionIdsAtom)
   const globalWorkspaceId = useAtomValue(currentAgentWorkspaceIdAtom)
@@ -1025,6 +1027,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       modelId: agentModelId || undefined,
       workspaceId: currentWorkspaceId || undefined,
       startedAt: streamStartedAt,
+      runtimeRunnerMode,
       ...(attachedDirs.length > 0 && { additionalDirectories: attachedDirs }),
       // 解析用户消息中的 Skill/MCP 引用，传递结构化元数据给后端
       ...(() => {
@@ -1050,7 +1053,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         return map
       })
     })
-  }, [inputContent, pendingFiles, attachedDirs, sessionId, agentChannelId, agentModelId, currentWorkspaceId, workspaces, streaming, suggestion, hasAvailableModel, hasBannerOverlay, store, setStreamingStates, setPendingFiles, setAgentStreamErrors, setPromptSuggestions, setInputContent, setLiveMessagesMap])
+  }, [inputContent, pendingFiles, attachedDirs, sessionId, agentChannelId, agentModelId, currentWorkspaceId, runtimeRunnerMode, workspaces, streaming, suggestion, hasAvailableModel, hasBannerOverlay, store, setStreamingStates, setPendingFiles, setAgentStreamErrors, setPromptSuggestions, setInputContent, setLiveMessagesMap])
 
   /** 停止生成 */
   const handleStop = React.useCallback((): void => {
@@ -1325,6 +1328,16 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
 
   const hasTextInput = inputContent.trim().length > 0
   const canSend = !hasBannerOverlay && (hasTextInput || pendingFiles.length > 0 || !!suggestion) && agentChannelId !== null && hasAvailableModel && (!streaming || hasTextInput)
+  const runnerModeControl = buildAgentRunnerModeControl(runtimeRunnerMode, streaming)
+
+  const handleToggleRunnerMode = React.useCallback((): void => {
+    if (runnerModeControl.disabled) return
+    const nextMode = runnerModeControl.nextMode
+    setRuntimeRunnerMode(nextMode)
+    window.electronAPI.updateSettings({ agentRuntimeRunnerMode: nextMode }).catch((error) => {
+      console.error('[AgentView] 保存 Runner 链路失败:', error)
+    })
+  }, [runnerModeControl.disabled, runnerModeControl.nextMode, setRuntimeRunnerMode])
 
   return (
     <>
@@ -1516,6 +1529,28 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
                   onModelSelect={handleModelSelect}
                 />
                 <PermissionModeSelector sessionId={sessionId} />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className={cn(
+                        'h-[36px] gap-1.5 rounded-control px-2 text-xs font-semibold text-foreground/60 hover:text-foreground',
+                        runtimeRunnerMode === 'legacy' && 'text-status-waiting-fg hover:text-status-waiting-fg',
+                        runnerModeControl.disabled && 'cursor-not-allowed opacity-50',
+                      )}
+                      onClick={handleToggleRunnerMode}
+                      disabled={runnerModeControl.disabled}
+                      aria-label={`Agent 链路：${runnerModeControl.label}`}
+                    >
+                      <GitBranch className="size-4" />
+                      <span className="hidden sm:inline">{runnerModeControl.label}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>{runnerModeControl.description}</p>
+                  </TooltipContent>
+                </Tooltip>
                 {/* 思考模式切换 + 展开偏好 */}
                 <AgentThinkingPopover
                   agentThinking={agentThinking}
