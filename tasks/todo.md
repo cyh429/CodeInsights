@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 CodeInsights 项目图标外缘修正计划
+
+- [x] 明确反馈范围：保留当前中间深色圆角方形 CI 图标主体，去掉外侧浅色背景圈/留白，不重新设计主体图形。
+- [x] 调整 `apps/electron/resources/generate-icons.sh`：在生成主图标前清理与画布边缘连通的浅色背景，并保留透明 alpha。
+- [x] 重新生成 Electron、renderer、web、video 和 tray 相关图标资源，确保所有派生图标来自同一透明主图标。
+- [x] 验证主图标和派生图标尺寸、透明外缘、SVG XML、typecheck/build 和 `git diff --check`。
+- [x] 在本节末尾追加 Review，记录修正结果和残留风险。
+
+## 2026-05-23 CodeInsights 项目图标外缘修正 Review
+
+- 已按反馈保留当前 CI 主体，去掉主图标外侧浅色背景圈/留白；`apps/electron/resources/icon.png` 现在为 RGBA，四角和画布边缘 alpha 均为 0。
+- 已修改 `apps/electron/resources/generate-icons.sh`：先清理画布边缘连通的浅色背景，再用透明主图标生成 `.png`、`.ico`、`.icns`、renderer、web 和 video 资源；相同 PNG 改为保存一次后复制字节，生成耗时从接近 3 分钟降到约 23 秒。
+- 已按审查反馈补强生成脚本：使用 `CODEINSIGHTS_ICON_SOURCE` 刷新主图标时，如果缺少 `iconutil` 会直接失败，避免 `icon.png` 已更新但 macOS `.icns` 仍是旧图标。
+- 已重新生成 Electron resources、renderer `codeinsights-logos`、renderer model icon、`web/assets/brand/logo.webp` 和 video cutout 图标；tray template 仍保持单色 CI 模板图标。
+- 透明度验证通过：`apps/electron/resources/icon.png`、`codeinsights-transparent.png`、renderer model、web logo、video cutout、build 后 `dist/resources/icon.png` 均为 1024x1024 且边缘透明；`icon.ico` 顶层 256x256 四角 alpha 为 0。
+- 构建验证通过：`xmllint --noout apps/electron/resources/icon.svg apps/electron/resources/codeinsights-logos/icon.svg`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build`；`git diff --check`。
+- 代码审查通过：复查确认脚本不会把透明主图标重新扁平化成白底；`CODEINSIGHTS_ICON_SOURCE` + 缺少 `iconutil` 的保护会在写文件前失败；`.ico` / `.icns` / PNG / WebP 均保留透明角。
+- 残留说明：工作树中已有 `.DS_Store`、`docs/.DS_Store`、`assets/`、`improve/` 等无关噪音，本轮未处理。
+
 ## 2026-05-22 Agent 右侧资源边栏布局优化计划
 
 - [x] 启动前复习 `tasks/lessons.md`，确认本轮应优先做结构减法，避免给右侧边栏继续堆叠装饰和重复信息。
@@ -18,6 +37,73 @@
 - 验证通过：`cd apps/electron && bun run typecheck`；`cd apps/electron && bun run build:renderer`；仓库根目录 `bun run typecheck`；`git diff --check`。
 - 已尝试用本地浏览器打开 `http://localhost:5173/` 做视觉核验，但浏览器环境缺少 Electron preload 的 `window.electronAPI`，初始化组件报错，不能作为桌面壳视觉证据；当前 Electron dev 进程未开放远程调试端口，因此本轮未产出真实桌面截图。
 - 工作树中已有 `.DS_Store`、`assets/`、`improve/` 以及更早的图标任务记录未跟随本轮改动处理；本轮代码改动仅限 Agent 右侧资源边栏相关文件。
+
+## 2026-05-22 CodeInsights 项目图标第四组计划
+
+- [x] 复盘前三组候选：继续减少内部信息量，把方向收敛到更像正式 App icon 的强品牌符号。
+- [x] 新增第四组 `codeinsights-refined-*` SVG：更粗主形、更少节点、更少渐变，优先保证 64px / 128px 识别。
+- [x] 导出每个候选的 1024x1024 PNG，并生成第四组总览图。
+- [x] 更新 `assets/icon/README.md`，说明 refined 组的定位与推荐候选。
+- [x] 验证 SVG XML、PNG 尺寸、总览图渲染与 `git diff --check`，在本节末尾追加 Review。
+
+## 2026-05-22 CodeInsights 项目图标第四组 Review
+
+- 已新增第四组 6 套 refined 候选：`codeinsights-refined-core`、`codeinsights-refined-scope`、`codeinsights-refined-bracket`、`codeinsights-refined-signal`、`codeinsights-refined-slab`、`codeinsights-refined-terminal`。
+- 每套候选都包含 SVG 源文件和 1024x1024 PNG 预览；第四组总览图为 `assets/icon/codeinsights-refined-candidates.png`。
+- 本轮优化重点：相比第三组进一步减少内部细节，强化粗主形和小尺寸识别，避免复杂功能说明图；语义只保留 C/I、洞察镜头、代码括号、Agent 信号、终端入口等少量核心符号。
+- 推荐优先继续打磨：`refined-core` 作为正式默认 App icon 方向，`refined-bracket` 作为开发者工具属性方向，`refined-terminal` 作为 Agent 执行入口方向。
+- 本轮未替换 Electron 当前生效的 `apps/electron/resources/icon.*`，只新增候选资产。
+- 验证通过：`xmllint --noout assets/icon/codeinsights-refined-*.svg`；`sips` 尺寸检查确认 6 个候选 PNG 均为 1024x1024、总览 PNG 为 1800x1200；已人工查看总览图和临时 128px / 64px 缩略图，主轮廓可识别；`git diff --check` 无空白错误。
+
+## 2026-05-22 CodeInsights 项目图标第三组计划
+
+- [x] 启动前复习 `tasks/lessons.md` 与现有 `assets/icon`，确认本轮只新增候选资产，不覆盖旧图标，不替换 Electron 当前生效图标。
+- [x] 设计第三组更偏正式品牌标识的 SVG 候选：少元素、强轮廓、科技感、可在 Dock / tray 小尺寸下识别。
+- [x] 将每个 SVG 导出为 1024x1024 PNG，并生成第三组总览图。
+- [x] 更新 `assets/icon/README.md`，说明新增候选的设计方向和推荐用途。
+- [x] 验证 SVG XML、PNG 尺寸、文件清单和工作树差异，在本节末尾追加 Review。
+
+## 2026-05-22 CodeInsights 项目图标第三组 Review
+
+- 已新增第三组 6 套几何品牌候选：`codeinsights-geometric-lens`、`codeinsights-geometric-bracket`、`codeinsights-geometric-beacon`、`codeinsights-geometric-crystal`、`codeinsights-geometric-thread`、`codeinsights-geometric-monogram`。
+- 每套候选都包含 SVG 源文件和 1024x1024 PNG 预览；第三组总览图为 `assets/icon/codeinsights-geometric-candidates.png`。
+- 本轮设计重点：更接近正式 App icon 的品牌标识，不做复杂功能说明图；元素控制在 C/I、代码括号、洞察光束、Agent 信号、Pipeline 单线节点等抽象符号内。
+- 推荐优先继续打磨：`geometric-lens` 作为默认主图标方向，`geometric-monogram` 作为长期品牌字标方向，`geometric-bracket` 作为开发者工具属性更明确的方向。
+- 本轮未替换 Electron 当前生效的 `apps/electron/resources/icon.*`，只新增候选资产。
+- 验证通过：`xmllint --noout assets/icon/codeinsights-geometric-*.svg`；`sips` 尺寸检查确认 6 个候选 PNG 均为 1024x1024、总览 PNG 为 1800x1200；已人工查看总览图，确认没有占位图或空白渲染；`git diff --check` 无空白错误。
+
+## 2026-05-22 CodeInsights 简约图标第二组计划
+
+- [x] 记录用户反馈到 `tasks/lessons.md`：上一组元素过多，不够美观简约，后续图标应优先作为品牌标识而非功能说明图。
+- [x] 重新定义设计约束：强主轮廓、低元素数、少渐变、最多一处强调色，小尺寸仍可识别。
+- [x] 新增第二组简约候选 SVG：以 CodeInsights 的 C/I、代码洞察、Pipeline 方向、Agent 核心为抽象几何符号，不堆叠功能节点。
+- [x] 使用 `sips` 导出 1024x1024 PNG，并生成第二组总览图。
+- [x] 验证 SVG / PNG 资产，更新 `assets/icon/README.md` 与本节 Review。
+
+## 2026-05-22 CodeInsights 简约图标第二组 Review
+
+- 已新增第二组 6 套简约候选：`codeinsights-minimal-c-mark`、`codeinsights-minimal-aperture`、`codeinsights-minimal-stack`、`codeinsights-minimal-terminal`、`codeinsights-minimal-flow`、`codeinsights-minimal-cut`。
+- 每套都包含 SVG 源文件和 1024x1024 PNG 预览；第二组总览图为 `assets/icon/codeinsights-minimal-candidates.png`。
+- 本轮优化重点：减少功能说明性元素，去掉密集节点和复杂轨道，控制为强主轮廓 + 少量几何负形 + 单一强调色。
+- 小尺寸临时检查覆盖 64px / 128px，`C Mark`、`Aperture`、`Terminal` 最适合作为正式 App icon 候选继续打磨；`Stack` 更接近旧识别点但更简洁。
+- 本轮仍未替换 Electron 当前生效的 `apps/electron/resources/icon.*`，只生成候选资产。
+
+## 2026-05-22 CodeInsights 项目图标候选设计计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认本轮只新增图标资产，不触碰已有运行时代码和无关 `.DS_Store` 噪音。
+- [x] 检查现有图标资源：`assets/icon` 当前为空；Electron 当前生效图标在 `apps/electron/resources/icon.*`，本轮不直接替换。
+- [x] 确认导出工具：本机 `sips` 可将 SVG 导出为 1024 PNG；未安装 `rsvg-convert` / ImageMagick，因此本轮使用 SVG 源文件 + `sips` PNG 预览。
+- [x] 设计多套符合 CodeInsights 定位的候选图标：保留代码纵深识别点，同时体现 Pipeline、Agent、本地优先、开源贡献与高对比桌面图标方向。
+- [x] 将候选 SVG 与 PNG 放入 `assets/icon`，并生成一张候选总览图方便对比。
+- [x] 验证 SVG 结构、PNG 尺寸和文件清单，在本节末尾追加 Review。
+
+## 2026-05-22 CodeInsights 项目图标候选设计 Review
+
+- 已新增 5 套候选图标：`codeinsights-pipeline-prism`、`codeinsights-agent-orbit`、`codeinsights-local-core`、`codeinsights-open-merge`、`codeinsights-dock-mark`。
+- 每套候选都包含 SVG 源文件和 1024x1024 PNG 预览，统一放在 `assets/icon`；另有 `codeinsights-icon-candidates.png` 作为 1800x720 总览图。
+- 设计方向分别覆盖：Pipeline 五阶段工作流、Agent 工具轨道、本地优先与权限审计、开源贡献/merge 流程、小尺寸高对比 Dock 标记。
+- 已补充 `assets/icon/README.md` 说明候选用途；本轮未替换 Electron 当前生效的 `apps/electron/resources/icon.*`。
+- 验证通过：`xmllint --noout assets/icon/codeinsights-*.svg`；`sips` 尺寸检查确认候选 PNG 均为 1024x1024，总览 PNG 为 1800x720；`git diff --check` 无空白错误。
 
 ## 2026-05-22 CodeInsights 项目重命名计划
 
@@ -2365,3 +2451,25 @@ Phase 8 禁止事项：
 - [ ] 在 `assets/imgs/` 生成 style 7 SVG，并导出对应 PNG。
 - [ ] 运行 SVG XML 校验、PNG 导出校验、抽样视觉检查，修复箭头、文字、边距问题。
 - [ ] 在本文件追加 Review，记录生成文件、验证结果与残留风险。
+
+## 2026-05-23 CodeInsights 新项目图标替换计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认本轮不再新增候选图标，直接把用户提供的新项目图标替换为当前生效资源。
+- [x] 检查工作树，保护既有 `.DS_Store`、`assets/`、`improve/` 和本文件已有未提交记录，不回滚无关改动。
+- [x] 盘点旧项目图标入口：Electron 打包图标 `apps/electron/resources/icon.*`、运行时资源副本、托盘 template、渲染层 `models/codeinsights.png`、品牌 Logo 下载资源。
+- [x] 以 `assets/icon/CodeInsights.png` 为源生成 1024 PNG、macOS `.icns`、Windows `.ico`、托盘尺寸 PNG，并同步替换 renderer / resources 中的 CodeInsights 旧图标。
+- [x] 复查源码引用和资源清单，确认第三方模型/平台图标不被误替换。
+- [x] 运行资源尺寸校验、必要构建验证和 `git diff --check`，在本节追加 Review。
+
+## 2026-05-23 CodeInsights 新项目图标替换 Review
+
+- 已使用 `assets/icon/CodeInsights.png` 生成当前项目图标，并把已跟踪的 `apps/electron/resources/icon.png` 作为后续默认源；Electron 生效图标已导出为 `icon.png`、`icon.icns`、`icon.ico`。
+- 已移除旧 SVG 图标形状：`apps/electron/resources/icon.svg` 改为引用已跟踪的 `resources/icon.png`，`apps/electron/resources/codeinsights-logos/icon.svg` 改为单色 CI tray 标记，避免继续从旧斜条矢量图生成。
+- 已重写 `apps/electron/resources/generate-icons.sh`：默认从已跟踪的 `resources/icon.png` 生成 Electron、renderer、web、video 和品牌素材；需要刷新源图时可通过 `CODEINSIGHTS_ICON_SOURCE` 指向新 PNG；tray template 由脚本绘制单色 CI 标记。不再使用 `icon.svg -> icon.png` 自引用，也不依赖本机未安装的 `rsvg-convert` / ImageMagick。
+- 已同步渲染层 CodeInsights 图标：`apps/electron/src/renderer/assets/models/codeinsights.png`，以及 `apps/electron/src/renderer/assets/bots/codeinsights-logos/*.png`。
+- 已同步打包资源品牌图标：`apps/electron/resources/codeinsights-logos/*.png`；其中 `codeinsights-transparent.png` 使用透明背景 cutout，其余变体统一为新正式图标，避免旧图标残留。
+- 已同步非 Electron 明确品牌入口：`web/assets/brand/logo.webp` 与 `assets/video/assets/codeinsights-logo-cutout*.png`；第三方模型、飞书、微信、钉钉等平台图标未替换。
+- 已生成托盘 template 资源：`iconTemplate.png`、`iconTemplate@2x.png`、`iconTemplate@3x.png`，尺寸分别为 22 / 44 / 66 px；视觉抽样确认为单色 CI 标记，不再是旧斜条图标。
+- 审查发现并已修复：第一轮生成后 `icon.ico` 和三份 tray template 与 HEAD hash 一致，说明仍是旧资源；修复后四个文件当前 hash 均不同于 HEAD，并已抽样打开 `.ico` 确认为新 App icon。
+- 验证通过：执行 `CODEINSIGHTS_ICON_SOURCE="$PWD/assets/icon/CodeInsights.png" apps/electron/resources/generate-icons.sh`；SVG `xmllint --noout`；PIL 尺寸检查覆盖源图、Electron PNG/ICO、renderer PNG、WebP、视频 cutout、托盘 template；当前 vs HEAD hash 对比覆盖 `icon.ico` 和三份 tray template；源码扫描确认没有 tracked 文件继续引用未跟踪 `assets/icon/CodeInsights.png`；`bun run --filter='@codeinsights/electron' typecheck`；清理后执行 `bun run --filter='@codeinsights/electron' build`；`git diff --check`。
+- 已清理后重建 `apps/electron/dist/resources`，确认 ignored dist 中不再保留旧 `proma-logos`；构建仍有既有 Vite chunk size warning。本轮未引入运行时代码变更；当前工作树中 `.DS_Store`、`docs/.DS_Store` 和未跟踪 `assets/` / `improve/` 为既有状态或资产目录，不应误纳入无关提交。
