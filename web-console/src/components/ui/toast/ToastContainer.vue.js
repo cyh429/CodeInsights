@@ -25,8 +25,8 @@ debugger; /* PartiallyEnd: #3632/scriptSetup.vue */
 const __VLS_ctx = {};
 let __VLS_components;
 let __VLS_directives;
-// CSS variable injection 
-// CSS variable injection end 
+// CSS variable injection
+// CSS variable injection end
 const __VLS_0 = {}.Teleport;
 /** @type {[typeof __VLS_components.Teleport, typeof __VLS_components.Teleport, ]} */ ;
 // @ts-ignore

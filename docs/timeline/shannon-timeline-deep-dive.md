@@ -1,8 +1,8 @@
 # Shannon Timeline 功能深度拆解分析
 
-> **文档版本**: v1.0  
-> **生成日期**: 2026-05-04  
-> **分析范围**: Shannon 平台 Task History & Timeline 全链路实现  
+> **文档版本**: v1.0
+> **生成日期**: 2026-05-04
+> **分析范围**: Shannon 平台 Task History & Timeline 全链路实现
 > **源码路径**: `/Users/zq/Desktop/ai-projs/posp/template/Shannon/`
 
 ---
@@ -71,7 +71,7 @@ Temporal 工作流引擎将所有执行事件以**追加日志**形式持久化�
 
 ```go
 // timeline.go: 从 Temporal 获取工作流历史
-it := h.tclient.GetWorkflowHistory(ctx, workflowID, runID, false, 
+it := h.tclient.GetWorkflowHistory(ctx, workflowID, runID, false,
     enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
 ```
 
@@ -193,36 +193,36 @@ GET /api/v1/tasks/{id}/timeline
 ### 3.3 Timeline 构建核心逻辑
 
 ```go
-func (h *TimelineHandler) buildTimeline(ctx context.Context, workflowID, runID, mode string, 
+func (h *TimelineHandler) buildTimeline(ctx context.Context, workflowID, runID, mode string,
     includePayloads bool) ([]db.EventLog, timelineStats, error) {
-    
+
     // 1. 获取 Temporal History 迭代器
-    it := h.tclient.GetWorkflowHistory(ctx, workflowID, runID, false, 
+    it := h.tclient.GetWorkflowHistory(ctx, workflowID, runID, false,
         enumspb.HISTORY_EVENT_FILTER_TYPE_ALL_EVENT)
-    
+
     // 2. 状态追踪器
     acts := map[int64]*act{}      // 活动状态
     timers := map[int64]*timer{}  // 计时器状态
     childs := map[int64]*child{}  // 子工作流状态
-    
+
     // 3. 遍历所有历史事件
     for it.HasNext() {
         e, _ := it.Next()
         ts := e.GetEventTime().AsTime()
-        
+
         switch e.EventType {
         // === 工作流生命周期 ===
         case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_STARTED:
             add("WF_STARTED", "Workflow started", ts, uint64(e.GetEventId()))
-            
+
         case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_COMPLETED:
             add("WF_COMPLETED", "Workflow completed", ts, uint64(e.GetEventId()))
-            
+
         case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_FAILED:
-            msg := fmt.Sprintf("Workflow failed: %s", 
+            msg := fmt.Sprintf("Workflow failed: %s",
                 summarizeFailure(a.GetFailure(), includePayloads))
             add("WF_FAILED", msg, ts, uint64(e.GetEventId()))
-        
+
         // === 活动执行（Activity）===
         case enumspb.EVENT_TYPE_ACTIVITY_TASK_SCHEDULED:
             acts[e.GetEventId()] = &act{
@@ -233,44 +233,44 @@ func (h *TimelineHandler) buildTimeline(ctx context.Context, workflowID, runID, 
             if mode == "full" {
                 add("ACT_SCHEDULED", "...", ts, uint64(e.GetEventId()))
             }
-            
+
         case enumspb.EVENT_TYPE_ACTIVITY_TASK_STARTED:
             acts[a.GetScheduledEventId()].Started = ts
-            
+
         case enumspb.EVENT_TYPE_ACTIVITY_TASK_COMPLETED:
             st := acts[a.GetScheduledEventId()]
             dur := durationFromTo(st, ts)
             name, id := activityNameID(st)
-            add("ACT_COMPLETED", 
+            add("ACT_COMPLETED",
                 fmt.Sprintf("Activity %s(id=%s) completed in %s", name, id, dur),
                 ts, uint64(e.GetEventId()))
-        
+
         // === 计时器 ===
         case enumspb.EVENT_TYPE_TIMER_STARTED:
             timers[e.GetEventId()] = &timer{...}
         case enumspb.EVENT_TYPE_TIMER_FIRED:
             add("TIMER_FIRED", "Timer fired", ts, uint64(e.GetEventId()))
-        
+
         // === 信号 ===
         case enumspb.EVENT_TYPE_WORKFLOW_EXECUTION_SIGNALED:
             add("SIG_RECEIVED", fmt.Sprintf("Signal received: %s", a.GetSignalName()), ...)
-        
+
         // === 子工作流 ===
         case enumspb.EVENT_TYPE_START_CHILD_WORKFLOW_EXECUTION_INITIATED:
             childs[e.GetEventId()] = &child{...}
         case enumspb.EVENT_TYPE_CHILD_WORKFLOW_EXECUTION_COMPLETED:
             c := childs[a.GetInitiatedEventId()]
             dur := childDuration(c, ts)
-            add("CHILD_COMPLETED", 
+            add("CHILD_COMPLETED",
                 fmt.Sprintf("Child %s completed in %s", ctype(c), dur), ...)
         }
     }
-    
+
     // 4. 按时间戳排序
-    sort.SliceStable(out, func(i, j int) bool { 
-        return out[i].Timestamp.Before(out[j].Timestamp) 
+    sort.SliceStable(out, func(i, j int) bool {
+        return out[i].Timestamp.Before(out[j].Timestamp)
     })
-    
+
     return out, timelineStats{Total: len(out), Mode: mode}, nil
 }
 ```
@@ -294,7 +294,7 @@ if persist && h.dbClient != nil {
             _ = h.dbClient.SaveEventLog(ctx, &evts[i])
         }
     }(events)
-    
+
     // 立即返回 202 Accepted，不阻塞请求
     w.WriteHeader(http.StatusAccepted)
     json.NewEncoder(w).Encode(map[string]any{
@@ -361,11 +361,11 @@ func shouldPersistEvent(eventType string) bool {
          "ROLE_ASSIGNED", "DELEGATION", "BUDGET_THRESHOLD",
          "SCREENSHOT_SAVED":
         return true
-    
+
     // ❌ 不持久化：流式增量和心跳
     case "LLM_PARTIAL", "HEARTBEAT", "PING", "LLM_PROMPT":
         return false
-    
+
     // ✅ 默认持久化（安全兜底）
     default:
         return true
@@ -380,7 +380,7 @@ func (m *Manager) persistWorker() {
     batch := make([]db.EventLog, 0, m.batchSize)
     ticker := time.NewTicker(m.flushEvery)
     defer ticker.Stop()
-    
+
     flush := func() {
         ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
         for i := range batch {
@@ -391,7 +391,7 @@ func (m *Manager) persistWorker() {
         cancel()
         batch = batch[:0]
     }
-    
+
     for {
         select {
         case ev := <-m.persistCh:
@@ -507,24 +507,24 @@ interface RunState {
     streamError: string | null;
     sessionTitle: string | null;
     mainWorkflowId: string | null;
-    
+
     // 控制状态
     isPaused: boolean;
     isCancelling: boolean;
     isCancelled: boolean;
-    
+
     // 浏览器自动化
     browserMode: boolean;
     currentTool: string | null;
     toolHistory: BrowserToolExecution[];
-    
+
     // HITL 审核
     reviewStatus: "none" | "reviewing" | "approved";
-    
+
     // Swarm 模式
     swarmMode: boolean;
     swarm: SwarmState | null;
-    
+
     // Skills
     selectedSkill: string | null;
 }
@@ -583,7 +583,7 @@ const getFriendlyTitle = (event: any): string => {
     if (event.message?.startsWith("Thinking: REASON")) return "Agent is reasoning";
     if (event.message?.startsWith("Thinking: ACT")) return "Agent is planning action";
     if (event.message?.includes("Expanded query into")) return "Expanded research query";
-    
+
     // 类型兜底映射
     const typeMap: Record<string, string> = {
         "WORKFLOW_STARTED": "Workflow Started",

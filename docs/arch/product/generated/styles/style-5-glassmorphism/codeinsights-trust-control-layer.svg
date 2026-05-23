@@ -16,8 +16,8 @@
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.45"/>
     </filter>
-    
-    
+
+
     <radialGradient id="glow-blue" cx="30%" cy="28%" r="45%">
       <stop offset="0%" stop-color="#58A6FF" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#58A6FF" stop-opacity="0"/>
@@ -144,5 +144,5 @@
     <rect x="0" y="0" width="72" height="28" rx="14" fill="#0F2F1A" stroke="#3FB950" stroke-width="1"/>
     <text x="36" y="18" text-anchor="middle" class="chip" fill="#3FB950">工程师控制</text>
   </g>
-  
+
 </svg>

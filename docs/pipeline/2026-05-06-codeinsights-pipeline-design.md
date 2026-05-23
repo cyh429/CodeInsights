@@ -1,7 +1,7 @@
 # 2026-05-06 CodeInsights Pipeline 设计稿
 
-> 状态：已确认  
-> 范围：首版 `pipeline` 平替 `chat`，保留隐藏回退  
+> 状态：已确认
+> 范围：首版 `pipeline` 平替 `chat`，保留隐藏回退
 > 文档位置：`docs/pipeline/`
 
 ## 1. 目标与边界
@@ -347,4 +347,3 @@ LangGraph 只放在主进程，不进入 preload / renderer。
 - `README.md`
 - `README.en.md`
 - `AGENTS.md`
-

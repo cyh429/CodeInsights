@@ -16,8 +16,8 @@
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.45"/>
     </filter>
-    
-    
+
+
     <radialGradient id="glow-blue" cx="30%" cy="28%" r="45%">
       <stop offset="0%" stop-color="#58A6FF" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#58A6FF" stop-opacity="0"/>
@@ -175,5 +175,5 @@
   </g>
   <text x="92" y="617" text-anchor="start" class="label" fill="#F0F6FC">不是一次性全自动跑完，也不是第六个自动 PR 阶段。</text>
   <text x="92" y="642" text-anchor="start" class="body">Pipeline 在关键阶段保留人工 gate；Tester 通过后进入材料准备和后续提交动作。</text>
-  
+
 </svg>

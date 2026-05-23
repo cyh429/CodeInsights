@@ -16,8 +16,8 @@
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.08"/>
     </filter>
-    
-    
+
+
     <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#2563EB"/>
     </marker>
@@ -165,5 +165,5 @@
   </g>
   <text x="92" y="617" text-anchor="start" class="label" fill="#0F172A">不是一次性全自动跑完，也不是第六个自动 PR 阶段。</text>
   <text x="92" y="642" text-anchor="start" class="body">Pipeline 在关键阶段保留人工 gate；Tester 通过后进入材料准备和后续提交动作。</text>
-  
+
 </svg>

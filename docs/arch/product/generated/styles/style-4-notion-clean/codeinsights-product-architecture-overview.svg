@@ -16,8 +16,8 @@
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0"/>
     </filter>
-    
-    
+
+
     <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#3B82F6"/>
     </marker>
@@ -151,5 +151,5 @@
     <rect x="0" y="0" width="84" height="28" rx="14" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1"/>
     <text x="42" y="18" text-anchor="middle" class="chip" fill="#3B82F6">复用成熟运行时</text>
   </g>
-  
+
 </svg>

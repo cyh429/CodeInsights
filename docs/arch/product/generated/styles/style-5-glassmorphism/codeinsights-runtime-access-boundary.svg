@@ -16,8 +16,8 @@
     <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
       <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.45"/>
     </filter>
-    
-    
+
+
     <radialGradient id="glow-blue" cx="30%" cy="28%" r="45%">
       <stop offset="0%" stop-color="#58A6FF" stop-opacity="0.18"/>
       <stop offset="100%" stop-color="#58A6FF" stop-opacity="0"/>
@@ -132,5 +132,5 @@
 
   <rect x="60" y="650" width="1080" height="54" rx="16" fill="#161B22" stroke="#30363D" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
   <text x="88" y="684" text-anchor="start" class="body" font-size="14">上游 agent 升级后，CodeInsights 在已接入运行时范围内优先继承能力，减少二次封装适配成本。</text>
-  
+
 </svg>
