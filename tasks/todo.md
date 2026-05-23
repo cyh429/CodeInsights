@@ -1,5 +1,46 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 真实素材接入优化计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏视频应优先使用真实运行素材；GitHub 直播放需要公开 user-attachments URL，当前本地真实录屏先作为仓库素材接入并保留 fallback 链接。
+- [x] 复查中英文 README、已有真实截图/录屏和素材目录，确认本轮只做文档展示优化，不修改运行时代码。
+- [x] 将 README 首屏媒体从旧概念视频切换为真实 Electron 运行录屏，并保留 20 秒概念视频作为辅助入口。
+- [x] 新增中英文“真实界面预览”区块，展示 Pipeline、Agent、模型配置、Agent 设置/MCP/Skills 四类截图。
+- [x] 更新中英文素材目录，补充 `docs/assets/readme/real-runs/` 下的真实截图、录屏、抽帧和素材说明。
+- [x] 验证 README 引用路径、视频/图片文件、敏感信息扫描和 Markdown diff 空白，在本节末尾追加 Review。
+
+## 2026-05-23 README 真实素材接入优化 Review
+
+- 已更新 `README.md` 与 `README_en.md` 首屏展示：移除旧 user-attachments 概念视频播放器，改为真实 Electron 运行录屏抽帧图，点击可打开 `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4`；20 秒概念视频保留为辅助入口。
+- 已新增中英文真实界面预览区块，覆盖 Pipeline 工作台、Agent 工作区、模型配置、Agent 设置 / MCP / Skills 四类真实截图；截图使用 `width="100%"`，避免在 README 表格里撑开布局。
+- 已更新中英文素材目录，补充真实录屏、抽帧图、四张截图和 `docs/assets/readme/real-runs/README.md` 说明文件。
+- 验证通过：所有 README 新增相对资源路径存在；`ffprobe` 确认真实录屏为 H.264、1600x966、30fps、6 秒、180 帧；敏感 token 扫描无命中；`rg` 确认旧 `user-attachments` 视频和 `<video>` 标签已从中英文 README 清理；`git diff --check -- README.md README_en.md tasks/todo.md docs/assets/readme/real-runs` 通过。
+- 说明：当前没有新的公开 GitHub user-attachments URL，故 README 首屏采用真实录屏抽帧链接 MP4 的方式，避免相对 MP4 在 GitHub README 中被过滤后出现空白。
+
+## 2026-05-23 README 真实截图与录屏素材计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认 README 素材要使用真实可运行界面，避免 mock，并避开 API Key、渠道密钥、飞书凭证等敏感信息。
+- [x] 确认本轮不直接修改 README，只新增真实截图/录屏素材和给出可引用片段；如需写入 README，等待用户再次明确允许。
+- [x] 使用隔离配置目录启动 Electron 应用，避免读取本机已有 `~/.codeinsights-dev` 敏感会话与渠道。
+- [x] 通过真实应用采集关键功能素材：Pipeline 主界面、Agent 会话界面、工作区/资源面板、渠道与设置、权限/人工交互相关可见状态。
+- [x] 录制 README 可用短视频：优先覆盖 `Pipeline | Agent` 模式切换和主要工作台操作；若某些功能需要真实凭证，则只录制可本地展示部分并记录限制。
+- [x] 将素材整理到 `docs/assets/readme/real-runs/`，保留命名清晰的 PNG / MP4 和素材清单。
+- [x] 验证图片/视频文件可打开、尺寸合适、无敏感信息，并在本节末尾追加 Review。
+
+## 2026-05-23 README 真实截图与录屏素材 Review
+
+- 已用真实 Electron dev 主窗口采集素材，CDP 目标为 `http://localhost:5173/`，不是浏览器 mock 页面；本轮启动时使用 `CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config` 隔离配置，避免读取本机真实渠道、会话和 IM 凭证。
+- 已生成 README 可用素材目录：`docs/assets/readme/real-runs/`。
+- 截图产物：
+  - `01-pipeline-dashboard.png`：Pipeline 发射台、六阶段 Mission Route、产物与运行日志。
+  - `02-agent-workbench.png`：Agent Mission、Command Deck、右侧资源面板、会话/工作区文件。
+  - `03-settings-overview.png`：模型配置、DeepSeek 预设、Pipeline Codex 认证来源、Agent 供应商。
+  - `04-channels-and-agent-settings.png`：Agent 高级设置、内置工具、MCP 服务器、Skills。
+- 录屏产物：`codeinsights-real-run-overview.mp4`，6 秒，1600x966，H.264，30fps；另生成 `codeinsights-real-run-overview-contact-sheet.jpg` 作为抽帧核验图。
+- 已新增 `docs/assets/readme/real-runs/README.md`，包含素材说明和 README Markdown 引用片段；未直接修改根 `README.md`，符合“README 修改需先获得允许”的项目规则。
+- 验证通过：人工查看四张截图和录屏抽帧；`ffprobe` 确认视频可读；`node --check docs/assets/readme/real-runs/capture-cdp.mjs`；敏感 token 文本扫描 `rg` 无命中；`git diff --check -- tasks/todo.md docs/assets/readme/real-runs`。
+- 限制说明：本轮使用空密钥演示配置，因此没有真实跑需要模型 API Key 的 Pipeline 节点执行、Agent 工具调用和权限审批弹窗；这些素材需要提供可用脱敏渠道后再补录。
+
 ## 2026-05-23 README 首屏图标与英文链接修复计划
 
 - [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏应优先展示视频，品牌图标不应继续占据标题左侧。
@@ -2571,3 +2612,39 @@ Phase 8 禁止事项：
 - 已确认上一版 raw 仓库 mp4 会被 GitHub README 渲染器过滤成空段落，导致页面上没有可播放视频。
 - 已通过 GitHub 编辑器上传并持久化视频附件，最终 README 使用可匿名访问的 `https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588`。
 - 已验证新附件匿名请求能返回 mp4 文件头，GitHub Markdown API 会保留 `gh:secured-asset-reference` 与 `<video>`，README 旧名扫描无结果。
+
+## 2026-05-23 当前分支合并到主分支计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认大规模合并前必须先规划、保护无关工作树改动，并在实现前 check-in。
+- [x] 更新 `origin/main` 引用并检查分支状态：当前分支为 `base/agent-core-refactor`，主分支为 `origin/main`。
+- [x] 识别关键风险：`git merge-base HEAD origin/main` 无共同祖先，当前不是普通分支合并，而是两套不同 Git 历史的树级接入。
+- [x] 量化差异：当前树相对 `origin/main` 为 1110 个文件变化，约 244470 行新增、4990 行删除；当前分支树 1106 个文件，`origin/main` 树 28 个文件。
+- [x] 用户确认目标：让主分支采用当前桌面应用/monorepo 作为新主线；不直接在主分支上尝试 `merge --allow-unrelated-histories`。
+- [x] 采用策略 A：从 `origin/main` 创建保留双亲历史的整树替换式 merge commit，commit tree 以当前分支为准，排除 `.DS_Store` 等无关文件。
+- [ ] 备选策略 B：若主分支仍要保留现有 28 文件网站形态，则不要整树合并；改为按功能分批 cherry-pick/移植，并为每批跑验证后单独提交。
+- [x] 执行前清理或隔离当前工作树无关噪音：`.DS_Store`、`docs/.DS_Store`、`assets/.DS_Store`、`assets/icon/.DS_Store`、`improve/.DS_Store`、`improve/ui/.DS_Store` 不纳入合并。
+- [x] 验证清单：`git status --short`、树差异审查、`bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check`；本轮未额外启动真实 Electron 桌面壳。
+- [x] Review：执行后记录最终策略、验证结果、未处理风险和是否需要推送/PR。
+
+## 2026-05-23 当前分支合并到主分支 Review
+
+- 合并策略采用“整树替换式双父 merge commit”：第一父为 `origin/main`，第二父为当前 `base/agent-core-refactor`，最终文件树以当前桌面应用/monorepo 为准。
+- 本地已有 `main` 与 `origin/main` 也没有共同 merge-base；执行前保留本地 `main` 的备份分支，避免丢失本地旧引用。
+- 合并提交通过临时 index 生成，只包含当前分支文件树和本次 `tasks/todo.md` 记录；未纳入当前工作树中的 `.DS_Store` 噪音。
+- 验证通过：`git diff --check -- tasks/todo.md`；`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`。
+- 本轮仅完成本地分支整合；未执行 `git push` 或创建 PR。
+
+## 2026-05-23 README 标题图标白圈修正计划
+
+- [x] 按用户纠正更新 `tasks/lessons.md`：README 首屏图标不能使用带白色外圈的旧 RGB 素材。
+- [x] 确认 README 当前引用的 `assets/icon/CodeInsights.png` 带白圈且无 alpha；仓库内 `apps/electron/resources/icon.png` 已是透明外缘主图标。
+- [x] 用透明外缘主图标替换 README 引用的 `assets/icon/CodeInsights.png`，保持 README 结构不变。
+- [x] 验证图标 alpha、尺寸、README diff 和空白检查，提交并推送到远程 `main`。
+- [x] Review：记录最终使用的素材、验证结果和仍有工作树噪音未处理。
+
+## 2026-05-23 README 标题图标白圈修正 Review
+
+- 已将 `assets/icon/CodeInsights.png` 从无 alpha 的 1254x1254 RGB 图替换为透明外缘的 1024x1024 RGBA 主图标，README 首屏仍引用同一路径。
+- 验证四角 alpha 均为 0，去除了 README 图标周围可见白圈，只保留中间 CI 主体。
+- 验证通过：PIL 尺寸/alpha 抽样；`sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icon/CodeInsights.png`；`git diff --check -- README.md assets/icon/CodeInsights.png tasks/lessons.md tasks/todo.md`。
+- 当前原工作树仍保留既有 `.DS_Store` 和任务记录未提交状态，本轮远程 `main` 提交未纳入这些噪音。

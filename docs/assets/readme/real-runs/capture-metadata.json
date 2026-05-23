@@ -1,0 +1,8 @@
+{
+  "title": "CodeInsights",
+  "url": "http://localhost:5173/",
+  "width": 1440,
+  "height": 870,
+  "devicePixelRatio": 2,
+  "text": "Agent\nPipeline\n工作区控制台\n工作区\n默认工作区\n新建贡献 Pipeline\nv2\n暂无 Pipeline 会话\n0\nMCP\n10\nSkills\n🧑‍💻\n用户\nPipeline Dock\n欢迎使用 CodeInsights Pipeline\n新 Agent 会话\nCODEINSIGHTS PIPELINE\n当前节点：探索\n准备启动\n第 1 轮\n未启动\n进度和人工审核状态会同步到下方阶段轨。\nMISSION ROUTE\n贡献工作流航线\n6 个阶段\n01\n探索\n贡献节点 · explorer\n待处理\n02\n计划\n贡献节点 · planner\n待处理\n03\n开发\n贡献节点 · developer\n待处理\n04\n审查\n贡献节点 · reviewer\n待处理\n05\n测试\n贡献节点 · tester\n待处理\n06\n提交\n贡献节点 · committer\n待处理\n任务档案 / 运行轨迹\n产物与运行日志\n\n聚合阶段产物、审核反馈和节点事件，形成可检索的 Pipeline 运行档案。\n\n记录\n0\n显示\n0/0\n上一个\n下一个\n复制报告\n00\n全部\n01\n任务\n02\n探索\n03\n计划\n04\n开发\n05\n审查\n06\n测试\n阶段产物\n运行日志\n暂无阶段产物\n\nPipeline 完成阶段输出后，结构化产物会在这里归档。\n\n发射台\nPipeline 任务\n等待输入\n启动 Pipeline"
+}
