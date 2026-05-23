@@ -1,5 +1,20 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 恢复视频播放器计划
+
+- [x] 按用户纠正确认问题：上一轮把 README 首屏 `<video>` 替换成抽帧图链接，虽然保留了 MP4 链接，但删除了视频播放器展示。
+- [x] 更新 `tasks/lessons.md`，记录 README 明确要求视频时必须保留 `<video>`，只能补 fallback，不能用静态图替代。
+- [x] 恢复 `README.md` 与 `README_en.md` 首屏真实运行录屏 `<video>` 播放器。
+- [x] 同步更新 `docs/assets/readme/real-runs/README.md` 的引用片段和说明，避免后续继续复制静态图方案。
+- [x] 验证视频路径、录屏元数据、敏感信息扫描、`git diff --check`，然后提交并推送当前分支和主分支。
+
+## 2026-05-23 README 恢复视频播放器 Review
+
+- 已按用户纠正恢复 `README.md` 与 `README_en.md` 首屏真实运行录屏 `<video>` 播放器，不再用抽帧图替代视频展示。
+- 已保留 MP4 文本链接、20 秒概念视频入口和真实界面截图区；`docs/assets/readme/real-runs/README.md` 的引用片段也同步改回 `<video>`。
+- 已更新 `tasks/lessons.md`，记录 README 明确要求视频时必须保留播放器，只能补 fallback，不能用静态图替代。
+- 验证通过：`rg "<video"` 确认中英文 README 均有视频播放器；`ffprobe` 确认真实录屏为 H.264、1600x966、30fps、6 秒、180 帧；敏感 token 扫描无命中；`git diff --check -- README.md README_en.md docs/assets/readme/real-runs/README.md tasks/lessons.md tasks/todo.md` 通过。
+
 ## 2026-05-23 README 真实素材接入优化计划
 
 - [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏视频应优先使用真实运行素材；GitHub 直播放需要公开 user-attachments URL，当前本地真实录屏先作为仓库素材接入并保留 fallback 链接。

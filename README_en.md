@@ -16,9 +16,7 @@ CodeInsights is a local-first AI Agent desktop workspace for open source contrib
 
 ---
 
-<a href="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4">
-  <img src="./docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg" alt="CodeInsights real run recording preview" width="900" />
-</a>
+<video src="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4" controls width="900" autoplay muted loop></video>
 
 [Homepage](https://zcxggmu.github.io/CodeInsights/) · [Real run recording](./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4) · [20-second concept video](./assets/video/codeinsights-intro-20s.mp4) · [Video design notes](./assets/video/DESIGN.md)
 
