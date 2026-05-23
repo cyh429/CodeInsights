@@ -1,5 +1,13 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 参考页样式对齐计划
+
+- [x] 对照 ScienceClaw 的 README_zh 结构，确认需要重排的首屏元素：标题、语言切换、简介、徽章、视频播放器和锚点导航。
+- [x] 重写 README 顶部展示区，改为居中品牌标题 + 语言切换 + 一句话定位 + 彩色徽章 + 原生视频播放器。
+- [x] 补一块简洁的“产品优势”卡片区，参考外部 README 的三栏式信息密度。
+- [x] 清理或收敛原来的目录/展示重复块，让 README 更像展示型项目首页。
+- [x] 运行 Markdown、链接和 diff 验证，在本节末尾追加 Review。
+
 ## 2026-05-23 README 首屏视频与旧名清理计划
 
 - [x] 复查 README 首屏、项目展示、FAQ、本地配置说明、素材目录和当前视频/图片素材引用，确认仍有旧名说明与顶部图标位置问题。
@@ -2508,3 +2516,11 @@ Phase 8 禁止事项：
 - 已同步修正 `assets/imgs/codeinsights-system-architecture.png`、`assets/imgs/codeinsights-local-storage-framework.png` 和 `assets/video/assets/system-architecture.png`，避免视频和架构素材继续暴露历史名称。
 - 验证通过：`bun run lint`；`bun run validate`（带 `HYPERFRAMES_BROWSER_PATH=/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge` 和 `PRODUCER_FORCE_SCREENSHOT=1`）；`bun run inspect -- --samples 12 --timeout 30000`；`rg -n "RV-Insights|rv-insights|rv_insights|@rv-insights|\\.rv-" README.md assets/video/index.html assets/video/DESIGN.md assets/imgs/*.svg assets/video/meta.json assets/video/package.json assets/video/hyperframes.json`；`git diff --check`。
 - 残留风险仅在仓库里既有的无关 `.DS_Store` 噪音和未跟踪资产目录，不属于本次 README 修复范围。
+
+## 2026-05-23 README 参考页样式对齐 Review
+
+- 已把 README 顶部改成更接近参考页的展示结构：居中品牌标题、语言切换、简短定位、彩色徽章、原生视频播放器和锚点导航。
+- 已新增三栏式“产品优势”卡片，把项目最重要的三件事先讲清楚：可审计流水线、本地优先工作台、复用成熟运行时。
+- 已保持正文深层内容不变，只收敛顶部入口与信息层级，让 README 先像一个项目首页，再展开详细架构、命令和边界。
+- 验证通过：`git diff --check`；README 本地链接/媒体/锚点 Node 检查；`rg` 旧名扫描；`ffprobe` 视频文件检查。
+- 残留风险仅在工作树既有的 `.DS_Store` 和未跟踪资产目录，不属于本轮 README 结构调整范围。

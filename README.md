@@ -1,43 +1,62 @@
-# CodeInsights
+<div align="center">
 
-<p align="center">
-  <a href="./assets/video/codeinsights-intro-20s.mp4">
-    <img src="./assets/video/snapshots/contact-sheet.jpg" width="960" alt="CodeInsights 20 秒介绍视频关键画面预览" />
-  </a>
-</p>
+<h1><img src="./assets/icon/CodeInsights.png" alt="CodeInsights" width="42" style="vertical-align: middle;" />&nbsp;CodeInsights</h1>
 
-<p align="center">
-  <a href="./assets/video/codeinsights-intro-20s.mp4">观看 20 秒介绍视频</a>
-  ·
-  <a href="./assets/video/DESIGN.md">视频设计说明</a>
-  ·
-  <a href="https://zcxggmu.github.io/CodeInsights/">项目主页</a>
-</p>
+**[English](https://zcxggmu.github.io/CodeInsights/)** | **[中文](./README.md)**
 
-CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软件贡献、代码协作和长期任务自动化。它不是把一次复杂贡献交给单个黑盒 Agent，而是把成熟 coding agent 运行时接入到可审计、可回退、可验证的工程流程中。
+</div>
 
-当前公开主入口是 `Pipeline | Agent`：
+CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软件贡献、代码协作和长期任务自动化。它把成熟 coding agent 运行时接入到可审计、可回退、可验证的工程流程中，让复杂贡献从“一次性聊天”变成有阶段、有证据、有回放的工程协作。
 
-- `Pipeline`：面向开源贡献的结构化流水线，默认使用 v2 六节点流程：`Explorer -> Planner -> Developer -> Reviewer -> Tester -> Committer`。
-- `Agent`：通用自主执行模式，基于 Claude Agent SDK / Anthropic 兼容协议，支持工具调用、权限确认、AskUser、ExitPlan、工作区和 Skills。
-- `Chat`：历史对话能力仍保留为兼容回退，不作为当前公开主入口。
+<div align="center">
 
-## 目录
+*Pipeline | Agent · 本地优先 · 可审计 · 可回放 · 人工 Gate · 多运行时接入*
 
-- [核心定位](#核心定位)
-- [核心能力](#核心能力)
-- [快速开始](#快速开始)
-- [技术栈](#技术栈)
-- [Monorepo 结构](#monorepo-结构)
-- [整体架构](#整体架构)
-- [Pipeline 工作流](#pipeline-工作流)
-- [Agent Runtime](#agent-runtime)
-- [IPC 与状态流](#ipc-与状态流)
-- [本地数据与配置](#本地数据与配置)
-- [开发指南](#开发指南)
-- [打包发布](#打包发布)
-- [安全与边界](#安全与边界)
-- [贡献说明](#贡献说明)
+[![Pipeline](https://img.shields.io/badge/Pipeline-v2-8f55ff.svg)](#pipeline-工作流) [![Agent](https://img.shields.io/badge/Agent-Claude_SDK-20d3a2.svg)](#agent-runtime) [![Codex](https://img.shields.io/badge/Codex-SDK_CLI-3498db.svg)](#pipeline-工作流) [![Local First](https://img.shields.io/badge/Local_First-JSONL-f2c56b.svg)](#本地数据与配置) [![MCP](https://img.shields.io/badge/MCP-Skills-9b59b6.svg)](#agent-runtime) [![Electron](https://img.shields.io/badge/Electron-Desktop-2ecc71.svg)](#整体架构) [![License](https://img.shields.io/badge/License-TBD-6c757d.svg)](#贡献说明)
+
+---
+
+<video src="./assets/video/codeinsights-intro-20s.mp4" controls width="100%" muted></video>
+
+[项目主页](https://zcxggmu.github.io/CodeInsights/) · [视频文件](./assets/video/codeinsights-intro-20s.mp4) · [视频设计说明](./assets/video/DESIGN.md)
+
+[产品优势](#产品优势) · [核心定位](#核心定位) · [核心能力](#核心能力) · [快速开始](#快速开始) · [架构](#整体架构) · [Pipeline](#pipeline-工作流) · [Agent Runtime](#agent-runtime) · [本地数据](#本地数据与配置) · [开发指南](#开发指南) · [常用命令](#常用命令) · [安全边界](#安全与边界) · [素材](#素材目录) · [贡献](#贡献说明)
+
+</div>
+
+---
+
+<a id="产品优势"></a>
+
+## ✨ 产品优势
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 可审计流水线
+
+`Pipeline` 把开源贡献拆成 Explorer、Planner、Developer、Reviewer、Tester、Committer 六个节点。每个阶段都有明确产物、人工 gate 和验证证据，方便继续、重跑、回退或接受风险。
+
+</td>
+<td width="33%" valign="top">
+
+### 本地优先工作台
+
+配置、会话索引、JSONL 事件、checkpoint、artifacts 和工作区文件默认保存在本机。CodeInsights 不依赖本地数据库，便于迁移、排障、审计和开源协作。
+
+</td>
+<td width="34%" valign="top">
+
+### 复用成熟运行时
+
+`Agent` 模式接入 Claude Agent SDK 兼容链路，Pipeline 的开发、审查、测试和提交材料阶段可走 Codex SDK / CLI。CodeInsights 专注于工作流、权限、状态、桥接和本地存储。
+
+</td>
+</tr>
+</table>
+
+---
 
 ## 核心定位
 
