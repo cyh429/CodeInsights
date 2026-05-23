@@ -2531,5 +2531,11 @@ Phase 8 禁止事项：
 
 - [x] 复核远端 GitHub README 渲染结果，确认 raw 仓库 mp4 的 `<video>` 被过滤成空段落。
 - [x] 获取 GitHub `user-attachments/assets` 视频地址，按 ScienceClaw 参考写法替换 README 首屏播放器。
-- [ ] 验证附件 URL 可访问、GitHub Markdown 渲染保留播放器、README 不含旧项目名。
-- [ ] 提交并推送修复，避免纳入无关 `.DS_Store` 改动。
+- [x] 验证附件 URL 可访问、GitHub Markdown 渲染保留播放器、README 不含旧项目名。
+- [x] 提交并推送修复，避免纳入无关 `.DS_Store` 改动。
+
+## 2026-05-23 README GitHub 附件视频修复 Review
+
+- 已确认上一版 raw 仓库 mp4 会被 GitHub README 渲染器过滤成空段落，导致页面上没有可播放视频。
+- 已通过 GitHub 编辑器上传并持久化视频附件，最终 README 使用可匿名访问的 `https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588`。
+- 已验证新附件匿名请求能返回 mp4 文件头，GitHub Markdown API 会保留 `gh:secured-asset-reference` 与 `<video>`，README 旧名扫描无结果。

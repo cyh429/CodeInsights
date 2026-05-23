@@ -146,4 +146,5 @@
 
 - GitHub 仓库 README 会过滤 `<video src="https://github.com/<owner>/<repo>/raw/...mp4">`，页面里只留下空段落；不能把 raw 仓库视频地址当成可播放播放器验证通过。
 - README 需要像参考项目一样直接展示可点击播放视频时，应使用 GitHub 上传附件生成的 `https://github.com/user-attachments/assets/...` 地址，并在推送后抓取 GitHub 渲染 HTML 验证存在 `gh:secured-asset-reference` 和 `<video>`。
+- 仅调用 `upload/policies/assets` 得到的附件 URL 可能在匿名访问下仍是 404；需要让 GitHub 编辑器完成上传并把附件引用持久化到公开内容后，再用匿名请求校验 mp4 文件头。
 - 用户指出线上仍无视频时，要先承认 raw mp4 方案错误，再补齐真正的 GitHub 渲染验证，不要只停留在本地 Markdown 或 HEAD 请求。
