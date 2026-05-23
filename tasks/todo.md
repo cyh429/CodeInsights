@@ -1,5 +1,20 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 首屏辅助链接删除计划
+
+- [x] 按截图确认删除范围：视频下方第一行红框内的三个链接 `真实运行录屏文件`、`20 秒概念介绍`、`视频设计说明`。
+- [x] 保留首屏视频播放器和 `项目主页 / Homepage` 链接，不移动或删除其他导航项。
+- [x] 同步更新中英文 README 顶部链接行。
+- [x] 更新 `tasks/lessons.md`，记录截图红框类需求要按可见区域精确删除，不要替换成别的展示方式。
+- [x] 验证红框三项已从首屏删除、视频仍存在、Markdown 空白无误，然后提交并推送。
+
+## 2026-05-23 README 首屏辅助链接删除 Review
+
+- 已删除中英文 README 首屏视频下方红框对应的三个辅助链接：`真实运行录屏文件 / 20 秒概念介绍 / 视频设计说明` 与英文对应项。
+- 已保留 `项目主页 / Homepage` 链接、首屏 GitHub 附件视频播放器和第二行章节导航。
+- 已更新 `tasks/lessons.md`，记录截图红框类需求要按可见区域精确删除，不要改动视频播放器本身。
+- 验证通过：`rg` 确认红框三项不再出现在 `README.md` / `README_en.md`；中英文 README 仍保留 `<video>`；GitHub Markdown API 对当前 `<video>` 返回可渲染视频；`git diff --check -- README.md README_en.md tasks/lessons.md tasks/todo.md` 通过。
+
 ## 2026-05-23 README 线上视频渲染修复计划
 
 - [x] 按用户反馈复查线上 GitHub README，确认 raw README 里有相对路径 `<video>`，但渲染 HTML 把它过滤成空段落，页面上确实没有视频。
