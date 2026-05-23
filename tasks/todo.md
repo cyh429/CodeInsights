@@ -2589,6 +2589,7 @@ Phase 8 禁止事项：
 
 - 合并策略采用“整树替换式双父 merge commit”：第一父为 `origin/main`，第二父为当前 `base/agent-core-refactor`，最终文件树以当前桌面应用/monorepo 为准。
 - 本地已有 `main` 与 `origin/main` 也没有共同 merge-base；执行前保留本地 `main` 的备份分支，避免丢失本地旧引用。
-- 合并提交通过临时 index 生成，只包含当前分支文件树和本次 `tasks/todo.md` 记录；未纳入当前工作树中的 `.DS_Store` 噪音。
-- 验证通过：`git diff --check -- tasks/todo.md`；`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`。
-- 本轮仅完成本地分支整合；未执行 `git push` 或创建 PR。
+- 合并提交通过临时 index 生成，只包含当前分支文件树和本次 `tasks/todo.md` 记录；未纳入当前工作树中的未提交 `.DS_Store` 噪音。
+- 复查发现当前分支历史里已有被跟踪的 `.DS_Store`，且整树接入相对 `origin/main` 暴露出既有尾随空白；已在 `main` 上追加一个纯机械清理提交，删除 6 个被跟踪 `.DS_Store`、补 `.gitignore` 规则并清理尾随空白。
+- 最终验证在临时 `main` worktree 执行通过：`git diff --check origin/main --`；`bun install`；`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`。
+- 本轮仅完成本地 `main` 与 `codex/integrate-agent-core-refactor` 分支整合；未执行 `git push` 或创建 PR。
