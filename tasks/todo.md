@@ -1,5 +1,13 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 首屏视频与旧名清理计划
+
+- [x] 复查 README 首屏、项目展示、FAQ、本地配置说明、素材目录和当前视频/图片素材引用，确认仍有旧名说明与顶部图标位置问题。
+- [x] 将 README 标题下的图标替换为 20 秒视频预览，并移除重复的项目展示区块。
+- [x] 清理 README 中所有历史项目名、旧目录实名说明和“为什么写旧名”的 FAQ。
+- [x] 重新渲染视频和关键帧快照，确保 README 首屏预览使用更新后的 CodeInsights 素材。
+- [x] 验证 README 链接、旧名扫描、图片/视频预览和 git diff；在本节末尾追加 Review。
+
 ## 2026-05-23 CodeInsights 项目图标外缘修正计划
 
 - [x] 明确反馈范围：保留当前中间深色圆角方形 CI 图标主体，去掉外侧浅色背景圈/留白，不重新设计主体图形。
@@ -2491,3 +2499,12 @@ Phase 8 禁止事项：
 - 已保留谨慎边界：Chat 为隐藏回退而非公开主入口；素材图中 `RV-Insights` 是历史项目名；根目录当前未检测到独立 LICENSE 文件，许可证说明需以最终 LICENSE / NOTICE 为准。
 - 验证通过：`git diff --check`；自定义 Node 脚本检查 `README.md` 的 24 个链接 / 图片和 47 个标题锚点均可解析；旧版本号和过期五阶段表述扫描未发现需要修正的残留。
 - 本轮只修改文档，未运行 TypeScript typecheck 或应用构建；当前工作树仍有既有无关 `.DS_Store` 修改、未跟踪 `assets/` 和 `improve/` 目录状态，不应误纳入无关提交。
+
+## 2026-05-23 README 首屏视频与旧名清理 Review
+
+- 已把 README 首屏的图标位替换为 20 秒视频预览，视频链接和设计说明放在标题后第一视觉位，不再单独展示重复的“项目展示”区块。
+- 已从 README 中清理所有历史项目名相关提示，包括旧名说明段、FAQ 和旧配置目录的直白命名，只保留不暴露旧项目名的迁移表述。
+- 已重新渲染 `assets/video/codeinsights-intro-20s.mp4`、`assets/video/snapshots/contact-sheet.jpg`、`assets/video/render-contact-sheet.jpg` 和关键帧快照；新视频首帧与 README 预览均为 CodeInsights 品牌内容。
+- 已同步修正 `assets/imgs/codeinsights-system-architecture.png`、`assets/imgs/codeinsights-local-storage-framework.png` 和 `assets/video/assets/system-architecture.png`，避免视频和架构素材继续暴露历史名称。
+- 验证通过：`bun run lint`；`bun run validate`（带 `HYPERFRAMES_BROWSER_PATH=/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge` 和 `PRODUCER_FORCE_SCREENSHOT=1`）；`bun run inspect -- --samples 12 --timeout 30000`；`rg -n "RV-Insights|rv-insights|rv_insights|@rv-insights|\\.rv-" README.md assets/video/index.html assets/video/DESIGN.md assets/imgs/*.svg assets/video/meta.json assets/video/package.json assets/video/hyperframes.json`；`git diff --check`。
+- 残留风险仅在仓库里既有的无关 `.DS_Store` 噪音和未跟踪资产目录，不属于本次 README 修复范围。
