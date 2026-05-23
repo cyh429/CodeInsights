@@ -1,5 +1,20 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 最新开发状态同步计划
+
+- [x] 核对当前 Git 状态与最新提交，确认主分支公开文档基线为 `842dc597 merge: 删除 README 首屏辅助视频链接`。
+- [x] 更新 Agent 重构总览、开发进度清单和下次启动提示词，明确阶段 0-15、README / 素材 / 图标 / 公开文档任务完成状态。
+- [x] 明确当前未完成项：飞书真实入口和群聊 MCP、旧路径清理、旧 session 兼容清理、插件真实 UI 补跑、License 决策。
+- [x] 校准下次启动提示词中的实际项目路径、包版本、最新提交和下一步开发规则。
+- [x] 运行文档级验证，追加 Review。
+
+## 2026-05-23 最新开发状态同步 Review
+
+- 已同步 `docs/agent-refactor/README.md`：当前状态更新到 2026-05-23，明确 `842dc597` 只是 README 首屏辅助链接清理的主分支 merge 提交，不是 Agent runtime 新阶段；阶段 0-15 已完成，README / 公开素材 / 图标收尾已完成。
+- 已同步 `docs/agent-refactor/development-checklist.md`：当前版本校准为根包 `0.1.1`、shared `0.1.42`、core `0.2.12`、ui `0.1.4`、electron `0.0.103`，并列明仍未完成的飞书真实验证、旧路径清理、插件真实 UI 补跑和 License 决策。
+- 已更新 `docs/agent-refactor/next-session-prompt.md`：项目路径校准为 `/Users/zq/Desktop/ai-projs/posp/RV-Insights`，加入最新提交、完成项、未完成项、工作树噪音和下一步规则。
+- 验证通过：`rg` 检查旧版本号和错误项目路径已清理；`git diff --check -- docs/agent-refactor/README.md docs/agent-refactor/development-checklist.md docs/agent-refactor/next-session-prompt.md tasks/todo.md` 通过。
+
 ## 2026-05-23 README 首屏辅助链接删除计划
 
 - [x] 按截图确认删除范围：视频下方第一行红框内的三个链接 `真实运行录屏文件`、`20 秒概念介绍`、`视频设计说明`。

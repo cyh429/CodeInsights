@@ -4,9 +4,9 @@
 
 ## 当前开发状态
 
-更新时间：2026-05-22
+更新时间：2026-05-23
 
-当前阶段：阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证；桌面 Agent 输入区可在后续发送前选择 `Runner v2` 或 `Legacy`。阶段 14A Agent Runner v2 默认化、阶段 14B Pipeline Runner v2 默认化、阶段 14C Channels v2 默认化均已完成。飞书配置仍缺失，真实飞书入口与群聊 MCP 仍未声明通过。
+当前阶段：阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证；桌面 Agent 输入区可在后续发送前选择 `Runner v2` 或 `Legacy`。阶段 14A Agent Runner v2 默认化、阶段 14B Pipeline Runner v2 默认化、阶段 14C Channels v2 默认化均已完成。2026-05-23 公开文档/README 素材与首屏清理已完成到主分支 merge 提交 `842dc597 merge: 删除 README 首屏辅助视频链接`。飞书配置仍缺失，真实飞书入口与群聊 MCP 仍未声明通过；旧路径清理尚未开始。
 
 已完成：
 
@@ -54,15 +54,18 @@
 - [x] 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`；`agentRuntimeRunnerV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 显式回滚。
 - [x] 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`；`agentRuntimePipelineRunnerV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 显式回滚到 Pipeline legacy adapter。
 - [x] 阶段 14C Channels v2 默认化已完成代码侧评估：按用户指示不再以飞书真实配置为阻塞，`agentRuntimeChannelsV2` 默认开启且可通过 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=0` 显式回滚到旧 Feishu bridge 路径；本阶段不声明飞书真实入口或群聊 MCP 已通过。
-- [x] 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证：Agent 输入区新增 Runner 链路切换按钮，后续发送可选择 `Runner v2` 或 `Legacy`；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
+- [x] 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证并提交：`9e9efd1e feat(agent): 完成阶段15 Runner 链路手动切换`；Agent 输入区新增 Runner 链路切换按钮，后续发送可选择 `Runner v2` 或 `Legacy`；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
+- [x] 项目公开名与包版本已更新到当前状态：根包 `codeinsights@0.1.1`，`@codeinsights/shared@0.1.42`，`@codeinsights/core@0.2.12`，`@codeinsights/ui@0.1.4`，`@codeinsights/electron@0.0.103`。
+- [x] README / 公开素材近期收尾已完成：中英文 README 首屏 GitHub 附件视频播放器可渲染；真实运行截图/录屏素材已接入；20 秒介绍视频完成；模型配置页 CodeInsights 官方供应商推广卡片已移除；项目主图标已处理透明外缘；首屏红框内三个辅助链接已删除且只保留 `项目主页 / Homepage`。
 
 下一步建议：
 
 1. 保持旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容，不删除旧路径。
-2. 若后续需要声明飞书真实可用，再补飞书入口和飞书群聊 MCP 真实验证；这不再阻塞当前 Channels v2 默认开关。
-3. 后续清理旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 或旧 session JSONL 兼容前，必须先建立独立计划和回滚点。
-4. 后续默认化、UI 暴露或清理前后都重新跑完整聚焦验证与真实 Electron 交互复核，并证明显式回滚开关可用。
-5. 每阶段完成并通过验证后立即单独提交。
+2. 若后续需要声明飞书真实可用，再补飞书入口和飞书群聊 MCP 真实验证；缺 `~/.codeinsights/feishu.json` 与 `~/.codeinsights-dev/feishu.json` 时继续记录为阻塞。
+3. 若下一步进入旧路径清理，必须另起独立阶段计划，先列出清理范围、回滚点、验证矩阵和旧 session 兼容策略。
+4. 后续默认化、UI 暴露、旧路径清理或公开发布前后都重新跑完整聚焦验证与真实 Electron 交互复核，并证明显式回滚开关可用。
+5. 正式发布前补齐 License / NOTICE 决策；当前 README 仍标注 License TBD。
+6. 每阶段完成并通过验证后立即单独提交。
 
 当前已知缺口：
 
@@ -73,6 +76,7 @@
 - 阶段 14B 已默认开启 Pipeline Runner v2 并提交 `be82e53d`：默认 Electron session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 走 Pipeline Runner v2 并完成到 committer，显式关闭 session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认回到 Pipeline legacy adapter。
 - 阶段 14C 已默认开启 Channels v2 的代码侧开关：默认值、显式关闭、显式开启和模块导入 env 隔离均由 `feishu-channel-adapter.test.ts` 覆盖。
 - 阶段 15 已增加 Agent Runner 手动切换：`AgentSendInput.runtimeRunnerMode` 和 `settings.agentRuntimeRunnerMode` 记录用户选择，`run_started.runnerMode` 记录实际链路，`resolveAgentRuntimeRunnerModeForRun()` 保留 env 硬回滚。
+- 2026-05-23 README 首屏辅助链接删除已完成并合入主分支：`842dc597 merge: 删除 README 首屏辅助视频链接`。中英文 README 首屏视频下方只保留 `项目主页 / Homepage`，红框内 `真实运行录屏文件 / 20 秒概念介绍 / 视频设计说明` 及英文对应项已删除，视频播放器和第二行章节导航保留。
 - 2026-05-19 权限 deny 补跑通过：sessionId `c31ec718-0d80-465f-bebd-5233e2ca7884`，requestId `b31cdc76-fe22-428a-a11c-32fba08899b4`，目标文件未生成。
 - 2026-05-19 权限 approve 补跑发现重复 `sdk_session` 去重仍不完整；已在 event log writer 层按同一 run 的 `sdkSessionId` 去重，并复验证据中 `sdk_session_count=1`。
 - 2026-05-19 `sdk_session` writer 层去重修复已提交：`46e62a75 fix(agent): 补强阶段13 sdk_session 去重证据`。
@@ -87,6 +91,7 @@
 - 2026-05-19 Codex Pipeline runner 追加支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，内部 Git snapshot 清理宿主 `GIT_*` 环境并 fail closed，并补齐 strict schema 递归校验、reviewer 空字符串保守拒绝和 clean-env 单测。
 - 2026-05-19 已定位 Electron 9334 立即退出根因：旧 Electron 仍在 9333 运行，单实例锁导致新进程退出；结束旧实例后 9334 CDP 可连接。
 - 阶段 11 已完成 Renderer 旧 reducer fallback / shadow compare 清理；阶段 12 仍未删除 Agent 主循环旧 `adapter.query()`、Pipeline legacy adapter、shared `adaptAgentEventToRuntimeEvent()` 或旧 session transcript 兼容。
+- 当前未完成项仍以“真实飞书验证、旧路径清理、旧 session 兼容清理、插件真实 UI 补跑、License 决策”为主；不要把 README / 素材收尾提交误认为 Agent runtime 新阶段。
 - 工作树当前已知仍可能有 `.DS_Store` / `improve/` 噪音文件，不属于 Agent 重构成果，不应纳入阶段提交。
 
 阶段 13 当前证据文档：[2026-05-18-stage-13.md](./baseline-runs/2026-05-18-stage-13.md)

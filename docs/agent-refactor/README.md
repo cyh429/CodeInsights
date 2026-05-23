@@ -29,18 +29,20 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 3. 然后读 [目标架构](./target-architecture.md) 与 [迁移路线](./migration-plan.md)，确认模块边界和阶段顺序。
 4. 实现前读 [行为基线清单](./baseline-checklist.md)、[事件契约](./event-contract.md)、[Runtime Manifest](./runtime-manifest.md) 和 [第一批实现 PR 拆分](./implementation-prs.md)，把阶段拆成可验证 PR。
 5. 后续迭代按 [开发进度跟踪清单](./development-checklist.md) 更新状态、验证结果和回滚记录。
-6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续飞书阻塞项或后续稳定化阶段。
+6. 重新启动 Codex 会话时，可使用 [下次启动 Codex 提示词](./next-session-prompt.md) 恢复上下文并继续飞书阻塞项、旧路径清理评估或后续稳定化阶段。
 
 ## 当前进度
 
+- 状态更新时间：2026-05-23。
+- 当前公开文档基线：`842dc597 merge: 删除 README 首屏辅助视频链接`。它是 README 首屏辅助链接清理的主分支 merge 提交，不是新的 Agent runtime 实现阶段。
 - 阶段 0-12 已完成并提交，阶段 13 的 Runner v2 证据补齐与收尾补强也已完成到可审计状态。
 - 阶段 13 关键提交：`328b3c96`、`46e62a75`、`acc769f1`、`b3d0517e`、`6171f164`、`10356a3a`；文档交接同步提交：`353c5c53`。
 - 阶段 14 默认化评估计划已建立并提交：`02199299 docs(agent): 建立阶段14 Runner v2 默认化评估计划`。
 - 阶段 14A Agent Runner v2 默认化已完成并提交：`88c03213 feat(agent): 完成阶段14A Agent Runner v2 默认化`。未设置 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2` 时默认走 Runner v2，显式 `CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 可回到旧主循环。
 - 阶段 14B Pipeline Runner v2 默认化已完成并提交：`be82e53d feat(agent): 完成阶段14B Pipeline Runner v2 默认化`。未设置 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2` 时默认走 Pipeline Runner v2，显式 `CODEINSIGHTS_AGENT_RUNTIME_PIPELINE_RUNNER_V2=0` 可回到 Pipeline legacy adapter。
 - 阶段 14C Channels v2 默认化已按用户指示排除飞书真实入口阻塞后完成代码侧评估。未设置 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2` 时默认走 Channels v2，显式 `CODEINSIGHTS_AGENT_RUNTIME_CHANNELS_V2=0` 可回到旧 Feishu bridge 路径。
-- 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证。Agent 输入区底部工具栏可在后续发送前选择 `Runner v2` 或 `Legacy`，并通过 settings 持久化；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
-- 当前版本：`@codeinsights/shared@0.1.41`，`@codeinsights/electron@0.0.99`。
+- 阶段 15 Agent Runner 链路手动切换已完成实现与聚焦验证，提交为 `9e9efd1e feat(agent): 完成阶段15 Runner 链路手动切换`。Agent 输入区底部工具栏可在后续发送前选择 `Runner v2` 或 `Legacy`，并通过 settings 持久化；`CODEINSIGHTS_AGENT_RUNTIME_RUNNER_V2=0` 仍硬回滚旧主循环。
+- 当前版本：根包 `codeinsights@0.1.1`，`@codeinsights/shared@0.1.42`，`@codeinsights/core@0.2.12`，`@codeinsights/ui@0.1.4`，`@codeinsights/electron@0.0.103`。
 - 默认 Agent 对话、默认 Pipeline Claude 节点和默认 Channels v2 入口现在均走 v2 路径，三者均保留显式 env 关闭回滚。
 - 阶段 13 已补齐 Runner v2 代码侧等价证据：自动重试、typed error 持久化、catch error SDKMessage 持久化、`sdk_message` UI 推送、重复 `run_started/sdk_session` 去重、Plan Mode 退出、Watchdog、Teams auto-resume。
 - 阶段 13 已补齐真实 Electron Runner v2 交互：发送、停止、权限 approve / deny、AskUser、Plan Mode、旧 session resume、同会话并发、附件、additional directory、fork、rewind。
@@ -48,6 +50,7 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - 阶段 14B 默认 Pipeline 深水位真实 UI run 已完成：session `a70c02d0-ff2f-4283-b121-cd963771fd9f` 已到 explorer / planner / developer / reviewer / tester / committer，最终 completed；显式关闭回滚 session `1112d7fc-ab4b-4e4b-bedf-193533a7daec` 日志确认走 legacy adapter。
 - Codex Pipeline runner 已完成收尾补强：支持 `CODEX_HOME/auth.json`，API key 模式隔离继承的 `CODEX_HOME`，strict schema 递归校验所有 object schema，Git snapshot 清理宿主 `GIT_*` 并 fail closed，clean-env 单测通过。
 - 阶段 14 分批策略已写入 checklist：14A 已完成 Agent Runner v2 默认化；14B 已完成 Pipeline Runner v2 默认化；14C 已按用户指示不以飞书真实入口为阻塞完成 Channels v2 默认化。
+- README / 公开文档和素材侧近期已完成：项目公开名统一为 CodeInsights；中英文 README 已接入 GitHub 附件视频播放器、真实运行截图/录屏、素材目录和英文入口；模型配置页 CodeInsights 官方供应商推广卡片已移除；README 首屏红框内三个辅助链接已删除，仅保留 `项目主页 / Homepage`；20 秒介绍视频和透明外缘主图标素材已完成。
 
 ## 仍未完成
 
@@ -55,6 +58,9 @@ happyclaw 的核心理念更明确：不重新实现 Agent 能力，直接复用
 - 如果后续需要声明飞书真实可用，仍需补真实飞书入口和群聊 MCP 验证。
 - 后续旧路径清理仍必须保留明确回滚点，并重新跑完整聚焦验证与真实 Electron 交互复核。
 - 删除旧路径、旧 adapter 或旧兼容逻辑只能作为默认开启稳定后的后续阶段，不能在当前状态直接清理。
+- 旧 Agent 主循环、Pipeline legacy adapter、旧 Feishu bridge 和旧 session JSONL 兼容仍保留；如要删除，必须另起独立阶段计划、验证矩阵和回滚方案。
+- 阶段 6 的真实插件启用/禁用 Electron UI 交互仍只由聚焦测试覆盖，若要对外声明完整通过，需要补真实桌面壳验证。
+- 根许可证仍未最终收敛：README 当前标注 License TBD，正式发布前仍需补 `LICENSE` / `NOTICE` 决策。
 
 本方案不是 UI 视觉改造，也不是一次性删除旧 Agent。它是把当前 Agent 模式从“Electron 主进程里一个很厚的 Orchestrator”收敛成“可复用的本地 Claude Code runtime”。
 
