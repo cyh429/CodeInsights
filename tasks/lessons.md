@@ -13,6 +13,7 @@
 - 参考页里如果把视频作为主展示，README 应该用原生 `<video>` 做首个媒体块，而不是继续用静态截图链接视频。
 - 用户明确要求 README 放视频时，不能因为 GitHub 相对 MP4 可能渲染不稳定就把 `<video>` 替换成抽帧图；可以补 fallback 链接，但必须保留视频播放器。
 - GitHub README 中要让访问者直接点击播放视频时，`<video>` 的 `src` 应优先使用 GitHub 可访问的绝对视频 URL；相对 mp4 路径容易退化成文件跳转或不稳定渲染。
+- 线上 GitHub README 会把相对 MP4、raw.githubusercontent、GitHub raw、release asset 和 GitHub Pages MP4 的 `<video>` 过滤成空段落；必须用 `github.com/user-attachments/assets/...` 并用 GitHub Markdown API 或页面 HTML 复核 `<video>` 存在。
 - 参考页里的“短优势块 + 大段正文”结构适合开源桌面工具的 README；先给第一眼信号，再展开详细架构和命令。
 
 ## 2026-05-23 README 公开命名与视频首屏

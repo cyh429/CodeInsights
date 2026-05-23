@@ -16,9 +16,9 @@ CodeInsights is a local-first AI Agent desktop workspace for open source contrib
 
 ---
 
-<video src="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4" controls width="900" autoplay muted loop></video>
+<video src="https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588" controls width="900" autoplay muted loop></video>
 
-[Homepage](https://zcxggmu.github.io/CodeInsights/) · [Real run recording](./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4) · [20-second concept video](./assets/video/codeinsights-intro-20s.mp4) · [Video design notes](./assets/video/DESIGN.md)
+[Homepage](https://zcxggmu.github.io/CodeInsights/) · [Real run recording file](./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4) · [20-second concept video](./assets/video/codeinsights-intro-20s.mp4) · [Video design notes](./assets/video/DESIGN.md)
 
 [Highlights](#highlights) · [Real Interface](#real-interface-preview) · [Positioning](#positioning) · [Capabilities](#capabilities) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Pipeline](#pipeline-workflow) · [Agent Runtime](#agent-runtime) · [Local Data](#local-data-and-configuration) · [Development](#development-guide) · [Commands](#common-commands) · [Security](#security-and-boundaries) · [Assets](#asset-catalog) · [Contributing](#contributing)
 
