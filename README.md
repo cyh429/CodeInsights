@@ -16,9 +16,9 @@ CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软
 
 ---
 
-<video src="./assets/video/codeinsights-intro-20s.mp4" controls width="100%" muted></video>
+<video src="https://github.com/zcxGGmu/CodeInsights/raw/base/agent-core-refactor/assets/video/codeinsights-intro-20s.mp4" controls width="100%" muted preload="metadata"></video>
 
-[项目主页](https://zcxggmu.github.io/CodeInsights/) · [视频文件](./assets/video/codeinsights-intro-20s.mp4) · [视频设计说明](./assets/video/DESIGN.md)
+[项目主页](https://zcxggmu.github.io/CodeInsights/) · [视频文件备用入口](./assets/video/codeinsights-intro-20s.mp4) · [视频设计说明](./assets/video/DESIGN.md)
 
 [产品优势](#产品优势) · [核心定位](#核心定位) · [核心能力](#核心能力) · [快速开始](#快速开始) · [架构](#整体架构) · [Pipeline](#pipeline-工作流) · [Agent Runtime](#agent-runtime) · [本地数据](#本地数据与配置) · [开发指南](#开发指南) · [常用命令](#常用命令) · [安全边界](#安全与边界) · [素材](#素材目录) · [贡献](#贡献说明)
 
