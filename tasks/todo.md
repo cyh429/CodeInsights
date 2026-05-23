@@ -1,5 +1,37 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 首屏图标与英文链接修复计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏应优先展示视频，品牌图标不应继续占据标题左侧。
+- [x] 检查当前 README：H1 中仍嵌入 `assets/icon/CodeInsights.png`；`English` 链接指向 GitHub Pages 项目主页而不是英文 README。
+- [x] 将中文 README 标题改为纯文本 `CodeInsights`，删除左侧项目图标。
+- [x] 新增真实英文 README 文件，并将中文 README 的 `English` 链接指向该文件。
+- [x] 验证 README 语言链接、首屏图标残留和 Markdown 空白，在本节末尾追加 Review。
+
+## 2026-05-23 README 首屏图标与英文链接修复 Review
+
+- 已将中文 `README.md` 顶部标题从内嵌图标改为纯文本 `<h1>CodeInsights</h1>`，首屏不再展示左侧项目图标。
+- 已新增 `README_en.md`，并将中文 README 顶部 `English` 切换链接改为 `./README_en.md`；英文 README 顶部可切回 `./README.md`。
+- 英文 README 复用当前视频、徽章、架构图、快速开始、Pipeline、Agent Runtime、本地数据、Provider、Bridge、开发、打包、安全、素材和 FAQ 结构，语言切换不再跳到产品主页。
+- 已按用户纠正更新 `tasks/lessons.md`，记录 README 语言切换必须指向真实 README 文件、标题图标删除需清理 H1 内嵌图标。
+- 验证通过：`rg "<h1|English|中文|CodeInsights.png|zcxggmu.github.io/CodeInsights" README.md README_en.md`；本地 README 链接目标检查；`git diff --check`。
+
+## 2026-05-23 模型配置页移除 CodeInsights 官方供应商卡片计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认用户截图红框类需求应按“移除该视觉块”处理，而不是缩小或换位置保留。
+- [x] 定位红框来源：`ChannelSettings.tsx` 在“模型配置”和“Agent 供应商”区块分别渲染 `CodeInsightsProviderCard`。
+- [x] 删除两处 `CodeInsightsProviderCard` 渲染，保留用户已有渠道列表、Pipeline Codex 设置和 Agent 供应商开关。
+- [x] 删除推广卡片组件本身和相关无用导入，避免保留不可见死代码。
+- [x] 运行聚焦验证与 `git diff --check`，在本节末尾追加 Review。
+
+## 2026-05-23 模型配置页移除 CodeInsights 官方供应商卡片 Review
+
+- 已移除“模型配置”和“Agent 供应商”两个区块中的 `CodeInsightsProviderCard`，截图红框里的 CodeInsights 官方供应商卡片和“下载后启动”按钮不再渲染。
+- 已删除推广卡片组件本身、`ExternalLink` 图标导入和 `CodeInsightsLogo` 导入，未保留不可见死代码。
+- 真实渠道列表、Pipeline Codex 认证来源选择、Agent 供应商开关逻辑保持不变。
+- 验证通过：`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`rg \"CodeInsightsProviderCard|下载后启动|CodeInsights 官方供应|codeinsights.cool/download\" apps/electron/src/renderer` 无命中；`git diff --check`。
+- 代码审查通过：`code-reviewer` 复查无发现。
+
 ## 2026-05-23 README 参考页样式对齐计划
 
 - [x] 对照 ScienceClaw 的 README_zh 结构，确认需要重排的首屏元素：标题、语言切换、简介、徽章、视频播放器和锚点导航。

@@ -1,8 +1,8 @@
 <div align="center">
 
-<h1><img src="./assets/icon/CodeInsights.png" alt="CodeInsights" width="42" style="vertical-align: middle;" />&nbsp;CodeInsights</h1>
+<h1>CodeInsights</h1>
 
-**[English](https://zcxggmu.github.io/CodeInsights/)** | **[中文](./README.md)**
+**[English](./README_en.md)** | **[中文](./README.md)**
 
 </div>
 
