@@ -2473,3 +2473,21 @@ Phase 8 禁止事项：
 - 审查发现并已修复：第一轮生成后 `icon.ico` 和三份 tray template 与 HEAD hash 一致，说明仍是旧资源；修复后四个文件当前 hash 均不同于 HEAD，并已抽样打开 `.ico` 确认为新 App icon。
 - 验证通过：执行 `CODEINSIGHTS_ICON_SOURCE="$PWD/assets/icon/CodeInsights.png" apps/electron/resources/generate-icons.sh`；SVG `xmllint --noout`；PIL 尺寸检查覆盖源图、Electron PNG/ICO、renderer PNG、WebP、视频 cutout、托盘 template；当前 vs HEAD hash 对比覆盖 `icon.ico` 和三份 tray template；源码扫描确认没有 tracked 文件继续引用未跟踪 `assets/icon/CodeInsights.png`；`bun run --filter='@codeinsights/electron' typecheck`；清理后执行 `bun run --filter='@codeinsights/electron' build`；`git diff --check`。
 - 已清理后重建 `apps/electron/dist/resources`，确认 ignored dist 中不再保留旧 `proma-logos`；构建仍有既有 Vite chunk size warning。本轮未引入运行时代码变更；当前工作树中 `.DS_Store`、`docs/.DS_Store` 和未跟踪 `assets/` / `improve/` 为既有状态或资产目录，不应误纳入无关提交。
+
+## 2026-05-23 中文 README 完善计划
+
+- [x] 复习 `tasks/lessons.md`，确认本轮需要保护既有无关 `.DS_Store` / 资产目录状态，且文档内容必须以当前代码和素材为准。
+- [x] 盘点当前 `README.md`、workspace 包版本、Electron 脚本、主进程服务、renderer 模块、IPC 契约、Pipeline / Agent 运行链路与本地存储结构。
+- [x] 盘点 `assets/` 下图标、架构图、流程图、存储图和介绍视频素材，选择适合 README 首屏和架构章节的引用方式。
+- [x] 重写或整理中文 README：突出项目定位、核心能力、快速开始、架构图、模块说明、开发/打包/验证命令、配置与安全边界、贡献提示。
+- [x] 验证 README 中的本地资源路径、标题锚点、命令和 package 版本，运行 Markdown / 链接 / diff 静态检查。
+- [x] 在本文件追加 Review，记录最终改动、验证结果、未覆盖风险和后续建议。
+
+## 2026-05-23 中文 README 完善 Review
+
+- 已将 `README.md` 重写为当前项目状态的中文 README，覆盖项目定位、核心能力、快速开始、技术栈、Monorepo 结构、整体架构、Pipeline v2、Agent Runtime、IPC / Jotai 状态、本地存储、Provider、Bridge、开发指南、打包发布、安全边界、素材目录和常见问题。
+- 已结合 `assets/` 素材：顶部引用 `assets/icon/CodeInsights.png`，项目展示引用 `assets/video/snapshots/contact-sheet.jpg` 并链接 20 秒介绍视频，架构章节引用系统架构图、Pipeline LangGraph 流程图、Agent Runtime 流程图、IPC 状态流图和本地存储结构图。
+- 已纠正旧 README 的过期事实：默认新建 Pipeline 是 v2 六节点，包含 `committer`；v2 中 `tester` 和 `committer` 走 Codex；`@codeinsights/electron` 当前为 `0.0.102`；开发模式默认 `.codeinsights-dev`，正式版本默认 `.codeinsights`；运行中的 Pipeline 跨重启不会继续跑，只可靠恢复 `waiting_human` gate。
+- 已保留谨慎边界：Chat 为隐藏回退而非公开主入口；素材图中 `RV-Insights` 是历史项目名；根目录当前未检测到独立 LICENSE 文件，许可证说明需以最终 LICENSE / NOTICE 为准。
+- 验证通过：`git diff --check`；自定义 Node 脚本检查 `README.md` 的 24 个链接 / 图片和 47 个标题锚点均可解析；旧版本号和过期五阶段表述扫描未发现需要修正的残留。
+- 本轮只修改文档，未运行 TypeScript typecheck 或应用构建；当前工作树仍有既有无关 `.DS_Store` 修改、未跟踪 `assets/` 和 `improve/` 目录状态，不应误纳入无关提交。

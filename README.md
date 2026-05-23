@@ -1,160 +1,88 @@
 # CodeInsights
 
-CodeInsights 是一个本地优先的开源 AI Agent 桌面应用，面向开源软件贡献、代码协作和长期工作流自动化。项目基于 Electron + React + TypeScript + Bun 构建，公开主入口为 `Pipeline | Agent`：`Pipeline` 提供结构化的贡献流水线，`Agent` 提供通用自主执行能力；旧 `Chat` 路径仍保留为隐藏回退和兼容能力。
+<p align="center">
+  <img src="./assets/icon/CodeInsights.png" width="112" alt="CodeInsights 应用图标" />
+</p>
 
-核心设计目标：
+CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软件贡献、代码协作和长期任务自动化。它不是把一次复杂贡献交给单个黑盒 Agent，而是把成熟 coding agent 运行时接入到可审计、可回退、可验证的工程流程中。
 
-- **本地优先**：配置、会话索引、消息记录、Pipeline checkpoint 和工作区文件默认保存在本机配置目录，优先使用 JSON / JSONL 文件而不是本地数据库。
-- **Agent 工作流**：基于 `@anthropic-ai/claude-agent-sdk`，支持工具调用、文件操作、终端执行、权限确认、AskUser、ExitPlan 和 Agent Teams 运行状态跟踪。
-- **结构化贡献流水线**：`explorer -> planner -> developer -> reviewer -> tester` 五阶段 Pipeline，由 LangGraph 在主进程编排；探索 / 规划 / 测试走 Claude Agent SDK，开发 / 审查走 Codex，关键阶段通过人工 gate 决定继续、重跑或回退。
-- **多供应商渠道**：统一管理 Anthropic、OpenAI、DeepSeek、Google、Kimi、智谱、MiniMax、豆包、通义千问和自定义 OpenAI 兼容端点。
-- **远程桥接**：通过飞书、钉钉、微信 Bridge 远程触发 Agent 会话，支持私聊、群组、工作区切换和会话切换。
-- **可扩展工具链**：按工作区管理 Skills、MCP Server、工作区文件和默认 Skill 模板。
+当前公开主入口是 `Pipeline | Agent`：
+
+- `Pipeline`：面向开源贡献的结构化流水线，默认使用 v2 六节点流程：`Explorer -> Planner -> Developer -> Reviewer -> Tester -> Committer`。
+- `Agent`：通用自主执行模式，基于 Claude Agent SDK / Anthropic 兼容协议，支持工具调用、权限确认、AskUser、ExitPlan、工作区和 Skills。
+- `Chat`：历史对话能力仍保留为兼容回退，不作为当前公开主入口。
+
+项目主页：[https://zcxggmu.github.io/CodeInsights/](https://zcxggmu.github.io/CodeInsights/)
+
+> 说明：部分历史素材图中仍出现 `RV-Insights`，这是早期项目名；当前包名、产品名和打包配置均以 `CodeInsights` 为准。
+
+## 项目展示
+
+[![CodeInsights 20 秒介绍视频关键画面预览](./assets/video/snapshots/contact-sheet.jpg)](./assets/video/codeinsights-intro-20s.mp4)
+
+视频文件：[assets/video/codeinsights-intro-20s.mp4](./assets/video/codeinsights-intro-20s.mp4)
+
+视频设计说明：[assets/video/DESIGN.md](./assets/video/DESIGN.md)
 
 ## 目录
 
+- [核心定位](#核心定位)
 - [核心能力](#核心能力)
-- [技术栈](#技术栈)
 - [快速开始](#快速开始)
-- [项目结构](#项目结构)
+- [技术栈](#技术栈)
+- [Monorepo 结构](#monorepo-结构)
 - [整体架构](#整体架构)
-- [模块功能](#模块功能)
-- [核心流程](#核心流程)
+- [Pipeline 工作流](#pipeline-工作流)
+- [Agent Runtime](#agent-runtime)
+- [IPC 与状态流](#ipc-与状态流)
 - [本地数据与配置](#本地数据与配置)
 - [开发指南](#开发指南)
 - [打包发布](#打包发布)
-- [常见问题](#常见问题)
+- [安全与边界](#安全与边界)
+- [贡献说明](#贡献说明)
+
+## 核心定位
+
+CodeInsights 的产品假设很直接：
+
+1. 通用 Agent 很强，但长期软件贡献需要工程化流程，而不是一次性聊天。
+2. 复杂任务需要阶段化产物、人工 gate、验证证据和恢复能力。
+3. 本地配置、会话记录、checkpoint、workspace 文件和 artifacts 应优先保存在用户机器上，便于审计和迁移。
+4. AI 运行时不必全部重写。CodeInsights 负责工作流、状态、权限、桥接和本地存储，底层执行复用 Claude Agent SDK、OpenAI Codex SDK / CLI 等成熟运行时。
+
+适合的使用场景：
+
+- 给开源仓库寻找贡献点，规划方案，执行实现，审查和验证。
+- 在本地工作区中让 Agent 读取文件、修改代码、运行命令、整理资料。
+- 用飞书、钉钉、微信 Bridge 从远程消息触发桌面 Agent。
+- 把 MCP Server、Skills、工作区文件和本地 JSON / JSONL 记录组合成可复用工作流。
 
 ## 核心能力
 
-### Pipeline
-
-Pipeline 是面向开源贡献的结构化多 Agent 工作流。它不是把一个长任务丢给单个 Agent，而是把贡献过程拆成「发现问题、制定方案、执行实现、审查质量、验证结果」五个可审计阶段，并在关键节点插入人工 gate，保证用户始终能在继续投入成本前确认方向。
-
-当前固定主链路为：
-
-```mermaid
-flowchart LR
-  A["Explorer\n探索贡献点"] --> G1["人工审核"]
-  G1 --> B["Planner\n制定方案"]
-  B --> G2["人工审核"]
-  G2 --> C["Developer\n实现代码"]
-  C --> D["Reviewer\n审查变更"]
-  D --> G3["人工审核\n确认是否返工"]
-  G3 -->|"带反馈返工"| C
-  G3 -->|"通过"| E["Tester\n测试验证"]
-  E --> G4["人工审核"]
-  G4 --> F["完成"]
-```
-
-#### 五个 Agent 的职责拆解
-
-| Agent | 运行时 | 核心职责 | 结构化产物 | 进入下一阶段的条件 |
-|-------|--------|----------|------------|--------------------|
-| Explorer | Claude Agent SDK | 读取用户目标和工作区上下文，定位相关模块、约束、潜在贡献点和下一步方向 | `summary`、`findings`、`keyFiles`、`nextSteps` | 人工 gate 批准后进入 Planner；拒绝或要求重跑时带反馈重新探索 |
-| Planner | Claude Agent SDK | 把探索结果转成可执行方案，明确开发步骤、风险和验证路径 | `summary`、`steps`、`risks`、`verification` | 人工 gate 批准后进入 Developer；拒绝或要求重跑时带反馈重做计划 |
-| Developer | Codex SDK，`CODEINSIGHTS_PIPELINE_CODEX_BACKEND=cli` 可切 CLI fallback | 按计划直接修改工作区代码、补必要测试，并报告变更、测试和遗留风险 | `summary`、`changes`、`tests`、`risks` | 不单独停 gate，完成后立即交给 Reviewer |
-| Reviewer | Codex SDK / CLI fallback | 以只读方式审查 Developer 的结果，聚焦正确性、回归风险、测试缺口和实现质量 | `approved`、`summary`、`issues` | 进入 reviewer gate；人工批准后进 Tester，`reject_with_feedback` 会带反馈回到 Developer 并递增 review iteration |
-| Tester | Claude Agent SDK | 执行最终验证，记录命令、结果和阻塞项，确认交付是否真的可用 | `summary`、`commands`、`results`、`blockers` | 人工 gate 批准后标记 completed；拒绝或重跑时回到 Tester |
-
-运行时分工的原则是：Claude 负责上下文理解、方案整理和验证叙事；Codex 负责更贴近代码执行的开发和审查。`RoutedPipelineNodeRunner` 在主进程按节点自动路由：`explorer`、`planner`、`tester` 使用 Agent 兼容渠道，`developer`、`reviewer` 使用 Codex。本地 UI 不直接感知 SDK 差异，只消费统一的 Pipeline stream event 和阶段产物。
-
-#### 协作工作流
-
-1. 用户在 Pipeline 会话中提交任务，并选择 Agent 兼容渠道和工作区；如配置了 Pipeline Codex 渠道，Developer / Reviewer 会使用该 OpenAI 或 Custom 渠道，否则使用本机 Codex auth / `CODEX_API_KEY`。
-2. `PipelineService` 创建会话记录，启动 LangGraph，并用 `sessionId` 作为 checkpoint `thread_id`。
-3. 每个 Agent 只接收必要上下文：原始用户需求、人工反馈、review iteration，以及上游阶段产物的压缩摘要。完整产物仍落盘，但不会无限制注入后续提示词。
-4. 节点输出必须符合对应 JSON Schema。解析失败会进入 `node_failed`，避免把不可审计的自由文本当成阶段结果。
-5. gate 是一等状态，而不是普通聊天消息。`approve` 继续到下一节点，`rerun_node` 带反馈重跑当前节点，Reviewer gate 的 `reject_with_feedback` 会回到 Developer 重新实现。
-6. Renderer 通过全局 Pipeline listener 订阅 `node_start`、`text_delta`、`node_complete`、`gate_waiting`、`gate_resolved`、`status_change` 和 `error`，写入 Jotai Map 状态，页面切换不会丢失运行进度。
-
-#### 状态与恢复
-
-Pipeline 会话的核心状态包括 `currentNode`、`status`、`reviewIteration`、`lastApprovedNode`、`pendingGate` 和 `stageOutputs`。会话索引写入 `pipeline-sessions.json`，事件记录追加到 `pipeline-sessions/{sessionId}.jsonl`，阶段产物写入 `pipeline-artifacts/{sessionId}/`，LangGraph interrupt / resume 状态写入 `pipeline-checkpoints/{sessionId}/`。
-
-应用重启后，处于 `waiting_human` 的会话会从 checkpoint 恢复 pending gate；处于 `running` 的会话不会假装继续执行，而是标记为 `recovery_failed`，要求用户重新启动或处理失败状态。这样可以避免本地进程已丢失但 UI 仍显示正在运行的假状态。
-
-### Agent
-
-Agent 模式提供通用自主执行能力，适合调研、代码修改、文件整理、自动化任务和长上下文工作。它支持：
-
-- 工作区隔离：每个工作区拥有自己的 cwd、MCP 配置、Skills 和共享文件目录。
-- 权限管理：支持安全模式、询问模式和允许全部等权限策略。
-- 流式输出：SDK 消息实时转换成 UI 事件，并持久化为 JSONL。
-- 用户交互：工具权限请求、AskUser、ExitPlan 等事件会按 sessionId 排队，不因页面切换丢失。
-- Agent Teams：已接入 Claude Agent SDK Tasks / Teammates 事件跟踪，可延迟 result、收集 teammate inbox 结果并 auto-resume 汇总。
-
-Agent 兼容供应商限定为 Anthropic 协议兼容集合：`anthropic`、`deepseek`、`kimi-api`、`kimi-coding`。OpenAI、MiniMax、智谱、豆包、通义千问等渠道仍可用于普通 Chat / 渠道层能力。
-
-### Skills 与 MCP
-
-CodeInsights 按工作区管理 Skills 和 MCP Server：
-
-- 默认 Skills 模板在首次启动时同步到用户配置目录。
-- 每个工作区拥有独立的 `mcp.json`、`skills/`、`skills-inactive/` 和 `workspace-files/`。
-- 支持通过工作区配置让 Agent 获取不同任务场景下的工具、文档和能力。
-
-当前内置默认 Skill 目录包括 `brainstorming`、`docx`、`xlsx`、`pptx`、`pdf`、`find-skills`、`skill-creator`、`writing-plans`、`executing-plans`、`tool-builder` 等。
-
-### 远程 Bridge
-
-主进程内置飞书、钉钉、微信 Bridge 注册表。启用配置后，应用启动时可自动启动对应 Bridge，并把远程消息转成 Agent / Chat 会话请求。
-
-常用桥接命令包括：
-
-| 命令 | 功能 |
-|------|------|
-| `/help` | 查看帮助 |
-| `/new` | 创建新会话 |
-| `/list` | 查看会话列表 |
-| `/switch` | 切换会话 |
-| `/stop` | 停止当前任务 |
-| `/workspace` | 切换工作区 |
-| `/agent` | 切换到 Agent 模式 |
-| `/chat` | 切换到 Chat 模式 |
-| `/now` | 查看当前绑定状态 |
-
-### 其他能力
-
-- 多标签主界面：Pipeline、Agent、Chat 会话可以在标签页中打开和切换。
-- Quick Task：全局快捷任务窗口，快速提交任务并打开对应会话。
-- 文件浏览与附件：支持工作区文件浏览、文件提及、附件保存、PDF / Office / 文本解析。
-- AI 展示组件：Markdown、代码高亮、Mermaid、KaTeX、推理折叠和工具活动展示。
-- 记忆功能：支持 MemOS 配置和记忆工具。注意，记忆数据是否完全本地取决于你配置的记忆后端。
-- 自动更新：基于 Electron Updater。
-- 代理设置：支持系统代理检测和应用代理配置。
-- 环境检测：检测 Bun、Git、Node、Shell、WSL 等运行时条件。
-
-## 技术栈
-
-| 层级 | 技术 |
-|------|------|
-| 运行时 / 包管理 | Bun 1.2.5+ |
-| 桌面框架 | Electron 39.5.1 |
-| 前端框架 | React 18.3.1 |
-| 状态管理 | Jotai 2.17.1 |
-| 构建工具 | Vite 6.0.3、esbuild 0.24+ |
-| 样式 | Tailwind CSS 3.4.17、Radix UI、lucide-react |
-| Agent SDK | `@anthropic-ai/claude-agent-sdk@0.2.123` |
-| Pipeline 编排 | `@langchain/langgraph@1.3.0` |
-| 代码高亮 | Shiki 3.22.0 |
-| 富文本输入 | TipTap 3.19.0 |
-| Markdown / 数学公式 | React Markdown、remark-gfm、KaTeX |
-| 打包分发 | electron-builder 25.1.8 |
-| 即时通信 Bridge | 飞书、钉钉、微信 |
-| Codex 执行 | `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0` |
+| 能力 | 当前状态 | 说明 |
+|------|----------|------|
+| Pipeline v2 | 已接入 | 默认新建贡献流水线，包含 Explorer / Planner / Developer / Reviewer / Tester / Committer 和多类人工 gate |
+| Agent 模式 | 已接入 | 基于 Claude Agent SDK，支持 Anthropic / DeepSeek / Kimi API / Kimi Coding 等 Anthropic 协议兼容渠道 |
+| Codex 节点 | 已接入 | Pipeline 的开发、审查、测试和提交材料阶段可走 OpenAI Codex SDK，支持 CLI fallback |
+| 本地优先存储 | 已接入 | 会话索引、JSONL 事件、Pipeline checkpoint、artifacts、工作区文件均落本地文件系统 |
+| 多 Provider 渠道 | 已接入 | Anthropic、OpenAI、DeepSeek、Google、Moonshot / Kimi、智谱、MiniMax、豆包、通义千问、自定义 OpenAI 兼容端点 |
+| MCP / Skills | 已接入 | 按 Agent 工作区隔离 MCP 配置、启用 Skills、禁用 Skills 和工作区文件 |
+| IM Bridge | 已接入 | 飞书、钉钉、微信 Bridge 通过主进程服务连接 Agent / Chat 会话 |
+| 权限与人工交互 | 已接入 | 工具权限、AskUser、ExitPlan、Pipeline gate 均按 session 隔离，后台会话不丢事件 |
+| 自动更新与环境检查 | 已接入 | Electron Updater、运行时检查、系统代理、Bun / Git / Node / WSL 检测 |
+| 旧 Chat 回退 | 保留 | Provider 适配、附件、文档解析、工具调用等历史能力仍存在，但不是主入口 |
 
 ## 快速开始
 
 ### 环境要求
 
-- Bun 1.2.5+
+- Bun `1.2.5+`
 - Git
 - macOS / Windows / Linux
 
-### 从源码运行
+项目使用 Bun workspace。请优先使用 `bun install` 和 `bun run`，不要混用 npm / pnpm / yarn 安装依赖。
 
-项目主页：[https://zcxggmu.github.io/CodeInsights/](https://zcxggmu.github.io/CodeInsights/)
+### 从源码运行
 
 ```bash
 git clone https://github.com/zcxGGmu/CodeInsights.git
@@ -164,7 +92,7 @@ bun install
 bun run dev
 ```
 
-开发模式会并行启动 Vite 和 Electron。渲染进程通过 Vite HMR 热更新，主进程和 preload 通过 esbuild watch + electronmon 重启。
+`bun run dev` 会启动 Vite renderer、构建 Electron main / preload，并通过 electronmon 运行桌面应用。开发模式默认使用 `~/.codeinsights-dev/`，不会污染正式版本的 `~/.codeinsights/`。
 
 ### 构建后启动
 
@@ -179,13 +107,13 @@ bun run electron:start
 |------|------|
 | `bun run dev` | 启动 Electron 开发模式 |
 | `bun run electron:dev` | `bun run dev` 的别名 |
-| `bun run electron:build` | 构建 Electron 主进程、preload、文件预览 preload、渲染进程和资源 |
+| `bun run electron:build` | 构建 main、preload、file preview preload、renderer 和 resources |
 | `bun run electron:start` | 构建后启动 Electron |
-| `bun run build` | 对 workspace 包执行 build |
+| `bun run build` | 构建 workspace 中声明 build 脚本的包 |
 | `bun run typecheck` | 对 workspace 包执行 TypeScript 检查 |
 | `bun test` | 运行 Bun 测试 |
 
-Electron 应用目录下还有更细的命令：
+Electron 子包内的常用命令：
 
 ```bash
 cd apps/electron
@@ -199,15 +127,40 @@ bun run build:renderer
 bun run dist:fast
 ```
 
-## 项目结构
+### 首次配置建议
 
-CodeInsights 是 Bun workspace monorepo：
+1. 在设置中创建一个 Agent 兼容渠道：`anthropic`、`deepseek`、`kimi-api` 或 `kimi-coding`。
+2. 创建或选择 Agent 工作区，配置 MCP Server、Skills 和工作区文件。
+3. 如需使用 Pipeline v2 的 Codex 节点，在渠道设置里选择 OpenAI / Custom 作为 Pipeline Codex 渠道；也可以使用本机 Codex 登录或 `CODEX_API_KEY`。
+4. 启动 Pipeline 任务前检查 preflight 提示，确保 Agent 渠道、工作区和 Codex 运行时都可用。
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 运行时 / 包管理 | Bun `1.2.5+` |
+| 语言 | TypeScript `5+` |
+| 桌面框架 | Electron `39.5.1` |
+| 前端框架 | React `18.3.1` |
+| 状态管理 | Jotai `2.17.1` |
+| 样式与组件 | Tailwind CSS `3.4.17`、Radix UI、lucide-react |
+| Renderer 构建 | Vite `6.0.3` |
+| Main / Preload 构建 | esbuild `0.24+` |
+| Agent Runtime | `@anthropic-ai/claude-agent-sdk@0.2.123` |
+| Pipeline 编排 | `@langchain/langgraph@1.3.0` |
+| Codex 执行 | `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0` |
+| 代码高亮 | Shiki `3.22.0` |
+| 富文本输入 | TipTap `3.19.0` |
+| Markdown / 数学公式 | React Markdown、remark-gfm、KaTeX |
+| 打包分发 | electron-builder `25.1.8` |
+
+## Monorepo 结构
 
 ```text
 CodeInsights/
 ├── packages/
-│   ├── shared/          # 共享类型、IPC 常量、配置、工具函数
-│   ├── core/            # Provider 适配器、SSE 读取、代码高亮
+│   ├── shared/          # 共享类型、IPC 通道常量、配置、工具函数
+│   ├── core/            # Provider 适配器、SSE reader、Shiki 高亮
 │   └── ui/              # 共享 React UI 组件
 ├── apps/
 │   └── electron/        # Electron 桌面应用
@@ -218,30 +171,32 @@ CodeInsights/
 │           ├── main/        # 主进程、IPC、服务层
 │           ├── preload/     # contextBridge API
 │           └── renderer/    # React UI
-├── docs/                # 架构、Pipeline、设计文档
+├── assets/              # README / 官网 / 视频使用的品牌和架构素材
+├── docs/                # 架构、Pipeline、产品和历史设计文档
 ├── tasks/               # 当前任务计划与经验记录
 ├── tutorial/            # 内置教程内容
-├── web/                 # 预留 Web 相关目录
-└── web-console/         # 预留 Web Console 相关目录
+├── web/                 # 静态产品主页
+└── web-console/         # Web Console 相关目录
 ```
 
-### Workspace 包
+当前 workspace 包：
 
 | 包 | 当前版本 | 职责 |
 |----|----------|------|
-| `@codeinsights/shared` | `0.1.42` | 共享类型、IPC 通道常量、配置、能力 diff、Pipeline 状态工具 |
-| `@codeinsights/core` | `0.2.12` | Anthropic / OpenAI / Google Provider 适配器、SSE reader、Shiki 高亮 |
-| `@codeinsights/ui` | `0.1.4` | `CodeBlock`、`MermaidBlock`、平滑流式 hooks 等共享 UI |
-| `@codeinsights/electron` | `0.0.100` | 完整 Electron 桌面应用 |
+| 根包 `codeinsights` | `0.1.1` | Bun workspace 根配置 |
+| `@codeinsights/shared` | `0.1.42` | 共享类型、IPC 常量、Agent / Pipeline 契约和工具 |
+| `@codeinsights/core` | `0.2.12` | Provider 适配器、SSE 读取、thinking 能力识别、Shiki 高亮 |
+| `@codeinsights/ui` | `0.1.4` | `CodeBlock`、`MermaidBlock` 等共享 UI |
+| `@codeinsights/electron` | `0.0.102` | 完整 Electron 桌面应用 |
 
-依赖方向保持单向：
+内部包依赖方向保持单向：
 
 ```mermaid
 flowchart TD
-  shared["@codeinsights/shared\n类型 / IPC / 工具"]
-  core["@codeinsights/core\nProvider / Highlight"]
-  ui["@codeinsights/ui\n共享展示组件"]
-  electron["@codeinsights/electron\n桌面应用"]
+  shared["@codeinsights/shared"]
+  core["@codeinsights/core"]
+  ui["@codeinsights/ui"]
+  electron["@codeinsights/electron"]
 
   shared --> core
   shared --> electron
@@ -252,131 +207,190 @@ flowchart TD
 
 ## 整体架构
 
-### 分层视图
+![CodeInsights 系统架构：Electron、Bun workspace、Agent、Pipeline 与本地状态](./assets/imgs/codeinsights-system-architecture.png)
 
-```mermaid
-flowchart TB
-  subgraph User["用户入口"]
-    Desktop["Electron 桌面 UI"]
-    Feishu["飞书 / Lark"]
-    DingTalk["钉钉"]
-    WeChat["微信"]
-    Shortcut["全局快捷任务"]
-  end
+CodeInsights 使用 Electron 三进程边界和本地服务层：
 
-  subgraph Renderer["Renderer 进程"]
-    AppShell["AppShell / Tabs / ModeSwitcher"]
-    PipelineUI["Pipeline 组件"]
-    AgentUI["Agent 组件"]
-    SettingsUI["Settings / File Browser / Quick Task"]
-    Atoms["Jotai atoms"]
-    GlobalListeners["全局 IPC listeners"]
-  end
+| 层 | 入口 | 职责 |
+|----|------|------|
+| Main | `apps/electron/src/main/index.ts` | 窗口、托盘、生命周期、运行时初始化、IPC 注册、Agent / Pipeline / Bridge / 更新器 / watcher |
+| Preload | `apps/electron/src/preload/index.ts` | `contextBridge.exposeInMainWorld('electronAPI', ...)`，提供安全白名单 API |
+| File Preview Preload | `apps/electron/src/preload/file-preview-preload.ts` | 文件预览窗口的隔离 API |
+| Renderer | `apps/electron/src/renderer/main.tsx` | React UI、Jotai 状态、全局 IPC listeners、主题、快捷键、通知 |
+| Packages | `packages/shared`、`packages/core`、`packages/ui` | 共享契约、Provider 适配和跨应用 UI 能力 |
 
-  subgraph Bridge["Preload 安全桥"]
-    ElectronAPI["window.electronAPI"]
-  end
+主进程关键服务集中在 `apps/electron/src/main/lib/`：
 
-  subgraph Main["Main 进程"]
-    IPC["IPC handlers"]
-    AgentSvc["Agent Service / Orchestrator"]
-    PipelineSvc["Pipeline Service / LangGraph"]
-    ChannelSvc["Channel Manager"]
-    WorkspaceSvc["Workspace / Skills / MCP"]
-    BridgeSvc["Feishu / DingTalk / WeChat Bridge"]
-    SystemSvc["Runtime / Updater / Proxy / Watchers"]
-  end
+| 领域 | 代表文件 | 说明 |
+|------|----------|------|
+| Agent 编排 | `agent-orchestrator.ts`、`agent-runtime-runner.ts`、`agent-service.ts` | SDK 调用、runner-v2、事件流、并发守卫、权限、持久化、重试 |
+| Agent 工作区 | `agent-workspace-manager.ts`、`agent-runtime-materializer.ts`、`agent-runtime-manifest-registry.ts` | 工作区 CRUD、MCP、Skills、runtime snapshot、session cwd |
+| Pipeline | `pipeline-service.ts`、`pipeline-graph.ts`、`pipeline-node-router.ts` | LangGraph 编排、start / resume / stop / state、节点路由 |
+| Pipeline 执行 | `pipeline-node-runner.ts`、`codex-pipeline-node-runner.ts` | Claude 节点、Codex SDK / CLI 节点、结构化输出解析 |
+| Pipeline 产物 | `pipeline-artifact-service.ts`、`pipeline-patch-work-service.ts`、`contribution-task-service.ts` | artifacts、patch-work、贡献任务状态和提交材料 |
+| 渠道管理 | `channel-manager.ts` | Provider CRUD、API Key 加密、测试连接、模型拉取 |
+| 远程 Bridge | `bridge-registry.ts`、`feishu-*`、`dingtalk-*`、`wechat-*` | 飞书、钉钉、微信连接和命令处理 |
+| Chat 回退 | `chat-service.ts`、`conversation-manager.ts`、`chat-tools/*` | 历史 Chat、工具调用、消息持久化 |
+| 文件与文档 | `attachment-service.ts`、`document-parser.ts`、`file-preview-service.ts` | 附件、PDF / Office / 文本解析、文件预览 |
+| 系统服务 | `runtime-init.ts`、`bun-finder.ts`、`git-detector.ts`、`node-detector.ts`、`shell-env.ts` | Shell、Bun、Git、Node、WSL 检测 |
+| 设置与更新 | `settings-service.ts`、`proxy-settings-service.ts`、`updater/*` | 主题、代理、自动更新、GitHub release |
 
-  subgraph Storage["本地文件"]
-    Config["~/.codeinsights 或 ~/.codeinsights-dev"]
-    Json["JSON 配置"]
-    Jsonl["JSONL 会话日志"]
-    Checkpoint["Pipeline checkpoint"]
-    Artifacts["Pipeline artifacts"]
-    WorkspaceFiles["工作区文件 / Skills / MCP"]
-  end
+Renderer 主要模块：
 
-  subgraph External["外部服务"]
-    Providers["AI Provider APIs"]
-    ClaudeSDK["Claude Agent SDK binary"]
-    CodexSDK["Codex SDK / CLI binary"]
-    MCP["MCP Servers"]
-  end
+| 目录 | 说明 |
+|------|------|
+| `atoms/` | Jotai 状态：Pipeline、Agent、Chat、Settings、Theme、Tabs、Bridge、Updater |
+| `hooks/` | 全局 IPC listeners、会话创建 / 打开、标签页、后台任务、快捷键 |
+| `components/app-shell/` | 三栏布局、模式切换、导航、搜索、右侧面板 |
+| `components/pipeline/` | Pipeline 视图、阶段轨道、记录、gate、失败卡片、Committer 面板 |
+| `components/agent/` | Agent 消息、工具活动、权限、AskUser、ExitPlan、工作区、任务进度 |
+| `components/settings/` | 渠道、Agent、MCP、Skills、Bridge、主题、代理、记忆、快捷键、更新 |
+| `components/file-browser/` | 工作区文件树、文件拖放、文件提及 |
+| `components/ai-elements/` | Markdown、推理块、富文本输入、文件路径 chip、滚动辅助 |
+| `components/quick-task/` | 快速任务窗口 UI |
 
-  Desktop --> Renderer
-  Shortcut --> Renderer
-  Feishu --> BridgeSvc
-  DingTalk --> BridgeSvc
-  WeChat --> BridgeSvc
-  Renderer --> ElectronAPI
-  ElectronAPI --> IPC
-  IPC --> AgentSvc
-  IPC --> PipelineSvc
-  IPC --> ChannelSvc
-  IPC --> WorkspaceSvc
-  IPC --> SystemSvc
-  AgentSvc --> ClaudeSDK
-  PipelineSvc --> ClaudeSDK
-  PipelineSvc --> CodexSDK
-  ClaudeSDK --> Providers
-  CodexSDK --> Providers
-  ChannelSvc --> Providers
-  AgentSvc --> MCP
-  ChannelSvc --> Json
-  AgentSvc --> Jsonl
-  PipelineSvc --> Jsonl
-  PipelineSvc --> Checkpoint
-  PipelineSvc --> Artifacts
-  WorkspaceSvc --> WorkspaceFiles
-  SystemSvc --> Config
-  GlobalListeners --> Atoms
-  Atoms --> AppShell
+## Pipeline 工作流
+
+![CodeInsights Pipeline LangGraph 流程：Explorer、Planner、Developer、Reviewer、Tester、Committer 与人工审核](./assets/imgs/codeinsights-pipeline-langgraph-flow.png)
+
+Pipeline v2 是当前新建贡献任务的默认流程。它把开源贡献拆成六个阶段，并在关键位置用人工 gate 控制继续、重跑、返工或接受风险。
+
+### 节点职责
+
+| 节点 | v2 运行时 | 主要职责 | 关键产物 |
+|------|-----------|----------|----------|
+| Explorer | Claude Agent SDK | 阅读用户目标和仓库上下文，发现可贡献任务，生成候选报告 | `summary`、`findings`、`keyFiles`、`reports` |
+| Planner | Claude Agent SDK | 把选定任务转成计划、风险和验证路径 | `plan.md`、`test-plan.md`、`steps`、`risks` |
+| Developer | Codex SDK / CLI | 在工作区内实现修改，补充必要测试和开发记录 | `dev.md`、`changedFiles`、`testsRun` |
+| Reviewer | Codex SDK / CLI | 只读审查 diff，聚焦正确性、回归、测试缺口、安全和维护性 | `review.md`、`approved`、`structuredIssues` |
+| Tester | Codex SDK / CLI | 运行验证命令，收集测试证据和 patch-set 摘要 | `result.md`、`testEvidence`、`patchSet` |
+| Committer | Codex SDK / CLI | 生成提交信息、PR 标题和正文草稿，进入提交审核 | `commit.md`、`pr.md`、`submissionStatus` |
+
+Pipeline v1 仍用于旧会话兼容：`explorer / planner / tester` 走 Claude，`developer / reviewer / committer` 走 Codex。v2 默认是：`explorer / planner` 走 Claude，`developer / reviewer / tester / committer` 走 Codex。
+
+### Gate 语义
+
+| Gate | 触发位置 | 作用 |
+|------|----------|------|
+| `task_selection` | Explorer 后 | 选择或确认贡献任务 |
+| `document_review` | Planner / Developer / Reviewer | 审核阶段文档或变更摘要 |
+| `review_iteration_limit` | Reviewer 多轮未通过 | 让用户接管是否接受风险或继续返工 |
+| `test_blocked` | Tester 失败或证据不足 | 明确测试阻塞项，用户可接受风险或回到开发 |
+| `submission_review` | Committer 后 | 审核提交材料草稿 |
+| `remote_write_confirmation` | 远端提交前 | 对 push / PR 这类远端写操作做显式确认 |
+
+Gate 是 Pipeline 的一等状态，不是普通聊天消息。`approve` 会继续到下一节点，`rerun_node` 会带反馈重跑当前节点，Reviewer 的 `reject_with_feedback` 会回到 Developer 并递增 `reviewIteration`。
+
+### Codex 执行边界
+
+Pipeline Codex 节点默认使用 `@openai/codex-sdk`，可通过环境变量切换到 CLI fallback：
+
+```bash
+CODEINSIGHTS_PIPELINE_CODEX_BACKEND=cli bun run dev
 ```
 
-### Electron 三进程边界
+Codex 渠道只接受启用的 OpenAI / Custom 渠道。未选择 Pipeline Codex 渠道时，会尝试使用本机 Codex auth 或 `CODEX_API_KEY`。
 
-| 进程 / 层 | 入口 | 职责 |
-|-----------|------|------|
-| Main | `apps/electron/src/main/index.ts` | 创建窗口、单实例锁、菜单托盘、运行时初始化、IPC 注册、Agent / Pipeline / Bridge / 更新器 / 文件监听等服务 |
-| Preload | `apps/electron/src/preload/index.ts` | 使用 `contextBridge` 暴露白名单 API，隔离 Node 能力和 UI 上下文 |
-| File Preview Preload | `apps/electron/src/preload/file-preview-preload.ts` | 文件预览窗口的隔离 API |
-| Renderer | `apps/electron/src/renderer/main.tsx` | React UI、Jotai 状态、全局监听器、主题、更新器、快捷键和主界面 |
+v2 中 Codex 节点带有 Git 防护：
 
-Electron 安全策略：
+- Developer 使用 `workspace-write`，Reviewer 使用 `read-only`。
+- `git`、`gh`、`hub` 等命令会被 guard 阻断，防止节点私自 commit / push / tag / PR。
+- 提交材料由 Committer 生成草稿；实际本地 commit 或远端提交由 Pipeline service 在用户确认后执行。
 
-- `contextIsolation: true`
-- `nodeIntegration: false`
-- 渲染进程只能通过 `window.electronAPI` 访问主进程能力
-- 外部链接通过系统浏览器打开，避免 Electron 窗口被导航覆盖
+### 状态恢复
 
-### IPC 架构
+Pipeline 使用 LangGraph `MemorySaver` 的本地落盘 checkpointer。应用重启后：
+
+- `waiting_human` 会话可以恢复 pending gate。
+- `running` 会话不会假装继续执行，当前策略是标记为 `recovery_failed`，避免 UI 显示已经丢失的后台任务。
+- `getSessionState` 优先读取 checkpoint；失败时回放 JSONL records 作为兜底。
+
+## Agent Runtime
+
+![CodeInsights Agent Runtime 流程：Renderer、Agent 编排、权限、Claude SDK 与 JSONL 存储](./assets/imgs/codeinsights-agent-runtime-flow.png)
+
+Agent 模式是通用自主执行入口，适合调研、代码修改、文件整理、自动化任务和长上下文协作。
+
+### 运行链路
+
+```text
+Renderer AgentView
+  -> preload electronAPI
+  -> main IPC agent handlers
+  -> agent-service
+  -> AgentOrchestrator
+  -> Agent Runtime Runner
+  -> Claude Agent SDK query()
+  -> SDKMessage / RuntimeEvent stream
+  -> JSONL 持久化 + Renderer 全局监听器
+```
+
+关键能力：
+
+- 同一 session 有并发守卫，避免两个请求同时写同一会话。
+- runner-v2 默认启用，输出 `AgentRuntimeEvent`，同时保留旧 SDKMessage JSONL。
+- 权限请求、AskUser、ExitPlan 按 `sessionId` 排队，页面切换或后台会话不会丢。
+- 工作区按 slug 隔离，每个新 session 有独立 runtime cwd。
+- runtime manifest 记录 plugins / commands / skills snapshot，避免运行时悄悄读取变化后的源目录。
+- 支持 Agent Teams 事件跟踪和 teammate inbox 结果收集。
+
+### Agent 兼容 Provider
+
+Agent SDK 通过 Anthropic Messages 兼容协议工作，因此当前 Agent 模式只支持：
+
+- `anthropic`
+- `deepseek`
+- `kimi-api`
+- `kimi-coding`
+
+OpenAI、MiniMax、智谱、豆包、通义千问、Google、自定义 OpenAI 兼容端点仍可用于 Provider / Chat / Codex 相关能力，但不能直接作为 Agent SDK 渠道。
+
+### Skills 与 MCP
+
+工作区能力按目录隔离：
+
+```text
+agent-workspaces/{workspaceSlug}/
+├── mcp.json
+├── skills/
+├── skills-inactive/
+├── workspace-files/
+└── sessions/{sessionId}/cwd/
+```
+
+首次启动会同步 `apps/electron/default-skills/` 到用户配置目录中的 `default-skills/`。当前默认 Skills 包括：
+
+- `brainstorming`
+- `writing-plans`
+- `executing-plans`
+- `find-skills`
+- `skill-creator`
+- `tool-builder`
+- `docx`
+- `xlsx`
+- `pptx`
+- `pdf`
+
+## IPC 与状态流
+
+![CodeInsights IPC 与 Renderer 状态流：preload、main service、全局监听器和 Jotai 状态](./assets/imgs/codeinsights-ipc-state-flow.png)
 
 CodeInsights 的 IPC 遵循四层同步模型：
 
-```mermaid
-sequenceDiagram
-  participant Shared as packages/shared
-  participant Main as main/ipc handlers
-  participant Preload as preload/index.ts
-  participant Renderer as renderer atoms/hooks
-
-  Shared->>Shared: 定义通道常量和类型
-  Renderer->>Preload: window.electronAPI.method(input)
-  Preload->>Main: ipcRenderer.invoke(channel, input)
-  Main->>Main: ipcMain.handle(channel, service)
-  Main-->>Preload: result
-  Preload-->>Renderer: typed result
-```
+1. `packages/shared/src/types/*` 定义通道常量和请求 / 响应类型。
+2. `apps/electron/src/main/ipc.ts` 或 `apps/electron/src/main/ipc/*-handlers.ts` 注册 `ipcMain.handle`。
+3. `apps/electron/src/preload/index.ts` 通过 `contextBridge` 暴露 `window.electronAPI`。
+4. Renderer 在 `atoms/`、`hooks/` 和组件中调用 API，并通过全局 listener 写入 Jotai 状态。
 
 主要 IPC 域：
 
 | 域 | 说明 |
 |----|------|
 | `IPC_CHANNELS` | 运行时、Git、通用系统能力 |
-| `CHANNEL_IPC_CHANNELS` | AI 渠道 CRUD、测试连接、拉取模型 |
+| `CHANNEL_IPC_CHANNELS` | AI 渠道 CRUD、连接测试、模型拉取 |
 | `AGENT_IPC_CHANNELS` | Agent 会话、流式事件、权限、AskUser、工作区 |
-| `PIPELINE_IPC_CHANNELS` | Pipeline 会话、记录、状态、gate、stream |
-| `CHAT_IPC_CHANNELS` | 隐藏回退 Chat 会话、消息、流式响应 |
+| `PIPELINE_IPC_CHANNELS` | Pipeline 会话、记录、状态、gate、stream、提交动作 |
+| `CHAT_IPC_CHANNELS` | 旧 Chat 回退会话和流式响应 |
 | `ENVIRONMENT_IPC_CHANNELS` | 环境检查和安装器 |
 | `PROXY_IPC_CHANNELS` | 系统代理检测和代理配置 |
 | `SYSTEM_PROMPT_IPC_CHANNELS` | 系统提示词管理 |
@@ -385,309 +399,165 @@ sequenceDiagram
 | `FEISHU_IPC_CHANNELS` | 飞书配置、绑定、Bridge 状态 |
 | `DINGTALK_IPC_CHANNELS` | 钉钉配置和 Bridge 状态 |
 | `WECHAT_IPC_CHANNELS` | 微信配置和 Bridge 状态 |
+| `QUICK_TASK_IPC_CHANNELS` | 快速任务窗口提交、隐藏、聚焦和快捷键重注册 |
 | `GITHUB_RELEASE_IPC_CHANNELS` | 版本发布与更新信息 |
 
-## 模块功能
-
-### Main 进程服务层
-
-`apps/electron/src/main/lib/` 是应用的主要业务层。
-
-| 模块 | 代表文件 | 职责 |
-|------|----------|------|
-| Agent 编排 | `agent-orchestrator.ts`、`agent-orchestrator/*` | 调用 Claude Agent SDK、并发守卫、SDK env、消息持久化、重试、完成信号、Teams auto-resume |
-| Agent 服务薄层 | `agent-service.ts`、`agent-event-bus.ts` | 连接 IPC、EventBus 和 orchestrator，把流式事件转发到窗口 |
-| Agent 会话 | `agent-session-manager.ts` | Agent 会话元数据和 SDK JSONL 消息存储 |
-| Agent 工作区 | `agent-workspace-manager.ts` | 工作区 CRUD、MCP 配置、Skills、工作区文件 |
-| Agent 权限 / 用户交互 | `agent-permission-service.ts`、`agent-ask-user-service.ts`、`agent-exit-plan-service.ts` | 权限请求、AskUser、ExitPlan 流程 |
-| Agent Teams | `agent-team-reader.ts`、`agent-orchestrator/teams-coordinator.ts` | 读取 `~/.claude/teams`、跟踪 teammate 状态、收集 inbox 结果 |
-| Pipeline | `pipeline-service.ts`、`pipeline-graph.ts`、`pipeline-node-router.ts`、`pipeline-node-runner.ts`、`codex-pipeline-node-runner.ts` | LangGraph 编排、Claude / Codex 节点路由、start / resume / stop / state |
-| Pipeline 持久化 | `pipeline-session-manager.ts`、`pipeline-checkpointer.ts`、`pipeline-artifact-service.ts` | 会话索引、JSONL 记录、checkpoint、阶段产物 |
-| Pipeline 人工审核 | `pipeline-human-gate-service.ts` | pending gate 管理和 resume 响应 |
-| 渠道管理 | `channel-manager.ts` | Provider 渠道 CRUD、API Key 加密、连接测试 |
-| Chat 回退能力 | `chat-service.ts`、`conversation-manager.ts` | 旧 Chat 会话、流式生成、消息持久化 |
-| Chat 工具 | `chat-tool-*`、`chat-tools/*` | 工具注册、工具执行、HTTP、Web Search、记忆工具等 |
-| 附件 / 文档 | `attachment-service.ts`、`document-parser.ts`、`file-preview-service.ts` | 附件保存、PDF / Office / 文本解析、文件预览 |
-| 远程 Bridge | `bridge-registry.ts`、`feishu-*`、`dingtalk-*`、`wechat-*` | 飞书、钉钉、微信机器人与 Agent / Chat 会话连接 |
-| 系统服务 | `runtime-init.ts`、`bun-finder.ts`、`git-detector.ts`、`node-detector.ts`、`shell-env.ts` | Shell、Bun、Git、Node、WSL 等运行时检测 |
-| 设置服务 | `settings-service.ts`、`user-profile-service.ts`、`proxy-settings-service.ts` | 主题、用户档案、代理配置 |
-| 更新与发布 | `updater/*`、`github-release-service.ts` | Electron 自动更新、版本信息 |
-| 文件监听 | `workspace-watcher.ts`、`chat-tools-watcher.ts` | 工作区、MCP、Skills、Chat 工具变化通知 |
-| Quick Task | `quick-task-window.ts` | 快捷任务窗口生命周期 |
-| 搜索 | `jsonl-search.ts` | 对 JSONL 会话记录分页搜索 |
-
-### IPC handlers
-
-`apps/electron/src/main/ipc.ts` 是注册总入口，部分域已拆到 `apps/electron/src/main/ipc/`：
-
-- `agent-handlers.ts`
-- `pipeline-handlers.ts`
-- `channel-handlers.ts`
-- `settings-handlers.ts`
-- `bot-hub-handlers.ts`
-- `quick-task-handlers.ts`
-
-### Renderer 前端模块
-
-| 目录 | 职责 |
-|------|------|
-| `atoms/` | Jotai 状态：Pipeline、Agent、Chat、Settings、Theme、Tabs、Search、Updater、Bridge 等 |
-| `hooks/` | 全局 IPC listeners、会话打开/创建、标签页关闭、快捷键、后台任务 |
-| `components/app-shell/` | 三面板主框架、模式切换、左侧导航、右侧面板、搜索 |
-| `components/tabs/` | 多标签模型、标签栏、标签内容、关闭确认 |
-| `components/pipeline/` | Pipeline 主视图、阶段轨道、记录流、审核卡片、失败卡片 |
-| `components/agent/` | Agent 会话、消息渲染、工具活动、权限请求、AskUser、工作区选择、任务进度 |
-| `components/chat/` | 旧 Chat 回退 UI、模型选择、上下文设置、工具选择 |
-| `components/settings/` | 渠道、Agent、MCP、Skills、外观、代理、记忆、Bridge、更新、快捷键等设置 |
-| `components/file-browser/` | 工作区文件树、文件拖放、文件提及 |
-| `components/ai-elements/` | AI 消息、富文本输入、推理块、上下文分隔线、文件路径 chip |
-| `components/quick-task/` | 快捷任务窗口 UI |
-| `components/environment/` | 环境检查卡片和安装提示 |
-| `components/ui/` | Radix + Tailwind 基础组件 |
-
-### Provider 适配层
-
-`@codeinsights/core` 使用适配器注册表把多供应商协议统一为内部 Provider 接口：
-
-```mermaid
-flowchart LR
-  UI["Chat / Channel UI"] --> Registry["Provider Registry"]
-  Registry --> Anthropic["AnthropicAdapter\nAnthropic 协议"]
-  Registry --> OpenAI["OpenAIAdapter\nChat Completions / 兼容协议"]
-  Registry --> Google["GoogleAdapter\nGenerative Language API"]
-  Anthropic --> A["Anthropic / DeepSeek / Kimi API / Kimi Coding"]
-  OpenAI --> B["OpenAI / Moonshot / 智谱 / MiniMax / 豆包 / 通义 / Custom"]
-  Google --> C["Google Gemini"]
-```
-
-Provider 类型与默认 URL 在 `packages/shared/src/types/channel.ts` 中定义。渠道中的 API Key 由主进程通过 Electron `safeStorage` 加密后写入本地配置文件。
-
-## 核心流程
-
-### Agent 执行流程
-
-```mermaid
-sequenceDiagram
-  participant User as 用户
-  participant UI as Renderer AgentView
-  participant Preload as Preload API
-  participant IPC as Main IPC
-  participant Agent as Agent Service
-  participant Orch as AgentOrchestrator
-  participant SDK as Claude Agent SDK
-  participant Store as JSONL / Session Store
-
-  User->>UI: 输入任务
-  UI->>Preload: sendAgentMessage(input)
-  Preload->>IPC: agent:send-message
-  IPC->>Agent: runAgent(input, webContents)
-  Agent->>Orch: sendMessage(input, callbacks)
-  Orch->>Store: 写入用户消息
-  Orch->>SDK: query({ prompt, options })
-  loop SDK stream
-    SDK-->>Orch: SDKMessage
-    Orch->>Store: 追加 SDKMessage
-    Orch-->>Agent: AgentEvent
-    Agent-->>UI: agent:stream-event
-    UI->>UI: 更新 Jotai stream state
-  end
-  Orch-->>Agent: onComplete(messages)
-  Agent-->>UI: agent:stream-complete
-```
-
-关键点：
-
-- 同一 session 有并发守卫，避免两个 Agent 请求同时写同一个 JSONL。
-- SDK `options.env` 由项目显式合并 `process.env` 后再注入渠道变量，保证 `PATH`、`HOME`、`SHELL` 等基础环境可用。
-- Agent 流式监听器挂在 `renderer/main.tsx` 顶层，不随页面切换卸载。
-- 权限请求和 AskUser 请求按 `sessionId` 存入 Map，后台会话也能恢复响应。
-
-### Pipeline 执行流程
-
-```mermaid
-sequenceDiagram
-  participant UI as Pipeline UI
-  participant IPC as Pipeline IPC
-  participant Service as PipelineService
-  participant Graph as LangGraph
-  participant Router as RoutedPipelineNodeRunner
-  participant Claude as Claude Agent SDK
-  participant Codex as Codex SDK / CLI
-  participant Store as Pipeline Store
-
-  UI->>IPC: startPipeline(input)
-  IPC->>Service: start(input, callbacks)
-  Service->>Store: create session / append status
-  Service->>Graph: invoke(sessionId, userInput)
-  Graph->>Router: run explorer
-  Router->>Claude: query explorer prompt
-  Claude-->>Router: structured output
-  Router-->>Graph: explorer result
-  Graph->>Service: interrupt(gate request)
-  Service->>Store: pendingGate + records + checkpoint
-  Service-->>UI: pipeline:stream:event
-  UI->>IPC: respondGate(approve/reject)
-  IPC->>Service: resume(response)
-  Service->>Graph: resume with gate response
-  Graph->>Router: run planner / developer / reviewer / tester
-  Router->>Claude: explorer / planner / tester
-  Router->>Codex: developer / reviewer
-```
-
-Pipeline 的 gate 是一等概念，不复用 Agent 的 AskUser：
-
-- 每个 gate 有独立 `gateId`。
-- pending gate 存在 session meta 和 checkpoint 中。
-- reviewer gate 如果选择 `reject_with_feedback`，会回到 developer 继续迭代，并递增 `reviewIteration`。
-- 非 reviewer gate 选择 `rerun_node` 时会带反馈重跑当前节点。
-- tester gate 通过后进入 completed。
-
-节点执行路由：
-
-- `explorer` / `planner` / `tester`：通过 `ClaudePipelineNodeRunner` 执行，使用 Agent 兼容渠道、工作区 MCP、Skills plugin 和工作区权限模式。
-- `developer`：通过 Codex 执行，默认 `@openai/codex-sdk`，可用 `CODEINSIGHTS_PIPELINE_CODEX_BACKEND=cli` 切到 `codex exec` fallback；sandbox 为 `workspace-write`。
-- `reviewer`：同样通过 Codex 执行，但 sandbox 为 `read-only`，输出必须包含 `approved` boolean 和 `issues`。
-- Codex 渠道只接受启用的 OpenAI / Custom 渠道；未配置时使用本机 Codex auth 或 `CODEX_API_KEY`。
-
-阶段产物会被拆成三类数据：
-
-| 数据 | 用途 | 存储 |
-|------|------|------|
-| 会话元数据 | 列表、当前节点、状态、pending gate、review iteration | `pipeline-sessions.json` |
-| 流水线记录 | 用户输入、节点切换、节点输出、gate 请求 / 决策、错误 | `pipeline-sessions/{sessionId}.jsonl` |
-| 阶段产物和 checkpoint | 结构化 artifact 正文、LangGraph interrupt / resume 状态 | `pipeline-artifacts/{sessionId}/`、`pipeline-checkpoints/{sessionId}/` |
-
-### Bridge 远程调用流程
-
-```mermaid
-flowchart LR
-  Msg["飞书 / 钉钉 / 微信消息"] --> Bridge["Bridge Manager"]
-  Bridge --> Command["命令解析\n/help /new /switch /workspace"]
-  Command --> Session["绑定会话和工作区"]
-  Session --> Headless["runAgentHeadless 或 Chat 调用"]
-  Headless --> EventBus["AgentEventBus"]
-  EventBus --> Desktop["桌面 UI 同步流式事件"]
-  EventBus --> Reply["远程消息回复"]
-```
-
-Bridge 以主进程服务为中心运行，即使用户从手机或群组触发任务，桌面端也可以同步看到 Agent 会话状态。
-
-### 启动流程
-
-```mermaid
-flowchart TD
-  A["app 启动"] --> B["开发 / 正式 userData 隔离"]
-  B --> C["单实例锁"]
-  C --> D["清理 ANTHROPIC_* 环境变量"]
-  D --> E["初始化运行时\nShell / Bun / Git / Node"]
-  E --> F["同步默认 Skills"]
-  F --> G["注册菜单和托盘"]
-  G --> H["注册 IPC handlers"]
-  H --> I["创建主窗口和 Quick Task 窗口"]
-  I --> J["启动 workspace / chat tools watcher"]
-  J --> K["注册全局快捷键"]
-  K --> L["按配置启动 Bridge"]
-  L --> M["初始化自动更新"]
-```
+Renderer 全局监听器挂在 `main.tsx` 顶层，核心目的是保证切换设置页、文件面板或其他标签时，Agent / Pipeline 的流式事件仍能落入状态。
 
 ## 本地数据与配置
 
-正式版本默认使用 `~/.codeinsights/`，开发模式默认使用 `~/.codeinsights-dev/`。测试和特殊场景可用 `CODEINSIGHTS_CONFIG_DIR` 覆盖。
+![CodeInsights 本地存储与配置结构：JSON、JSONL、工作区、checkpoint 和 artifacts](./assets/imgs/codeinsights-local-storage-framework.png)
+
+CodeInsights 默认不使用本地数据库。正式版本默认写入 `~/.codeinsights/`，开发模式默认写入 `~/.codeinsights-dev/`。可通过 `CODEINSIGHTS_CONFIG_DIR` 覆盖目录，并兼容旧 `.rv-insights*` 配置迁移。
 
 ```text
 ~/.codeinsights/
 ├── channels.json
-├── conversations.json
-├── conversations/
-│   └── {conversationId}.jsonl
-├── pipeline-sessions.json
-├── pipeline-sessions/
-│   └── {sessionId}.jsonl
-├── pipeline-checkpoints/
-│   └── {sessionId}/
-├── pipeline-artifacts/
-│   └── {sessionId}/
-├── agent-sessions.json
-├── agent-sessions/
-│   └── {sessionId}.jsonl
-├── agent-workspaces.json
-├── agent-workspaces/
-│   └── {workspaceSlug}/
-│       ├── {sessionId}/
-│       ├── workspace-files/
-│       ├── mcp.json
-│       ├── skills/
-│       └── skills-inactive/
-├── attachments/
-│   └── {conversationId}/
-├── default-skills/
-├── sdk-config/
 ├── settings.json
 ├── user-profile.json
 ├── proxy-settings.json
 ├── system-prompts.json
 ├── memory.json
 ├── chat-tools.json
+├── conversations.json
+├── conversations/
+│   └── {conversationId}.jsonl
+├── attachments/
+│   └── {conversationId}/
+├── agent-sessions.json
+├── agent-sessions/
+│   ├── {sessionId}.jsonl
+│   └── {sessionId}.events.jsonl
+├── agent-workspaces.json
+├── agent-workspaces/
+│   └── {workspaceSlug}/
+│       ├── mcp.json
+│       ├── skills/
+│       ├── skills-inactive/
+│       ├── workspace-files/
+│       └── sessions/{sessionId}/cwd/
+├── default-skills/
+├── sdk-config/
+├── pipeline-sessions.json
+├── pipeline-sessions/
+│   └── {sessionId}.jsonl
+├── pipeline-checkpoints/
+│   └── {sessionId}/memory-saver.json
+├── pipeline-artifacts/
+│   └── {sessionId}/
+├── contribution-tasks.json
+├── contribution-tasks/
+│   └── {taskId}.jsonl
 ├── feishu.json
 ├── feishu-bindings.json
 ├── dingtalk.json
 ├── wechat.json
-└── wechat-sync.json
+├── wechat-sync.json
+└── agent-channel-bindings.json
 ```
 
 设计原则：
 
-- 索引文件保存轻量元数据，便于快速加载列表。
-- 会话正文和事件流使用 JSONL 追加写入，便于流式持久化、恢复和搜索。
+- JSON 保存配置和索引，JSONL 保存会话消息、事件记录和可回放日志。
 - Pipeline checkpoint 单独服务 LangGraph interrupt / resume。
-- 工作区文件、MCP 和 Skills 按 workspace slug 隔离。
-- SDK 配置目录独立于用户自己的 Claude Code CLI 配置。
+- Pipeline v2 会在目标仓库维护 `patch-work/`，保存计划、测试计划、开发记录、审查记录、结果和提交材料。
+- API Key 由主进程使用 Electron `safeStorage` 加密后写入 `channels.json`。
+- `sdk-config/` 用于隔离 Claude SDK 配置，避免直接污染用户的 Claude Code CLI 配置。
+
+## Provider 适配层
+
+`@codeinsights/core` 使用 Provider adapter registry 统一不同供应商协议：
+
+| Provider | 适配器 | 协议 |
+|----------|--------|------|
+| Anthropic | `AnthropicAdapter` | Anthropic Messages |
+| DeepSeek | `AnthropicAdapter('deepseek')` | Anthropic 兼容 |
+| Kimi API | `AnthropicAdapter('kimi-api')` | Anthropic 兼容 |
+| Kimi Coding | `AnthropicAdapter('kimi-coding')` | Anthropic 兼容 |
+| OpenAI | `OpenAIAdapter` | Chat Completions |
+| Moonshot / Kimi OpenAI 协议 | `OpenAIAdapter` | OpenAI 兼容 |
+| 智谱、MiniMax、豆包、通义千问 | `OpenAIAdapter` | OpenAI 兼容 |
+| Custom | `OpenAIAdapter` | 自定义 OpenAI 兼容端点 |
+| Google | `GoogleAdapter` | Generative Language API |
+
+渠道默认 URL、标签、Agent 兼容集合定义在 `packages/shared/src/types/channel.ts`。新增 Provider 时应同步更新 shared 类型、core registry、设置 UI 和连接测试逻辑。
+
+## 远程 Bridge
+
+主进程内置 Bridge registry，当前注册飞书、钉钉、微信。Bridge 启动后会把远程消息转换为桌面端 Agent / Chat 会话请求，并把运行状态和回复同步回消息平台。
+
+常用命令：
+
+| 命令 | 功能 |
+|------|------|
+| `/help` | 查看帮助 |
+| `/new` | 创建新会话 |
+| `/list` | 查看会话列表 |
+| `/switch` | 切换会话 |
+| `/stop` | 停止当前任务 |
+| `/workspace` | 切换工作区 |
+| `/agent` | 切换到 Agent 模式 |
+| `/chat` | 切换到 Chat 模式 |
+| `/now` | 查看当前绑定状态 |
 
 ## 开发指南
 
 ### 添加新的 IPC 能力
 
-新增 IPC 通道时按四层同步：
+按四层同步：
 
 1. 在 `packages/shared/src/types/*` 定义通道常量和请求 / 响应类型。
-2. 在 `apps/electron/src/main/ipc.ts` 或 `apps/electron/src/main/ipc/*-handlers.ts` 注册 `ipcMain.handle`。
-3. 在 `apps/electron/src/preload/index.ts` 通过 `contextBridge` 暴露方法。
-4. 在 `apps/electron/src/renderer/atoms` 或 `hooks` 中封装调用，并在组件中使用。
+2. 在 `apps/electron/src/main/ipc.ts` 或 `apps/electron/src/main/ipc/*-handlers.ts` 注册 handler。
+3. 在 `apps/electron/src/preload/index.ts` 暴露 `window.electronAPI` 方法。
+4. 在 renderer 的 `atoms/`、`hooks/` 或组件中封装调用。
 
 ### 添加新的 Provider
 
-1. 在 `packages/shared/src/types/channel.ts` 增加 `ProviderType`、默认 URL、显示名称。
-2. 在 `packages/core/src/providers/index.ts` 注册对应适配器。
-3. 如需 Agent 兼容，必须确认目标 Provider 支持 Anthropic Messages 协议，并加入 `AGENT_COMPATIBLE_PROVIDERS`。
-4. 在设置 UI 中验证渠道创建、测试连接、模型拉取和发送流程。
+1. 修改 `packages/shared/src/types/channel.ts`，增加 `ProviderType`、默认 URL 和显示名称。
+2. 在 `packages/core/src/providers/index.ts` 注册适配器。
+3. 如果要用于 Agent，确认目标端点支持 Anthropic Messages 协议，并加入 `AGENT_COMPATIBLE_PROVIDERS`。
+4. 更新设置 UI、连接测试、模型拉取和必要测试。
 
-### 添加新的主进程服务
+### 修改 Pipeline 节点
 
-建议保持当前分层：
+优先检查这些文件：
 
-```text
-shared 类型 / 常量
-  -> main/lib 业务服务
-  -> main/ipc handler 薄包装
-  -> preload API
-  -> renderer atom / hook
-  -> React view
-```
+- `packages/shared/src/types/pipeline.ts`
+- `apps/electron/src/main/lib/pipeline-graph.ts`
+- `apps/electron/src/main/lib/pipeline-node-router.ts`
+- `apps/electron/src/main/lib/pipeline-node-runner.ts`
+- `apps/electron/src/main/lib/codex-pipeline-node-runner.ts`
+- `apps/electron/src/main/lib/pipeline-service.ts`
+- `apps/electron/src/renderer/components/pipeline/*`
 
-业务逻辑放在 `main/lib/`，IPC handler 只做输入接收、调用服务和错误返回。
+注意事项：
+
+- v1 和 v2 的运行时路由不同，不能只改一种版本。
+- 节点输出需要保持结构化 schema 可解析，并提供自然语言 fallback 的安全策略。
+- 所有人工 gate 必须能持久化、恢复和回放。
+- Codex 节点不能绕过 Git guard 直接写远端。
 
 ### 前端状态管理
 
-项目使用 Jotai：
+项目状态管理统一使用 Jotai：
 
-- `atoms/*` 保存可复用业务状态。
-- 长任务流式状态按 `sessionId` 使用 Map / Set 隔离。
-- 全局监听器使用 `useStore()` 直接写 atoms，避免组件卸载导致事件丢失。
-- UI 组件尽量保持展示和交互职责，复杂状态转换抽成纯函数并补测试。
+- 会话流式状态按 `sessionId` 存在 Map / Set 中。
+- 全局 IPC listener 使用 `useStore()` 写 atoms，避免 UI 组件卸载导致丢事件。
+- 展示组件保持轻量，复杂派生逻辑抽为纯函数并补测试。
+- 新增本地状态前优先考虑是否应放入配置文件，而不是默认写 `localStorage`。
 
-### 测试与验证
+### 文档同步
 
-常用验证：
+功能或架构发生变化时，应同步检查：
+
+- `README.md`
+- `AGENTS.md`，需要用户允许后再修改
+- `docs/` 中对应设计文档
+- `tasks/todo.md` 的计划和 Review
+
+## 测试与验证
+
+常用验证命令：
 
 ```bash
 bun test
@@ -698,10 +568,16 @@ bun run electron:build
 局部验证示例：
 
 ```bash
-bun test apps/electron/src/main/lib/pipeline-graph.test.ts
-bun test apps/electron/src/main/lib/agent-orchestrator/completion-signal.test.ts
 bun run --filter='@codeinsights/electron' typecheck
-bun run --filter='@codeinsights/electron' build:main
+bun test apps/electron/src/main/lib/pipeline-graph.test.ts
+bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts
+bun test apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts
+```
+
+文档或 Markdown 修改至少建议运行：
+
+```bash
+git diff --check
 ```
 
 ## 打包发布
@@ -715,73 +591,114 @@ bun run dist:linux
 bun run dist:fast
 ```
 
-### Agent SDK 打包注意事项
+### Electron Builder 要点
 
-`@anthropic-ai/claude-agent-sdk@0.2.123` 在当前项目中必须特殊处理：
+`apps/electron/electron-builder.yml` 当前采用：
 
-- `build:main` 使用 `--external:@anthropic-ai/claude-agent-sdk`。
-- SDK native binary 通过 optional dependencies 分发：
-  - `@anthropic-ai/claude-agent-sdk-darwin-arm64`
-  - `@anthropic-ai/claude-agent-sdk-darwin-x64`
-  - `@anthropic-ai/claude-agent-sdk-win32-x64`
-  - `@anthropic-ai/claude-agent-sdk-win32-arm64`
-- `electron-builder.yml` 必须把 SDK 主包和目标平台子包打进 `app/node_modules/@anthropic-ai/`。
-- 当前 Windows 打包目标配置为 x64。
-- macOS x64 和 arm64 需要在对应架构 runner 上分别构建，不能假设一个 Apple Silicon runner 同时装齐两个平台 binary。
+- `asar: false`，避免 SDK symlink 和 native binary 路径问题。
+- `files` 显式包含 Claude Agent SDK 主包和平台子包。
+- `files` 显式包含 OpenAI Codex SDK / CLI 主包和平台子包。
+- `extraResources` 包含 default-skills、tutorial 和品牌 logo 素材。
+- macOS 目标为 `dmg` / `zip`，Windows 目标为 NSIS x64。
 
-其他普通依赖通常应由 esbuild 打进 `main.cjs`，不要随意 external，否则需要手动在 electron-builder `files` 中补齐所有子依赖。
+### Claude Agent SDK 打包
 
-### Codex 打包注意事项
+`@anthropic-ai/claude-agent-sdk@0.2.123` 使用平台 native binary。主进程构建必须 external：
 
-Pipeline 的 `developer` / `reviewer` 节点依赖 `@openai/codex-sdk@0.130.0` 和 `@openai/codex@0.130.0`：
+```text
+--external:@anthropic-ai/claude-agent-sdk
+```
 
-- `build:main` 需要 external `@openai/codex-sdk` 和 `@openai/codex`，避免把 native binary 解析逻辑打碎。
-- `apps/electron/package.json` 通过 optional dependencies 显式列出 darwin / linux / win32 的 x64 与 arm64 Codex 平台包。
-- `codex-pipeline-node-runner.ts` 会解析 `@openai/codex-*` 平台包下的 `vendor/{target}/codex/{codex|codex.exe}`，打包后如路径位于 asar 内会切换到 `.asar.unpacked`。
-- 默认后端是 Codex SDK；设置 `CODEINSIGHTS_PIPELINE_CODEX_BACKEND=cli` 时走 `codex exec` fallback。
-- CLI fallback 在 stop / abort 时会清理 Codex CLI 进程树，POSIX 使用独立进程组，Windows 使用 `taskkill /F /T /PID`。
+对应平台包通过 optional dependencies 安装，例如：
+
+- `@anthropic-ai/claude-agent-sdk-darwin-arm64`
+- `@anthropic-ai/claude-agent-sdk-darwin-x64`
+- `@anthropic-ai/claude-agent-sdk-win32-x64`
+- `@anthropic-ai/claude-agent-sdk-win32-arm64`
+
+macOS x64 与 arm64 需要在匹配架构 runner 上分别构建，不应假设单个 Apple Silicon runner 会安装所有平台 binary。
+
+### OpenAI Codex 打包
+
+Pipeline Codex 节点依赖：
+
+- `@openai/codex-sdk@0.130.0`
+- `@openai/codex@0.130.0`
+- `@openai/codex-{platform}-{arch}` optional dependencies
+
+主进程构建 external：
+
+```text
+--external:@openai/codex-sdk
+--external:@openai/codex
+```
+
+`codex-pipeline-node-runner.ts` 会解析平台包中的 native CLI；打包后如路径位于 asar 内，会切到 `.asar.unpacked`。当前配置禁用 asar，路径处理仍保留防御逻辑。
+
+## 安全与边界
+
+当前安全边界包括：
+
+- Electron `contextIsolation: true`、`nodeIntegration: false`。
+- Renderer 只能通过 preload 暴露的 `window.electronAPI` 访问主进程能力。
+- API Key 通过 Electron `safeStorage` 加密存储。
+- Agent 权限请求、AskUser、ExitPlan 和 Pipeline gate 都按 session 隔离。
+- Pipeline v2 Codex 节点运行时会清理敏感环境变量，并隔离 `CODEX_HOME` / `HOME` / Git 相关变量。
+- Codex workspace-write 节点有命令级 Git guard 和事后校验，防止 Agent 私自 commit、push、tag、reset、rebase 或创建 PR。
+- Pipeline 远端写操作需要专门确认，不由普通节点自由执行。
+
+仍需注意：
+
+- 本项目会让 Agent 在用户工作区读取文件、编辑代码、运行命令。请只在可信工作区和可信模型渠道中使用高权限模式。
+- `safeStorage` 保护的是本机加密存储，不等于跨设备密钥管理系统。
+- Bridge 会把远程消息转成本地 Agent 请求，启用前应确认 Bot 权限、群聊范围和默认工作区。
+- `default-skills/` 中部分技能带独立 LICENSE 文本，复用或分发时需要逐项核对。
+
+## 素材目录
+
+`assets/` 当前包含 README、官网和介绍视频使用的素材：
+
+| 路径 | 用途 |
+|------|------|
+| `assets/icon/CodeInsights.png` | README 顶部和品牌图标源 |
+| `assets/imgs/codeinsights-system-architecture.png` | 系统架构图 |
+| `assets/imgs/codeinsights-pipeline-langgraph-flow.png` | Pipeline v2 LangGraph 流程图 |
+| `assets/imgs/codeinsights-agent-runtime-flow.png` | Agent Runtime 流程图 |
+| `assets/imgs/codeinsights-ipc-state-flow.png` | IPC 与状态流图 |
+| `assets/imgs/codeinsights-local-storage-framework.png` | 本地存储结构图 |
+| `assets/video/codeinsights-intro-20s.mp4` | 20 秒介绍视频 |
+| `assets/video/snapshots/contact-sheet.jpg` | 视频关键帧预览 |
+
+同名 `.svg` 图适合需要高清缩放的文档或网页场景。
 
 ## 常见问题
 
-### Agent 模式提示找不到 SDK binary
+### Agent 模式为什么不能直接选择 OpenAI 渠道？
 
-先确认依赖安装完整：
+当前 Agent 模式基于 Claude Agent SDK 和 Anthropic Messages 兼容协议，所以只支持 `anthropic`、`deepseek`、`kimi-api`、`kimi-coding`。OpenAI / Custom 可以作为 Pipeline Codex 渠道使用。
 
-```bash
-bun install
-ls apps/electron/node_modules/@anthropic-ai
-```
+### Pipeline 为什么同时需要 Agent 渠道和 Codex 渠道？
 
-对应平台的 `claude-agent-sdk-{platform}-{arch}` 子包必须存在。
+Pipeline v2 是混合运行时。Explorer / Planner 使用 Claude Agent SDK，因此需要 Agent 兼容渠道；Developer / Reviewer / Tester / Committer 使用 Codex，因此可以选择 OpenAI / Custom 渠道、本机 Codex auth 或 `CODEX_API_KEY`。
 
-### Agent 渠道不能使用 OpenAI / MiniMax / 智谱
+### 运行中的 Pipeline 能跨重启继续吗？
 
-这是当前架构限制。Agent 模式通过 Claude Agent SDK 和 Anthropic Messages 兼容协议运行，只支持 `anthropic`、`deepseek`、`kimi-api`、`kimi-coding`。其他 Provider 可用于普通 Chat / 渠道功能。
+不能保证。当前可靠恢复的是 `waiting_human` gate。进程已经丢失的 `running` 节点会标记为 `recovery_failed`，避免 UI 误报仍在运行。
 
-### Pipeline 为什么需要 Agent 渠道和 Codex 渠道
+### 开发模式看不到正式版本数据怎么办？
 
-Pipeline 是混合运行时：Explorer / Planner / Tester 走 Claude Agent SDK，所以需要一个 Agent 兼容渠道和工作区；Developer / Reviewer 走 Codex，所以可以单独选择 OpenAI / Custom 渠道，或使用本机 Codex auth / `CODEX_API_KEY`。启动前的 preflight 会同时检查这两类配置，避免跑到中途才失败。
-
-### 开发模式和正式版本数据不一致
-
-开发模式默认使用 `~/.codeinsights-dev/`，正式版本使用 `~/.codeinsights/`。如果需要指定目录，可设置：
+开发模式默认写 `~/.codeinsights-dev/`，正式版本写 `~/.codeinsights/`。可以用环境变量指定目录：
 
 ```bash
 CODEINSIGHTS_CONFIG_DIR=/path/to/config bun run dev
 ```
 
-### 修改 README 和架构文档时需要同步什么
+### README 图里为什么写 RV-Insights？
 
-如果功能或架构发生变化，应同步更新：
+这是历史项目名残留在部分素材图中。当前项目命名、package scope、应用产品名和打包配置均使用 CodeInsights。
 
-- `README.md`
-- `AGENTS.md`
-- 对应的 `docs/` 设计文档
+## 贡献说明
 
-本仓库约定业务变更需要先规划、实现后验证，并在 `tasks/todo.md` 记录结果。
+欢迎围绕 Pipeline、Agent Runtime、Provider 适配、MCP / Skills、Bridge、本地存储和 UI 体验提交改进。提交前请尽量运行相关测试、类型检查和 `git diff --check`，并保持改动范围清晰。
 
-## 贡献
-
-欢迎围绕 Pipeline、Agent、Skills、MCP、远程 Bridge、Provider 适配器和本地优先数据管理提交改进。提交前请尽量运行相关测试、类型检查和构建验证，并保持改动范围清晰。
-
-当前仓库未在根目录提供 LICENSE 文件；如需分发或商用，请先确认许可证状态。
+许可证说明：当前仓库根目录未检测到独立 `LICENSE` 文件；部分 package 标注 `Apache-2.0`，应用内和历史网页存在 MIT 文案，`default-skills/` 中部分技能还带独立授权文本。正式分发、复用或商用前，请以仓库最终 LICENSE / NOTICE 文件为准。
