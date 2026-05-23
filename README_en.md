@@ -16,11 +16,13 @@ CodeInsights is a local-first AI Agent desktop workspace for open source contrib
 
 ---
 
-<video src="https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588" controls width="800" autoplay muted loop></video>
+<a href="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4">
+  <img src="./docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg" alt="CodeInsights real run recording preview" width="900" />
+</a>
 
-[Homepage](https://zcxggmu.github.io/CodeInsights/) · [Video fallback](./assets/video/codeinsights-intro-20s.mp4) · [Video design notes](./assets/video/DESIGN.md)
+[Homepage](https://zcxggmu.github.io/CodeInsights/) · [Real run recording](./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4) · [20-second concept video](./assets/video/codeinsights-intro-20s.mp4) · [Video design notes](./assets/video/DESIGN.md)
 
-[Highlights](#highlights) · [Positioning](#positioning) · [Capabilities](#capabilities) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Pipeline](#pipeline-workflow) · [Agent Runtime](#agent-runtime) · [Local Data](#local-data-and-configuration) · [Development](#development-guide) · [Commands](#common-commands) · [Security](#security-and-boundaries) · [Assets](#asset-catalog) · [Contributing](#contributing)
+[Highlights](#highlights) · [Real Interface](#real-interface-preview) · [Positioning](#positioning) · [Capabilities](#capabilities) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Pipeline](#pipeline-workflow) · [Agent Runtime](#agent-runtime) · [Local Data](#local-data-and-configuration) · [Development](#development-guide) · [Commands](#common-commands) · [Security](#security-and-boundaries) · [Assets](#asset-catalog) · [Contributing](#contributing)
 
 </div>
 
@@ -51,6 +53,57 @@ Configuration, session indexes, JSONL events, checkpoints, artifacts, and worksp
 ### Mature Runtime Reuse
 
 `Agent` mode uses Claude Agent SDK compatible runtimes. Pipeline development, review, testing, and submission-draft stages can use OpenAI Codex SDK / CLI. CodeInsights focuses on workflow, permissions, state, bridges, and local storage.
+
+</td>
+</tr>
+</table>
+
+---
+
+<a id="real-interface-preview"></a>
+
+## Real Interface Preview
+
+These assets were captured from a real Electron development window with an isolated configuration directory, so existing local channels, sessions, and credentials were not loaded. The screenshots and recording focus on visible workspace states that do not require real API keys.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Pipeline Workspace
+
+<img src="./docs/assets/readme/real-runs/01-pipeline-dashboard.png" alt="Real Pipeline workspace screenshot" width="100%" />
+
+The six-stage contribution pipeline, Mission Route, human gates, artifacts, and run logs are visible in one workspace.
+
+</td>
+<td width="50%" valign="top">
+
+### Agent Workbench
+
+<img src="./docs/assets/readme/real-runs/02-agent-workbench.png" alt="Real Agent workbench screenshot" width="100%" />
+
+Agent sessions, the Command Deck, workspace files, resource panels, and task context stay in the same local desktop flow.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### Model Configuration
+
+<img src="./docs/assets/readme/real-runs/03-settings-overview.png" alt="Real model configuration screenshot" width="100%" />
+
+Provider channels, the DeepSeek preset, Pipeline Codex auth source, and Agent provider settings are managed from the settings panel.
+
+</td>
+<td width="50%" valign="top">
+
+### Agent Settings / MCP / Skills
+
+<img src="./docs/assets/readme/real-runs/04-channels-and-agent-settings.png" alt="Real Agent settings MCP Skills screenshot" width="100%" />
+
+Advanced Agent settings, built-in tools, MCP servers, and Skills are isolated by workspace for local automation.
 
 </td>
 </tr>
@@ -479,7 +532,7 @@ Operational cautions:
 
 ## Asset Catalog
 
-`assets/` contains README, homepage, and intro-video assets:
+`assets/` and `docs/assets/readme/real-runs/` contain README, homepage, intro-video, and real-run assets:
 
 | Path | Purpose |
 |------|---------|
@@ -491,6 +544,13 @@ Operational cautions:
 | `assets/imgs/codeinsights-local-storage-framework.png` | Local storage structure |
 | `assets/video/codeinsights-intro-20s.mp4` | 20-second intro video |
 | `assets/video/snapshots/contact-sheet.jpg` | Video contact sheet |
+| `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4` | 6-second real Electron window recording |
+| `docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg` | Contact sheet for the real run recording |
+| `docs/assets/readme/real-runs/01-pipeline-dashboard.png` | Real Pipeline workspace screenshot |
+| `docs/assets/readme/real-runs/02-agent-workbench.png` | Real Agent workbench screenshot |
+| `docs/assets/readme/real-runs/03-settings-overview.png` | Real model configuration screenshot |
+| `docs/assets/readme/real-runs/04-channels-and-agent-settings.png` | Real Agent settings, MCP, and Skills screenshot |
+| `docs/assets/readme/real-runs/README.md` | Real-run asset notes, capture method, and markdown snippets |
 
 The matching `.svg` diagrams are useful for high-resolution documentation or web pages.
 

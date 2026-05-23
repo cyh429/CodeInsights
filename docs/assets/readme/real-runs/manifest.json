@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-05-23T13:32:47.962Z",
+  "cdpPort": 9334,
+  "targetUrl": "http://localhost:5173/",
+  "files": [
+    "01-pipeline-dashboard.png",
+    "02-agent-workbench.png",
+    "03-settings-overview.png",
+    "04-channels-and-agent-settings.png",
+    "codeinsights-real-run-overview.mp4",
+    "codeinsights-real-run-overview-contact-sheet.jpg",
+    "capture-metadata.json"
+  ],
+  "notes": [
+    "截图和录屏来自真实 Electron dev 主窗口。",
+    "本轮使用隔离 CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config，避免读取本机渠道密钥和历史会话。",
+    "dev 模式主进程会打开 DevTools，本轮采集时已关闭 DevTools target，仅采集业务主窗口 target。"
+  ]
+}

@@ -1,5 +1,46 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 真实素材接入优化计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏视频应优先使用真实运行素材；GitHub 直播放需要公开 user-attachments URL，当前本地真实录屏先作为仓库素材接入并保留 fallback 链接。
+- [x] 复查中英文 README、已有真实截图/录屏和素材目录，确认本轮只做文档展示优化，不修改运行时代码。
+- [x] 将 README 首屏媒体从旧概念视频切换为真实 Electron 运行录屏，并保留 20 秒概念视频作为辅助入口。
+- [x] 新增中英文“真实界面预览”区块，展示 Pipeline、Agent、模型配置、Agent 设置/MCP/Skills 四类截图。
+- [x] 更新中英文素材目录，补充 `docs/assets/readme/real-runs/` 下的真实截图、录屏、抽帧和素材说明。
+- [x] 验证 README 引用路径、视频/图片文件、敏感信息扫描和 Markdown diff 空白，在本节末尾追加 Review。
+
+## 2026-05-23 README 真实素材接入优化 Review
+
+- 已更新 `README.md` 与 `README_en.md` 首屏展示：移除旧 user-attachments 概念视频播放器，改为真实 Electron 运行录屏抽帧图，点击可打开 `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4`；20 秒概念视频保留为辅助入口。
+- 已新增中英文真实界面预览区块，覆盖 Pipeline 工作台、Agent 工作区、模型配置、Agent 设置 / MCP / Skills 四类真实截图；截图使用 `width="100%"`，避免在 README 表格里撑开布局。
+- 已更新中英文素材目录，补充真实录屏、抽帧图、四张截图和 `docs/assets/readme/real-runs/README.md` 说明文件。
+- 验证通过：所有 README 新增相对资源路径存在；`ffprobe` 确认真实录屏为 H.264、1600x966、30fps、6 秒、180 帧；敏感 token 扫描无命中；`rg` 确认旧 `user-attachments` 视频和 `<video>` 标签已从中英文 README 清理；`git diff --check -- README.md README_en.md tasks/todo.md docs/assets/readme/real-runs` 通过。
+- 说明：当前没有新的公开 GitHub user-attachments URL，故 README 首屏采用真实录屏抽帧链接 MP4 的方式，避免相对 MP4 在 GitHub README 中被过滤后出现空白。
+
+## 2026-05-23 README 真实截图与录屏素材计划
+
+- [x] 启动前复习 `tasks/lessons.md`，确认 README 素材要使用真实可运行界面，避免 mock，并避开 API Key、渠道密钥、飞书凭证等敏感信息。
+- [x] 确认本轮不直接修改 README，只新增真实截图/录屏素材和给出可引用片段；如需写入 README，等待用户再次明确允许。
+- [x] 使用隔离配置目录启动 Electron 应用，避免读取本机已有 `~/.codeinsights-dev` 敏感会话与渠道。
+- [x] 通过真实应用采集关键功能素材：Pipeline 主界面、Agent 会话界面、工作区/资源面板、渠道与设置、权限/人工交互相关可见状态。
+- [x] 录制 README 可用短视频：优先覆盖 `Pipeline | Agent` 模式切换和主要工作台操作；若某些功能需要真实凭证，则只录制可本地展示部分并记录限制。
+- [x] 将素材整理到 `docs/assets/readme/real-runs/`，保留命名清晰的 PNG / MP4 和素材清单。
+- [x] 验证图片/视频文件可打开、尺寸合适、无敏感信息，并在本节末尾追加 Review。
+
+## 2026-05-23 README 真实截图与录屏素材 Review
+
+- 已用真实 Electron dev 主窗口采集素材，CDP 目标为 `http://localhost:5173/`，不是浏览器 mock 页面；本轮启动时使用 `CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config` 隔离配置，避免读取本机真实渠道、会话和 IM 凭证。
+- 已生成 README 可用素材目录：`docs/assets/readme/real-runs/`。
+- 截图产物：
+  - `01-pipeline-dashboard.png`：Pipeline 发射台、六阶段 Mission Route、产物与运行日志。
+  - `02-agent-workbench.png`：Agent Mission、Command Deck、右侧资源面板、会话/工作区文件。
+  - `03-settings-overview.png`：模型配置、DeepSeek 预设、Pipeline Codex 认证来源、Agent 供应商。
+  - `04-channels-and-agent-settings.png`：Agent 高级设置、内置工具、MCP 服务器、Skills。
+- 录屏产物：`codeinsights-real-run-overview.mp4`，6 秒，1600x966，H.264，30fps；另生成 `codeinsights-real-run-overview-contact-sheet.jpg` 作为抽帧核验图。
+- 已新增 `docs/assets/readme/real-runs/README.md`，包含素材说明和 README Markdown 引用片段；未直接修改根 `README.md`，符合“README 修改需先获得允许”的项目规则。
+- 验证通过：人工查看四张截图和录屏抽帧；`ffprobe` 确认视频可读；`node --check docs/assets/readme/real-runs/capture-cdp.mjs`；敏感 token 文本扫描 `rg` 无命中；`git diff --check -- tasks/todo.md docs/assets/readme/real-runs`。
+- 限制说明：本轮使用空密钥演示配置，因此没有真实跑需要模型 API Key 的 Pipeline 节点执行、Agent 工具调用和权限审批弹窗；这些素材需要提供可用脱敏渠道后再补录。
+
 ## 2026-05-23 README 首屏图标与英文链接修复计划
 
 - [x] 启动前复习 `tasks/lessons.md`，确认 README 首屏应优先展示视频，品牌图标不应继续占据标题左侧。

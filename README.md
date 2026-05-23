@@ -18,11 +18,13 @@ CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软
 
 ---
 
-<video src="https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588" controls width="800" autoplay muted loop></video>
+<a href="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4">
+  <img src="./docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg" alt="CodeInsights 真实运行录屏预览" width="900" />
+</a>
 
-[项目主页](https://zcxggmu.github.io/CodeInsights/) · [视频文件备用入口](./assets/video/codeinsights-intro-20s.mp4) · [视频设计说明](./assets/video/DESIGN.md)
+[项目主页](https://zcxggmu.github.io/CodeInsights/) · [真实运行录屏](./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4) · [20 秒概念介绍](./assets/video/codeinsights-intro-20s.mp4) · [视频设计说明](./assets/video/DESIGN.md)
 
-[产品优势](#产品优势) · [核心定位](#核心定位) · [核心能力](#核心能力) · [快速开始](#快速开始) · [架构](#整体架构) · [Pipeline](#pipeline-工作流) · [Agent Runtime](#agent-runtime) · [本地数据](#本地数据与配置) · [开发指南](#开发指南) · [常用命令](#常用命令) · [安全边界](#安全与边界) · [素材](#素材目录) · [贡献](#贡献说明)
+[产品优势](#产品优势) · [真实界面](#真实界面预览) · [核心定位](#核心定位) · [核心能力](#核心能力) · [快速开始](#快速开始) · [架构](#整体架构) · [Pipeline](#pipeline-工作流) · [Agent Runtime](#agent-runtime) · [本地数据](#本地数据与配置) · [开发指南](#开发指南) · [常用命令](#常用命令) · [安全边界](#安全与边界) · [素材](#素材目录) · [贡献](#贡献说明)
 
 </div>
 
@@ -53,6 +55,57 @@ CodeInsights 是一个本地优先的 AI Agent 桌面工作台，面向开源软
 ### 复用成熟运行时
 
 `Agent` 模式接入 Claude Agent SDK 兼容链路，Pipeline 的开发、审查、测试和提交材料阶段可走 Codex SDK / CLI。CodeInsights 专注于工作流、权限、状态、桥接和本地存储。
+
+</td>
+</tr>
+</table>
+
+---
+
+<a id="真实界面预览"></a>
+
+## 真实界面预览
+
+以下素材来自真实 Electron 开发窗口，采集时使用隔离配置目录，避免读取本机已有渠道、会话和凭证。录屏与截图展示的是不依赖真实 API Key 的可见工作台状态。
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Pipeline 工作台
+
+<img src="./docs/assets/readme/real-runs/01-pipeline-dashboard.png" alt="Pipeline 工作台真实截图" width="100%" />
+
+六阶段贡献流水线、Mission Route、人工 gate、产物和运行日志在同一工作台中集中展示。
+
+</td>
+<td width="50%" valign="top">
+
+### Agent 工作区
+
+<img src="./docs/assets/readme/real-runs/02-agent-workbench.png" alt="Agent 工作区真实截图" width="100%" />
+
+Agent 会话、Command Deck、工作区文件、资源面板和任务上下文保持在同一个本地桌面流程里。
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 模型配置
+
+<img src="./docs/assets/readme/real-runs/03-settings-overview.png" alt="模型配置真实截图" width="100%" />
+
+多 Provider 渠道、DeepSeek 预设、Pipeline Codex 认证来源和 Agent 供应商设置集中在设置面板中。
+
+</td>
+<td width="50%" valign="top">
+
+### Agent 设置 / MCP / Skills
+
+<img src="./docs/assets/readme/real-runs/04-channels-and-agent-settings.png" alt="Agent 设置 MCP Skills 真实截图" width="100%" />
+
+Agent 高级设置、内置工具、MCP Server 和 Skills 按工作区隔离管理，方便扩展本地自动化能力。
 
 </td>
 </tr>
@@ -675,7 +728,7 @@ Pipeline Codex 节点依赖：
 
 ## 素材目录
 
-`assets/` 当前包含 README、官网和介绍视频使用的素材：
+`assets/` 和 `docs/assets/readme/real-runs/` 当前包含 README、官网和介绍视频使用的素材：
 
 | 路径 | 用途 |
 |------|------|
@@ -687,6 +740,13 @@ Pipeline Codex 节点依赖：
 | `assets/imgs/codeinsights-local-storage-framework.png` | 本地存储结构图 |
 | `assets/video/codeinsights-intro-20s.mp4` | 20 秒介绍视频 |
 | `assets/video/snapshots/contact-sheet.jpg` | 视频关键帧预览 |
+| `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4` | 真实 Electron 窗口 6 秒运行录屏 |
+| `docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg` | 真实运行录屏抽帧预览 |
+| `docs/assets/readme/real-runs/01-pipeline-dashboard.png` | Pipeline 工作台真实截图 |
+| `docs/assets/readme/real-runs/02-agent-workbench.png` | Agent 工作区真实截图 |
+| `docs/assets/readme/real-runs/03-settings-overview.png` | 模型配置真实截图 |
+| `docs/assets/readme/real-runs/04-channels-and-agent-settings.png` | Agent 设置、MCP 与 Skills 真实截图 |
+| `docs/assets/readme/real-runs/README.md` | 真实素材说明、采集方式和引用片段 |
 
 同名 `.svg` 图适合需要高清缩放的文档或网页场景。
 
