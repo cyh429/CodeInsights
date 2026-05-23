@@ -1,5 +1,5 @@
 <svg width="1400" height="700" viewBox="0 0 1400 700" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="sdk-title sdk-desc">
-  <title id="sdk-title">RV-Insights Dual SDK Hybrid Architecture</title>
+  <title id="sdk-title">CodeInsights Dual SDK Hybrid Architecture</title>
   <desc id="sdk-desc">Shows how OpenAI Agents SDK and Claude Agent SDK work together through a Python orchestration layer.</desc>
   <defs>
     <linearGradient id="sbg" x1="0" y1="0" x2="1400" y2="700" gradientUnits="userSpaceOnUse">

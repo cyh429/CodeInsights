@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 860" width="1200" height="860">
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
+  </style>
+  <defs>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#10a37f"/></marker>
+  </defs>
+  <rect width="1200" height="860" fill="#ffffff"/>
+  <text x="600" y="34" text-anchor="middle" fill="#0d0d0d" font-size="22" font-weight="600">Pipeline LangGraph Flow</text>
+  <text x="600" y="58" text-anchor="middle" fill="#6e6e80" font-size="13">Human-gated contribution workflow with Claude and Codex node routing</text>
+  <rect x="54" y="86" width="1092" height="124" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="66" y="106" fill="#6e6e80" font-size="12" font-weight="500">Start and Planning</text>
+  <rect x="82" y="126" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="82" y="126" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="153" y="157" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">User Task</text>
+  <text x="153" y="179" text-anchor="middle" fill="#6e6e80" font-size="12">startPipeline()</text>
+  <rect x="278" y="126" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="278" y="126" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="349" y="157" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Explorer</text>
+  <text x="349" y="179" text-anchor="middle" fill="#6e6e80" font-size="12">Claude read-only</text>
+  <rect x="474" y="126" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="474" y="126" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="545" y="157" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="545" y="179" text-anchor="middle" fill="#6e6e80" font-size="12">task selection</text>
+  <rect x="670" y="126" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="670" y="126" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="741" y="157" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Planner</text>
+  <text x="741" y="179" text-anchor="middle" fill="#6e6e80" font-size="12">Claude plan docs</text>
+  <rect x="866" y="126" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="866" y="126" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="937" y="157" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="937" y="179" text-anchor="middle" fill="#6e6e80" font-size="12">document review</text>
+  <path d="M 224,155 L 278,155" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="225.5" y="134" width="51" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="251" y="147" text-anchor="middle" fill="#6e6e80" font-size="12">input</text>
+  <path d="M 420,155 L 474,155" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="418.0" y="134" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="447" y="147" text-anchor="middle" fill="#6e6e80" font-size="12">report</text>
+  <path d="M 616,155 L 670,155" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="610.5" y="134" width="65" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="643" y="147" text-anchor="middle" fill="#6e6e80" font-size="12">approve</text>
+  <path d="M 812,155 L 866,155" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="816.0" y="134" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="839" y="147" text-anchor="middle" fill="#6e6e80" font-size="12">plan</text>
+  <rect x="54" y="270" width="1092" height="150" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="66" y="290" fill="#6e6e80" font-size="12" font-weight="500">Implementation Loop</text>
+  <rect x="116" y="318" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="116" y="318" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="193" y="349" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Developer</text>
+  <text x="193" y="371" text-anchor="middle" fill="#6e6e80" font-size="12">Codex workspace-write</text>
+  <rect x="342" y="318" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="342" y="318" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="419" y="349" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="419" y="371" text-anchor="middle" fill="#6e6e80" font-size="12">dev document</text>
+  <rect x="568" y="318" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="568" y="318" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="645" y="349" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Reviewer</text>
+  <text x="645" y="371" text-anchor="middle" fill="#6e6e80" font-size="12">Codex read-only</text>
+  <rect x="794" y="318" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="794" y="318" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="871" y="349" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="871" y="371" text-anchor="middle" fill="#6e6e80" font-size="12">review decision</text>
+  <path d="M 270,347 L 342,347" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="277.0" y="326" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="306" y="339" text-anchor="middle" fill="#6e6e80" font-size="12">dev.md</text>
+  <path d="M 496,347 L 568,347" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="509.0" y="326" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="532" y="339" text-anchor="middle" fill="#6e6e80" font-size="12">diff</text>
+  <path d="M 722,347 L 794,347" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="729.0" y="326" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="758" y="339" text-anchor="middle" fill="#6e6e80" font-size="12">issues</text>
+  <path d="M 1008,155 L 1088,155 L 1088,248 L 193,248 L 193,318" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="617.0" y="227" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="640" y="240" text-anchor="middle" fill="#6e6e80" font-size="12">next</text>
+  <path d="M 948,347 L 1088,347 L 1088,460 L 195,460 L 195,512" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="608.5" y="439" width="65" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="641" y="452" text-anchor="middle" fill="#6e6e80" font-size="12">approve</text>
+  <path d="M 794,376 L 794,408 L 193,408 L 193,376" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
+  <rect x="432.5" y="387" width="121" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="493" y="400" text-anchor="middle" fill="#6e6e80" font-size="12">reject feedback</text>
+  <rect x="54" y="472" width="1092" height="144" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="66" y="492" fill="#6e6e80" font-size="12" font-weight="500">Verification and Submission</text>
+  <rect x="118" y="520" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="118" y="520" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="195" y="551" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Tester</text>
+  <text x="195" y="573" text-anchor="middle" fill="#6e6e80" font-size="12">Codex evidence</text>
+  <rect x="344" y="520" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="344" y="520" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="421" y="551" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="421" y="573" text-anchor="middle" fill="#6e6e80" font-size="12">test blocked?</text>
+  <rect x="570" y="520" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="570" y="520" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="647" y="551" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Committer</text>
+  <text x="647" y="573" text-anchor="middle" fill="#6e6e80" font-size="12">Codex draft-only</text>
+  <rect x="796" y="520" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="796" y="520" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="873" y="551" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Gate</text>
+  <text x="873" y="573" text-anchor="middle" fill="#6e6e80" font-size="12">submission review</text>
+  <rect x="1010" y="520" width="96" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="1010" y="520" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="1058" y="551" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Done</text>
+  <text x="1058" y="573" text-anchor="middle" fill="#6e6e80" font-size="12">completed</text>
+  <path d="M 272,549 L 344,549" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="272.0" y="528" width="72" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="308" y="541" text-anchor="middle" fill="#6e6e80" font-size="12">evidence</text>
+  <path d="M 498,549 L 570,549" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="505.0" y="528" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="534" y="541" text-anchor="middle" fill="#6e6e80" font-size="12">accept</text>
+  <path d="M 724,549 L 796,549" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="734.5" y="528" width="51" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="760" y="541" text-anchor="middle" fill="#6e6e80" font-size="12">draft</text>
+  <path d="M 950,549 L 1010,549" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="951.0" y="528" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="980" y="541" text-anchor="middle" fill="#6e6e80" font-size="12">finish</text>
+  <path d="M 344,578 L 344,638 L 92,638 L 92,347 L 116,347" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
+  <rect x="52" y="676" width="1096" height="108" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="64" y="696" fill="#6e6e80" font-size="12" font-weight="500">State, Artifacts, and Recovery</text>
+  <rect x="104" y="714" width="182" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="104" y="714" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="195" y="745" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">PipelineService</text>
+  <text x="195" y="767" text-anchor="middle" fill="#6e6e80" font-size="12">active controllers</text>
+  <rect x="360" y="714" width="182" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="360" y="714" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="451" y="745" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">MemorySaver</text>
+  <text x="451" y="767" text-anchor="middle" fill="#6e6e80" font-size="12">checkpoint on disk</text>
+  <rect x="618" y="714" width="182" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="618" y="714" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="709" y="745" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">patch-work</text>
+  <text x="709" y="767" text-anchor="middle" fill="#6e6e80" font-size="12">accepted docs + patch</text>
+  <rect x="876" y="714" width="182" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
+  <rect x="876" y="714" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
+  <text x="967" y="745" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">records JSONL</text>
+  <text x="967" y="767" text-anchor="middle" fill="#6e6e80" font-size="12">logs + artifacts</text>
+  <path d="M 286,743 L 360,743" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
+  <rect x="297.5" y="722" width="51" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="323" y="735" text-anchor="middle" fill="#6e6e80" font-size="12">state</text>
+  <path d="M 544,743 L 618,743" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="541.5" y="722" width="79" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="581" y="735" text-anchor="middle" fill="#6e6e80" font-size="12">documents</text>
+  <path d="M 802,743 L 876,743" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+  <rect x="810.0" y="722" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
+  <text x="839" y="735" text-anchor="middle" fill="#6e6e80" font-size="12">append</text>
+  <g transform="translate(62,812)">
+    <line x1="0" y1="8" x2="34" y2="8" stroke="#10a37f" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+    <text x="44" y="12" fill="#6e6e80" font-size="12">同步请求 / 主数据流</text>
+    <line x1="0" y1="30" x2="34" y2="30" stroke="#10a37f" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+    <text x="44" y="34" fill="#6e6e80" font-size="12">异步事件 / 流式回传</text>
+  </g>
+</svg>

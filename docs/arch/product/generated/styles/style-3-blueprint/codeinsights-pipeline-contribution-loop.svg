@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-labelledby="title desc">
+  <title id="title">CodeInsights Pipeline 贡献闭环</title>
+  <desc id="desc">CodeInsights homepage architecture diagram generated from product source materials.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .title { fill: #CAF0F8; font-size: 28px; font-weight: 700; }
+    .subtitle { fill: #90E0EF; font-size: 15px; }
+    .label { fill: #CAF0F8; font-size: 15px; font-weight: 650; }
+    .body { fill: #90E0EF; font-size: 13px; }
+    .tiny { fill: #90E0EF; font-size: 11px; }
+    .chip { fill: #CAF0F8; font-size: 12px; font-weight: 650; }
+  </style>
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.18"/>
+    </filter>
+    
+    <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+      <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#112240" stroke-width="0.5"/>
+    </pattern>
+    
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#48CAE4"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#06D6A0"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#90E0EF"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#48CAE4"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="720" fill="#0A1628"/>
+  <rect width="1280" height="720" fill="url(#grid)" opacity="0.65"/>
+
+  <text x="60" y="54" text-anchor="start" class="title">Pipeline 模式：贡献闭环</text>
+<text x="60" y="84" text-anchor="start" class="subtitle">人类工程经验设计阶段和 gate，AI 在节点内部完成探索、计划、开发、审核支持和验证。</text>
+
+  <rect x="60" y="124" width="1160" height="86" rx="18" fill="#0D1F3C" stroke="#F77F00" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(92 158)">
+    <rect x="0" y="-16" width="150" height="24" rx="12" fill="#F77F00" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#F77F00"/>
+    <text x="24" y="0" class="tiny" fill="#F77F00" font-weight="700">HUMAN JUDGMENT</text>
+  </g>
+  <text x="92" y="188" text-anchor="start" class="label" fill="#F77F00">方向确认、风险判断、继续 / 重跑 / 反馈返工</text>
+  <g transform="translate(828 151)">
+    <rect x="0" y="0" width="84" height="28" rx="14" fill="#063B35" stroke="#06D6A0" stroke-width="1"/>
+    <text x="42" y="18" text-anchor="middle" class="chip" fill="#06D6A0">Approve</text>
+  </g>
+  <g transform="translate(936 151)">
+    <rect x="0" y="0" width="72" height="28" rx="14" fill="#3A250A" stroke="#F77F00" stroke-width="1"/>
+    <text x="36" y="18" text-anchor="middle" class="chip" fill="#F77F00">Rerun</text>
+  </g>
+  <g transform="translate(1028 151)">
+    <rect x="0" y="0" width="92" height="28" rx="14" fill="#0D1F3C" stroke="#00B4D8" stroke-width="1"/>
+    <text x="46" y="18" text-anchor="middle" class="chip" fill="#48CAE4">Feedback</text>
+  </g>
+
+  <rect x="44" y="250" width="1188" height="210" rx="24" fill="#0D1F3C" stroke="#00B4D8" stroke-width="1.2" filter="url(#shadow)"/>
+  <g transform="translate(72 274)">
+    <rect x="0" y="-16" width="186" height="24" rx="12" fill="#06D6A0" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#06D6A0"/>
+    <text x="24" y="0" class="tiny" fill="#06D6A0" font-weight="700">AI-EXECUTED STAGES</text>
+  </g>
+
+  <g>
+    <rect x="60" y="286" width="165" height="128" rx="14" fill="#063B35" stroke="#06D6A0" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+    <circle cx="88" cy="316" r="15" fill="#06D6A0"/>
+    <text x="88" y="321" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="750">1</text>
+    <text x="114" y="314" text-anchor="start" class="label" fill="#06D6A0" font-size="16">Explorer</text>
+    <text x="82" y="352" text-anchor="start" class="body">读上下文</text>
+<text x="82" y="369" text-anchor="start" class="body">发现贡献点</text>
+<text x="82" y="386" text-anchor="start" class="body">报告</text>
+  </g>
+  <g>
+    <rect x="305" y="286" width="165" height="128" rx="14" fill="#063B35" stroke="#06D6A0" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+    <circle cx="333" cy="316" r="15" fill="#06D6A0"/>
+    <text x="333" y="321" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="750">2</text>
+    <text x="359" y="314" text-anchor="start" class="label" fill="#06D6A0" font-size="16">Planner</text>
+    <text x="327" y="352" text-anchor="start" class="body">拆计划</text>
+<text x="327" y="369" text-anchor="start" class="body">列风险</text>
+<text x="327" y="386" text-anchor="start" class="body">定验证</text>
+  </g>
+  <g>
+    <rect x="550" y="286" width="165" height="128" rx="14" fill="#0D1F3C" stroke="#00B4D8" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+    <circle cx="578" cy="316" r="15" fill="#48CAE4"/>
+    <text x="578" y="321" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="750">3</text>
+    <text x="604" y="314" text-anchor="start" class="label" fill="#48CAE4" font-size="16">Developer</text>
+    <text x="572" y="352" text-anchor="start" class="body">改代码</text>
+<text x="572" y="369" text-anchor="start" class="body">补测试</text>
+<text x="572" y="386" text-anchor="start" class="body">写摘要</text>
+  </g>
+  <g>
+    <rect x="795" y="286" width="165" height="128" rx="14" fill="#3A250A" stroke="#F77F00" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+    <circle cx="823" cy="316" r="15" fill="#F77F00"/>
+    <text x="823" y="321" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="750">4</text>
+    <text x="849" y="314" text-anchor="start" class="label" fill="#F77F00" font-size="16">Reviewer</text>
+    <text x="817" y="352" text-anchor="start" class="body">查正确性</text>
+<text x="817" y="369" text-anchor="start" class="body">找回归</text>
+<text x="817" y="386" text-anchor="start" class="body">给反馈</text>
+  </g>
+  <g>
+    <rect x="1040" y="286" width="165" height="128" rx="14" fill="#08263D" stroke="#48CAE4" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+    <circle cx="1068" cy="316" r="15" fill="#90E0EF"/>
+    <text x="1068" y="321" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="750">5</text>
+    <text x="1094" y="314" text-anchor="start" class="label" fill="#90E0EF" font-size="16">Tester</text>
+    <text x="1062" y="352" text-anchor="start" class="body">跑验证</text>
+<text x="1062" y="369" text-anchor="start" class="body">记结果</text>
+<text x="1062" y="386" text-anchor="start" class="body">列阻塞</text>
+  </g>
+
+  <g>
+    <polygon points="265,320 303,350 265,380 227,350" fill="#3A250A" stroke="#F77F00" stroke-width="1.5"/>
+    <text x="265" y="348" text-anchor="middle" fill="#F77F00" font-size="12" font-weight="750">gate</text>
+    <text x="265" y="364" text-anchor="middle" fill="#90E0EF" font-size="10">human</text>
+  </g>
+  <g>
+    <polygon points="510,320 548,350 510,380 472,350" fill="#3A250A" stroke="#F77F00" stroke-width="1.5"/>
+    <text x="510" y="348" text-anchor="middle" fill="#F77F00" font-size="12" font-weight="750">gate</text>
+    <text x="510" y="364" text-anchor="middle" fill="#90E0EF" font-size="10">human</text>
+  </g>
+  <g>
+    <polygon points="755,320 793,350 755,380 717,350" fill="#3A250A" stroke="#F77F00" stroke-width="1.5"/>
+    <text x="755" y="348" text-anchor="middle" fill="#F77F00" font-size="12" font-weight="750">gate</text>
+    <text x="755" y="364" text-anchor="middle" fill="#90E0EF" font-size="10">human</text>
+  </g>
+  <g>
+    <polygon points="1000,320 1038,350 1000,380 962,350" fill="#3A250A" stroke="#F77F00" stroke-width="1.5"/>
+    <text x="1000" y="348" text-anchor="middle" fill="#F77F00" font-size="12" font-weight="750">gate</text>
+    <text x="1000" y="364" text-anchor="middle" fill="#90E0EF" font-size="10">human</text>
+  </g>
+
+  <line x1="225" y1="350" x2="227" y2="350" stroke="#06D6A0" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <line x1="303" y1="350" x2="305" y2="350" stroke="#06D6A0" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <line x1="470" y1="350" x2="472" y2="350" stroke="#06D6A0" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <line x1="548" y1="350" x2="550" y2="350" stroke="#06D6A0" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <line x1="715" y1="350" x2="717" y2="350" stroke="#48CAE4" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <line x1="793" y1="350" x2="795" y2="350" stroke="#48CAE4" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <line x1="960" y1="350" x2="962" y2="350" stroke="#F77F00" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <line x1="1038" y1="350" x2="1040" y2="350" stroke="#90E0EF" stroke-width="2" fill="none" marker-end="url(#arrow-purple)"/>
+
+  <path d="M 881 432 C 825 506, 682 506, 636 432" stroke="#F77F00" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <rect x="672" y="484" width="220" height="36" rx="18" fill="#0D1F3C" stroke="#F77F00" stroke-width="1.4" opacity="1"/>
+  <text x="782" y="507" text-anchor="middle" class="tiny" fill="#F77F00" font-weight="700">feedback / rework</text>
+
+  <path d="M 1205 350 C 1245 350, 1255 538, 1199 548" stroke="#90E0EF" stroke-width="2" fill="none" marker-end="url(#arrow-purple)"/>
+  <rect x="930" y="548" width="290" height="118" rx="18" fill="#0D1F3C" stroke="#48CAE4" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(958 580)">
+    <rect x="0" y="-16" width="87" height="24" rx="12" fill="#90E0EF" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#90E0EF"/>
+    <text x="24" y="0" class="tiny" fill="#90E0EF" font-weight="700">OUTCOME</text>
+  </g>
+  <text x="958" y="617" text-anchor="start" class="label" fill="#90E0EF">提交材料汇总</text>
+  <text x="958" y="642" text-anchor="start" class="body">Patch / PR notes</text>
+<text x="958" y="662" text-anchor="start" class="body">Artifacts / test records</text>
+
+  <rect x="60" y="548" width="820" height="118" rx="18" fill="#0D1F3C" stroke="#00B4D8" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(92 580)">
+    <rect x="0" y="-16" width="96" height="24" rx="12" fill="#48CAE4" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#48CAE4"/>
+    <text x="24" y="0" class="tiny" fill="#48CAE4" font-weight="700">BOUNDARY</text>
+  </g>
+  <text x="92" y="617" text-anchor="start" class="label" fill="#CAF0F8">不是一次性全自动跑完，也不是第六个自动 PR 阶段。</text>
+  <text x="92" y="642" text-anchor="start" class="body">Pipeline 在关键阶段保留人工 gate；Tester 通过后进入材料准备和后续提交动作。</text>
+  
+</svg>

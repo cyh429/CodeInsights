@@ -1,5 +1,5 @@
 <svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">RV-Insights RISC-V Expert Q&amp;A Concept Preview</title>
+  <title id="title">CodeInsights RISC-V Expert Q&amp;A Concept Preview</title>
   <desc id="desc">Concept preview artwork for a future RISC-V Expert Q and A video with a light technology style and red-blue emphasis.</desc>
   <defs>
     <linearGradient id="bg" x1="180" y1="80" x2="1440" y2="820" gradientUnits="userSpaceOnUse">
@@ -96,5 +96,5 @@
   <circle cx="1360" cy="636" r="16" fill="#FFF1EF" stroke="#FFD7D1"/>
 
   <path d="M228 746H1372" stroke="#D8E4F2"/>
-  <text x="228" y="802" fill="#6B7E96" font-family="Arial, Helvetica, sans-serif" font-size="20">RV-Insights preview art for hero or demo placement</text>
+  <text x="228" y="802" fill="#6B7E96" font-family="Arial, Helvetica, sans-serif" font-size="20">CodeInsights preview art for hero or demo placement</text>
 </svg>

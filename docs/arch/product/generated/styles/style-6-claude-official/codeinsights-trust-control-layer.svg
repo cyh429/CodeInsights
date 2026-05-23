@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" role="img" aria-labelledby="title desc">
+  <title id="title">CodeInsights Trust and Control Layer</title>
+  <desc id="desc">CodeInsights homepage architecture diagram generated from product source materials.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif; letter-spacing: 0; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .title { fill: #1A1A1A; font-size: 28px; font-weight: 700; }
+    .subtitle { fill: #6A6A6A; font-size: 15px; }
+    .label { fill: #1A1A1A; font-size: 15px; font-weight: 650; }
+    .body { fill: #6A6A6A; font-size: 13px; }
+    .tiny { fill: #6A6A6A; font-size: 11px; }
+    .chip { fill: #1A1A1A; font-size: 12px; font-weight: 650; }
+  </style>
+  <defs>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#0F172A" flood-opacity="0.12"/>
+    </filter>
+    
+    
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#457B9D"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2F7D6F"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8A5A00"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8C8C8C"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="700" fill="#F8F6F3"/>
+
+  <text x="60" y="54" text-anchor="start" class="title">Trust &amp; Control Layer</text>
+<text x="60" y="84" text-anchor="start" class="subtitle">让 AI 做更多节点内工作，但让工程师保留权限、gate、记录、恢复和验证控制权。</text>
+
+  <rect x="88" y="132" width="300" height="104" rx="18" fill="#A8C5E6" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g>
+    <circle cx="130" cy="184" r="24" fill="#457B9D"/>
+    <circle cx="130" cy="184" r="26" fill="none" stroke="#457B9D" stroke-width="1" opacity="0.35"/>
+    <text x="130" y="188" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="750">AI</text>
+  </g>
+  <text x="176" y="170" text-anchor="start" class="label" fill="#457B9D">AI 执行力</text>
+  <text x="176" y="194" text-anchor="start" class="body">搜索、修改、审查支持、验证</text>
+  <rect x="812" y="132" width="300" height="104" rx="18" fill="#F4E4C1" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g>
+    <circle cx="854" cy="184" r="24" fill="#8A5A00"/>
+    <circle cx="854" cy="184" r="26" fill="none" stroke="#8A5A00" stroke-width="1" opacity="0.35"/>
+    <text x="854" y="188" text-anchor="middle" fill="#FFFFFF" font-size="9" font-weight="750">Human</text>
+  </g>
+  <text x="900" y="170" text-anchor="start" class="label" fill="#8A5A00">人类工程判断</text>
+  <text x="900" y="194" text-anchor="start" class="body">方向、边界、质量和最终决策</text>
+
+  <rect x="428" y="118" width="344" height="138" rx="22" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <g transform="translate(464 154)">
+    <rect x="0" y="-16" width="168" height="24" rx="12" fill="#2F7D6F" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#2F7D6F"/>
+    <text x="24" y="0" class="tiny" fill="#2F7D6F" font-weight="700">CONTROL BOUNDARY</text>
+  </g>
+  <text x="464" y="192" text-anchor="start" class="title" font-size="24">CodeInsights 控制边界</text>
+  <text x="464" y="222" text-anchor="start" class="body">把执行力约束到可审计、可回退、可验证的贡献流程里。</text>
+
+  <path d="M 388 184 C 405 184 410 184 428 184" stroke="#457B9D" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <path d="M 812 184 C 795 184 790 184 772 184" stroke="#8A5A00" stroke-width="2" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M 600 256 C 600 288 600 304 600 326" stroke="#2F7D6F" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+
+  <rect x="52" y="302" width="1096" height="186" rx="28" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.2" filter="url(#shadow)"/>
+  <g transform="translate(84 326)">
+    <rect x="0" y="-16" width="123" height="24" rx="12" fill="#5A5A5A" opacity="0.12"/>
+    <circle cx="12" cy="-4" r="4" fill="#5A5A5A"/>
+    <text x="24" y="0" class="tiny" fill="#5A5A5A" font-weight="700">PROOF LAYER</text>
+  </g>
+  <g>
+        <rect x="70" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="150" cy="372" r="24" fill="#F4E4C1" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="150" y="377" text-anchor="middle" fill="#8A5A00" font-size="14" font-weight="800">1</text>
+        <text x="150" y="416" text-anchor="middle" class="label" fill="#8A5A00" font-size="14">Permission</text>
+        <text x="150" y="438" text-anchor="middle" class="tiny">safe / ask / allow</text>
+      </g>
+<g>
+        <rect x="250" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="330" cy="372" r="24" fill="#F4E4C1" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="330" y="377" text-anchor="middle" fill="#8A5A00" font-size="14" font-weight="800">2</text>
+        <text x="330" y="416" text-anchor="middle" class="label" fill="#8A5A00" font-size="14">Human Gate</text>
+        <text x="330" y="438" text-anchor="middle" class="tiny">approve / rerun</text>
+      </g>
+<g>
+        <rect x="430" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="510" cy="372" r="24" fill="#E8E6E3" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="510" y="377" text-anchor="middle" fill="#5A5A5A" font-size="14" font-weight="800">3</text>
+        <text x="510" y="416" text-anchor="middle" class="label" fill="#5A5A5A" font-size="14">JSONL Records</text>
+        <text x="510" y="438" text-anchor="middle" class="tiny">replayable trace</text>
+      </g>
+<g>
+        <rect x="610" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="690" cy="372" r="24" fill="#E8E6E3" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="690" y="377" text-anchor="middle" fill="#5A5A5A" font-size="14" font-weight="800">4</text>
+        <text x="690" y="416" text-anchor="middle" class="label" fill="#5A5A5A" font-size="14">Artifacts</text>
+        <text x="690" y="438" text-anchor="middle" class="tiny">reports / manifest</text>
+      </g>
+<g>
+        <rect x="790" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="870" cy="372" r="24" fill="#9DD4C7" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="870" y="377" text-anchor="middle" fill="#2F7D6F" font-size="14" font-weight="800">5</text>
+        <text x="870" y="416" text-anchor="middle" class="label" fill="#2F7D6F" font-size="14">Checkpoint</text>
+        <text x="870" y="438" text-anchor="middle" class="tiny">resume state</text>
+      </g>
+<g>
+        <rect x="970" y="338" width="160" height="114" rx="16" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+        <circle cx="1050" cy="372" r="24" fill="#A8C5E6" stroke="#4A4A4A" stroke-width="1.2"/>
+        <text x="1050" y="377" text-anchor="middle" fill="#457B9D" font-size="14" font-weight="800">6</text>
+        <text x="1050" y="416" text-anchor="middle" class="label" fill="#457B9D" font-size="14">Local Workspace</text>
+        <text x="1050" y="438" text-anchor="middle" class="tiny">cwd + MCP + Skills</text>
+      </g>
+  <line x1="230" y1="395" x2="248" y2="395" stroke="#8C8C8C" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
+  <line x1="410" y1="395" x2="428" y2="395" stroke="#8C8C8C" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
+  <line x1="590" y1="395" x2="608" y2="395" stroke="#8C8C8C" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
+  <line x1="770" y1="395" x2="788" y2="395" stroke="#8C8C8C" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
+  <line x1="950" y1="395" x2="968" y2="395" stroke="#8C8C8C" stroke-width="2" fill="none" marker-end="url(#arrow-gray)"/>
+
+  <rect x="100" y="560" width="1000" height="88" rx="20" fill="#FFFDF8" stroke="#4A4A4A" stroke-width="1.4" opacity="1" filter="url(#shadow)"/>
+  <text x="132" y="596" text-anchor="start" class="label" fill="#2F7D6F">结果</text>
+  <text x="132" y="626" text-anchor="start" class="title" font-size="24">可审计 / 可恢复 / 可验证的开源贡献流程</text>
+  <g transform="translate(860 584)">
+    <rect x="0" y="0" width="72" height="28" rx="14" fill="#F4D0C8" stroke="#4A4A4A" stroke-width="1"/>
+    <text x="36" y="18" text-anchor="middle" class="chip" fill="#8F3A32">非全自动</text>
+  </g>
+  <g transform="translate(956 584)">
+    <rect x="0" y="0" width="72" height="28" rx="14" fill="#9DD4C7" stroke="#4A4A4A" stroke-width="1"/>
+    <text x="36" y="18" text-anchor="middle" class="chip" fill="#2F7D6F">工程师控制</text>
+  </g>
+  
+</svg>

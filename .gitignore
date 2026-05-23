@@ -1,3 +1,6 @@
+node_modules/
+tasks/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 server/server.log
@@ -16,7 +19,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/

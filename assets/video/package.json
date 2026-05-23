@@ -1,0 +1,13 @@
+{
+  "name": "codeinsights-intro-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.6.33 preview",
+    "lint": "npx --yes hyperframes@0.6.33 lint",
+    "validate": "npx --yes hyperframes@0.6.33 validate",
+    "inspect": "npx --yes hyperframes@0.6.33 inspect",
+    "snapshot": "npx --yes hyperframes@0.6.33 snapshot --at 1,5.7,9.7,13.7,17.7,19.4",
+    "render": "npx --yes hyperframes@0.6.33 render -o codeinsights-intro-20s.mp4 --fps 30 --quality standard --workers 1"
+  }
+}

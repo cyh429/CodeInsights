@@ -1,8 +1,8 @@
-# RV-Insights Web
+# CodeInsights Web
 
 ## Overview
 
-This directory contains the static bilingual product homepage for `RV-Insights`.
+This directory contains the static bilingual product homepage for `CodeInsights`.
 It is intentionally framework-free for now so the project can ship a polished landing page
 before a full frontend application is implemented.
 
@@ -18,7 +18,7 @@ Then open [http://localhost:8000/](http://localhost:8000/).
 
 ## Public URL
 
-- [https://zcxggmu.github.io/RV-Insights/](https://zcxggmu.github.io/RV-Insights/)
+- [https://zcxggmu.github.io/CodeInsights/](https://zcxggmu.github.io/CodeInsights/)
 
 ## Files
 

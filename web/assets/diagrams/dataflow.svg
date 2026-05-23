@@ -1,5 +1,5 @@
 <svg width="1400" height="500" viewBox="0 0 1400 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="df-title df-desc">
-  <title id="df-title">RV-Insights Cross-Agent Data Flow</title>
+  <title id="df-title">CodeInsights Cross-Agent Data Flow</title>
   <desc id="df-desc">Data contracts flowing between agents: InputContext through ExplorationResult, ExecutionPlan, DevelopmentResult, ReviewVerdict, to TestResult.</desc>
   <defs>
     <linearGradient id="dbg" x1="0" y1="0" x2="1400" y2="500" gradientUnits="userSpaceOnUse">
