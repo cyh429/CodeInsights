@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="./assets/icon/CodeInsights.png" alt="CodeInsights" width="96" />
+
 <h1>CodeInsights</h1>
 
 **[English](./README_en.md)** | **[中文](./README.md)**
