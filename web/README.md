@@ -3,8 +3,12 @@
 ## Overview
 
 This directory contains the static bilingual product homepage for `CodeInsights`.
-It is intentionally framework-free for now so the project can ship a polished landing page
-before a full frontend application is implemented.
+It is intentionally framework-free because GitHub Pages deploys the `web/` folder
+directly without a build step.
+
+The current homepage follows the main README: CodeInsights is presented as a
+local-first AI Agent desktop workbench for auditable Pipeline work, Agent
+runtime sessions, MCP / Skills, and portable local records.
 
 ## Local Preview
 
@@ -23,10 +27,13 @@ Then open [http://localhost:8000/](http://localhost:8000/).
 ## Files
 
 - `index.html`: homepage structure and bilingual copy
-- `styles.css`: visual system, layout, and responsive styling
+- `styles.css`: visual system, responsive layout, focus states, and reveal styling
 - `app.js`: language toggle and reveal interactions
-- `assets/diagrams/`: architecture and workflow SVG diagrams
-- `assets/previews/`: concept preview SVGs for the hero and demo sections
+- `assets/brand/`: deployable logo asset
+- `assets/screenshots/`: resized real Electron screenshots used by the homepage
+- `assets/video/`: intro video, real-run video, and video poster/contact sheets
+- `assets/diagrams-current/`: current architecture diagrams copied from root `assets/imgs/`
+- `tests/`: structure tests for the static homepage
 
 ## Scope
 
@@ -34,11 +41,12 @@ This version includes:
 
 - Static homepage layout
 - Bilingual toggle
-- SVG architecture and preview assets
-- Responsive presentation
+- Real product screenshots and video
+- Current Pipeline, Agent Runtime, IPC, and local-storage diagrams
+- Responsive presentation without a JavaScript framework
 
 This version does not include:
 
-- Live chat or backend integration
-- Real demo video
-- A full Vue application shell
+- Live Electron APIs
+- A backend service
+- A separate web application shell

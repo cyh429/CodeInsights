@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 项目主页重构计划
+
+- [x] 复习 `tasks/lessons.md`、`README.md`、`assets/` 和 `web/` 当前实现，确认首页要从旧 RISC-V / Python / 双 SDK 叙述切换到当前 Electron 桌面工作台。
+- [x] 根据 `ui-ux-pro-max` 规则确定首页信息结构：首屏真实产品信号、三大价值、真实界面、Pipeline v2、Agent Runtime、本地存储、快速开始。
+- [x] 整理 `web/assets/` 可部署素材，复用 README 与 `assets/` 下的品牌、真实截图、架构图和介绍视频，避免 GitHub Pages 缺资源。
+- [x] 重构 `web/index.html` 与 `web/styles.css`，保留静态无框架和双语切换，提升响应式、可访问性、真实素材展示和现代产品页观感。
+- [x] 更新 `web/README.md` 与 `web/tests/test_homepage_structure.py`，同步新的页面范围和断言，避免测试继续绑定旧信息。
+- [x] 运行结构测试、静态资源检查、HTML/CSS 基础验证、diff 空白检查，并用本地静态服务器做页面截图核验。
+- [x] 在本节末尾追加 Review，记录改动、验证结果、视觉核验和残留风险。
+
+## 2026-05-23 项目主页重构 Review
+
+- 已将 `web/` 静态主页从旧 RISC-V / Python / OpenAI Agents SDK 叙述重构为当前 README 对齐的 CodeInsights 首页：本地优先 AI Agent 桌面工作台、Pipeline v2、Agent Runtime、MCP / Skills、本地 JSON / JSONL 存储与 Codex SDK / CLI 边界。
+- 已更新首屏为真实 Pipeline 桌面截图背景，首屏保留下一段露出；新增真实运行录屏、四张真实 Electron 截图、Pipeline / Agent / System / IPC / Local Storage 当前架构图展示。
+- 已整理 `web/assets/`：保留实际引用的品牌 logo、真实截图、两段 MP4、视频 poster 和当前 SVG 架构图；删除旧 `web/assets/diagrams/` 与 `web/assets/previews/` 中过期 RISC-V / Python / OpenAI Agents SDK 素材，并删除未使用 PNG / contact sheet 降低 Pages 体积。
+- 已改进可访问性与响应式：加入 skip link、可见 focus、reduced-motion 处理、锚点滚动偏移、复杂架构图可读摘要、移动端无横向溢出。
+- 已更新 `web/README.md`、`web/tests/test_homepage_structure.py` 和 `.github/workflows/deploy-pages.yml`；测试现在解析 `index.html` 的本地 `href/src/poster` 引用，Pages 上传前会运行主页结构测试。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`；`git diff --check -- web tasks/todo.md .github/workflows/deploy-pages.yml`；旧定位关键词扫描 `web/index.html web/README.md web/assets` 无命中；Playwright 桌面 1440x1000 与移动 390x844 均无横向溢出、首屏露出下一段、图片无加载失败、语言切换正常、导航锚点不被固定 header 遮挡。
+- 视觉核验截图已生成到 `/tmp/codeinsights-homepage-desktop-top.png` 与 `/tmp/codeinsights-homepage-mobile-top.png`；本地预览服务使用 `python3 -m http.server 8765 -d web`。
+
 ## 2026-05-23 最新开发状态同步计划
 
 - [x] 核对当前 Git 状态与最新提交，确认主分支公开文档基线为 `842dc597 merge: 删除 README 首屏辅助视频链接`。

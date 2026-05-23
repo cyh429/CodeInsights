@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="CodeInsights is a multi-agent RISC-V open-source contribution platform powered by dual SDK architecture (Claude Agent SDK + OpenAI Agents SDK) with human-in-the-loop review gates."
+      content="CodeInsights is a local-first AI Agent desktop workbench for auditable, replayable, and verifiable open-source contribution workflows."
     />
-    <title>CodeInsights | Multi-Agent RISC-V Contribution Platform</title>
+    <title>CodeInsights | Local-first AI Agent Desktop Workbench</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,407 +17,576 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body data-lang="zh">
+    <a class="skip-link" href="#main">
+      <span class="lang lang-zh">跳到主要内容</span>
+      <span class="lang lang-en">Skip to content</span>
+    </a>
+
     <header class="site-header">
-      <a class="site-header__brand" href="#hero">
-        <img src="./assets/brand/logo.webp" alt="CodeInsights logo" />
+      <a class="site-header__brand" href="#hero" aria-label="CodeInsights home">
+        <img src="./assets/brand/logo.webp" alt="" width="42" height="42" />
         <span>CodeInsights</span>
       </a>
-      <nav class="site-header__nav" aria-label="Primary">
-        <a href="#proof">
-          <span class="lang lang-zh">优势</span>
-          <span class="lang lang-en">Value</span>
-        </a>
-        <a href="#architecture">
-          <span class="lang lang-zh">架构</span>
-          <span class="lang lang-en">Architecture</span>
+      <nav class="site-header__nav" aria-label="Primary navigation">
+        <a href="#showcase">
+          <span class="lang lang-zh">界面</span>
+          <span class="lang lang-en">Product</span>
         </a>
         <a href="#pipeline">
-          <span class="lang lang-zh">流水线</span>
+          <span class="lang lang-zh">Pipeline</span>
           <span class="lang lang-en">Pipeline</span>
         </a>
-        <a href="#sdk-hybrid">
-          <span class="lang lang-zh">双 SDK</span>
-          <span class="lang lang-en">Dual SDK</span>
+        <a href="#agent-runtime">
+          <span class="lang lang-zh">Agent</span>
+          <span class="lang lang-en">Agent</span>
         </a>
-        <a href="#capabilities">
-          <span class="lang lang-zh">能力</span>
-          <span class="lang lang-en">Capabilities</span>
+        <a href="#local-first">
+          <span class="lang lang-zh">本地优先</span>
+          <span class="lang lang-en">Local-first</span>
         </a>
         <a href="#quickstart">Quick Start</a>
       </nav>
       <button id="lang-toggle" class="lang-toggle" data-lang-toggle="header" type="button" aria-label="Toggle language">EN</button>
     </header>
-    <main>
-      <section id="hero" class="hero">
-        <div class="hero__copy" data-reveal>
-          <img class="hero__logo" src="./assets/brand/logo.webp" alt="CodeInsights logo" />
+
+    <main id="main">
+      <section id="hero" class="hero" aria-labelledby="hero-title">
+        <img
+          class="hero__backdrop"
+          src="./assets/screenshots/pipeline-dashboard.jpg"
+          alt=""
+          width="1600"
+          height="966"
+          fetchpriority="high"
+        />
+        <div class="hero__shade" aria-hidden="true"></div>
+        <div class="hero__inner" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">面向 RISC-V 开源贡献的多 Agent 平台</span>
-            <span class="lang lang-en">A Multi-Agent Platform for RISC-V Open-Source Contributions</span>
+            <span class="lang lang-zh">Pipeline | Agent · 本地优先 · 可审计 · 可回放</span>
+            <span class="lang lang-en">Pipeline | Agent · Local-first · Auditable · Replayable</span>
           </p>
-          <h1>
-            <span class="lang lang-zh">用 <span class="accent">AI Agent</span> 驱动 RISC-V 开源贡献</span>
-            <span class="lang lang-en"><span class="accent">AI Agent</span>-Driven RISC-V Open-Source Contributions</span>
-          </h1>
+          <h1 id="hero-title">CodeInsights</h1>
           <p class="hero__lead">
-            <span class="lang lang-zh">
-              编排五个专业化 Agent 节点——探索、规划、开发、审核、测试——形成从"发现贡献机会"到"输出可验证补丁"的完整闭环。采用 Claude Agent SDK + OpenAI Agents SDK 双架构，每阶段设有人工审核门禁。
-            </span>
-            <span class="lang lang-en">
-              Orchestrates five specialized agents — Explorer, Planner, Developer, Reviewer, Tester — forming a complete pipeline from discovering contribution opportunities to producing verified patches. Powered by Claude Agent SDK + OpenAI Agents SDK with human review gates at every stage.
-            </span>
+            <span class="lang lang-zh">本地优先的 AI Agent 桌面工作台，把开源软件贡献从一次性聊天变成有阶段、有证据、有回放的工程流程。</span>
+            <span class="lang lang-en">A local-first AI Agent desktop workbench that turns open-source contribution from one-off chat into staged, evidenced, replayable engineering work.</span>
           </p>
           <div class="hero__actions">
-            <a class="button button-primary" href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">
-              View on GitHub
-            </a>
-            <a class="button button-secondary" href="#architecture">
-              <span class="lang lang-zh">查看架构</span>
-              <span class="lang lang-en">View Architecture</span>
+            <a class="button button-primary" href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
+            <a class="button button-secondary" href="#showcase">
+              <span class="lang lang-zh">查看真实界面</span>
+              <span class="lang lang-en">View Product</span>
             </a>
             <a class="button button-secondary" href="#quickstart">Quick Start</a>
           </div>
-          <ul class="hero__signals">
-            <li>5-Agent Pipeline</li>
-            <li>Human-in-the-Loop</li>
-            <li>Dual SDK Architecture</li>
-            <li>Claude + OpenAI</li>
-            <li>RISC-V Domain RAG</li>
-          </ul>
+          <dl class="hero__metrics" aria-label="CodeInsights highlights">
+            <div>
+              <dt>6</dt>
+              <dd>
+                <span class="lang lang-zh">Pipeline 阶段</span>
+                <span class="lang lang-en">Pipeline stages</span>
+              </dd>
+            </div>
+            <div>
+              <dt>JSONL</dt>
+              <dd>
+                <span class="lang lang-zh">本地事件回放</span>
+                <span class="lang lang-en">Local event replay</span>
+              </dd>
+            </div>
+            <div>
+              <dt>MCP</dt>
+              <dd>
+                <span class="lang lang-zh">工作区能力扩展</span>
+                <span class="lang lang-en">Workspace extensions</span>
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 
-      <section id="proof" class="section-block section-block--tight">
+      <section id="proof" class="section-block section-block--compact">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">核心优势</span>
-            <span class="lang lang-en">Core advantages</span>
+            <span class="lang lang-zh">产品定位</span>
+            <span class="lang lang-en">Product focus</span>
           </p>
           <h2>
-            <span class="lang lang-zh">为什么选择 CodeInsights</span>
-            <span class="lang lang-en">Why CodeInsights</span>
+            <span class="lang lang-zh">不是另一个聊天框，是长期贡献的流程层</span>
+            <span class="lang lang-en">Not another chat box, but a workflow layer for long-running contribution</span>
           </h2>
         </div>
-        <div class="proof-strip" data-reveal>
-          <span class="proof-chip">5-Agent Pipeline</span>
-          <span class="proof-chip">Human-in-the-Loop</span>
-          <span class="proof-chip">Dual SDK (Claude + OpenAI)</span>
-          <span class="proof-chip">Evidence-First</span>
-          <span class="proof-chip">RISC-V Domain RAG</span>
-          <span class="proof-chip">Auditable Workflow</span>
-        </div>
-        <div class="card-grid card-grid--four">
-          <article class="info-card" data-reveal>
-            <p class="info-card__index">01</p>
+        <div class="value-grid">
+          <article class="value-card" data-reveal>
+            <p class="value-card__label">Pipeline</p>
             <h3>
-              <span class="lang lang-zh">多 Agent 流水线</span>
-              <span class="lang lang-en">Multi-Agent Pipeline</span>
+              <span class="lang lang-zh">可审计流水线</span>
+              <span class="lang lang-en">Auditable pipeline</span>
             </h3>
             <p>
-              <span class="lang lang-zh">五个专业化 Agent（探索、规划、开发、审核、测试）形成完整的贡献闭环，从发现机会到输出可验证补丁。</span>
-              <span class="lang lang-en">Five specialized agents (Explorer, Planner, Developer, Reviewer, Tester) form a complete contribution pipeline from opportunity discovery to verified patches.</span>
+              <span class="lang lang-zh">Explorer、Planner、Developer、Reviewer、Tester、Committer 六阶段协作，每个关键节点都保留产物、人工 gate 和验证证据。</span>
+              <span class="lang lang-en">Explorer, Planner, Developer, Reviewer, Tester, and Committer collaborate with artifacts, human gates, and verification evidence at critical points.</span>
             </p>
           </article>
-          <article class="info-card" data-reveal>
-            <p class="info-card__index">02</p>
+          <article class="value-card" data-reveal>
+            <p class="value-card__label">Local-first</p>
             <h3>
-              <span class="lang lang-zh">人工审核门禁</span>
-              <span class="lang lang-en">Human Review Gates</span>
+              <span class="lang lang-zh">默认落在本机</span>
+              <span class="lang lang-en">Stored on your machine</span>
             </h3>
             <p>
-              <span class="lang lang-zh">每个阶段完成后必须暂停等待人工审批，高风险操作绝不自动执行。支持驳回、回流和修改意见。</span>
-              <span class="lang lang-en">Every phase pauses for human approval before proceeding. High-risk operations are never automated. Supports rejection, rollback, and modification feedback.</span>
+              <span class="lang lang-zh">渠道配置、会话索引、JSONL 事件、checkpoint、artifacts 和工作区文件优先写入本地文件系统，不引入本地数据库。</span>
+              <span class="lang lang-en">Channel config, session indexes, JSONL events, checkpoints, artifacts, and workspace files are written to the local filesystem without a local database.</span>
             </p>
           </article>
-          <article class="info-card" data-reveal>
-            <p class="info-card__index">03</p>
+          <article class="value-card" data-reveal>
+            <p class="value-card__label">Runtime</p>
             <h3>
-              <span class="lang lang-zh">双 SDK 混合架构</span>
-              <span class="lang lang-en">Dual SDK Hybrid</span>
+              <span class="lang lang-zh">复用成熟运行时</span>
+              <span class="lang lang-en">Built on mature runtimes</span>
             </h3>
             <p>
-              <span class="lang lang-zh">Claude Agent SDK 负责代码操作（开发/测试），OpenAI Agents SDK 负责编排与审核。各取所长，不是折中。</span>
-              <span class="lang lang-en">Claude Agent SDK handles code operations (dev/test), OpenAI Agents SDK handles orchestration and review. Best-of-both, not a compromise.</span>
-            </p>
-          </article>
-          <article class="info-card" data-reveal>
-            <p class="info-card__index">04</p>
-            <h3>
-              <span class="lang lang-zh">领域知识增强</span>
-              <span class="lang lang-en">Domain Knowledge</span>
-            </h3>
-            <p>
-              <span class="lang lang-zh">RISC-V ISA 规范、内核文档、邮件列表归档通过 RAG 知识库增强 Agent 的领域理解能力。</span>
-              <span class="lang lang-en">RISC-V ISA specs, kernel docs, and mailing list archives enhance agent domain understanding through a RAG knowledge base.</span>
+              <span class="lang lang-zh">Agent 模式接入 Claude Agent SDK 兼容链路，Pipeline 的开发、审查、测试和提交材料阶段可走 Codex SDK / CLI。</span>
+              <span class="lang lang-en">Agent mode uses the Claude Agent SDK compatible path, while Pipeline development, review, testing, and submission drafting can run through Codex SDK / CLI.</span>
             </p>
           </article>
         </div>
       </section>
 
-      <section id="architecture" class="section-block">
+      <section id="showcase" class="section-block">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">四层系统架构</span>
-            <span class="lang lang-en">Four-layer system architecture</span>
+            <span class="lang lang-zh">真实桌面界面</span>
+            <span class="lang lang-en">Real desktop surface</span>
           </p>
           <h2>
-            <span class="lang lang-zh">用户交互、编排、Agent 能力、工具基础设施</span>
-            <span class="lang lang-en">User interface, orchestration, agent capabilities, and tools infrastructure</span>
+            <span class="lang lang-zh">公开主页直接展示正在构建的工作台</span>
+            <span class="lang lang-en">The homepage shows the workbench that is actually being built</span>
           </h2>
           <p class="section-copy">
-            <span class="lang lang-zh">编排层通过 Python asyncio 状态机驱动五阶段流水线，Agent 能力层分为 OpenAI Agents SDK（探索/规划/审核）和 Claude Agent SDK（开发/测试）两侧。</span>
-            <span class="lang lang-en">The orchestration layer drives a five-phase pipeline via Python asyncio state machine. The agent layer splits into OpenAI Agents SDK (explore/plan/review) and Claude Agent SDK (develop/test).</span>
+            <span class="lang lang-zh">以下素材来自真实 Electron 开发窗口，采集时使用隔离配置目录，避免读取本机已有渠道、会话和凭证。</span>
+            <span class="lang lang-en">These captures come from a real Electron development window using an isolated config directory to avoid local channels, sessions, and credentials.</span>
           </p>
         </div>
-        <article class="diagram-card" data-reveal>
-          <img src="./assets/diagrams/architecture-v2.svg" alt="CodeInsights v2.2 system architecture diagram" />
-        </article>
+
+        <div class="media-feature" data-reveal>
+          <video
+            src="./assets/video/codeinsights-real-run-overview.mp4"
+            poster="./assets/video/real-run-contact-sheet.jpg"
+            controls
+            muted
+            loop
+            preload="metadata"
+            aria-label="CodeInsights real desktop overview"
+          ></video>
+          <div class="media-feature__copy">
+            <p class="eyebrow">
+              <span class="lang lang-zh">6 秒真实录屏</span>
+              <span class="lang lang-en">6-second real run</span>
+            </p>
+            <h3>
+              <span class="lang lang-zh">Pipeline、Agent、设置与回到 Pipeline 的实际桌面流</span>
+              <span class="lang lang-en">A real desktop pass through Pipeline, Agent, settings, and back to Pipeline</span>
+            </h3>
+            <p>
+              <span class="lang lang-zh">首页首屏使用真实 Pipeline 截图建立产品信号，这段录屏提供更完整的界面节奏。</span>
+              <span class="lang lang-en">The hero uses a real Pipeline screenshot for product signal; this video shows the broader interface rhythm.</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="screenshot-grid">
+          <figure class="screenshot-card" data-reveal>
+            <img src="./assets/screenshots/pipeline-dashboard.jpg" alt="CodeInsights Pipeline desktop workbench" width="1600" height="966" loading="lazy" />
+            <figcaption>
+              <strong>
+                <span class="lang lang-zh">Pipeline 工作台</span>
+                <span class="lang lang-en">Pipeline workbench</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">六阶段路线、人工 gate、产物和运行日志集中展示。</span>
+                <span class="lang lang-en">Six-stage route, human gates, artifacts, and execution logs in one surface.</span>
+              </span>
+            </figcaption>
+          </figure>
+          <figure class="screenshot-card" data-reveal>
+            <img src="./assets/screenshots/agent-workbench.jpg" alt="CodeInsights Agent workspace" width="1600" height="966" loading="lazy" />
+            <figcaption>
+              <strong>
+                <span class="lang lang-zh">Agent 工作区</span>
+                <span class="lang lang-en">Agent workspace</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">会话、命令入口、资源面板和工作区文件保持在同一流程中。</span>
+                <span class="lang lang-en">Sessions, command entry, resource panel, and workspace files stay in the same flow.</span>
+              </span>
+            </figcaption>
+          </figure>
+          <figure class="screenshot-card" data-reveal>
+            <img src="./assets/screenshots/settings-overview.jpg" alt="CodeInsights model and Codex settings" width="1600" height="966" loading="lazy" />
+            <figcaption>
+              <strong>
+                <span class="lang lang-zh">模型配置</span>
+                <span class="lang lang-en">Model configuration</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">多 Provider 渠道、Agent 供应商和 Pipeline Codex 认证来源集中配置。</span>
+                <span class="lang lang-en">Provider channels, Agent vendors, and Pipeline Codex auth sources are configured together.</span>
+              </span>
+            </figcaption>
+          </figure>
+          <figure class="screenshot-card" data-reveal>
+            <img src="./assets/screenshots/agent-settings.jpg" alt="CodeInsights Agent MCP and Skills settings" width="1600" height="966" loading="lazy" />
+            <figcaption>
+              <strong>
+                <span class="lang lang-zh">MCP / Skills</span>
+                <span class="lang lang-en">MCP / Skills</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">工作区隔离的 MCP Server、Skills 和内置工具配置。</span>
+                <span class="lang lang-en">Workspace-scoped MCP servers, Skills, and built-in tool settings.</span>
+              </span>
+            </figcaption>
+          </figure>
+        </div>
       </section>
 
-      <section id="pipeline" class="section-block section-block--alt">
+      <section id="pipeline" class="section-block section-block--band">
         <div class="section-block__header" data-reveal>
-          <p class="eyebrow">
-            <span class="lang lang-zh">五阶段 Agent 流水线</span>
-            <span class="lang lang-en">Five-stage agent pipeline</span>
-          </p>
+          <p class="eyebrow">Pipeline v2</p>
           <h2>
-            <span class="lang lang-zh">从发现贡献机会到输出可验证补丁</span>
-            <span class="lang lang-en">From discovering opportunities to producing verified patches</span>
+            <span class="lang lang-zh">把贡献任务拆成可恢复、可审核、可验证的阶段</span>
+            <span class="lang lang-en">Split contribution work into recoverable, reviewable, verifiable stages</span>
           </h2>
         </div>
-        <div class="workflow-layout">
-          <article class="diagram-card" data-reveal>
-            <img src="./assets/diagrams/pipeline.svg" alt="CodeInsights 5-agent pipeline diagram" />
-            <img class="pipeline-detail" src="./assets/previews/pipeline-detail.jpg" alt="Pipeline detail view" />
-          </article>
-          <div class="workflow-notes" data-reveal>
-            <article class="note-card">
-              <h3>Explorer + Planner</h3>
+        <div class="split-layout">
+          <figure class="diagram-panel" data-reveal aria-describedby="pipeline-flow-summary">
+            <img
+              src="./assets/diagrams-current/codeinsights-pipeline-langgraph-flow.svg"
+              alt="Pipeline v2 overview: Explorer and Planner lead into Codex-backed Developer, Reviewer, Tester, and Committer stages with human review gates."
+              width="2400"
+              height="1720"
+              loading="lazy"
+            />
+            <figcaption id="pipeline-flow-summary" class="sr-only">
+              Pipeline v2 starts with Explorer and Planner, pauses for human review, then routes implementation, review, testing, and submission drafting through Codex-backed stages. Rejection and blocked-test paths return to earlier stages instead of silently continuing.
+            </figcaption>
+          </figure>
+          <div class="stage-list" data-reveal>
+            <article>
+              <span>01</span>
+              <h3>Explorer</h3>
               <p>
-                <span class="lang lang-zh">探索 Agent 通过 Handoff 编排子 Agent（邮件列表爬取、代码分析、可行性验证），规划 Agent 输出结构化开发方案和测试方案。</span>
-                <span class="lang lang-en">Explorer orchestrates sub-agents via Handoff (mail scanning, code analysis, feasibility check). Planner outputs structured dev and test plans.</span>
+                <span class="lang lang-zh">阅读目标与仓库上下文，发现候选贡献任务。</span>
+                <span class="lang lang-en">Reads the goal and repository context to discover candidate contribution tasks.</span>
               </p>
             </article>
-            <article class="note-card">
-              <h3>Developer (Claude Code)</h3>
+            <article>
+              <span>02</span>
+              <h3>Planner</h3>
               <p>
-                <span class="lang lang-zh">使用 Claude Opus 4.6 的内置工具集（Read/Write/Edit/Bash/Grep）进行代码开发，通过 can_use_tool 回调实现细粒度操作审批。</span>
-                <span class="lang lang-en">Uses Claude Opus 4.6 built-in tools (Read/Write/Edit/Bash/Grep) for code development, with fine-grained operation approval via can_use_tool callback.</span>
+                <span class="lang lang-zh">输出计划、风险、验证路径和可审查文档。</span>
+                <span class="lang lang-en">Produces plans, risks, verification paths, and reviewable documents.</span>
               </p>
             </article>
-            <article class="note-card">
-              <h3>Reviewer (Codex)</h3>
+            <article>
+              <span>03</span>
+              <h3>Developer</h3>
               <p>
-                <span class="lang lang-zh">审核 Agent 通过 Handoff 分发给安全、正确性、风格三个专业审核子 Agent，汇总后做出通过/驳回判定。</span>
-                <span class="lang lang-en">Reviewer distributes via Handoff to security, correctness, and style sub-agents, then aggregates findings into an approve/reject verdict.</span>
+                <span class="lang lang-zh">通过 Codex SDK / CLI 在工作区中实现修改并记录开发证据。</span>
+                <span class="lang lang-en">Uses Codex SDK / CLI to implement changes in the workspace and record development evidence.</span>
               </p>
             </article>
-            <article class="note-card">
-              <h3>Tester (QEMU)</h3>
+            <article>
+              <span>04</span>
+              <h3>Reviewer</h3>
               <p>
-                <span class="lang lang-zh">测试 Agent 在沙箱中搭建 QEMU RISC-V 仿真环境，执行交叉编译、启动测试和集成测试。</span>
-                <span class="lang lang-en">Tester sets up QEMU RISC-V emulation in a sandbox, running cross-compilation, boot tests, and integration tests.</span>
+                <span class="lang lang-zh">只读审查 diff，聚焦正确性、回归、安全和测试缺口。</span>
+                <span class="lang lang-en">Reviews diffs read-only, focusing on correctness, regressions, security, and test gaps.</span>
+              </p>
+            </article>
+            <article>
+              <span>05</span>
+              <h3>Tester</h3>
+              <p>
+                <span class="lang lang-zh">运行验证命令，收集测试证据和 patch-set 摘要。</span>
+                <span class="lang lang-en">Runs verification commands and collects test evidence plus patch-set summaries.</span>
+              </p>
+            </article>
+            <article>
+              <span>06</span>
+              <h3>Committer</h3>
+              <p>
+                <span class="lang lang-zh">生成提交信息、PR 标题和正文草稿，等待最终确认。</span>
+                <span class="lang lang-en">Drafts commit messages, PR titles, and PR bodies for final confirmation.</span>
               </p>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="sdk-hybrid" class="section-block">
+      <section id="agent-runtime" class="section-block">
         <div class="section-block__header" data-reveal>
-          <p class="eyebrow">
-            <span class="lang lang-zh">双 SDK 混合架构</span>
-            <span class="lang lang-en">Dual SDK hybrid architecture</span>
-          </p>
+          <p class="eyebrow">Agent Runtime</p>
           <h2>
-            <span class="lang lang-zh">Claude 负责代码操作，OpenAI 负责编排与审核</span>
-            <span class="lang lang-en">Claude for code operations, OpenAI for orchestration and review</span>
-          </h2>
-          <p class="section-copy">
-            <span class="lang lang-zh">需要操作文件系统和执行代码的 Agent 用 Claude Agent SDK，纯推理和结构化决策的 Agent 用 OpenAI Agents SDK。这不是折中，而是各取所长。</span>
-            <span class="lang lang-en">Agents that need file system access and code execution use Claude Agent SDK. Pure reasoning and structured decision agents use OpenAI Agents SDK. Best-of-both, not a compromise.</span>
-          </p>
-        </div>
-        <article class="diagram-card" data-reveal>
-          <img src="./assets/diagrams/sdk-hybrid.svg" alt="Dual SDK hybrid architecture diagram" />
-        </article>
-        <div class="card-grid card-grid--two" data-reveal>
-          <article class="info-card info-card--blue">
-            <h3>OpenAI Agents SDK</h3>
-            <p>
-              <span class="lang lang-zh">库原生模型，Python 进程内直接调用 API。Handoff 编排多 Agent 协作，Guardrails 校验输入输出，内置 Tracing 追踪系统。适合信息检索、结构化分析、多维度审查。</span>
-              <span class="lang lang-en">Library-native model, direct API calls within Python process. Handoff for multi-agent orchestration, Guardrails for I/O validation, built-in Tracing. Ideal for information retrieval, structured analysis, and multi-dimensional review.</span>
-            </p>
-          </article>
-          <article class="info-card info-card--red">
-            <h3>Claude Agent SDK</h3>
-            <p>
-              <span class="lang lang-zh">子进程模型，通过 stdin/stdout JSON 协议与 Claude Code CLI 通信。内置完整工具集（Read/Write/Edit/Bash/Grep/Glob），MCP 原生支持，沙箱隔离。适合文件操作、代码生成、终端执行。</span>
-              <span class="lang lang-en">Subprocess model, communicating with Claude Code CLI via stdin/stdout JSON. Complete built-in toolset (Read/Write/Edit/Bash/Grep/Glob), native MCP support, sandbox isolation. Ideal for file operations, code generation, and terminal execution.</span>
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section id="capabilities" class="section-block section-block--alt">
-        <div class="section-block__header" data-reveal>
-          <p class="eyebrow">
-            <span class="lang lang-zh">能力拆解</span>
-            <span class="lang lang-en">Capability map</span>
-          </p>
-          <h2>
-            <span class="lang lang-zh">平台的六大核心能力</span>
-            <span class="lang lang-en">Six core platform capabilities</span>
+            <span class="lang lang-zh">通用自主执行入口，围绕权限、工作区和事件流设计</span>
+            <span class="lang lang-en">A general autonomous execution entry designed around permissions, workspaces, and event streams</span>
           </h2>
         </div>
-        <div class="card-grid card-grid--three">
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">邮件列表监控</span><span class="lang lang-en">Mailing List Monitoring</span></h3>
-            <p><span class="lang lang-zh">自动扫描 linux-riscv、qemu-devel 等邮件列表，识别未解决的 bug 报告、功能请求和架构适配讨论。</span><span class="lang lang-en">Automatically scans linux-riscv, qemu-devel mailing lists to identify unresolved bugs, feature requests, and architecture adaptation discussions.</span></p>
-          </article>
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">代码库分析</span><span class="lang lang-en">Codebase Analysis</span></h3>
-            <p><span class="lang lang-zh">分析 RISC-V 架构代码中的 TODO/FIXME 注释、与 ARM/x86 的实现差距、缺失的测试覆盖和编译警告。</span><span class="lang lang-en">Analyzes RISC-V architecture code for TODO/FIXME comments, gaps vs ARM/x86 implementations, missing test coverage, and compiler warnings.</span></p>
-          </article>
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">自动化开发</span><span class="lang lang-en">Automated Development</span></h3>
-            <p><span class="lang lang-zh">Claude Code 的内置工具集提供完整的代码操作能力——文件读写、代码编辑、终端执行、Git 操作一体化。</span><span class="lang lang-en">Claude Code's built-in toolset provides complete code operation capabilities — file I/O, code editing, terminal execution, and Git operations in one.</span></p>
-          </article>
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">多维度审核</span><span class="lang lang-en">Multi-Dimensional Review</span></h3>
-            <p><span class="lang lang-zh">安全审查（缓冲区溢出、权限提升）、正确性审查（ISA 规范符合性）、风格审查（编码规范）三维并行。</span><span class="lang lang-en">Security review (buffer overflow, privilege escalation), correctness review (ISA compliance), and style review (coding standards) in parallel.</span></p>
-          </article>
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">QEMU 交叉验证</span><span class="lang lang-en">QEMU Cross-Verification</span></h3>
-            <p><span class="lang lang-zh">在沙箱中搭建 QEMU RISC-V 仿真环境，执行交叉编译验证、启动测试和集成测试，确保补丁可靠。</span><span class="lang lang-en">Sets up QEMU RISC-V emulation in a sandbox for cross-compilation verification, boot tests, and integration tests to ensure patch reliability.</span></p>
-          </article>
-          <article class="capability-card" data-reveal>
-            <h3><span class="lang lang-zh">知识库检索</span><span class="lang lang-en">Knowledge Base Retrieval</span></h3>
-            <p><span class="lang lang-zh">RISC-V ISA 规范、内核文档、邮件列表归档通过 RAG 管道（Chroma/Milvus 向量库）增强 Agent 理解。</span><span class="lang lang-en">RISC-V ISA specs, kernel docs, and mailing list archives enhance agent understanding through a RAG pipeline (Chroma/Milvus vector stores).</span></p>
-          </article>
+        <div class="split-layout split-layout--reverse">
+          <div class="feature-stack" data-reveal>
+            <article class="feature-row">
+              <h3>
+                <span class="lang lang-zh">全局监听，不丢后台事件</span>
+                <span class="lang lang-en">Global listeners preserve background events</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">Agent IPC 监听器挂在 Renderer 顶层，页面切换时流式输出、权限请求和 AskUser 仍会进入 Jotai 状态。</span>
+                <span class="lang lang-en">Agent IPC listeners mount at the renderer root, so streams, permission requests, and AskUser prompts still enter Jotai state across view changes.</span>
+              </p>
+            </article>
+            <article class="feature-row">
+              <h3>
+                <span class="lang lang-zh">工作区隔离的 MCP / Skills</span>
+                <span class="lang lang-en">Workspace-scoped MCP / Skills</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">每个工作区有独立 MCP 配置、Skills、workspace files 和 session cwd，适合长期任务与可审计自动化。</span>
+                <span class="lang lang-en">Each workspace has isolated MCP config, Skills, workspace files, and session cwd for long-running auditable automation.</span>
+              </p>
+            </article>
+            <article class="feature-row">
+              <h3>
+                <span class="lang lang-zh">Agent 兼容渠道边界清晰</span>
+                <span class="lang lang-en">Clear Agent-compatible provider boundary</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">Agent 模式当前面向 Anthropic Messages 兼容渠道：Anthropic、DeepSeek、Kimi API 和 Kimi Coding。</span>
+                <span class="lang lang-en">Agent mode targets Anthropic Messages compatible providers: Anthropic, DeepSeek, Kimi API, and Kimi Coding.</span>
+              </p>
+            </article>
+          </div>
+          <figure class="diagram-panel" data-reveal aria-describedby="agent-runtime-flow-summary">
+            <img
+              src="./assets/diagrams-current/codeinsights-agent-runtime-flow.svg"
+              alt="Agent Runtime overview: Renderer, preload, main IPC services, Agent runner, Claude Agent SDK compatible stream, JSONL persistence, and Jotai state."
+              width="2400"
+              height="1520"
+              loading="lazy"
+            />
+            <figcaption id="agent-runtime-flow-summary" class="sr-only">
+              Agent Runtime requests move from the Renderer through the preload bridge into main-process IPC handlers, Agent service, and runtime runner. Streamed SDK events are persisted as JSONL and reflected back into renderer state through global listeners.
+            </figcaption>
+          </figure>
         </div>
       </section>
 
-      <section id="comparison" class="section-block">
+      <section id="local-first" class="section-block section-block--band">
         <div class="section-block__header" data-reveal>
-          <p class="eyebrow"><span class="lang lang-zh">对比分析</span><span class="lang lang-en">Comparison</span></p>
-          <h2><span class="lang lang-zh">与现有工具的对比</span><span class="lang lang-en">How CodeInsights compares</span></h2>
+          <p class="eyebrow">
+            <span class="lang lang-zh">本地数据与架构</span>
+            <span class="lang lang-en">Local data and architecture</span>
+          </p>
+          <h2>
+            <span class="lang lang-zh">JSON 配置、JSONL 事件、checkpoint 与 artifacts 可迁移可审计</span>
+            <span class="lang lang-en">JSON config, JSONL events, checkpoints, and artifacts stay portable and inspectable</span>
+          </h2>
         </div>
-        <div class="comparison-table-wrap" data-reveal>
-          <table class="comparison-table">
-            <thead>
-              <tr>
-                <th><span class="lang lang-zh">维度</span><span class="lang lang-en">Dimension</span></th>
-                <th>SWE-Agent</th><th>Aider</th><th>OpenDevin</th>
-                <th class="comparison-table__highlight">CodeInsights</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><span class="lang lang-zh">定位</span><span class="lang lang-en">Focus</span></td>
-                <td><span class="lang lang-zh">通用 SWE</span><span class="lang lang-en">General SWE</span></td>
-                <td><span class="lang lang-zh">结对编程</span><span class="lang lang-en">Pair programming</span></td>
-                <td><span class="lang lang-zh">通用 AI 开发</span><span class="lang lang-en">General AI dev</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">RISC-V 领域贡献</span><span class="lang lang-en">RISC-V domain</span></td>
-              </tr>
-              <tr>
-                <td>Agent</td>
-                <td><span class="lang lang-zh">单 Agent</span><span class="lang lang-en">Single</span></td>
-                <td><span class="lang lang-zh">单 Agent</span><span class="lang lang-en">Single</span></td>
-                <td><span class="lang lang-zh">多 Agent</span><span class="lang lang-en">Multi</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">5 Agent + 人工门禁</span><span class="lang lang-en">5 agents + human gates</span></td>
-              </tr>
-              <tr>
-                <td><span class="lang lang-zh">模型</span><span class="lang lang-en">Models</span></td>
-                <td><span class="lang lang-zh">单模型</span><span class="lang lang-en">Single</span></td>
-                <td><span class="lang lang-zh">单模型</span><span class="lang lang-en">Single</span></td>
-                <td><span class="lang lang-zh">单模型</span><span class="lang lang-en">Single</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">双 SDK 混合</span><span class="lang lang-en">Dual SDK hybrid</span></td>
-              </tr>
-              <tr>
-                <td><span class="lang lang-zh">人工介入</span><span class="lang lang-en">Human review</span></td>
-                <td><span class="lang lang-zh">无</span><span class="lang lang-en">None</span></td>
-                <td><span class="lang lang-zh">实时交互</span><span class="lang lang-en">Real-time</span></td>
-                <td><span class="lang lang-zh">有限</span><span class="lang lang-en">Limited</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">每阶段强制审核</span><span class="lang lang-en">Mandatory per-phase</span></td>
-              </tr>
-              <tr>
-                <td><span class="lang lang-zh">领域知识</span><span class="lang lang-en">Domain knowledge</span></td>
-                <td><span class="lang lang-zh">无</span><span class="lang lang-en">None</span></td>
-                <td><span class="lang lang-zh">无</span><span class="lang lang-en">None</span></td>
-                <td><span class="lang lang-zh">无</span><span class="lang lang-en">None</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">RAG 知识库</span><span class="lang lang-en">RAG knowledge base</span></td>
-              </tr>
-              <tr>
-                <td><span class="lang lang-zh">测试验证</span><span class="lang lang-en">Testing</span></td>
-                <td><span class="lang lang-zh">运行已有测试</span><span class="lang lang-en">Existing tests</span></td>
-                <td><span class="lang lang-zh">无</span><span class="lang lang-en">None</span></td>
-                <td><span class="lang lang-zh">运行已有测试</span><span class="lang lang-en">Existing tests</span></td>
-                <td class="comparison-table__highlight"><span class="lang lang-zh">专用 Agent + QEMU</span><span class="lang lang-en">Dedicated + QEMU</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="architecture-grid">
+          <figure class="diagram-card" data-reveal aria-describedby="system-architecture-summary">
+            <img
+              src="./assets/diagrams-current/codeinsights-system-architecture.svg"
+              alt="System architecture overview: Electron main process, preload bridge, renderer UI, shared packages, Agent, Pipeline, Bridge, and local storage services."
+              width="2400"
+              height="1520"
+              loading="lazy"
+            />
+            <figcaption id="system-architecture-summary">
+              <strong>
+                <span class="lang lang-zh">系统架构</span>
+                <span class="lang lang-en">System architecture</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">Electron 主进程负责服务和运行时，Preload 暴露安全 API，Renderer 通过 Jotai 展示 Agent、Pipeline、Bridge 和本地存储状态。</span>
+                <span class="lang lang-en">Electron main owns services and runtimes, preload exposes safe APIs, and renderer uses Jotai to display Agent, Pipeline, Bridge, and local-storage state.</span>
+              </span>
+            </figcaption>
+          </figure>
+          <figure class="diagram-card" data-reveal aria-describedby="local-storage-summary">
+            <img
+              src="./assets/diagrams-current/codeinsights-local-storage-framework.svg"
+              alt="Local storage overview: JSON configuration, JSONL conversations and events, attachments, workspaces, checkpoints, artifacts, and SDK config."
+              width="2400"
+              height="1520"
+              loading="lazy"
+            />
+            <figcaption id="local-storage-summary">
+              <strong>
+                <span class="lang lang-zh">本地存储</span>
+                <span class="lang lang-en">Local storage</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">JSON 保存配置和索引，JSONL 保存会话与事件，工作区、checkpoint、artifacts 和 SDK 配置都有明确目录。</span>
+                <span class="lang lang-en">JSON stores config and indexes; JSONL stores sessions and events; workspaces, checkpoints, artifacts, and SDK config have explicit directories.</span>
+              </span>
+            </figcaption>
+          </figure>
+          <figure class="diagram-card" data-reveal aria-describedby="ipc-state-summary">
+            <img
+              src="./assets/diagrams-current/codeinsights-ipc-state-flow.svg"
+              alt="IPC and state flow overview: shared contracts, main-process handlers, preload bridge, renderer APIs, global listeners, and Jotai atoms."
+              width="2400"
+              height="1440"
+              loading="lazy"
+            />
+            <figcaption id="ipc-state-summary">
+              <strong>
+                <span class="lang lang-zh">IPC 与状态流</span>
+                <span class="lang lang-en">IPC and state flow</span>
+              </strong>
+              <span>
+                <span class="lang lang-zh">共享类型定义通道契约，主进程处理 IPC，Preload 桥接白名单 API，Renderer 全局监听器写入 Jotai atoms。</span>
+                <span class="lang lang-en">Shared types define channel contracts, main handles IPC, preload bridges allowlisted APIs, and renderer global listeners write into Jotai atoms.</span>
+              </span>
+            </figcaption>
+          </figure>
         </div>
       </section>
 
-      <section id="quickstart" class="section-block section-block--alt">
+      <section id="capabilities" class="section-block">
+        <div class="section-block__header" data-reveal>
+          <p class="eyebrow">
+            <span class="lang lang-zh">当前能力</span>
+            <span class="lang lang-en">Current capabilities</span>
+          </p>
+          <h2>
+            <span class="lang lang-zh">围绕桌面 Agent 协作所需的基础设施</span>
+            <span class="lang lang-en">Infrastructure for desktop Agent collaboration</span>
+          </h2>
+        </div>
+        <div class="capability-grid">
+          <article data-reveal>
+            <h3>Provider Adapters</h3>
+            <p>
+              <span class="lang lang-zh">Anthropic、OpenAI、DeepSeek、Google、Kimi、智谱、MiniMax、豆包、通义千问和自定义 OpenAI 兼容端点。</span>
+              <span class="lang lang-en">Anthropic, OpenAI, DeepSeek, Google, Kimi, Zhipu, MiniMax, Doubao, Qwen, and custom OpenAI-compatible endpoints.</span>
+            </p>
+          </article>
+          <article data-reveal>
+            <h3>Human Gates</h3>
+            <p>
+              <span class="lang lang-zh">工具权限、AskUser、ExitPlan、Pipeline gate 都按 session 隔离，后台会话不丢请求。</span>
+              <span class="lang lang-en">Tool permissions, AskUser, ExitPlan, and Pipeline gates are isolated per session, preserving background requests.</span>
+            </p>
+          </article>
+          <article data-reveal>
+            <h3>IM Bridge</h3>
+            <p>
+              <span class="lang lang-zh">飞书、钉钉、微信 Bridge 可以把远程消息转成本地桌面 Agent / Chat 会话请求。</span>
+              <span class="lang lang-en">Feishu, DingTalk, and WeChat bridges can turn remote messages into local desktop Agent / Chat session requests.</span>
+            </p>
+          </article>
+          <article data-reveal>
+            <h3>Documents</h3>
+            <p>
+              <span class="lang lang-zh">附件、PDF、Office、文本解析和文件预览贯穿 Chat 回退、Agent 工作区和任务资料。</span>
+              <span class="lang lang-en">Attachments, PDF, Office, text parsing, and file preview support Chat fallback, Agent workspaces, and task context.</span>
+            </p>
+          </article>
+          <article data-reveal>
+            <h3>Runtime Checks</h3>
+            <p>
+              <span class="lang lang-zh">Bun、Git、Node、WSL、Shell 环境、代理和自动更新由主进程统一检测与管理。</span>
+              <span class="lang lang-en">Bun, Git, Node, WSL, shell environment, proxy settings, and updater state are checked and managed from the main process.</span>
+            </p>
+          </article>
+          <article data-reveal>
+            <h3>Security Boundary</h3>
+            <p>
+              <span class="lang lang-zh">Electron contextIsolation、preload 白名单、safeStorage 加密和 Codex Git guard 共同约束高风险操作。</span>
+              <span class="lang lang-en">Electron contextIsolation, preload allowlists, safeStorage encryption, and Codex Git guards constrain high-risk operations.</span>
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="quickstart" class="section-block section-block--band">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">Quick Start</p>
-          <h2><span class="lang lang-zh">快速开始</span><span class="lang lang-en">Get started in minutes</span></h2>
+          <h2>
+            <span class="lang lang-zh">从源码运行 Electron 桌面应用</span>
+            <span class="lang lang-en">Run the Electron desktop app from source</span>
+          </h2>
+          <p class="section-copy">
+            <span class="lang lang-zh">项目使用 Bun workspace。开发模式默认写入隔离的 `~/.codeinsights-dev/`，不会污染正式版本配置。</span>
+            <span class="lang lang-en">The project uses Bun workspaces. Development mode writes to isolated `~/.codeinsights-dev/` by default.</span>
+          </p>
         </div>
         <div class="quickstart-layout">
-          <div class="quickstart-steps" data-reveal>
-            <article class="step-card">
-              <p class="step-card__index">01</p>
-              <h3><span class="lang lang-zh">获取代码</span><span class="lang lang-en">Clone the repo</span></h3>
-              <p><span class="lang lang-zh">从 GitHub 拉取 CodeInsights 仓库。</span><span class="lang lang-en">Pull the repository from GitHub.</span></p>
+          <div class="setup-list" data-reveal>
+            <article>
+              <span>01</span>
+              <h3>
+                <span class="lang lang-zh">准备环境</span>
+                <span class="lang lang-en">Prepare runtime</span>
+              </h3>
+              <p>Bun 1.2.5+ · Git · macOS / Windows / Linux</p>
             </article>
-            <article class="step-card">
-              <p class="step-card__index">02</p>
-              <h3><span class="lang lang-zh">安装依赖</span><span class="lang lang-en">Install dependencies</span></h3>
-              <p><span class="lang lang-zh">安装 Python 依赖，包括 Claude Agent SDK 和 OpenAI Agents SDK。</span><span class="lang lang-en">Install Python dependencies including both SDKs.</span></p>
+            <article>
+              <span>02</span>
+              <h3>
+                <span class="lang lang-zh">配置渠道</span>
+                <span class="lang lang-en">Configure channels</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">在设置中创建 Agent 兼容渠道，并按需选择 Pipeline Codex 渠道或本机 Codex auth。</span>
+                <span class="lang lang-en">Create an Agent-compatible channel, then choose a Pipeline Codex channel or local Codex auth as needed.</span>
+              </p>
             </article>
-            <article class="step-card">
-              <p class="step-card__index">03</p>
-              <h3><span class="lang lang-zh">配置并运行</span><span class="lang lang-en">Configure and run</span></h3>
-              <p><span class="lang lang-zh">配置 API 密钥，启动平台。</span><span class="lang lang-en">Set up API keys and launch the platform.</span></p>
+            <article>
+              <span>03</span>
+              <h3>
+                <span class="lang lang-zh">创建工作区</span>
+                <span class="lang lang-en">Create a workspace</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">按工作区隔离 MCP Server、Skills、workspace files 和会话工作目录。</span>
+                <span class="lang lang-en">Scope MCP servers, Skills, workspace files, and session cwd per workspace.</span>
+              </p>
             </article>
           </div>
           <div class="code-shell" data-reveal>
-            <div class="code-shell__tabs"><span>bash</span><a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a></div>
+            <div class="code-shell__bar">
+              <span>bash</span>
+              <a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
+            </div>
             <pre><code>git clone https://github.com/zcxGGmu/CodeInsights.git
 cd CodeInsights
-python -m pip install -r requirements.txt
 
-# Configure API keys
-cp .env.example .env
-# Edit .env with your ANTHROPIC_API_KEY and OPENAI_API_KEY
+bun install
+bun run dev
 
-# Run the platform
-python -m codeinsights --help</code></pre>
+# build and launch after compilation
+bun run electron:build
+bun run electron:start</code></pre>
           </div>
         </div>
       </section>
-
-      <section id="dataflow" class="section-block">
-        <div class="section-block__header" data-reveal>
-          <p class="eyebrow"><span class="lang lang-zh">数据流</span><span class="lang lang-en">Data flow</span></p>
-          <h2><span class="lang lang-zh">跨 Agent 数据契约</span><span class="lang lang-en">Cross-agent data contracts</span></h2>
-          <p class="section-copy"><span class="lang lang-zh">所有 Agent 之间通过 Pydantic 模型的 JSON 序列化形式传递数据，无需额外协议。</span><span class="lang lang-en">All inter-agent communication uses JSON-serialized Pydantic models as the sole data contract.</span></p>
-        </div>
-        <article class="diagram-card" data-reveal>
-          <img src="./assets/diagrams/dataflow.svg" alt="Cross-agent data flow diagram" />
-        </article>
-      </section>
     </main>
+
     <footer class="site-footer">
       <div>
         <strong>CodeInsights</strong>
-        <p><span class="lang lang-zh">面向 RISC-V 开源软件贡献的多 Agent 平台，采用 Claude Agent SDK + OpenAI Agents SDK 混合架构。</span><span class="lang lang-en">A multi-agent platform for RISC-V open-source contributions, powered by Claude Agent SDK + OpenAI Agents SDK hybrid architecture.</span></p>
+        <p>
+          <span class="lang lang-zh">本地优先的 AI Agent 桌面工作台，面向开源软件贡献、代码协作和长期任务自动化。</span>
+          <span class="lang lang-en">A local-first AI Agent desktop workbench for open-source contribution, code collaboration, and long-running task automation.</span>
+        </p>
       </div>
       <div class="site-footer__links">
         <a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
-        <a href="https://github.com/zcxGGmu/CodeInsights/blob/main/LICENSE" target="_blank" rel="noreferrer noopener">MIT License</a>
+        <a href="./assets/video/codeinsights-intro-20s.mp4">
+          <span class="lang lang-zh">20 秒介绍视频</span>
+          <span class="lang lang-en">20s Intro Video</span>
+        </a>
         <button class="lang-toggle lang-toggle--footer" data-lang-toggle="footer" type="button">EN</button>
       </div>
     </footer>

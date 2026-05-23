@@ -17,8 +17,11 @@ langToggles.forEach((toggle) => {
 });
 
 const revealNodes = document.querySelectorAll("[data-reveal]");
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-if ("IntersectionObserver" in window) {
+if (prefersReducedMotion) {
+  revealNodes.forEach((node) => node.classList.add("is-visible"));
+} else if ("IntersectionObserver" in window) {
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
