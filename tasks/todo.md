@@ -2593,3 +2593,18 @@ Phase 8 禁止事项：
 - 复查发现当前分支历史里已有被跟踪的 `.DS_Store`，且整树接入相对 `origin/main` 暴露出既有尾随空白；已在 `main` 上追加一个纯机械清理提交，删除 6 个被跟踪 `.DS_Store`、补 `.gitignore` 规则并清理尾随空白。
 - 最终验证在临时 `main` worktree 执行通过：`git diff --check origin/main --`；`bun install`；`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`。
 - 本轮仅完成本地 `main` 与 `codex/integrate-agent-core-refactor` 分支整合；未执行 `git push` 或创建 PR。
+
+## 2026-05-23 README 标题图标白圈修正计划
+
+- [x] 按用户纠正更新 `tasks/lessons.md`：README 首屏图标不能使用带白色外圈的旧 RGB 素材。
+- [x] 确认 README 当前引用的 `assets/icon/CodeInsights.png` 带白圈且无 alpha；仓库内 `apps/electron/resources/icon.png` 已是透明外缘主图标。
+- [x] 用透明外缘主图标替换 README 引用的 `assets/icon/CodeInsights.png`，保持 README 结构不变。
+- [x] 验证图标 alpha、尺寸、README diff 和空白检查，提交并推送到远程 `main`。
+- [x] Review：记录最终使用的素材、验证结果和仍有工作树噪音未处理。
+
+## 2026-05-23 README 标题图标白圈修正 Review
+
+- 已将 `assets/icon/CodeInsights.png` 从无 alpha 的 1254x1254 RGB 图替换为透明外缘的 1024x1024 RGBA 主图标，README 首屏仍引用同一路径。
+- 验证四角 alpha 均为 0，去除了 README 图标周围可见白圈，只保留中间 CI 主体。
+- 验证通过：PIL 尺寸/alpha 抽样；`sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icon/CodeInsights.png`；`git diff --check -- README.md assets/icon/CodeInsights.png tasks/lessons.md tasks/todo.md`。
+- 当前原工作树仍保留既有 `.DS_Store` 和任务记录未提交状态，本轮远程 `main` 提交未纳入这些噪音。
