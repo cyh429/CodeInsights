@@ -1,5 +1,22 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-23 README 线上视频渲染修复计划
+
+- [x] 按用户反馈复查线上 GitHub README，确认 raw README 里有相对路径 `<video>`，但渲染 HTML 把它过滤成空段落，页面上确实没有视频。
+- [x] 用 GitHub Markdown API 验证视频源规则：相对 MP4、raw.githubusercontent、GitHub raw、release asset 和 GitHub Pages MP4 都会被过滤；`github.com/user-attachments/assets/...` 会生成 `gh:secured-asset-reference` 和 `<video>`。
+- [x] 更新 `tasks/lessons.md`，记录 README 视频必须用 user-attachments URL 并在线验证。
+- [x] 将中英文 README 首屏视频源改为可渲染的 GitHub 附件 URL，同时保留真实运行录屏文件链接。
+- [x] 更新真实素材说明，明确仓库内真实运行 MP4 是文件链接，线上播放器必须使用 GitHub 附件 URL。
+- [x] 验证 Markdown API、线上 GitHub HTML、敏感信息扫描和 `git diff --check`，提交并推送当前分支与主分支。
+
+## 2026-05-23 README 线上视频渲染修复 Review
+
+- 已确认根因：线上 GitHub README 渲染 HTML 中，原相对路径 `<video src="./docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4">` 被过滤成空段落，所以页面不会显示视频。
+- 已用 GitHub Markdown API 验证：相对 MP4、raw.githubusercontent、GitHub raw、release asset 和 GitHub Pages MP4 都不会保留 `<video>`；`https://github.com/user-attachments/assets/64ca3efd-b424-4e09-b0ca-9c4840cf9588` 会生成 `gh:secured-asset-reference` 和 `<video>`。
+- 已将 `README.md` 与 `README_en.md` 首屏视频源改为可渲染的 GitHub 附件 URL；仓库内真实运行录屏 `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4` 保留为“真实运行录屏文件”链接和素材目录条目。
+- 已同步更新 `docs/assets/readme/real-runs/README.md` 与 `tasks/lessons.md`，后续替换视频必须先上传为 user-attachments 并用 GitHub Markdown API 或线上 HTML 复核。
+- 验证通过：GitHub Markdown API 返回 `<video>` 与 `gh:secured-asset-reference`；附件 URL 匿名 range GET 返回 MP4 `ftypisom` 文件头；敏感 token 扫描无命中；`git diff --check -- README.md README_en.md docs/assets/readme/real-runs/README.md tasks/lessons.md tasks/todo.md` 通过。
+
 ## 2026-05-23 README 恢复视频播放器计划
 
 - [x] 按用户纠正确认问题：上一轮把 README 首屏 `<video>` 替换成抽帧图链接，虽然保留了 MP4 链接，但删除了视频播放器展示。
