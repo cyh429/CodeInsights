@@ -141,3 +141,9 @@
 - AppShell / Sidebar / Tab 的 token、边框、状态线和 focus 收敛即使代码完成，也可能在真实客户端截图中显得变化很小；不能把这类阶段汇报成用户能明显感知的 UI 优化。
 - 当用户期待“全客户端 UI 优化”时，必须优先说明 UI-2 不会改变 Pipeline 主面板卡片、StageRail、Composer 和 Records 的整体观感；这些属于 UI-3。
 - 阶段完成后给用户看客户端前，应主动指出“你现在最明显不会变的是主内容区”，避免用户把未进入阶段范围的页面误判为未修改。
+
+## 2026-05-23 GitHub README 视频渲染
+
+- GitHub 仓库 README 会过滤 `<video src="https://github.com/<owner>/<repo>/raw/...mp4">`，页面里只留下空段落；不能把 raw 仓库视频地址当成可播放播放器验证通过。
+- README 需要像参考项目一样直接展示可点击播放视频时，应使用 GitHub 上传附件生成的 `https://github.com/user-attachments/assets/...` 地址，并在推送后抓取 GitHub 渲染 HTML 验证存在 `gh:secured-asset-reference` 和 `<video>`。
+- 用户指出线上仍无视频时，要先承认 raw mp4 方案错误，再补齐真正的 GitHub 渲染验证，不要只停留在本地 Markdown 或 HEAD 请求。

@@ -2526,3 +2526,10 @@ Phase 8 禁止事项：
 - 已按用户澄清把 `<video>` 的 `src` 改为 GitHub 绝对视频地址，避免 README 上的视频播放器退化成静态预览或相对文件跳转；仓库内 mp4 链接保留为备用入口。
 - 验证通过：`git diff --check`；README 本地链接/媒体/锚点 Node 检查；`curl -L --head --fail` 远程视频地址检查；`rg` 旧名扫描；`ffprobe` 视频文件检查。
 - 残留风险仅在工作树既有的 `.DS_Store` 和未跟踪资产目录，不属于本轮 README 结构调整范围。
+
+## 2026-05-23 README GitHub 附件视频修复计划
+
+- [x] 复核远端 GitHub README 渲染结果，确认 raw 仓库 mp4 的 `<video>` 被过滤成空段落。
+- [x] 获取 GitHub `user-attachments/assets` 视频地址，按 ScienceClaw 参考写法替换 README 首屏播放器。
+- [ ] 验证附件 URL 可访问、GitHub Markdown 渲染保留播放器、README 不含旧项目名。
+- [ ] 提交并推送修复，避免纳入无关 `.DS_Store` 改动。
