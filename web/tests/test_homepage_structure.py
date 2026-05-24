@@ -79,8 +79,13 @@ class HomepageStructureTest(unittest.TestCase):
 
     def test_key_copy_and_ctas_present(self):
         for text in [
-            "View Product",
+            "Product",
+            "Workflow",
+            "Architecture",
+            "Watch Real Run",
             "Quick Start",
+            "Complex contribution needs process quality",
+            "Start with a reviewable plan",
             "Pipeline v2",
             "Claude Agent SDK",
             "Codex SDK / CLI",

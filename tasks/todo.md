@@ -1,5 +1,43 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 项目主页逐步改进计划
+
+- [x] 基于上一轮诊断和 `ui-ux-pro-max` 规则确认改造边界：只改 `web/` 静态项目主页与对应测试/说明，不触碰 Electron 运行时代码。
+- [x] 重构首页首屏：降低导航重量、增强真实产品截图可见度、压缩 CTA 数量、补充更明确的开源贡献工作台定位。
+- [x] 重构移动端导航与首屏：避免固定导航吞掉首屏，确保 390px 宽度下按钮、标题和正文不裁切。
+- [x] 收敛内容叙事：把重复的 Pipeline / Local-first / Runtime 价值点改成更明确的“为什么用 / 如何工作 / 如何开始”路径。
+- [x] 统一视觉系统：减少米色网格和统一重阴影，建立更克制的科技产品色板、卡片层级和媒体展示节奏。
+- [x] 更新 `web/tests/test_homepage_structure.py` 中与新版结构相关的断言。
+- [x] 运行结构测试、静态资源检查、diff 空白检查，并用本地静态服务截图核验桌面与移动端观感。
+- [x] 在本节末尾追加 Review，记录改动范围、验证结果和残留风险。
+
+## 2026-05-24 项目主页逐步改进 Review
+
+- 已重构 `web/index.html` 首屏信息层级：导航从 5 项收敛为 Product / Workflow / Architecture / Start，主 CTA 保留 GitHub，次 CTA 改为查看真实运行，Quick Start 降级为文本链接。
+- 已将首屏定位从功能堆叠改为“开源贡献工作台”：Pipeline 负责阶段和证据，Agent 负责执行，本地 JSONL 负责回放；价值卡片改为 Plan / Execute / Prove 三段路径。
+- 已重写 `web/styles.css` 视觉系统：从米色重网格改为中性浅灰背景、teal / blue / coral 多色语义强调，降低全局重阴影，保留 8px 卡片半径，首屏截图遮罩更轻且产品界面更可见。
+- 已优化移动端：小屏隐藏顶部导航列表，只保留品牌和语言切换；按钮改为单列，标题字号和断行更稳，补充横向溢出防护。
+- 已同步 `web/tests/test_homepage_structure.py` 的新版 CTA 与文案断言。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`；本地 HTML 资源引用检查无缺失；`git diff --check -- web/index.html web/styles.css web/tests/test_homepage_structure.py tasks/todo.md`。
+- 视觉核验：本地静态服务 `http://127.0.0.1:8765/`；桌面截图 `/tmp/codeinsights-homepage-final-desktop.png`；真实 390x844 移动视口截图 `/tmp/codeinsights-homepage-final-mobile.png`，移动端 `scrollWidth=clientWidth=390`，顶部语言按钮在视口内。
+
+## 2026-05-24 项目主页视觉诊断计划
+
+- [x] 复习 `tasks/lessons.md`，确认历史首页、README 和主界面视觉反馈中的约束与经验。
+- [x] 核对 `web/` 静态项目主页的信息架构、视觉层级、素材使用、响应式和可访问性实现。
+- [x] 对照 README 首屏与 Electron 客户端首屏，区分公开项目主页问题和产品内主页问题。
+- [x] 给出不直接改代码的优化点清单，并按影响优先级整理。
+- [x] 在本节末尾追加 Review，记录本轮诊断范围、证据和建议下一步。
+
+## 2026-05-24 项目主页视觉诊断 Review
+
+- 本轮诊断聚焦 `web/index.html`、`web/styles.css`、`web/app.js`、根 `README.md` 首屏和 Electron AppShell / App 入口；未修改主页实现代码。
+- 已用本地静态服务 `http://127.0.0.1:8765/` 核验桌面 1440x1000、桌面 1280x720 和移动 390x844 首屏截图；本地结构测试 `python3 -m unittest web.tests.test_homepage_structure` 通过。
+- 主要问题：固定导航视觉重量过高，移动端导航占用首屏过多；首屏真实截图被深色遮罩压暗，产品本体信号不足；米色网格、统一阴影和卡片堆叠让页面显得模板化；内容重复强调 Pipeline / Local-first / Runtime，缺少面向访问者的清晰转化路径；架构图和截图展示偏重信息堆叠，缺少主次。
+- 线上 Pages 核验受阻：`curl https://zcxggmu.github.io/CodeInsights/` 两次返回 connection reset，本轮结论以本地 `web/` 当前实现和截图为准。
+- 建议下一步先做首屏与移动导航重构，再处理视觉系统和内容叙事；不要先从局部颜色微调入手。
+
+
 ## 2026-05-24 README 顶部项目图标比例调整计划
 
 - [x] 复习 `tasks/lessons.md` 中 README 标题图标相关经验，确认本轮仅调整首屏图标展示比例。

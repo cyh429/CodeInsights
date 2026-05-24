@@ -29,22 +29,21 @@
       </a>
       <nav class="site-header__nav" aria-label="Primary navigation">
         <a href="#showcase">
-          <span class="lang lang-zh">界面</span>
+          <span class="lang lang-zh">产品</span>
           <span class="lang lang-en">Product</span>
         </a>
         <a href="#pipeline">
-          <span class="lang lang-zh">Pipeline</span>
-          <span class="lang lang-en">Pipeline</span>
-        </a>
-        <a href="#agent-runtime">
-          <span class="lang lang-zh">Agent</span>
-          <span class="lang lang-en">Agent</span>
+          <span class="lang lang-zh">工作流</span>
+          <span class="lang lang-en">Workflow</span>
         </a>
         <a href="#local-first">
-          <span class="lang lang-zh">本地优先</span>
-          <span class="lang lang-en">Local-first</span>
+          <span class="lang lang-zh">架构</span>
+          <span class="lang lang-en">Architecture</span>
         </a>
-        <a href="#quickstart">Quick Start</a>
+        <a href="#quickstart">
+          <span class="lang lang-zh">开始</span>
+          <span class="lang lang-en">Start</span>
+        </a>
       </nav>
       <button id="lang-toggle" class="lang-toggle" data-lang-toggle="header" type="button" aria-label="Toggle language">EN</button>
     </header>
@@ -62,42 +61,42 @@
         <div class="hero__shade" aria-hidden="true"></div>
         <div class="hero__inner" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">Pipeline | Agent · 本地优先 · 可审计 · 可回放</span>
-            <span class="lang lang-en">Pipeline | Agent · Local-first · Auditable · Replayable</span>
+            <span class="lang lang-zh">面向开源贡献的 AI Agent 桌面工作台</span>
+            <span class="lang lang-en">AI Agent desktop workbench for open-source contribution</span>
           </p>
           <h1 id="hero-title">CodeInsights</h1>
           <p class="hero__lead">
-            <span class="lang lang-zh">本地优先的 AI Agent 桌面工作台，把开源软件贡献从一次性聊天变成有阶段、有证据、有回放的工程流程。</span>
-            <span class="lang lang-en">A local-first AI Agent desktop workbench that turns open-source contribution from one-off chat into staged, evidenced, replayable engineering work.</span>
+            <span class="lang lang-zh">把一次性聊天改造成可计划、可审查、可验证的贡献流程。<br />Pipeline 负责阶段和证据，Agent 负责执行，本地 JSONL 负责回放。</span>
+            <span class="lang lang-en">Turn one-off chat into planned, reviewable, verifiable contribution work.<br />Pipeline owns stages and evidence, Agent owns execution, and local JSONL keeps the replay trail.</span>
           </p>
           <div class="hero__actions">
             <a class="button button-primary" href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
             <a class="button button-secondary" href="#showcase">
-              <span class="lang lang-zh">查看真实界面</span>
-              <span class="lang lang-en">View Product</span>
+              <span class="lang lang-zh">查看真实运行</span>
+              <span class="lang lang-en">Watch Real Run</span>
             </a>
-            <a class="button button-secondary" href="#quickstart">Quick Start</a>
+            <a class="hero__text-link" href="#quickstart">Quick Start</a>
           </div>
           <dl class="hero__metrics" aria-label="CodeInsights highlights">
             <div>
               <dt>6</dt>
               <dd>
-                <span class="lang lang-zh">Pipeline 阶段</span>
-                <span class="lang lang-en">Pipeline stages</span>
+                <span class="lang lang-zh">阶段化贡献路径</span>
+                <span class="lang lang-en">staged contribution path</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Gate</dt>
+              <dd>
+                <span class="lang lang-zh">人工审核断点</span>
+                <span class="lang lang-en">human review checkpoints</span>
               </dd>
             </div>
             <div>
               <dt>JSONL</dt>
               <dd>
                 <span class="lang lang-zh">本地事件回放</span>
-                <span class="lang lang-en">Local event replay</span>
-              </dd>
-            </div>
-            <div>
-              <dt>MCP</dt>
-              <dd>
-                <span class="lang lang-zh">工作区能力扩展</span>
-                <span class="lang lang-en">Workspace extensions</span>
+                <span class="lang lang-en">local event replay</span>
               </dd>
             </div>
           </dl>
@@ -107,46 +106,46 @@
       <section id="proof" class="section-block section-block--compact">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">产品定位</span>
-            <span class="lang lang-en">Product focus</span>
+            <span class="lang lang-zh">为什么需要它</span>
+            <span class="lang lang-en">Why it exists</span>
           </p>
           <h2>
-            <span class="lang lang-zh">不是另一个聊天框，是长期贡献的流程层</span>
-            <span class="lang lang-en">Not another chat box, but a workflow layer for long-running contribution</span>
+            <span class="lang lang-zh">复杂贡献需要的不只是模型能力，而是过程质量</span>
+            <span class="lang lang-en">Complex contribution needs process quality, not only model capability</span>
           </h2>
         </div>
         <div class="value-grid">
           <article class="value-card" data-reveal>
-            <p class="value-card__label">Pipeline</p>
+            <p class="value-card__label">Plan</p>
             <h3>
-              <span class="lang lang-zh">可审计流水线</span>
-              <span class="lang lang-en">Auditable pipeline</span>
+              <span class="lang lang-zh">先形成可审查计划</span>
+              <span class="lang lang-en">Start with a reviewable plan</span>
             </h3>
             <p>
-              <span class="lang lang-zh">Explorer、Planner、Developer、Reviewer、Tester、Committer 六阶段协作，每个关键节点都保留产物、人工 gate 和验证证据。</span>
-              <span class="lang lang-en">Explorer, Planner, Developer, Reviewer, Tester, and Committer collaborate with artifacts, human gates, and verification evidence at critical points.</span>
+              <span class="lang lang-zh">Explorer 和 Planner 先把贡献机会、风险、验证路径和待确认事项整理成阶段产物，避免直接冲进修改。</span>
+              <span class="lang lang-en">Explorer and Planner turn contribution opportunities, risks, verification paths, and open questions into staged artifacts before edits begin.</span>
             </p>
           </article>
           <article class="value-card" data-reveal>
-            <p class="value-card__label">Local-first</p>
+            <p class="value-card__label">Execute</p>
             <h3>
-              <span class="lang lang-zh">默认落在本机</span>
-              <span class="lang lang-en">Stored on your machine</span>
+              <span class="lang lang-zh">让 Agent 在边界内执行</span>
+              <span class="lang lang-en">Let agents execute within boundaries</span>
             </h3>
             <p>
-              <span class="lang lang-zh">渠道配置、会话索引、JSONL 事件、checkpoint、artifacts 和工作区文件优先写入本地文件系统，不引入本地数据库。</span>
-              <span class="lang lang-en">Channel config, session indexes, JSONL events, checkpoints, artifacts, and workspace files are written to the local filesystem without a local database.</span>
+              <span class="lang lang-zh">Agent 读取工作区、调用工具、等待权限和 AskUser；Pipeline 在人工 gate 处暂停，而不是把风险藏在自动化里。</span>
+              <span class="lang lang-en">Agent reads the workspace, calls tools, waits for permissions and AskUser; Pipeline pauses at human gates instead of hiding risk inside automation.</span>
             </p>
           </article>
           <article class="value-card" data-reveal>
-            <p class="value-card__label">Runtime</p>
+            <p class="value-card__label">Prove</p>
             <h3>
-              <span class="lang lang-zh">复用成熟运行时</span>
-              <span class="lang lang-en">Built on mature runtimes</span>
+              <span class="lang lang-zh">把验证证据留下来</span>
+              <span class="lang lang-en">Keep the evidence trail</span>
             </h3>
             <p>
-              <span class="lang lang-zh">Agent 模式接入 Claude Agent SDK 兼容链路，Pipeline 的开发、审查、测试和提交材料阶段可走 Codex SDK / CLI。</span>
-              <span class="lang lang-en">Agent mode uses the Claude Agent SDK compatible path, while Pipeline development, review, testing, and submission drafting can run through Codex SDK / CLI.</span>
+              <span class="lang lang-zh">会话、事件、checkpoint、artifacts 和工作区文件都优先落到本机，方便恢复、对比、排障和开源协作。</span>
+              <span class="lang lang-en">Sessions, events, checkpoints, artifacts, and workspace files stay local first so recovery, comparison, debugging, and collaboration remain inspectable.</span>
             </p>
           </article>
         </div>
@@ -155,12 +154,12 @@
       <section id="showcase" class="section-block">
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">
-            <span class="lang lang-zh">真实桌面界面</span>
-            <span class="lang lang-en">Real desktop surface</span>
+            <span class="lang lang-zh">真实产品界面</span>
+            <span class="lang lang-en">Real product surface</span>
           </p>
           <h2>
-            <span class="lang lang-zh">公开主页直接展示正在构建的工作台</span>
-            <span class="lang lang-en">The homepage shows the workbench that is actually being built</span>
+            <span class="lang lang-zh">先看实际工作台，再看它背后的流程</span>
+            <span class="lang lang-en">See the workbench first, then the workflow behind it</span>
           </h2>
           <p class="section-copy">
             <span class="lang lang-zh">以下素材来自真实 Electron 开发窗口，采集时使用隔离配置目录，避免读取本机已有渠道、会话和凭证。</span>
@@ -254,8 +253,8 @@
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">Pipeline v2</p>
           <h2>
-            <span class="lang lang-zh">把贡献任务拆成可恢复、可审核、可验证的阶段</span>
-            <span class="lang lang-en">Split contribution work into recoverable, reviewable, verifiable stages</span>
+            <span class="lang lang-zh">一条流水线覆盖发现、实现、审查、测试和提交材料</span>
+            <span class="lang lang-en">One pipeline covers discovery, implementation, review, testing, and submission drafting</span>
           </h2>
         </div>
         <div class="split-layout">
@@ -328,8 +327,8 @@
         <div class="section-block__header" data-reveal>
           <p class="eyebrow">Agent Runtime</p>
           <h2>
-            <span class="lang lang-zh">通用自主执行入口，围绕权限、工作区和事件流设计</span>
-            <span class="lang lang-en">A general autonomous execution entry designed around permissions, workspaces, and event streams</span>
+            <span class="lang lang-zh">Agent 是执行面，权限、工作区和事件流是边界</span>
+            <span class="lang lang-en">Agent is the execution surface; permissions, workspaces, and event streams are the boundary</span>
           </h2>
         </div>
         <div class="split-layout split-layout--reverse">
@@ -387,8 +386,8 @@
             <span class="lang lang-en">Local data and architecture</span>
           </p>
           <h2>
-            <span class="lang lang-zh">JSON 配置、JSONL 事件、checkpoint 与 artifacts 可迁移可审计</span>
-            <span class="lang lang-en">JSON config, JSONL events, checkpoints, and artifacts stay portable and inspectable</span>
+            <span class="lang lang-zh">本地文件系统就是审计、恢复和迁移的基础设施</span>
+            <span class="lang lang-en">The local filesystem is the audit, recovery, and portability layer</span>
           </h2>
         </div>
         <div class="architecture-grid">
