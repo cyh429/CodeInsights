@@ -1,5 +1,13 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 README 功能演示视频内嵌播放器计划
+
+- [x] 复核当前中英文 README 功能演示区和四段功能视频文件，确认需要从海报链接改为 GitHub README 可直接播放的 `<video>`。
+- [x] 使用当前 GitHub Web 登录态上传四段功能演示 MP4，获取 `https://github.com/user-attachments/assets/...` URL；匿名访问需等公开 README 引用推送后复核。
+- [x] 将 `README.md`、`README_en.md` 和 `docs/assets/readme/real-runs/README.md` 中的功能演示区替换为内嵌视频播放器，删除“相对 MP4 不能内嵌”的临时说明。
+- [x] 使用 GitHub 编辑器 Preview 验证新视频 URL 会渲染为 `<video>` / `gh:secured-asset-reference`，并检查资源路径、敏感信息和 Markdown 空白。
+- [ ] 提交并推送到远程，最后在本节末尾追加 Review，记录附件 URL、验证结果和残留限制。
+
 ## 2026-05-24 README 多功能演示视频补充计划
 
 - [x] 复习既有 README 真实运行素材、录屏经验和 GitHub README 视频渲染限制，确认新增视频采用仓库内 MP4 文件链接还是后续上传 user-attachments 播放器。

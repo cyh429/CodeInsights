@@ -115,7 +115,7 @@ Advanced Agent settings, built-in tools, MCP servers, and Skills are isolated by
 
 These short videos were captured from a real Electron development window with the same isolated configuration approach. They demonstrate locally verifiable UI flows only: no real model call is made, no Feishu / DingTalk / WeChat bridge is connected, and no existing local sessions or credentials are loaded.
 
-GitHub README rendering is unreliable for inline relative-path MP4 playback, so the previews below link to repository MP4 files. To render them inline like the hero overview, upload each video as a GitHub `user-attachments` asset and replace the links with those attachment URLs.
+The feature demos are uploaded as GitHub `user-attachments`, so they render as playable video controls directly in the README. The repository MP4 files and posters remain in the asset directory for auditing, recapture, and future re-uploading.
 
 <table>
 <tr>
@@ -123,11 +123,7 @@ GitHub README rendering is unreliable for inline relative-path MP4 playback, so 
 
 ### Pipeline Workflow
 
-<a href="./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4">
-  <img src="./docs/assets/readme/real-runs/feature-01-pipeline-workflow-poster.jpg" alt="Pipeline workflow demo video preview" width="100%" />
-</a>
-
-[Open demo video](./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4)
+<video src="https://github.com/user-attachments/assets/dadf47f5-d339-4df1-90d4-a07e8d91eb42" controls muted width="100%"></video>
 
 Shows the Pipeline workspace, six-stage Mission Route, record filters, and artifact / run-log switching.
 
@@ -136,11 +132,7 @@ Shows the Pipeline workspace, six-stage Mission Route, record filters, and artif
 
 ### Agent Workspace
 
-<a href="./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4">
-  <img src="./docs/assets/readme/real-runs/feature-02-agent-workspace-poster.jpg" alt="Agent workspace demo video preview" width="100%" />
-</a>
-
-[Open demo video](./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4)
+<video src="https://github.com/user-attachments/assets/482f3f5c-4022-4500-b5dd-f1f7c5244cb3" controls muted width="100%"></video>
 
 Shows Agent mode, the workspace matrix, new-session entry, resource panel, and capabilities entry point.
 
@@ -151,11 +143,7 @@ Shows Agent mode, the workspace matrix, new-session entry, resource panel, and c
 
 ### Model And Provider Configuration
 
-<a href="./docs/assets/readme/real-runs/feature-03-provider-settings.mp4">
-  <img src="./docs/assets/readme/real-runs/feature-03-provider-settings-poster.jpg" alt="Model and provider configuration demo video preview" width="100%" />
-</a>
-
-[Open demo video](./docs/assets/readme/real-runs/feature-03-provider-settings.mp4)
+<video src="https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff" controls muted width="100%"></video>
 
 Shows model settings, the DeepSeek preset, Pipeline Codex auth source, and the new Provider configuration form.
 
@@ -164,11 +152,7 @@ Shows model settings, the DeepSeek preset, Pipeline Codex auth source, and the n
 
 ### Agent MCP / Skills Configuration
 
-<a href="./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4">
-  <img src="./docs/assets/readme/real-runs/feature-04-agent-mcp-skills-poster.jpg" alt="Agent MCP and Skills configuration demo video preview" width="100%" />
-</a>
-
-[Open demo video](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4)
+<video src="https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8" controls muted width="100%"></video>
 
 Shows advanced Agent settings, built-in tools, MCP servers, Skills, and workspace-scoped capability management.
 

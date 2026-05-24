@@ -18,30 +18,35 @@
       "title": "Pipeline 工作流",
       "video": "feature-01-pipeline-workflow.mp4",
       "poster": "feature-01-pipeline-workflow-poster.jpg",
+      "attachmentUrl": "https://github.com/user-attachments/assets/dadf47f5-d339-4df1-90d4-a07e8d91eb42",
       "description": "Pipeline 工作台、六阶段 Mission Route、记录过滤与阶段产物/运行日志切换。"
     },
     {
       "title": "Agent 工作区",
       "video": "feature-02-agent-workspace.mp4",
       "poster": "feature-02-agent-workspace-poster.jpg",
+      "attachmentUrl": "https://github.com/user-attachments/assets/482f3f5c-4022-4500-b5dd-f1f7c5244cb3",
       "description": "Agent 模式、工作区矩阵、新会话入口、右侧资源和能力入口。"
     },
     {
       "title": "模型与 Provider 配置",
       "video": "feature-03-provider-settings.mp4",
       "poster": "feature-03-provider-settings-poster.jpg",
+      "attachmentUrl": "https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff",
       "description": "模型配置页、DeepSeek 预设、Pipeline Codex 认证来源和 Agent 供应商区域。"
     },
     {
       "title": "Agent MCP / Skills 配置",
       "video": "feature-04-agent-mcp-skills.mp4",
       "poster": "feature-04-agent-mcp-skills-poster.jpg",
+      "attachmentUrl": "https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8",
       "description": "Agent 高级设置、内置工具、MCP Server、Skills 列表和工作区隔离能力。"
     }
   ],
   "notes": [
     "视频来自真实 Electron dev 主窗口，通过 CDP 捕捉业务窗口帧。",
     "采集建议使用隔离 CODEINSIGHTS_CONFIG_DIR，避免读取本机真实渠道密钥、历史会话和 IM 凭证。",
-    "本轮演示不调用真实模型、不连接外部 IM Bridge；Provider、MCP、Skills 只展示本地可验证配置界面。"
+    "本轮演示不调用真实模型、不连接外部 IM Bridge；Provider、MCP、Skills 只展示本地可验证配置界面。",
+    "README 内嵌播放器使用 GitHub user-attachments URL；仓库内 MP4 和 poster 作为可审计源文件保留。"
   ]
 }

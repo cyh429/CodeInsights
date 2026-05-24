@@ -45,16 +45,25 @@ CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config
 
 ![Agent MCP 与 Skills 配置](./docs/assets/readme/real-runs/04-channels-and-agent-settings.png)
 
-[![Pipeline 工作流演示](./docs/assets/readme/real-runs/feature-01-pipeline-workflow-poster.jpg)](./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4)
+<video src="https://github.com/user-attachments/assets/dadf47f5-d339-4df1-90d4-a07e8d91eb42" controls muted width="100%"></video>
 
-[![Agent 工作区演示](./docs/assets/readme/real-runs/feature-02-agent-workspace-poster.jpg)](./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4)
+<video src="https://github.com/user-attachments/assets/482f3f5c-4022-4500-b5dd-f1f7c5244cb3" controls muted width="100%"></video>
 
-[![模型与 Provider 配置演示](./docs/assets/readme/real-runs/feature-03-provider-settings-poster.jpg)](./docs/assets/readme/real-runs/feature-03-provider-settings.mp4)
+<video src="https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff" controls muted width="100%"></video>
 
-[![Agent MCP / Skills 配置演示](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills-poster.jpg)](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4)
+<video src="https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8" controls muted width="100%"></video>
 ```
 
-当前根 README 的播放器使用 GitHub 已验证可渲染的 `https://github.com/user-attachments/assets/...` 附件 URL；仓库内 `codeinsights-real-run-overview.mp4` 作为真实运行录屏文件链接保留。GitHub README 会过滤相对路径 MP4，因此新增或替换视频时必须先上传为 user-attachments 附件，并复核线上渲染 HTML 中存在 `<video>`。
+当前根 README 的首屏总览和四段功能演示都使用 GitHub 已验证可渲染的 `https://github.com/user-attachments/assets/...` 附件 URL；仓库内 MP4 / poster 作为真实素材源文件保留。GitHub README 会过滤相对路径 MP4，因此新增或替换视频时必须先上传为 user-attachments 附件，把 URL 写入公开 README，并复核线上渲染 HTML 中存在 `<video>`。
+
+功能演示附件映射：
+
+| 本地源文件 | GitHub 附件 URL |
+| --- | --- |
+| `feature-01-pipeline-workflow.mp4` | `https://github.com/user-attachments/assets/dadf47f5-d339-4df1-90d4-a07e8d91eb42` |
+| `feature-02-agent-workspace.mp4` | `https://github.com/user-attachments/assets/482f3f5c-4022-4500-b5dd-f1f7c5244cb3` |
+| `feature-03-provider-settings.mp4` | `https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff` |
+| `feature-04-agent-mcp-skills.mp4` | `https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8` |
 
 ## 重新采集功能演示视频
 
