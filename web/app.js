@@ -19,9 +19,16 @@ langToggles.forEach((toggle) => {
 const revealNodes = document.querySelectorAll("[data-reveal]");
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function isInViewport(node) {
+  const rect = node.getBoundingClientRect();
+  return rect.top < window.innerHeight * 0.92 && rect.bottom > 0;
+}
+
 if (prefersReducedMotion) {
   revealNodes.forEach((node) => node.classList.add("is-visible"));
 } else if ("IntersectionObserver" in window) {
+  document.body.classList.add("reveal-ready");
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -34,7 +41,13 @@ if (prefersReducedMotion) {
     { threshold: 0.18 }
   );
 
-  revealNodes.forEach((node) => observer.observe(node));
+  revealNodes.forEach((node) => {
+    if (isInViewport(node)) {
+      node.classList.add("is-visible");
+    } else {
+      observer.observe(node);
+    }
+  });
 } else {
   revealNodes.forEach((node) => node.classList.add("is-visible"));
 }

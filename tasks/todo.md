@@ -1,5 +1,61 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 项目主页第三轮打磨计划
+
+- [x] 把价值卡片从普通三列说明升级为更可扫读的“问题 / 机制 / 证据”信息路径。
+- [x] 重排能力区，把 Provider / Gate / Bridge / Documents / Runtime / Security 从等权卡片改为更清楚的能力矩阵。
+- [x] 优化 Quick Start：突出命令块，弱化长说明，补充更清楚的准备 / 配置 / 运行步骤。
+- [x] 复查移动端中下屏，确保标题、卡片、代码块和 footer 没有横向溢出。
+- [x] 更新测试、任务 Review，并重新跑结构测试、JS 检查、截图和代码审查。
+
+## 2026-05-24 项目主页第三轮打磨 Review
+
+- 已将 proof 区块改成“Shift / Problem / Control / Evidence”结构：先说明从模型答案转向可批准过程，再落到复杂修改失控、风险检查点和可回放证据。
+- 已在 proof 区块末尾新增产物条：`plan.md`、`review.md`、`test evidence`、`JSONL events`、`checkpoint`，让“可验证”更具体。
+- 已新增移动端 `mobile-jump-nav`，在隐藏顶部导航后提供 Product / Workflow / Architecture / Start 快捷锚点；经 320 / 375 / 390px 英文视口检查无溢出。
+- 已将能力区升级为带层级标签的能力矩阵：Model / Review / Bridge / Context / Runtime / Safety Layer，降低纯功能列表感。
+- 已优化 Quick Start：新增 Before launch 检查清单，保留三步运行路径，并在命令块内补充本地开发入口提示。
+- 已按代码审查修复：移动快捷导航从四列改两列，所有移动触控目标恢复到 44px；修复 proof / capability label 被通用段落样式覆盖；移除结构测试对未引用旧 `logo.webp` 的强绑定。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`；`node --check web/app.js`；HTML 本地引用检查无缺失；`git diff --check -- web/index.html web/styles.css web/app.js web/tests/test_homepage_structure.py tasks/todo.md`。
+- 视觉核验：proof 桌面 `/tmp/codeinsights-homepage-round3-proof-desktop.png`；proof 移动 `/tmp/codeinsights-homepage-round3-mobile.png`；capabilities 桌面 `/tmp/codeinsights-homepage-round3-capabilities-desktop.png`；Quick Start 移动 `/tmp/codeinsights-homepage-round3-code-mobile.png`。桌面、390px 移动、320px/375px 英文锚点检查均无页面横向溢出。
+
+## 2026-05-24 项目主页二次优化计划
+
+- [x] 收敛首屏：降低固定导航重量、减轻截图遮罩、改写首屏价值表达、保留一个主 CTA 和一个次 CTA。
+- [x] 优化移动首屏：减少首屏文案和按钮堆叠，确保 390px 宽度下标题、正文、按钮不裁切且不横向滚动。
+- [x] 重排真实运行展示：让录屏/截图成为更强的产品展示舞台，减少说明文字压迫感。
+- [x] 调整流程与架构区块节奏：用更轻的“如何工作”路径承接硬核图表，降低卡片网格均质感。
+- [x] 更新主页结构测试与静态资源引用，补充小尺寸 logo 资源。
+- [x] 运行结构测试、静态资源检查、diff 空白检查，并用本地静态服务截图核验桌面与移动端。
+- [x] 使用代码审查子代理复查本轮前端改动，并在本节末尾追加 Review。
+
+## 2026-05-24 项目主页二次优化 Review
+
+- 已优化 `web/index.html` 首屏：顶部 logo 改用 128px 小图、主文案改为更直接的开源贡献工作流定位，CTA 收敛为 GitHub 和查看真实运行，原 `6 / Gate / JSONL` 指标改为 Plan / Run / Prove 三步路径。
+- 已重写 `web/styles.css` 首屏视觉：导航降低背景实度与阴影，首屏高度和截图遮罩重新平衡，桌面端保留更清晰的真实产品背景，移动端隐藏次级说明与流程卡片，按钮保持单列可点击。
+- 已强化真实运行展示：`media-feature` 改为 `media-stage`，录屏成为更大的展示舞台，Pipeline 主截图横跨整行，后续截图保持两列节奏。
+- 已压缩 Pipeline 说明密度：6 个阶段卡片合并成发现与计划、实现与审查、验证与提交材料 3 个流程块，降低卡片网格均质感。
+- 已改进 reveal 渐进增强：内容默认可见，JS 可用时只做轻微位移动画，不再用透明度隐藏内容，避免锚点跳转或脚本慢加载时出现空白区块。
+- 已新增 `web/assets/brand/logo-128.png`，顶部导航不再加载 476KB 原始 logo；主页结构测试已同步小图标断言。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`；`node --check web/app.js`；HTML 本地引用检查无缺失；`git diff --check -- web/index.html web/styles.css web/app.js web/tests/test_homepage_structure.py tasks/todo.md`。
+- 视觉核验：本地服务 `http://127.0.0.1:8765/`；桌面首屏 `/tmp/codeinsights-homepage-optimized-desktop.png`；移动首屏 `/tmp/codeinsights-homepage-optimized-mobile.png`；展示区 `/tmp/codeinsights-homepage-showcase-desktop.png`；桌面与 390px 移动端 `scrollWidth == clientWidth`，无横向溢出。
+- 代码审查：`code-reviewer` 复查无发现；残留风险是未做真实 GitHub Pages 部署后截图核验。
+
+## 2026-05-24 项目主页二次视觉诊断计划
+
+- [x] 复习 `tasks/lessons.md` 和既有 homepage 任务记录，确认本轮只做视觉诊断，不改主页实现。
+- [x] 审阅 `web/index.html`、`web/styles.css`、`web/app.js`、主页测试和当前素材体积。
+- [x] 使用本地静态服务核验当前桌面与移动首屏截图。
+- [x] 按影响优先级整理主页 UI/UX 优化点。
+
+## 2026-05-24 项目主页二次视觉诊断 Review
+
+- 本轮基于当前 `web/` 静态主页、本地截图和结构测试做诊断；未修改主页实现代码。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`。
+- 本地核验：`http://127.0.0.1:8765/`；桌面截图 `/tmp/codeinsights-homepage-current-desktop.png`；移动截图 `/tmp/codeinsights-homepage-current-mobile.png`。
+- 核心问题：首屏真实产品截图被深色遮罩压得过暗，产品可辨认度不足；固定导航视觉重量偏高；首屏 CTA 与指标块仍偏多；移动端首屏信息压缩后可读性一般；后续区块卡片、图表和长技术文案密度接近，页面节奏不够有主次。
+- 建议优先级：先重做首屏构图和移动首屏，再收敛导航/CTA，然后重排 showcase 与架构内容，最后统一细节动效和资源策略。
+
 ## 2026-05-24 项目主页逐步改进计划
 
 - [x] 基于上一轮诊断和 `ui-ux-pro-max` 规则确认改造边界：只改 `web/` 静态项目主页与对应测试/说明，不触碰 Electron 运行时代码。

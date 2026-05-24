@@ -48,7 +48,7 @@ class HomepageStructureTest(unittest.TestCase):
 
     def test_current_homepage_assets_exist(self):
         required_assets = [
-            "assets/brand/logo.webp",
+            "assets/brand/logo-128.png",
             "assets/screenshots/pipeline-dashboard.jpg",
             "assets/screenshots/agent-workbench.jpg",
             "assets/screenshots/settings-overview.jpg",
@@ -84,8 +84,13 @@ class HomepageStructureTest(unittest.TestCase):
             "Architecture",
             "Watch Real Run",
             "Quick Start",
+            "Shape the plan",
+            "plan.md",
+            "Before launch",
+            "Agent-compatible channel",
             "Complex contribution needs process quality",
-            "Start with a reviewable plan",
+            "Complex edits drift easily",
+            "Turn risk into checkpoints",
             "Pipeline v2",
             "Claude Agent SDK",
             "Codex SDK / CLI",

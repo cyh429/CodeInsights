@@ -24,7 +24,7 @@
 
     <header class="site-header">
       <a class="site-header__brand" href="#hero" aria-label="CodeInsights home">
-        <img src="./assets/brand/logo.webp" alt="" width="42" height="42" />
+        <img src="./assets/brand/logo-128.png" alt="" width="42" height="42" />
         <span>CodeInsights</span>
       </a>
       <nav class="site-header__nav" aria-label="Primary navigation">
@@ -66,8 +66,8 @@
           </p>
           <h1 id="hero-title">CodeInsights</h1>
           <p class="hero__lead">
-            <span class="lang lang-zh">把一次性聊天改造成可计划、可审查、可验证的贡献流程。<br />Pipeline 负责阶段和证据，Agent 负责执行，本地 JSONL 负责回放。</span>
-            <span class="lang lang-en">Turn one-off chat into planned, reviewable, verifiable contribution work.<br />Pipeline owns stages and evidence, Agent owns execution, and local JSONL keeps the replay trail.</span>
+            <span class="lang lang-zh">把开源贡献从“让模型试试”变成可计划、可审查、可验证的桌面工作流。<span class="hero__lead-extra">Pipeline 安排阶段和证据，Agent 在本地工作区执行，JSONL 留下可回放记录。</span></span>
+            <span class="lang lang-en">Turn “ask a model to try” into planned, reviewable, verifiable contribution work.<span class="hero__lead-extra">Pipeline structures the stages, Agent executes in your workspace, and JSONL keeps the replay trail.</span></span>
           </p>
           <div class="hero__actions">
             <a class="button button-primary" href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
@@ -75,33 +75,51 @@
               <span class="lang lang-zh">查看真实运行</span>
               <span class="lang lang-en">Watch Real Run</span>
             </a>
-            <a class="hero__text-link" href="#quickstart">Quick Start</a>
           </div>
-          <dl class="hero__metrics" aria-label="CodeInsights highlights">
-            <div>
-              <dt>6</dt>
-              <dd>
-                <span class="lang lang-zh">阶段化贡献路径</span>
-                <span class="lang lang-en">staged contribution path</span>
-              </dd>
-            </div>
-            <div>
-              <dt>Gate</dt>
-              <dd>
-                <span class="lang lang-zh">人工审核断点</span>
-                <span class="lang lang-en">human review checkpoints</span>
-              </dd>
-            </div>
-            <div>
-              <dt>JSONL</dt>
-              <dd>
-                <span class="lang lang-zh">本地事件回放</span>
-                <span class="lang lang-en">local event replay</span>
-              </dd>
-            </div>
-          </dl>
+          <div class="hero__flow" aria-label="CodeInsights contribution path">
+            <article>
+              <span>01 / Plan</span>
+              <strong>
+                <span class="lang lang-zh">先形成方案</span>
+                <span class="lang lang-en">Shape the plan</span>
+              </strong>
+            </article>
+            <article>
+              <span>02 / Run</span>
+              <strong>
+                <span class="lang lang-zh">再让 Agent 执行</span>
+                <span class="lang lang-en">Let agents work</span>
+              </strong>
+            </article>
+            <article>
+              <span>03 / Prove</span>
+              <strong>
+                <span class="lang lang-zh">最后留下证据</span>
+                <span class="lang lang-en">Keep evidence</span>
+              </strong>
+            </article>
+          </div>
         </div>
       </section>
+
+      <nav class="mobile-jump-nav" aria-label="Mobile section shortcuts">
+        <a href="#showcase">
+          <span class="lang lang-zh">产品</span>
+          <span class="lang lang-en">Product</span>
+        </a>
+        <a href="#pipeline">
+          <span class="lang lang-zh">工作流</span>
+          <span class="lang lang-en">Workflow</span>
+        </a>
+        <a href="#local-first">
+          <span class="lang lang-zh">架构</span>
+          <span class="lang lang-en">Architecture</span>
+        </a>
+        <a href="#quickstart">
+          <span class="lang lang-zh">开始</span>
+          <span class="lang lang-en">Start</span>
+        </a>
+      </nav>
 
       <section id="proof" class="section-block section-block--compact">
         <div class="section-block__header" data-reveal>
@@ -114,40 +132,60 @@
             <span class="lang lang-en">Complex contribution needs process quality, not only model capability</span>
           </h2>
         </div>
-        <div class="value-grid">
-          <article class="value-card" data-reveal>
-            <p class="value-card__label">Plan</p>
+        <div class="proof-layout">
+          <div class="proof-summary" data-reveal>
+            <p class="value-card__label">Shift</p>
             <h3>
-              <span class="lang lang-zh">先形成可审查计划</span>
-              <span class="lang lang-en">Start with a reviewable plan</span>
+              <span class="lang lang-zh">从“模型给答案”转向“过程可批准”</span>
+              <span class="lang lang-en">From model answers to approvable process</span>
             </h3>
             <p>
-              <span class="lang lang-zh">Explorer 和 Planner 先把贡献机会、风险、验证路径和待确认事项整理成阶段产物，避免直接冲进修改。</span>
-              <span class="lang lang-en">Explorer and Planner turn contribution opportunities, risks, verification paths, and open questions into staged artifacts before edits begin.</span>
+              <span class="lang lang-zh">CodeInsights 把任务拆成计划、执行和证据三层，让每一步都能被人接管、暂停、复查或恢复。</span>
+              <span class="lang lang-en">CodeInsights splits work into planning, execution, and evidence so each step can be paused, reviewed, resumed, or taken over by a human.</span>
             </p>
-          </article>
-          <article class="value-card" data-reveal>
-            <p class="value-card__label">Execute</p>
-            <h3>
-              <span class="lang lang-zh">让 Agent 在边界内执行</span>
-              <span class="lang lang-en">Let agents execute within boundaries</span>
-            </h3>
-            <p>
-              <span class="lang lang-zh">Agent 读取工作区、调用工具、等待权限和 AskUser；Pipeline 在人工 gate 处暂停，而不是把风险藏在自动化里。</span>
-              <span class="lang lang-en">Agent reads the workspace, calls tools, waits for permissions and AskUser; Pipeline pauses at human gates instead of hiding risk inside automation.</span>
-            </p>
-          </article>
-          <article class="value-card" data-reveal>
-            <p class="value-card__label">Prove</p>
-            <h3>
-              <span class="lang lang-zh">把验证证据留下来</span>
-              <span class="lang lang-en">Keep the evidence trail</span>
-            </h3>
-            <p>
-              <span class="lang lang-zh">会话、事件、checkpoint、artifacts 和工作区文件都优先落到本机，方便恢复、对比、排障和开源协作。</span>
-              <span class="lang lang-en">Sessions, events, checkpoints, artifacts, and workspace files stay local first so recovery, comparison, debugging, and collaboration remain inspectable.</span>
-            </p>
-          </article>
+          </div>
+          <div class="value-grid value-grid--path">
+            <article class="value-card" data-reveal>
+              <p class="value-card__label">Problem</p>
+              <h3>
+                <span class="lang lang-zh">复杂修改容易失控</span>
+                <span class="lang lang-en">Complex edits drift easily</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">直接让 Agent 改仓库，很容易把风险、假设和验证缺口混进一段长输出里。</span>
+                <span class="lang lang-en">Letting an agent edit directly can bury risk, assumptions, and missing verification inside one long answer.</span>
+              </p>
+            </article>
+            <article class="value-card" data-reveal>
+              <p class="value-card__label">Control</p>
+              <h3>
+                <span class="lang lang-zh">把风险变成检查点</span>
+                <span class="lang lang-en">Turn risk into checkpoints</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">Pipeline 在计划、权限、AskUser 和人工 gate 处暂停，Agent 只在明确边界内执行。</span>
+                <span class="lang lang-en">Pipeline pauses at planning, permissions, AskUser, and human gates while Agent executes inside explicit boundaries.</span>
+              </p>
+            </article>
+            <article class="value-card" data-reveal>
+              <p class="value-card__label">Evidence</p>
+              <h3>
+                <span class="lang lang-zh">保留可回放证据</span>
+                <span class="lang lang-en">Keep replayable evidence</span>
+              </h3>
+              <p>
+                <span class="lang lang-zh">会话、事件、checkpoint、artifacts 和工作区文件优先落到本机，方便恢复、对比和排障。</span>
+                <span class="lang lang-en">Sessions, events, checkpoints, artifacts, and workspace files stay local first for recovery, comparison, and debugging.</span>
+              </p>
+            </article>
+          </div>
+          <div class="artifact-strip" data-reveal aria-label="Recorded artifacts">
+            <span>plan.md</span>
+            <span>review.md</span>
+            <span>test evidence</span>
+            <span>JSONL events</span>
+            <span>checkpoint</span>
+          </div>
         </div>
       </section>
 
@@ -167,7 +205,7 @@
           </p>
         </div>
 
-        <div class="media-feature" data-reveal>
+        <div class="media-stage" data-reveal>
           <video
             src="./assets/video/codeinsights-real-run-overview.mp4"
             poster="./assets/video/real-run-contact-sheet.jpg"
@@ -177,7 +215,7 @@
             preload="metadata"
             aria-label="CodeInsights real desktop overview"
           ></video>
-          <div class="media-feature__copy">
+          <div class="media-stage__copy">
             <p class="eyebrow">
               <span class="lang lang-zh">6 秒真实录屏</span>
               <span class="lang lang-en">6-second real run</span>
@@ -190,11 +228,25 @@
               <span class="lang lang-zh">首页首屏使用真实 Pipeline 截图建立产品信号，这段录屏提供更完整的界面节奏。</span>
               <span class="lang lang-en">The hero uses a real Pipeline screenshot for product signal; this video shows the broader interface rhythm.</span>
             </p>
+            <ul class="signal-list" aria-label="Visible product signals">
+              <li>
+                <span class="lang lang-zh">Pipeline 阶段轨道</span>
+                <span class="lang lang-en">Pipeline stage rail</span>
+              </li>
+              <li>
+                <span class="lang lang-zh">Agent 工作区</span>
+                <span class="lang lang-en">Agent workspace</span>
+              </li>
+              <li>
+                <span class="lang lang-zh">模型与 MCP 配置</span>
+                <span class="lang lang-en">Model and MCP settings</span>
+              </li>
+            </ul>
           </div>
         </div>
 
         <div class="screenshot-grid">
-          <figure class="screenshot-card" data-reveal>
+          <figure class="screenshot-card screenshot-card--wide" data-reveal>
             <img src="./assets/screenshots/pipeline-dashboard.jpg" alt="CodeInsights Pipeline desktop workbench" width="1600" height="966" loading="lazy" />
             <figcaption>
               <strong>
@@ -273,50 +325,35 @@
           <div class="stage-list" data-reveal>
             <article>
               <span>01</span>
-              <h3>Explorer</h3>
+              <h3>
+                <span class="lang lang-zh">发现与计划</span>
+                <span class="lang lang-en">Discover and plan</span>
+              </h3>
               <p>
-                <span class="lang lang-zh">阅读目标与仓库上下文，发现候选贡献任务。</span>
-                <span class="lang lang-en">Reads the goal and repository context to discover candidate contribution tasks.</span>
+                <span class="lang lang-zh">Explorer 阅读目标与仓库上下文，Planner 输出计划、风险、验证路径和可审查文档。</span>
+                <span class="lang lang-en">Explorer reads the goal and repository context; Planner produces the plan, risks, verification path, and reviewable documents.</span>
               </p>
             </article>
             <article>
               <span>02</span>
-              <h3>Planner</h3>
+              <h3>
+                <span class="lang lang-zh">实现与审查</span>
+                <span class="lang lang-en">Build and review</span>
+              </h3>
               <p>
-                <span class="lang lang-zh">输出计划、风险、验证路径和可审查文档。</span>
-                <span class="lang lang-en">Produces plans, risks, verification paths, and reviewable documents.</span>
+                <span class="lang lang-zh">Developer 通过 Codex SDK / CLI 修改工作区，Reviewer 只读审查 diff、回归、安全和测试缺口。</span>
+                <span class="lang lang-en">Developer changes the workspace through Codex SDK / CLI; Reviewer checks diffs, regressions, security, and test gaps read-only.</span>
               </p>
             </article>
             <article>
               <span>03</span>
-              <h3>Developer</h3>
+              <h3>
+                <span class="lang lang-zh">验证与提交材料</span>
+                <span class="lang lang-en">Verify and draft</span>
+              </h3>
               <p>
-                <span class="lang lang-zh">通过 Codex SDK / CLI 在工作区中实现修改并记录开发证据。</span>
-                <span class="lang lang-en">Uses Codex SDK / CLI to implement changes in the workspace and record development evidence.</span>
-              </p>
-            </article>
-            <article>
-              <span>04</span>
-              <h3>Reviewer</h3>
-              <p>
-                <span class="lang lang-zh">只读审查 diff，聚焦正确性、回归、安全和测试缺口。</span>
-                <span class="lang lang-en">Reviews diffs read-only, focusing on correctness, regressions, security, and test gaps.</span>
-              </p>
-            </article>
-            <article>
-              <span>05</span>
-              <h3>Tester</h3>
-              <p>
-                <span class="lang lang-zh">运行验证命令，收集测试证据和 patch-set 摘要。</span>
-                <span class="lang lang-en">Runs verification commands and collects test evidence plus patch-set summaries.</span>
-              </p>
-            </article>
-            <article>
-              <span>06</span>
-              <h3>Committer</h3>
-              <p>
-                <span class="lang lang-zh">生成提交信息、PR 标题和正文草稿，等待最终确认。</span>
-                <span class="lang lang-en">Drafts commit messages, PR titles, and PR bodies for final confirmation.</span>
+                <span class="lang lang-zh">Tester 运行验证命令并收集证据，Committer 生成提交信息、PR 标题和正文草稿。</span>
+                <span class="lang lang-en">Tester runs verification commands and collects evidence; Committer drafts commit messages, PR titles, and PR bodies.</span>
               </p>
             </article>
           </div>
@@ -462,43 +499,49 @@
             <span class="lang lang-en">Infrastructure for desktop Agent collaboration</span>
           </h2>
         </div>
-        <div class="capability-grid">
-          <article data-reveal>
+        <div class="capability-grid capability-grid--matrix">
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Model Layer</p>
             <h3>Provider Adapters</h3>
             <p>
               <span class="lang lang-zh">Anthropic、OpenAI、DeepSeek、Google、Kimi、智谱、MiniMax、豆包、通义千问和自定义 OpenAI 兼容端点。</span>
               <span class="lang lang-en">Anthropic, OpenAI, DeepSeek, Google, Kimi, Zhipu, MiniMax, Doubao, Qwen, and custom OpenAI-compatible endpoints.</span>
             </p>
           </article>
-          <article data-reveal>
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Review Layer</p>
             <h3>Human Gates</h3>
             <p>
               <span class="lang lang-zh">工具权限、AskUser、ExitPlan、Pipeline gate 都按 session 隔离，后台会话不丢请求。</span>
               <span class="lang lang-en">Tool permissions, AskUser, ExitPlan, and Pipeline gates are isolated per session, preserving background requests.</span>
             </p>
           </article>
-          <article data-reveal>
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Bridge Layer</p>
             <h3>IM Bridge</h3>
             <p>
               <span class="lang lang-zh">飞书、钉钉、微信 Bridge 可以把远程消息转成本地桌面 Agent / Chat 会话请求。</span>
               <span class="lang lang-en">Feishu, DingTalk, and WeChat bridges can turn remote messages into local desktop Agent / Chat session requests.</span>
             </p>
           </article>
-          <article data-reveal>
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Context Layer</p>
             <h3>Documents</h3>
             <p>
               <span class="lang lang-zh">附件、PDF、Office、文本解析和文件预览贯穿 Chat 回退、Agent 工作区和任务资料。</span>
               <span class="lang lang-en">Attachments, PDF, Office, text parsing, and file preview support Chat fallback, Agent workspaces, and task context.</span>
             </p>
           </article>
-          <article data-reveal>
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Runtime Layer</p>
             <h3>Runtime Checks</h3>
             <p>
               <span class="lang lang-zh">Bun、Git、Node、WSL、Shell 环境、代理和自动更新由主进程统一检测与管理。</span>
               <span class="lang lang-en">Bun, Git, Node, WSL, shell environment, proxy settings, and updater state are checked and managed from the main process.</span>
             </p>
           </article>
-          <article data-reveal>
+          <article class="capability-card" data-reveal>
+            <p class="capability-card__type">Safety Layer</p>
             <h3>Security Boundary</h3>
             <p>
               <span class="lang lang-zh">Electron contextIsolation、preload 白名单、safeStorage 加密和 Codex Git guard 共同约束高风险操作。</span>
@@ -521,6 +564,25 @@
           </p>
         </div>
         <div class="quickstart-layout">
+          <aside class="prereq-panel" data-reveal>
+            <p class="value-card__label">Before launch</p>
+            <h3>
+              <span class="lang lang-zh">先确认四件事</span>
+              <span class="lang lang-en">Check four things first</span>
+            </h3>
+            <ul class="check-list">
+              <li>Bun 1.2.5+</li>
+              <li>Git</li>
+              <li>
+                <span class="lang lang-zh">Agent 兼容渠道</span>
+                <span class="lang lang-en">Agent-compatible channel</span>
+              </li>
+              <li>
+                <span class="lang lang-zh">可选 Codex auth</span>
+                <span class="lang lang-en">Optional Codex auth</span>
+              </li>
+            </ul>
+          </aside>
           <div class="setup-list" data-reveal>
             <article>
               <span>01</span>
@@ -558,6 +620,10 @@
               <span>bash</span>
               <a href="https://github.com/zcxGGmu/CodeInsights" target="_blank" rel="noreferrer noopener">GitHub</a>
             </div>
+            <p class="code-shell__hint">
+              <span class="lang lang-zh">本地开发入口</span>
+              <span class="lang lang-en">Local development entry</span>
+            </p>
             <pre><code>git clone https://github.com/zcxGGmu/CodeInsights.git
 cd CodeInsights
 
