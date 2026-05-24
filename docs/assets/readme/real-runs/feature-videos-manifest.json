@@ -47,6 +47,7 @@
     "视频来自真实 Electron dev 主窗口，通过 CDP 捕捉业务窗口帧。",
     "采集建议使用隔离 CODEINSIGHTS_CONFIG_DIR，避免读取本机真实渠道密钥、历史会话和 IM 凭证。",
     "本轮演示不调用真实模型、不连接外部 IM Bridge；Provider、MCP、Skills 只展示本地可验证配置界面。",
-    "README 内嵌播放器使用 GitHub user-attachments URL；仓库内 MP4 和 poster 作为可审计源文件保留。"
+    "README 内嵌播放器使用 GitHub user-attachments URL；仓库内 MP4 和 poster 作为可审计源文件保留。",
+    "公开附件登记 issue: https://github.com/zcxGGmu/CodeInsights/issues/4，已关闭，仅用于让 GitHub 将附件绑定到公开内容。"
   ]
 }

@@ -65,6 +65,8 @@ CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config
 | `feature-03-provider-settings.mp4` | `https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff` |
 | `feature-04-agent-mcp-skills.mp4` | `https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8` |
 
+公开附件登记：`https://github.com/zcxGGmu/CodeInsights/issues/4`。该 issue 已关闭，仅用于让 GitHub 将四段 README 功能演示视频绑定到公开内容，确保匿名访问会跳转到 MP4 资源。
+
 ## 重新采集功能演示视频
 
 先用隔离配置目录启动 Electron dev 应用，并开启 CDP：

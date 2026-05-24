@@ -6,7 +6,20 @@
 - [x] 使用当前 GitHub Web 登录态上传四段功能演示 MP4，获取 `https://github.com/user-attachments/assets/...` URL；匿名访问需等公开 README 引用推送后复核。
 - [x] 将 `README.md`、`README_en.md` 和 `docs/assets/readme/real-runs/README.md` 中的功能演示区替换为内嵌视频播放器，删除“相对 MP4 不能内嵌”的临时说明。
 - [x] 使用 GitHub 编辑器 Preview 验证新视频 URL 会渲染为 `<video>` / `gh:secured-asset-reference`，并检查资源路径、敏感信息和 Markdown 空白。
-- [ ] 提交并推送到远程，最后在本节末尾追加 Review，记录附件 URL、验证结果和残留限制。
+- [x] 提交并推送到远程，最后在本节末尾追加 Review，记录附件 URL、验证结果和残留限制。
+
+## 2026-05-24 README 功能演示视频内嵌播放器 Review
+
+- 已将中英文 README 功能演示区从“poster 图 + 仓库 MP4 链接”改为 GitHub README 可直接渲染的 `<video>` 播放器。
+- 四段功能演示附件 URL：
+  - Pipeline 工作流：`https://github.com/user-attachments/assets/dadf47f5-d339-4df1-90d4-a07e8d91eb42`
+  - Agent 工作区：`https://github.com/user-attachments/assets/482f3f5c-4022-4500-b5dd-f1f7c5244cb3`
+  - 模型与 Provider 配置：`https://github.com/user-attachments/assets/aec44d0a-2cee-4d39-831f-41423b9765ff`
+  - Agent MCP / Skills 配置：`https://github.com/user-attachments/assets/91380be8-b868-4dd8-9b2a-3962729d55b8`
+- 已创建并关闭公开附件登记 issue：`https://github.com/zcxGGmu/CodeInsights/issues/4`，用于让 GitHub 将四段 user-attachments 绑定到公开内容；关闭后匿名 range GET 均返回 MP4 `ftypisom` 文件头。
+- 线上 README 已复核：`https://github.com/zcxGGmu/CodeInsights` 渲染 HTML 中存在 5 个 `<video>` 播放器，其中 4 个为本轮新增功能演示，且包含对应 `gh:secured-asset-reference`。
+- 验证通过：`jq` 校验 `feature-videos-manifest.json`；`git diff --check`；敏感 token 扫描无命中；GitHub 编辑器 Preview 返回 4 个视频元素；线上 HTML 和匿名 MP4 头部检查通过。
+- 已推送提交：`6df6bc35 docs: 内嵌 README 功能演示视频`。
 
 ## 2026-05-24 README 多功能演示视频补充计划
 
