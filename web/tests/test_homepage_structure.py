@@ -22,6 +22,7 @@ class HomepageStructureTest(unittest.TestCase):
         self.root = Path(__file__).resolve().parents[1]
         self.repo_root = self.root.parents[0]
         self.html = (self.root / "index.html").read_text(encoding="utf-8")
+        self.css = (self.root / "styles.css").read_text(encoding="utf-8")
 
     def test_core_files_exist(self):
         self.assertTrue((self.root / "index.html").exists())
@@ -64,6 +65,11 @@ class HomepageStructureTest(unittest.TestCase):
         ]
         for relative_path in required_assets:
             self.assertTrue((self.root / relative_path).exists(), relative_path)
+
+    def test_responsive_media_preserves_aspect_ratio(self):
+        self.assertIn("height: auto;", self.css)
+        self.assertIn(".diagram-panel img", self.css)
+        self.assertIn(".diagram-card img", self.css)
 
     def test_all_local_html_references_exist(self):
         parser = LocalReferenceParser()

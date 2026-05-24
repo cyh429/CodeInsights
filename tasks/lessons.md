@@ -1,5 +1,10 @@
 # Lessons
 
+## 2026-05-24 项目主页架构图留白
+
+- 给主页架构图、截图等 `<img>` 写 HTML `width` / `height` 属性时，CSS 基础规则必须同时包含 `width/max-width` 与 `height: auto`；否则窄列响应式布局会保留固定高度，SVG 默认居中适配后出现巨大上下白边。
+- 用户截图圈出页面大块空白时，要先测量真实 DOM 盒子和图片 natural size，不要只看 SVG viewBox；容器高度、HTML 尺寸属性和懒加载状态都可能造成“看起来是图片空白”的问题。
+
 ## 2026-05-23 README 语言切换与标题图标
 
 - README 顶部语言切换必须指向真实存在的 README 文件；不要把 `English` 链接到产品主页或 GitHub Pages 首页来替代英文 README。

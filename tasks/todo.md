@@ -1,5 +1,20 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 项目主页架构图留白修复计划
+
+- [x] 复现并解释用户截图中的大块空白：确认不是 SVG 画布内容过空，而是响应式图片高度被 HTML `height` 属性固定。
+- [x] 修正全局媒体基础样式，让图片在宽度缩放时保持原始比例。
+- [x] 增加主页结构测试，锁定响应式媒体必须保留 `height: auto`。
+- [x] 运行主页结构测试、JS 检查、diff 空白检查，并用本地浏览器量测 Pipeline 图高度。
+
+## 2026-05-24 项目主页架构图留白修复 Review
+
+- 已确认根因：`web/index.html` 的架构图保留 HTML `width` / `height` 属性用于预留尺寸，但 `web/styles.css` 基础媒体规则只设置了 `max-width: 100%`，没有 `height: auto`；当左列宽度变为约 `620px` 时，图片高度仍按 `1720px` 计算，SVG 内容被居中缩放后产生巨大上下白边。
+- 已在 `img, video` 基础规则补充 `height: auto`，后续截图和架构图都会在响应式宽度下保持原始宽高比；`media-stage video` 仍由后续更具体规则覆盖为 `height: 100%`，不影响首屏视频舞台。
+- 已补充主页结构测试 `test_responsive_media_preserves_aspect_ratio`，防止删除该基础规则后回归。
+- 验证通过：`python3 -m unittest web.tests.test_homepage_structure`；`node --check web/app.js`；`git diff --check -- web/styles.css web/tests/test_homepage_structure.py tasks/todo.md tasks/lessons.md`。
+- 本地浏览器量测：修复前 Pipeline 图像盒子约 `620.7 x 1720px`；修复后约 `620.7 x 444.8px`，与 SVG `1200 x 860` 比例一致。
+
 ## 2026-05-24 项目主页第三轮打磨计划
 
 - [x] 把价值卡片从普通三列说明升级为更可扫读的“问题 / 机制 / 证据”信息路径。
