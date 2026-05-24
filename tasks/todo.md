@@ -1,5 +1,17 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 README 顶部项目图标比例调整计划
+
+- [x] 复习 `tasks/lessons.md` 中 README 标题图标相关经验，确认本轮仅调整首屏图标展示比例。
+- [x] 将 `README.md` 顶部项目图标从偏小尺寸调大，使其更匹配下方 `CodeInsights` 标题的视觉比例。
+- [x] 验证 Markdown 图片引用、diff 空白和最终改动范围，并在本节末尾追加 Review。
+
+## 2026-05-24 README 顶部项目图标比例调整 Review
+
+- 已将 `README.md` 顶部项目图标展示宽度从 `96` 调整为 `144`，让图标和下方 `CodeInsights` 标题的视觉比例更接近。
+- 本轮未修改视频、徽章、语言切换、章节导航和英文 README。
+- 验证通过：`assets/icon/CodeInsights.png` 路径存在；`rg` 确认 README 顶部图标宽度为 `144`；`git diff --check -- README.md tasks/todo.md` 通过。
+
 ## 2026-05-23 项目主页重构计划
 
 - [x] 复习 `tasks/lessons.md`、`README.md`、`assets/` 和 `web/` 当前实现，确认首页要从旧 RISC-V / Python / 双 SDK 叙述切换到当前 Electron 桌面工作台。

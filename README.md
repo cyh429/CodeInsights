@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/icon/CodeInsights.png" alt="CodeInsights" width="96" />
+<img src="./assets/icon/CodeInsights.png" alt="CodeInsights" width="144" />
 
 <h1>CodeInsights</h1>
 
