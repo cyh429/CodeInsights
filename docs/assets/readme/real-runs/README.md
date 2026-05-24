@@ -18,7 +18,18 @@ CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config
 | `04-channels-and-agent-settings.png` | Agent 高级设置、内置工具、MCP 服务器、Skills | MCP / Skills / 本地能力章节 |
 | `codeinsights-real-run-overview.mp4` | 6 秒真实界面录屏，覆盖 Pipeline、Agent、设置与回到 Pipeline | README 真实录屏文件链接 |
 | `codeinsights-real-run-overview-contact-sheet.jpg` | 录屏抽帧总览 | 本地核验或视频 fallback 预览 |
+| `feature-01-pipeline-workflow.mp4` | Pipeline 工作台、六阶段 Mission Route、记录过滤和阶段产物 / 运行日志切换 | README 功能演示区 |
+| `feature-01-pipeline-workflow-poster.jpg` | Pipeline 工作流演示视频预览图 | README 功能演示区 |
+| `feature-02-agent-workspace.mp4` | Agent 模式、工作区矩阵、新会话入口、资源面板和能力入口 | README 功能演示区 |
+| `feature-02-agent-workspace-poster.jpg` | Agent 工作区演示视频预览图 | README 功能演示区 |
+| `feature-03-provider-settings.mp4` | 模型配置、DeepSeek 预设、Pipeline Codex 认证来源和新增 Provider 表单 | README 功能演示区 |
+| `feature-03-provider-settings-poster.jpg` | 模型与 Provider 配置演示视频预览图 | README 功能演示区 |
+| `feature-04-agent-mcp-skills.mp4` | Agent 高级设置、内置工具、MCP Server、Skills 和工作区隔离能力 | README 功能演示区 |
+| `feature-04-agent-mcp-skills-poster.jpg` | Agent MCP / Skills 演示视频预览图 | README 功能演示区 |
+| `feature-demos-contact-sheet.jpg` | 四段功能演示视频预览总览 | 本地核验或素材目录 |
+| `feature-videos-manifest.json` | 功能演示视频采集时间、文件清单和限制说明 | 审计记录 |
 | `capture-cdp.mjs` | CDP 采集脚本 | 后续重新采集素材 |
+| `capture-feature-demos.mjs` | 多功能演示视频 CDP 采集脚本 | 后续重新采集功能视频 |
 | `manifest.json` | 采集时间、目标 URL 和文件清单 | 审计记录 |
 
 ## README 引用片段
@@ -33,6 +44,31 @@ CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-capture-config
 ![模型配置](./docs/assets/readme/real-runs/03-settings-overview.png)
 
 ![Agent MCP 与 Skills 配置](./docs/assets/readme/real-runs/04-channels-and-agent-settings.png)
+
+[![Pipeline 工作流演示](./docs/assets/readme/real-runs/feature-01-pipeline-workflow-poster.jpg)](./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4)
+
+[![Agent 工作区演示](./docs/assets/readme/real-runs/feature-02-agent-workspace-poster.jpg)](./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4)
+
+[![模型与 Provider 配置演示](./docs/assets/readme/real-runs/feature-03-provider-settings-poster.jpg)](./docs/assets/readme/real-runs/feature-03-provider-settings.mp4)
+
+[![Agent MCP / Skills 配置演示](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills-poster.jpg)](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4)
 ```
 
 当前根 README 的播放器使用 GitHub 已验证可渲染的 `https://github.com/user-attachments/assets/...` 附件 URL；仓库内 `codeinsights-real-run-overview.mp4` 作为真实运行录屏文件链接保留。GitHub README 会过滤相对路径 MP4，因此新增或替换视频时必须先上传为 user-attachments 附件，并复核线上渲染 HTML 中存在 `<video>`。
+
+## 重新采集功能演示视频
+
+先用隔离配置目录启动 Electron dev 应用，并开启 CDP：
+
+```bash
+cd apps/electron
+CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-feature-config ./node_modules/.bin/electron --remote-debugging-port=9334 .
+```
+
+然后在仓库根目录运行：
+
+```bash
+CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-readme-feature-config bun docs/assets/readme/real-runs/capture-feature-demos.mjs
+```
+
+功能演示视频只覆盖本地可验证 UI，不调用真实模型、不连接外部 IM Bridge，也不读取本机历史会话或凭证。

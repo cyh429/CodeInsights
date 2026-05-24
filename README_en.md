@@ -20,7 +20,7 @@ CodeInsights is a local-first AI Agent desktop workspace for open source contrib
 
 [Homepage](https://zcxggmu.github.io/CodeInsights/)
 
-[Highlights](#highlights) · [Real Interface](#real-interface-preview) · [Positioning](#positioning) · [Capabilities](#capabilities) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Pipeline](#pipeline-workflow) · [Agent Runtime](#agent-runtime) · [Local Data](#local-data-and-configuration) · [Development](#development-guide) · [Commands](#common-commands) · [Security](#security-and-boundaries) · [Assets](#asset-catalog) · [Contributing](#contributing)
+[Highlights](#highlights) · [Real Interface](#real-interface-preview) · [Feature Demos](#feature-demo-videos) · [Positioning](#positioning) · [Capabilities](#capabilities) · [Quick Start](#quick-start) · [Architecture](#architecture) · [Pipeline](#pipeline-workflow) · [Agent Runtime](#agent-runtime) · [Local Data](#local-data-and-configuration) · [Development](#development-guide) · [Commands](#common-commands) · [Security](#security-and-boundaries) · [Assets](#asset-catalog) · [Contributing](#contributing)
 
 </div>
 
@@ -102,6 +102,75 @@ Provider channels, the DeepSeek preset, Pipeline Codex auth source, and Agent pr
 <img src="./docs/assets/readme/real-runs/04-channels-and-agent-settings.png" alt="Real Agent settings MCP Skills screenshot" width="100%" />
 
 Advanced Agent settings, built-in tools, MCP servers, and Skills are isolated by workspace for local automation.
+
+</td>
+</tr>
+</table>
+
+---
+
+<a id="feature-demo-videos"></a>
+
+## Feature Demo Videos
+
+These short videos were captured from a real Electron development window with the same isolated configuration approach. They demonstrate locally verifiable UI flows only: no real model call is made, no Feishu / DingTalk / WeChat bridge is connected, and no existing local sessions or credentials are loaded.
+
+GitHub README rendering is unreliable for inline relative-path MP4 playback, so the previews below link to repository MP4 files. To render them inline like the hero overview, upload each video as a GitHub `user-attachments` asset and replace the links with those attachment URLs.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### Pipeline Workflow
+
+<a href="./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4">
+  <img src="./docs/assets/readme/real-runs/feature-01-pipeline-workflow-poster.jpg" alt="Pipeline workflow demo video preview" width="100%" />
+</a>
+
+[Open demo video](./docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4)
+
+Shows the Pipeline workspace, six-stage Mission Route, record filters, and artifact / run-log switching.
+
+</td>
+<td width="50%" valign="top">
+
+### Agent Workspace
+
+<a href="./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4">
+  <img src="./docs/assets/readme/real-runs/feature-02-agent-workspace-poster.jpg" alt="Agent workspace demo video preview" width="100%" />
+</a>
+
+[Open demo video](./docs/assets/readme/real-runs/feature-02-agent-workspace.mp4)
+
+Shows Agent mode, the workspace matrix, new-session entry, resource panel, and capabilities entry point.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### Model And Provider Configuration
+
+<a href="./docs/assets/readme/real-runs/feature-03-provider-settings.mp4">
+  <img src="./docs/assets/readme/real-runs/feature-03-provider-settings-poster.jpg" alt="Model and provider configuration demo video preview" width="100%" />
+</a>
+
+[Open demo video](./docs/assets/readme/real-runs/feature-03-provider-settings.mp4)
+
+Shows model settings, the DeepSeek preset, Pipeline Codex auth source, and the new Provider configuration form.
+
+</td>
+<td width="50%" valign="top">
+
+### Agent MCP / Skills Configuration
+
+<a href="./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4">
+  <img src="./docs/assets/readme/real-runs/feature-04-agent-mcp-skills-poster.jpg" alt="Agent MCP and Skills configuration demo video preview" width="100%" />
+</a>
+
+[Open demo video](./docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4)
+
+Shows advanced Agent settings, built-in tools, MCP servers, Skills, and workspace-scoped capability management.
 
 </td>
 </tr>
@@ -544,6 +613,15 @@ Operational cautions:
 | `assets/video/snapshots/contact-sheet.jpg` | Video contact sheet |
 | `docs/assets/readme/real-runs/codeinsights-real-run-overview.mp4` | 6-second real Electron window recording |
 | `docs/assets/readme/real-runs/codeinsights-real-run-overview-contact-sheet.jpg` | Contact sheet for the real run recording |
+| `docs/assets/readme/real-runs/feature-01-pipeline-workflow.mp4` | Pipeline workflow feature demo video |
+| `docs/assets/readme/real-runs/feature-01-pipeline-workflow-poster.jpg` | Pipeline workflow demo preview |
+| `docs/assets/readme/real-runs/feature-02-agent-workspace.mp4` | Agent workspace feature demo video |
+| `docs/assets/readme/real-runs/feature-02-agent-workspace-poster.jpg` | Agent workspace demo preview |
+| `docs/assets/readme/real-runs/feature-03-provider-settings.mp4` | Model and Provider configuration feature demo video |
+| `docs/assets/readme/real-runs/feature-03-provider-settings-poster.jpg` | Model and Provider configuration demo preview |
+| `docs/assets/readme/real-runs/feature-04-agent-mcp-skills.mp4` | Agent MCP / Skills configuration feature demo video |
+| `docs/assets/readme/real-runs/feature-04-agent-mcp-skills-poster.jpg` | Agent MCP / Skills configuration demo preview |
+| `docs/assets/readme/real-runs/feature-demos-contact-sheet.jpg` | Contact sheet for the four feature demo videos |
 | `docs/assets/readme/real-runs/01-pipeline-dashboard.png` | Real Pipeline workspace screenshot |
 | `docs/assets/readme/real-runs/02-agent-workbench.png` | Real Agent workbench screenshot |
 | `docs/assets/readme/real-runs/03-settings-overview.png` | Real model configuration screenshot |

@@ -1,5 +1,29 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-24 README 多功能演示视频补充计划
+
+- [x] 复习既有 README 真实运行素材、录屏经验和 GitHub README 视频渲染限制，确认新增视频采用仓库内 MP4 文件链接还是后续上传 user-attachments 播放器。
+- [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 启动 Electron dev 应用，避免读取本机真实渠道、API Key、会话和 IM 凭证。
+- [x] 通过真实 Electron 主窗口录制多段短视频，至少覆盖 Pipeline 工作台、Agent 工作区、设置/Provider 配置、Agent 工作区/MCP/Skills 配置；需要真实外部凭证的功能只录制可本地验证的 UI 流程并记录限制。
+- [x] 将新增视频、抽帧预览和采集元数据整理到 `docs/assets/readme/real-runs/`，命名清晰并更新该目录说明。
+- [x] 完善根 `README.md` 的真实界面预览或新增功能演示区块，按功能挂载视频链接、说明验证环境和无法无凭证完整演示的边界。
+- [x] 运行可行验证：启动/采集脚本、视频文件检查、README 资源路径检查、敏感信息扫描、`git diff --check`；必要时补充 README 渲染规则说明。
+- [x] 在本节末尾追加 Review，记录最终素材、验证结果、残留限制和是否需要 GitHub user-attachments 上传步骤。
+
+## 2026-05-24 README 多功能演示视频补充 Review
+
+- 已使用隔离配置目录 `/tmp/codeinsights-readme-feature-config` 启动真实 Electron dev 应用，并通过 CDP 捕捉业务主窗口；未读取本机真实渠道、历史会话或 IM 凭证。
+- 已新增四段 README 功能演示视频及预览图：
+  - `feature-01-pipeline-workflow.mp4` / `feature-01-pipeline-workflow-poster.jpg`：Pipeline 工作台、六阶段 Mission Route、记录过滤和阶段产物 / 运行日志切换。
+  - `feature-02-agent-workspace.mp4` / `feature-02-agent-workspace-poster.jpg`：Agent 模式、工作区矩阵、新会话、资源面板和能力入口。
+  - `feature-03-provider-settings.mp4` / `feature-03-provider-settings-poster.jpg`：模型配置、DeepSeek 预设、Pipeline Codex 认证来源和新增 Provider 配置表单。
+  - `feature-04-agent-mcp-skills.mp4` / `feature-04-agent-mcp-skills-poster.jpg`：Agent 高级设置、内置工具、MCP Server、Skills 和工作区隔离能力。
+- 已新增 `feature-demos-contact-sheet.jpg`、`feature-videos-manifest.json` 和 `capture-feature-demos.mjs`，便于后续审计与重新采集。
+- 已更新 `README.md` 和 `README_en.md`：新增功能演示视频区，使用 poster 图片链接仓库内 MP4，并明确 GitHub README 相对 MP4 不适合直接内嵌播放；若要内嵌播放器，需要后续上传为 GitHub `user-attachments` URL。
+- 已更新 `docs/assets/readme/real-runs/README.md` 的素材清单、引用片段和重新采集命令。
+- 验证通过：`node --check docs/assets/readme/real-runs/capture-feature-demos.mjs`；四段 MP4 均为 H.264、1600px 宽、30fps；README 相对资源路径检查通过；功能视频和文档敏感信息扫描无命中；`git diff --check -- README.md README_en.md docs/assets/readme/real-runs tasks/todo.md` 通过。
+- 残留限制：本轮未调用真实模型、未连接飞书 / 钉钉 / 微信 Bridge；这些需要真实凭证和外部服务，README 中已按本地可验证 UI 演示边界说明。
+
 ## 2026-05-24 项目主页架构图留白修复计划
 
 - [x] 复现并解释用户截图中的大块空白：确认不是 SVG 画布内容过空，而是响应式图片高度被 HTML `height` 属性固定。
