@@ -10,16 +10,18 @@
 
 ## 最新状态
 
-更新时间：2026-05-25 Phase 0 后
+更新时间：2026-05-25 Phase 1 提交后
 
-- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、Phase 0 基线冻结与实施准备。
+- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约。
 - 已提交：
   - `feb46548 docs: 规划 Agent Codex Runtime 接入`
   - `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`
   - `29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`
-  - Phase 0 后最新状态同步提交以 `git log -1 --oneline` 为准
-- 未完成：产品决策门禁仍未确认；Phase 1-8 代码实现、UI 接入、真实验证和发布维护均未开始。
-- 下一步：先确认 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 1 节产品决策门禁；确认后从 Phase 1“共享类型与设置契约”开始，不要直接进入 Phase 2 或 Codex runtime core。
+  - `ecb84a81 docs: 同步 Agent Codex Runtime Phase 0 后续状态`
+  - `6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`
+  - 本轮文档状态同步提交以 `git log -1 --oneline` 为准
+- 未完成：Phase 2 Codex Runtime Core、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime mock、Phase 5 Orchestrator runtime routing、Phase 6 Renderer 设置与历史、Phase 7 真实 Codex 集成与打包验证、Phase 8 文档发布维护。
+- 下一步：从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 4 节 Phase 2“Codex Runtime Core 抽取”开始；不要直接进入 Phase 3、Renderer UI 或真实 Codex runtime 集成。
 - 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并以 `git log -1 --oneline` 确认最新状态同步提交。
 
 ## 设计定位

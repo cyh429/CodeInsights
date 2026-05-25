@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 1 共享类型与设置契约完成，Phase 2 待启动
+状态：Phase 1 共享类型与设置契约已提交，Phase 2 待启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 1 完成
+更新时间：2026-05-25 Phase 1 提交后
 
 当前结论：
 
@@ -38,32 +38,33 @@
 - [x] 阶段完成即提交的长期纪律已记录到 `tasks/lessons.md`。
 - [x] 产品决策门禁已确认，见第 1 节；采用清单推荐值作为后续实现默认策略。
 - [x] Phase 0 基线冻结与实施准备已完成并提交：`29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`。
-- [x] Phase 1 共享类型与设置契约已完成并通过验证。
-- [ ] Phase 2-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
+- [x] Phase 1 共享类型与设置契约已完成、通过验证并提交：`6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
+- [ ] Phase 2-8 的 runtime core、event adapter、runtime routing、UI 接入、真实验证和发布维护均尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新状态同步提交以 `git log -1 --oneline` 为准。
-- 下一步应在 Phase 1 提交后，从 Phase 2：Codex Runtime Core 抽取开始。
+- 最新实现提交为 `6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`；本轮文档状态同步提交以 `git log -1 --oneline` 为准。
+- 下一步应从 Phase 2：Codex Runtime Core 抽取开始。
 
 下一步入口：
 
-1. 提交 Phase 1 阶段成果，提交边界仅包含 shared/settings/session 契约和对应测试/记录。
-2. 启动 Phase 2 前再次确认工作树与最新提交。
-3. Phase 2 只抽 Codex runtime core，保持 Pipeline 行为不变。
+1. 启动 Phase 2 前再次确认工作树与最新提交。
+2. 复习第 4 节 Phase 2 范围，只抽 Codex runtime core，保持 Pipeline 行为不变。
+3. 不要提前混入 Phase 3 event adapter、Phase 5 Orchestrator routing、Renderer UI 或真实 Codex 集成。
 
 最新验证记录：
 
 - [x] Markdown code fence 检查通过。
 - [x] 文档相对链接检查通过。
 - [x] 开发清单必备章节检查通过。
-- [x] `git diff --cached --check` 在文档准备提交前通过。
-- [x] 本轮代码基线验证通过：`bun run typecheck`。
-- [x] 本轮完整测试通过：`bun test --isolate`，508 pass / 0 fail。
-- [x] 本轮 Electron 构建通过：`bun run electron:build`，保留 Vite 大 chunk 警告。
-- [x] 本轮 diff 空白检查通过：`git diff --check`。
+- [x] Phase 1 验证通过：`bun test packages/shared`。
+- [x] Phase 1 验证通过：`bun test apps/electron/src/main/lib/settings-service.test.ts`。
+- [x] Phase 1 验证通过：`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`。
+- [x] Phase 1 完整测试通过：`bun test --isolate`，522 pass / 0 fail。
+- [x] Phase 1 类型检查通过：`bun run typecheck`。
+- [x] Phase 1 diff 空白检查通过：`git diff --check`。
 
 ## 0.2 当前完成/未完成总览
 
@@ -72,10 +73,10 @@
 | 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
-| 下次启动提示词 | [x] | 已更新为 Phase 0 后继续开发入口 |
+| 下次启动提示词 | [x] | 已更新为 Phase 1 后继续开发入口，下次从 Phase 2 启动 |
 | 产品决策 | [x] | 用户已确认采用第 1 节推荐值；后续无需再次询问同一门禁 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
-| Phase 1 | [x] | 已完成 shared/settings/session 契约 |
+| Phase 1 | [x] | 已完成 shared/settings/session 契约并提交 `6127b46c` |
 | Phase 2 | [ ] | 待抽 Codex runtime core |
 | Phase 3 | [ ] | 待做 Codex event adapter |
 | Phase 4 | [ ] | 待做 CodexAgentRuntime mock |
@@ -143,7 +144,7 @@ Phase 0 执行记录：
 
 - 分支：`codex/agent-codex-runtime-phase-0`。
 - 启动基线：`git status --short` 为空；最新提交为 `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`。
-- 产品门禁：未收到明确确认，本轮只按第 1 节推荐值作为 Phase 0 验证假设，不进入 Phase 1。
+- 产品门禁：Phase 0 执行当时未收到明确确认，本轮只按第 1 节推荐值作为 Phase 0 验证假设，不进入 Phase 1；该门禁后续已在 Phase 1 启动前确认。
 - 依赖版本：`@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、`@anthropic-ai/claude-agent-sdk@0.2.123`；`packages/core` peer 仍是 `@anthropic-ai/claude-agent-sdk >=0.2.123`。
 - Claude Agent 基线：`agent-service.ts` 当前仍创建单例 `ClaudeAgentAdapter`；`stopAgent(sessionId)` 转发到 `orchestrator.stop(sessionId)`；`ClaudeAgentAdapter` 通过 `@anthropic-ai/claude-agent-sdk query()`、`AbortController` 和自定义 `spawnClaudeCodeProcess` 管理 SDK 子进程。
 - Pipeline Codex 基线：`CodexSdkPipelineNodeRunner` 当前通过 `@openai/codex-sdk` 创建 `Codex` client，调用 `startThread()` + `thread.run()`，不是 Agent UI 需要的 `runStreamed()`；节点 sandbox 按节点映射，approval 为 `never`，network 为 `false`。
@@ -216,6 +217,7 @@ Phase 0 执行记录：
 
 Phase 1 执行记录：
 
+- 提交：`6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
 - 产品门禁：用户已确认采用第 1 节推荐值，并说明后续无需再就同一组推荐值询问。
 - shared 契约：新增 `CodingAgentRuntimeKind`、`AgentRuntimeSessionRef`、`AgentSessionMeta.runtimeKind` / `runtimeSession`，保留 `sdkSessionId` 作为 Claude legacy 字段；runtime events 增加 `codex_sdk` / `codex_cli` source、`run_started.runtimeKind`，并预留 `reasoningOutputTokens`。
 - settings 契约：新增 `agentRuntimeKind` 与 Agent Codex 独立设置字段；默认 runtime 仍为 `claude-code`，不会从 `pipelineCodexChannelId` 自动迁移到 `agentCodexChannelId`，损坏枚举读取时回落到安全默认值。
@@ -693,8 +695,8 @@ UI：
 | Phase | 状态 | 分支 / PR | 提交 | 验证摘要 | 残余风险 |
 | --- | --- | --- | --- | --- | --- |
 | 文档准备 | [x] | `agent-mode-codex` | `feb46548` + `c546bc4e` | 文档结构、相对链接、章节检查、diff 空白检查通过 | 当时未运行代码验证 |
-| Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 产品门禁未确认；未做真实 Codex Agent 集成 |
-| Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交 | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
+| Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 当时产品门禁未确认，后续已在 Phase 1 前确认；未做真实 Codex Agent 集成 |
+| Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | `6127b46c` | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
 | Phase 2 | [ ] | - | - | - | - |
 | Phase 3 | [ ] | - | - | - | - |
 | Phase 4 | [ ] | - | - | - | - |
@@ -709,5 +711,5 @@ UI：
 - [ ] Codex CLI fork/resume 能力是否可稳定从 SDK 调用。
 - [ ] CodeInsights workspace MCP 配置如何映射到 Codex 原生 MCP。
 - [ ] Codex skills/plugin 与 CodeInsights skills/plugin 的长期关系。
-- [ ] `danger-full-access` 是否允许进入普通设置 UI。
+- [ ] `danger-full-access` 高级开关的具体 UI 入口、二次确认文案和测试仍未设计实现。
 - [ ] Linux packaged binary 是否进入首版支持矩阵。

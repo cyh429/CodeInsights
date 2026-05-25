@@ -3036,3 +3036,21 @@ Phase 8 禁止事项：
 - 已按版本纪律递增 `@codeinsights/shared` 到 `0.1.43`，递增 `@codeinsights/electron` 到 `0.0.104`。
 - 验证通过：`bun test packages/shared`；`bun test apps/electron/src/main/lib/settings-service.test.ts`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test --isolate`（522 pass / 0 fail）；`bun run typecheck`；`git diff --check`。
 - 阶段边界保持：未修改 README.md / AGENTS.md，未进入 Codex runtime core、event adapter、Renderer UI 或真实 Codex 集成。
+
+## 2026-05-25 Agent Codex Runtime Phase 1 后状态同步计划
+
+- [x] 复查当前工作树和最新提交，确认 Phase 1 已提交为 `6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`，且启动时工作树干净。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md` 的最新开发状态、完成/未完成总览、Phase 1 执行记录和阶段提交记录。
+- [x] 更新 `docs/codex-support/README.md`，明确产品决策与 Phase 1 已完成，Phase 2-8 尚未开始。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`，让下次启动直接从 Phase 2 Codex Runtime Core 抽取继续。
+- [x] 运行文档结构、相对链接和 diff 空白检查。
+- [x] 提交本轮文档状态同步，并在本节追加 Review。
+
+## 2026-05-25 Agent Codex Runtime Phase 1 后状态同步 Review
+
+- 已确认启动时工作树干净，最新实现提交为 `6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：最新快照、完成/未完成总览、Phase 1 执行记录和阶段提交表均明确 Phase 1 已完成并提交，Phase 2-8 尚未开始，下一步为 Phase 2 Codex Runtime Core 抽取。
+- 已更新 `docs/codex-support/README.md`：索引页最新状态现在列明产品决策门禁与 Phase 1 已完成，未完成项从 Phase 2 到 Phase 8 逐项列出。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 1 后继续开发入口，要求先读清单第 4 节 Phase 2，并明确不要混入 event adapter、routing、UI 或真实 Codex 集成。
+- 验证通过：Codex support Markdown code fence 检查；Codex support Markdown 相对链接检查；旧状态短语扫描无命中；`git diff --check -- docs/codex-support tasks/todo.md`。
+- 本轮只修改文档和任务记录，未修改 README.md / AGENTS.md，未进入 Phase 2 代码实现。
