@@ -1,0 +1,4 @@
+{"type":"thread.started","thread_id":"thread-turn-failed"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"msg-failed","type":"agent_message","text":"无法继续执行。"}}
+{"type":"turn.failed","error":{"message":"Codex turn failed before completion"}}

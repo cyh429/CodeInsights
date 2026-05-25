@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"thread-agent-message"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"msg-1","type":"agent_message","text":"Hel"}}
+{"type":"item.updated","item":{"id":"msg-1","type":"agent_message","text":"Hello"}}
+{"type":"item.updated","item":{"id":"msg-1","type":"agent_message","text":"Hello, Codex"}}
+{"type":"item.completed","item":{"id":"msg-1","type":"agent_message","text":"Hello, Codex"}}
+{"type":"turn.completed","usage":{"input_tokens":11,"cached_input_tokens":3,"output_tokens":5,"reasoning_output_tokens":2}}

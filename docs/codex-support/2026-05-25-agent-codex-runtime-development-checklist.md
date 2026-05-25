@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 2 Codex Runtime Core 抽取已提交，Phase 3 待启动
+状态：Phase 3 Codex Event Adapter 已完成，Phase 4 待启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 2 提交后
+更新时间：2026-05-25 Phase 3 完成后
 
 当前结论：
 
@@ -40,20 +40,21 @@
 - [x] Phase 0 基线冻结与实施准备已完成并提交：`29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`。
 - [x] Phase 1 共享类型与设置契约已完成、通过验证并提交：`6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
 - [x] Phase 2 Codex Runtime Core 抽取已完成、通过验证并提交：`f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`。
-- [ ] Phase 3-8 的 event adapter、runtime routing、UI 接入、真实验证和发布维护尚未开始。
+- [x] Phase 3 Codex Event Adapter 已完成、通过验证；本阶段提交创建后以 `git log -1 --oneline` 为准。
+- [ ] Phase 4-8 的 CodexAgentRuntime mock、runtime routing、UI 接入、真实验证和发布维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新实现提交为 `f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`；本轮文档状态同步提交以 `git log -1 --oneline` 为准。
-- 下一步应从 Phase 3：Codex Event Adapter 开始。
+- 最新已知实现提交为 `f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`；Phase 3 完成提交创建后以 `git log -1 --oneline` 为准。
+- 下一步应从 Phase 4：CodexAgentRuntime Mock 接入开始。
 
 下一步入口：
 
-1. 启动 Phase 3 前再次确认工作树与最新提交。
-2. 复习第 5 节 Phase 3 范围，只实现 Codex event adapter 和 fixtures，不接 Orchestrator。
-3. 不要提前混入 Phase 4 CodexAgentRuntime mock、Phase 5 Orchestrator routing、Renderer UI 或真实 Codex 集成。
+1. 启动 Phase 4 前再次确认工作树与最新提交。
+2. 复习第 6 节 Phase 4 范围，只做 CodexAgentRuntime mock 接入，不接 Renderer UI 或真实 Codex 集成。
+3. 不要提前混入 Phase 5 Orchestrator runtime routing、Phase 6 Renderer UI 或 Phase 7 真实 Codex 集成。
 
 最新验证记录：
 
@@ -72,6 +73,10 @@
 - [x] Phase 2 diff 空白检查通过：`git diff --check -- apps/electron/src/main/lib/codex-runtime apps/electron/src/main/lib/codex-pipeline-node-runner.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/package.json tasks/todo.md`。
 - [x] Phase 2 代码审查复审通过：无 Critical / High / Medium findings。
 - [x] Phase 2 补充验证：`bun test --isolate` 跑到 540 个用例时仅 `pipeline-git-submission-service` 一个 before/after hook 偶发超时；该文件单独重跑 `bun test apps/electron/src/main/lib/pipeline-git-submission-service.test.ts`，21 pass / 0 fail，未指向本阶段改动。
+- [x] Phase 3 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`，13 pass / 0 fail。
+- [x] Phase 3 验证通过：`bun test packages/shared/src/agent/runtime-events.test.ts`，14 pass / 0 fail。
+- [x] Phase 3 类型检查通过：`bun run --filter='@codeinsights/electron' typecheck`。
+- [x] Phase 3 diff 空白检查通过：`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md`。
 
 ## 0.2 当前完成/未完成总览
 
@@ -80,13 +85,13 @@
 | 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
-| 下次启动提示词 | [x] | 已更新为 Phase 2 后继续开发入口，下次从 Phase 3 启动 |
+| 下次启动提示词 | [x] | 当前文件已更新为 Phase 4 入口；`next-session-prompt.md` 待后续状态同步 |
 | 产品决策 | [x] | 用户已确认采用第 1 节推荐值；后续无需再次询问同一门禁 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
 | Phase 1 | [x] | 已完成 shared/settings/session 契约并提交 `6127b46c` |
 | Phase 2 | [x] | 已完成 Codex runtime core 抽取并提交 `f04d893c` |
-| Phase 3 | [ ] | 待做 Codex event adapter；下一步入口 |
-| Phase 4 | [ ] | 待做 CodexAgentRuntime mock |
+| Phase 3 | [x] | 已完成 Codex event adapter 与 fixtures；本阶段提交创建后以 `git log -1` 为准 |
+| Phase 4 | [ ] | 待做 CodexAgentRuntime mock；下一步入口 |
 | Phase 5 | [ ] | 待接 Orchestrator runtime routing |
 | Phase 6 | [ ] | 待接 Renderer 设置、历史和 UX |
 | Phase 7 | [ ] | 待做真实 Codex 集成与打包验证 |
@@ -323,57 +328,71 @@ Phase 2 执行记录：
 
 任务：
 
-- [ ] 定义 adapter 状态：thread id、started items、completed items、previous text/output、terminal flag。
-- [ ] 实现 `thread.started -> sdk_session` 兼容映射。
-- [ ] 实现 `agent_message` started/updated/completed 映射。
-- [ ] 实现 `reasoning` 折叠式 task 映射。
-- [ ] 实现 `command_execution -> Bash` 工具活动映射。
-- [ ] 实现 `file_change -> PatchApply` 工具活动映射。
-- [ ] 实现 `mcp_tool_call -> server.tool` 工具活动映射。
-- [ ] 实现 `web_search -> WebSearch` 工具活动映射。
-- [ ] 实现 `todo_list -> agent_task_*` 映射。
-- [ ] 实现 `turn.completed -> usage_updated + run_completed`。
-- [ ] 实现 `turn.failed` 和顶层 `error -> run_failed`。
-- [ ] 实现 append-only delta 差分，非 append-only 时退化为完整覆盖。
-- [ ] 实现 terminal 去重。
+- [x] 定义 adapter 状态：thread id、started items、completed items、previous text/output、terminal flag。
+- [x] 实现 `thread.started -> sdk_session` 兼容映射。
+- [x] 实现 `agent_message` started/updated/completed 映射。
+- [x] 实现 `reasoning` 折叠式 task 映射。
+- [x] 实现 `command_execution -> Bash` 工具活动映射。
+- [x] 实现 `file_change -> PatchApply` 工具活动映射。
+- [x] 实现 `mcp_tool_call -> server.tool` 工具活动映射。
+- [x] 实现 `web_search -> WebSearch` 工具活动映射。
+- [x] 实现 `todo_list -> agent_task_*` 映射。
+- [x] 实现 `turn.completed -> usage_updated + run_completed`。
+- [x] 实现 `turn.failed` 和顶层 `error -> run_failed`。
+- [x] 实现 append-only delta 差分，非 append-only 时退化为完整覆盖。
+- [x] 实现 terminal 去重。
 
 Fixtures：
 
-- [ ] `agent-message-stream.jsonl`
-- [ ] `command-success.jsonl`
-- [ ] `command-failed.jsonl`
-- [ ] `file-change.jsonl`
-- [ ] `mcp-tool-call-success.jsonl`
-- [ ] `mcp-tool-call-failed.jsonl`
-- [ ] `web-search.jsonl`
-- [ ] `todo-list.jsonl`
-- [ ] `turn-failed.jsonl`
-- [ ] `abort-after-completed-race.jsonl`
+- [x] `agent-message-stream.jsonl`
+- [x] `command-success.jsonl`
+- [x] `command-failed.jsonl`
+- [x] `file-change.jsonl`
+- [x] `mcp-tool-call-success.jsonl`
+- [x] `mcp-tool-call-failed.jsonl`
+- [x] `web-search.jsonl`
+- [x] `todo-list.jsonl`
+- [x] `turn-failed.jsonl`
+- [x] `abort-after-completed-race.jsonl`
 
 测试：
 
-- [ ] 每类 item 映射为预期 runtime event。
-- [ ] `item.updated` 不重复输出累计文本。
-- [ ] `turn.completed` 前不产生 `run_completed`。
-- [ ] `turn.failed` 不被当作成功。
-- [ ] Abort 优先级由 adapter 或上层测试覆盖。
+- [x] 每类 item 映射为预期 runtime event。
+- [x] `item.updated` 不重复输出累计文本。
+- [x] `turn.completed` 前不产生 `run_completed`。
+- [x] `turn.failed` 不被当作成功。
+- [x] Abort 优先级由 adapter 或上层测试覆盖。
 
 验证：
 
-- [ ] `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`
-- [ ] `bun test packages/shared/src/agent/runtime-events.test.ts`
-- [ ] `bun run --filter='@codeinsights/electron' typecheck`
-- [ ] `git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md`
+- [x] `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`
+- [x] `bun test packages/shared/src/agent/runtime-events.test.ts`
+- [x] `bun run --filter='@codeinsights/electron' typecheck`
+- [x] `git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md`
 
 退出标准：
 
-- [ ] Codex SDK 当前所有公开 item 类型均有明确映射或明确忽略策略。
-- [ ] 不需要真实 Codex 即可稳定测试。
-- [ ] 不伪造 Claude SDKMessage。
+- [x] Codex SDK 当前所有公开 item 类型均有明确映射或明确忽略策略。
+- [x] 不需要真实 Codex 即可稳定测试。
+- [x] 不伪造 Claude SDKMessage。
 
 回滚点：
 
-- [ ] Adapter 尚未接入 runtime，失败可独立回滚。
+- [x] Adapter 尚未接入 runtime，失败可独立回滚。
+
+Phase 3 执行记录：
+
+- 新增 `apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.ts`，实现状态化 `ThreadEvent -> AgentStreamEnvelope` adapter，默认 source 为 `codex_sdk`。
+- 新增 10 个 JSONL fixtures，覆盖 agent message、command success/failed、file change、MCP success/failed、web search、todo list + reasoning、turn failed、completed 后 abort/failure race。
+- 映射覆盖 Codex SDK 0.130.0 当前公开 `ThreadItem` 类型：`agent_message`、`reasoning`、`command_execution`、`file_change`、`mcp_tool_call`、`web_search`、`todo_list`、`error`。
+- 文本和命令输出使用 append-only delta 差分；非 append-only 文本更新退化为完整 `assistant_message` 覆盖；一次性 `item.completed agent_message` 只产出最终完整消息。
+- `turn.completed` 映射 `usage_updated` + `run_completed`，并带上 `thread.started` 捕获的 thread id；`turn.failed` 和顶层 `error` 映射 `run_failed`；首个 terminal 事件后忽略后续 late abort/failure。
+- `reasoning` 与 `todo_list` 映射为 `agent_task_*`，`command_execution` / `file_change` / `mcp_tool_call` / `web_search` 映射为工具活动。
+- `packages/shared/src/agent/runtime-events.ts` 未改动，现有 runtime-neutral 契约足够承载 Phase 3；Claude 现有路径不变。
+- 版本：`@codeinsights/electron` patch 版本升至 `0.0.106`。
+- 代码审查：无 Critical / High findings；已删除未使用变量，并在提交前让新文件进入 diff 检查范围后重跑 `git diff --check`。
+- 验证结果：`bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts` 通过，13 pass / 0 fail；`bun test packages/shared/src/agent/runtime-events.test.ts` 通过，14 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck` 通过；`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md` 通过。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Phase 4 `CodexAgentRuntime` mock、Phase 5 Orchestrator routing、Renderer UI 或真实 Codex 集成。
 
 ## 6. Phase 4：CodexAgentRuntime Mock 接入
 
@@ -720,7 +739,7 @@ UI：
 | Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 当时产品门禁未确认，后续已在 Phase 1 前确认；未做真实 Codex Agent 集成 |
 | Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | `6127b46c` | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
 | Phase 2 | [x] | `codex/agent-codex-runtime-phase-0` | `f04d893c` | `bun test apps/electron/src/main/lib/codex-runtime`、`bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium findings | `bun test --isolate` 曾遇到 `pipeline-git-submission-service` hook 偶发超时，单文件重跑通过；gitless workspace 未纳入 Phase 2 |
-| Phase 3 | [ ] | - | - | - | 下一步：Codex Event Adapter，不接 Orchestrator |
+| Phase 3 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交创建后以 `git log -1` 为准 | `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过 | Adapter 尚未接入 runtime，失败可独立回滚；未做真实 Codex SDK 调用 |
 | Phase 4 | [ ] | - | - | - | - |
 | Phase 5 | [ ] | - | - | - | - |
 | Phase 6 | [ ] | - | - | - | - |

@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"thread-mcp-failed"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"mcp-err","type":"mcp_tool_call","server":"linear","tool":"get_issue","arguments":{"id":"CI-404"},"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"mcp-err","type":"mcp_tool_call","server":"linear","tool":"get_issue","arguments":{"id":"CI-404"},"error":{"message":"MCP timeout"},"status":"failed"}}
+{"type":"turn.completed","usage":{"input_tokens":18,"cached_input_tokens":1,"output_tokens":5,"reasoning_output_tokens":0}}

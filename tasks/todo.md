@@ -1,5 +1,32 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 3 计划
+
+范围确认：本轮只做 Phase 3 Codex Event Adapter 和 fixtures；不混入 Phase 4 `CodexAgentRuntime` mock、Phase 5 Orchestrator routing、Renderer UI、真实 Codex client 创建、真实 `runStreamed()` 调用、README.md 或 AGENTS.md 修改。
+
+- [x] 基于本地 `@openai/codex-sdk@0.130.0` 类型确认 `ThreadEvent` / `ThreadItem` 公开事件形状，并只使用 fixtures 驱动映射。
+- [x] 新增 `apps/electron/src/main/lib/agent-runtimes/__fixtures__/codex-events/*.jsonl`，覆盖 agent message、command、file change、MCP、web search、todo list、turn failed 和 terminal race。
+- [x] 先写 `apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`，锁定 ThreadEvent 到 `AgentStreamEnvelope` / `AgentRuntimeEvent` 的行为。
+- [x] 新增 `apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.ts`，实现状态化 adapter：thread id、started/completed items、累计输出差分、terminal flag 与 terminal 去重。
+- [x] 确认 `packages/shared/src/agent/runtime-events.ts` 现有 runtime-neutral 契约足够承载 Phase 3，无需扩展，Claude 现有路径不变。
+- [x] 验证 `item.updated` 只输出新增 delta；非 append-only 更新退化为完整 `assistant_message` 覆盖；`turn.completed` 才发 `usage_updated` / `run_completed`；`turn.failed` 和顶层 `error` 映射 `run_failed`。
+- [x] 运行 Phase 3 验证命令：`bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md`。
+- [x] 在本节末尾追加 Review，确认阶段边界与验证结果，并只提交 Phase 3 相关文件。
+
+## 2026-05-25 Agent Codex Runtime Phase 3 Review
+
+- 已新增纯 Codex Event Adapter：`apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.ts`，只消费 `@openai/codex-sdk@0.130.0` 的 `ThreadEvent` 类型并输出 `AgentStreamEnvelope` / `AgentRuntimeEvent`，不创建真实 Codex client，不调用真实 `runStreamed()`。
+- 已新增 10 个 JSONL fixtures：agent message、command success/failed、file change、MCP success/failed、web search、todo list + reasoning、turn failed、completed 后 abort/failure race。
+- Adapter 映射覆盖 Codex SDK 当前公开 `ThreadItem` 类型：`agent_message`、`reasoning`、`command_execution`、`file_change`、`mcp_tool_call`、`web_search`、`todo_list`、`error`；未伪造 Claude `SDKMessage`。
+- 已实现 append-only delta 差分：`item.updated` 只输出新增文本/命令输出；非 append-only 文本更新退化为完整 `assistant_message` 覆盖；`item.completed` 负责最终完整消息。
+- 已实现终态规则：`turn.completed` 产出 `usage_updated` + `run_completed`；`turn.failed` 和顶层 `error` 产出 `run_failed`；completed 后到达的 abort/failure 不覆盖首个终态。
+- `packages/shared/src/agent/runtime-events.ts` 未改动，现有 runtime-neutral 契约足够承载 Phase 3；Claude 现有路径保持不变。
+- Electron 包版本已从 `0.0.105` 升至 `0.0.106`。
+- 代码审查：无 Critical / High findings；已按审查建议删除未使用变量，并在提交前让新文件进入 diff 检查范围后重跑 `git diff --check`。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`，13 pass / 0 fail；`bun test packages/shared/src/agent/runtime-events.test.ts`，14 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md`。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Phase 4 `CodexAgentRuntime` mock、Phase 5 Orchestrator routing、Renderer UI 或真实 Codex 集成。
+
+
 ## 2026-05-25 Agent Codex Runtime Phase 2 后状态文档同步计划
 
 - [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：标明 Phase 2 已完成并提交，Phase 3-8 未完成，下一步从 Phase 3 开始。

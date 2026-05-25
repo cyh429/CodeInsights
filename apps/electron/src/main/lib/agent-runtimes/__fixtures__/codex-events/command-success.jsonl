@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"thread-command-success"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"cmd-1","type":"command_execution","command":"bun test apps/electron/src/main/lib/example.test.ts","aggregated_output":"","status":"in_progress"}}
+{"type":"item.updated","item":{"id":"cmd-1","type":"command_execution","command":"bun test apps/electron/src/main/lib/example.test.ts","aggregated_output":"$ bun test apps/electron/src/main/lib/example.test.ts\n1 pass","status":"in_progress"}}
+{"type":"item.completed","item":{"id":"cmd-1","type":"command_execution","command":"bun test apps/electron/src/main/lib/example.test.ts","aggregated_output":"$ bun test apps/electron/src/main/lib/example.test.ts\n1 pass","exit_code":0,"status":"completed"}}
+{"type":"turn.completed","usage":{"input_tokens":20,"cached_input_tokens":0,"output_tokens":8,"reasoning_output_tokens":1}}

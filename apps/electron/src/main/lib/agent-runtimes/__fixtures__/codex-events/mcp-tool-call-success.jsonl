@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"thread-mcp-success"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"mcp-1","type":"mcp_tool_call","server":"github","tool":"search_issues","arguments":{"query":"is:open label:bug"},"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"mcp-1","type":"mcp_tool_call","server":"github","tool":"search_issues","arguments":{"query":"is:open label:bug"},"result":{"content":[{"type":"text","text":"issue-1: failing test"}],"structured_content":{"count":1}},"status":"completed"}}
+{"type":"turn.completed","usage":{"input_tokens":18,"cached_input_tokens":1,"output_tokens":5,"reasoning_output_tokens":0}}

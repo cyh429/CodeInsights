@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"thread-command-failed"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"cmd-err","type":"command_execution","command":"bun test apps/electron/src/main/lib/failing.test.ts","aggregated_output":"","status":"in_progress"}}
+{"type":"item.updated","item":{"id":"cmd-err","type":"command_execution","command":"bun test apps/electron/src/main/lib/failing.test.ts","aggregated_output":"$ bun test apps/electron/src/main/lib/failing.test.ts\nnot ok 1 expected true","status":"in_progress"}}
+{"type":"item.completed","item":{"id":"cmd-err","type":"command_execution","command":"bun test apps/electron/src/main/lib/failing.test.ts","aggregated_output":"$ bun test apps/electron/src/main/lib/failing.test.ts\nnot ok 1 expected true","exit_code":1,"status":"failed"}}
+{"type":"turn.completed","usage":{"input_tokens":22,"cached_input_tokens":0,"output_tokens":7,"reasoning_output_tokens":1}}

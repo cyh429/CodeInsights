@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"thread-web-search"}
+{"type":"turn.started"}
+{"type":"item.started","item":{"id":"web-1","type":"web_search","query":"OpenAI Codex SDK ThreadEvent usage"}}
+{"type":"item.completed","item":{"id":"web-1","type":"web_search","query":"OpenAI Codex SDK ThreadEvent usage"}}
+{"type":"turn.completed","usage":{"input_tokens":30,"cached_input_tokens":5,"output_tokens":9,"reasoning_output_tokens":2}}

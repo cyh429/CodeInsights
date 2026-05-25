@@ -1,0 +1,6 @@
+{"type":"thread.started","thread_id":"thread-abort-race"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"msg-race","type":"agent_message","text":"任务已完成。"}}
+{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":0,"output_tokens":4,"reasoning_output_tokens":0}}
+{"type":"error","message":"AbortError: operation was aborted after completion"}
+{"type":"turn.failed","error":{"message":"late abort"}}
