@@ -2995,3 +2995,19 @@ Phase 8 禁止事项：
 - 已复习相关 lessons：Codex auth 要隔离宿主 `HOME` / `CODEX_HOME`，Agent stop 要覆盖 iterator 正常结束路径，runtime events 的 `sdk_session` 去重应在 writer 层，Git guard 不能只靠 PATH，阶段完成后要单独提交。
 - 验证通过：`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`（通过，保留 Vite 大 chunk 警告）；`git diff --check`。
 - 本轮只修改 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md` 与 `tasks/todo.md`，未修改 README.md / AGENTS.md，未修改运行时代码。
+
+## 2026-05-25 Agent Codex Runtime 最新状态二次同步计划
+
+- [x] 复查当前分支、最新提交和工作树状态，确认 Phase 0 已提交且当前无未提交改动。
+- [x] 更新开发进度清单的最新状态快照，明确 Phase 0 已完成、产品门禁未确认、Phase 1-8 未开始。
+- [x] 更新 `docs/codex-support/README.md` 的最新状态，避免仍显示 Phase 0-8 全部未完成。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`，让下次启动直接从产品门禁和 Phase 1 入口继续。
+- [x] 运行 Markdown / diff 检查，提交本轮状态同步文档。
+
+## 2026-05-25 Agent Codex Runtime 最新状态二次同步 Review
+
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：最新状态明确为 Phase 0 已完成并提交 `29e48a93`，产品决策门禁未确认，Phase 1-8 未开始。
+- 已更新 `docs/codex-support/README.md`：最新状态不再显示 Phase 0-8 全部未完成，下一步改为先确认产品门禁，再从 Phase 1 共享类型与设置契约开始。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 0 后续开发入口，要求先读清单第 1 节和 Phase 1，用户确认产品门禁前不开始代码改动。
+- 验证通过：Codex support Markdown code fence 平衡检查；Codex support Markdown 相对链接检查；`git diff --check`。
+- 本轮仍未修改运行时代码，未修改根 `README.md` 或 `AGENTS.md`。

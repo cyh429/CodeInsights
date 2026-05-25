@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 0 基线冻结完成，Phase 1 代码实现待用户确认产品门禁后启动
+状态：Phase 0 基线冻结完成，Phase 1 待产品门禁确认后启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 0
+更新时间：2026-05-25 Phase 0 后状态同步
 
 当前结论：
 
@@ -34,15 +34,17 @@
 - [x] Agent Codex Runtime 主方案已完成并提交：`feb46548 docs: 规划 Agent Codex Runtime 接入`。
 - [x] 开发进度跟踪清单已完成并提交：`feb46548 docs: 规划 Agent Codex Runtime 接入`。
 - [x] Codex support 文档索引已建立。
+- [x] 最新状态同步文档已建立：`c546bc4e docs: 同步 Agent Codex Runtime 开发状态`。
 - [x] 阶段完成即提交的长期纪律已记录到 `tasks/lessons.md`。
 - [ ] 产品决策门禁尚未确认，见第 1 节；本轮仅按推荐值作为 Phase 0 验证假设。
-- [x] Phase 0 基线冻结与实施准备已完成，未开始功能代码改动。
+- [x] Phase 0 基线冻结与实施准备已完成并提交：`29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`。
 - [ ] Phase 1-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
+- 最新状态同步提交以 `git log -1 --oneline` 为准。
 - 下一步应先确认第 1 节产品决策门禁，再进入 Phase 1 代码实现。
 
 下一步入口：
@@ -69,7 +71,7 @@
 | 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
-| 下次启动提示词 | [x] | 已新增 `docs/codex-support/next-session-prompt.md` |
+| 下次启动提示词 | [x] | 已更新为 Phase 0 后继续开发入口 |
 | 产品决策 | [ ] | 需要用户确认第 1 节门禁；Phase 0 仅按推荐值作为验证假设 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
 | Phase 1 | [ ] | 待做 shared/settings/session 契约 |
@@ -677,8 +679,8 @@ UI：
 
 | Phase | 状态 | 分支 / PR | 提交 | 验证摘要 | 残余风险 |
 | --- | --- | --- | --- | --- | --- |
-| 文档准备 | [x] | `agent-mode-codex` | `feb46548` + 最新状态同步提交 | 文档结构、相对链接、章节检查、diff 空白检查通过 | 未运行代码验证 |
-| Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交，哈希以 `git log -1 --oneline` 为准 | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 产品门禁未确认；未做真实 Codex Agent 集成 |
+| 文档准备 | [x] | `agent-mode-codex` | `feb46548` + `c546bc4e` | 文档结构、相对链接、章节检查、diff 空白检查通过 | 当时未运行代码验证 |
+| Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 产品门禁未确认；未做真实 Codex Agent 集成 |
 | Phase 1 | [ ] | - | - | - | - |
 | Phase 2 | [ ] | - | - | - | - |
 | Phase 3 | [ ] | - | - | - | - |
