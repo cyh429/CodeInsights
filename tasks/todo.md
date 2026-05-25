@@ -3231,3 +3231,39 @@ Phase 8 禁止事项：
 - 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 1 后继续开发入口，要求先读清单第 4 节 Phase 2，并明确不要混入 event adapter、routing、UI 或真实 Codex 集成。
 - 验证通过：Codex support Markdown code fence 检查；Codex support Markdown 相对链接检查；旧状态短语扫描无命中；`git diff --check -- docs/codex-support tasks/todo.md`。
 - 本轮只修改文档和任务记录，未修改 README.md / AGENTS.md，未进入 Phase 2 代码实现。
+
+## 2026-05-25 Agent Codex Runtime Phase 6 Renderer 设置、历史与 UX 计划
+
+- [x] 复习 `AGENTS.md`、`tasks/lessons.md`、当前 Git 状态和开发清单 Phase 5/Phase 6，确认本轮边界。
+- [x] 新增 `getAgentSessionRuntimeEvents` IPC / preload API，复用主进程已有 runtime events 读取能力。
+- [x] Renderer 加载 Codex session 时读取 runtime events，并实现 runtime transcript selector。
+- [x] 新增 `RuntimeTranscript` 组件，让 Codex 会话历史基于 runtime events 回放，缺失/损坏时给出降级提示。
+- [x] Agent settings 增加 Runtime 选择、Codex auth 来源、enabled openai/custom channel 下拉、独立模型、reasoning effort、network 和 web search 设置。
+- [x] settings initializer 自动清理 deleted/disabled/unsupported 的 `agentCodexChannelId`。
+- [x] Agent header 显示当前 session runtime，Codex session 下禁用或隐藏 rewind/fork/soft interrupt/queue message，并不展示 Claude per-tool `PermissionBanner`。
+- [x] Feature flag 关闭时隐藏 Codex runtime 入口，保留已写 runtime events。
+- [x] 补充 renderer 相关测试，覆盖 transcript selector、settings 清理、header badge/禁用态和 feature flag 行为。
+- [x] 运行验证：`bun test apps/electron/src/renderer`、`bun run --filter='@codeinsights/electron' typecheck`、feature flag 开关 UI smoke、`git diff --check -- apps/electron/src/preload apps/electron/src/main/ipc apps/electron/src/renderer tasks/todo.md`。
+- [x] 更新本节 Review，阶段验证通过后只 stage Phase 6 相关文件并提交详细中文提交信息。
+
+范围边界：
+
+- 本轮只做 Renderer 设置、history replay 与 UX 禁用态。
+- 不接入真实 Codex SDK / CLI，不做打包发布验证。
+- 不修改根 `README.md` 或 `AGENTS.md`。
+- Codex 继续使用 Phase 4 mock runtime 路径，不依赖本机登录或真实 API key。
+
+## 2026-05-25 Agent Codex Runtime Phase 6 Renderer 设置、历史与 UX Review
+
+- 已新增 `getAgentSessionRuntimeEvents` IPC / preload API，Renderer 加载 Agent session 时会同步读取 runtime events 并写入 per-session atom。
+- 已新增 `runtime-transcript-model.ts` 与 `RuntimeTranscript.tsx`：Codex 会话使用 runtime events 回放用户消息、assistant 文本、工具调用和终态，缺失 runtime events 时给出明确降级提示。
+- 已在 Agent 设置中加入 feature-flag 保护的 Runtime 设置：Claude Code / Codex、Codex native auth / enabled OpenAI 或 Custom channel、独立 Codex 模型、reasoning effort、network 和 web search。
+- 已在 settings initializer 中清理 deleted / disabled / unsupported 的 `agentCodexChannelId`；feature flag 关闭时设置入口隐藏并把默认 runtime 恢复为 Claude Code。
+- 已在 Agent Header 显示 session runtime；Codex session 使用 RuntimeTranscript，不展示 Claude per-tool PermissionBanner，并隐藏 Claude 模型选择、权限模式、runner 切换、thinking 与 AgentMessages 的 fork / rewind 控制。
+- 已禁用 Codex 运行中追加消息和 CodeInsights 触发 `/compact`；feature flag 关闭时既有 Codex session 仅可查看历史，Renderer 与主进程都会阻止继续发送。
+- 代码审查指出新建未运行 session 会因默认 `runtimeKind: 'claude-code'` 被 Renderer 误判为 Claude；已改为仅 `runtimeSession`、明确 `runtimeKind: 'codex'` 或 legacy `sdkSessionId` 绑定 session，未运行会话跟随当前默认 runtime。
+- 复审指出主进程仍可绕过 Renderer 继续执行既有 Codex session；已在 Orchestrator 选择 runtime 后、持久化用户消息和 active session 抢占前增加 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` gate，并补充 `codex_runtime_disabled` typed error。
+- 已将 runtime transcript selector 改为保留持久化顺序，并补充多轮同时间戳回放测试，避免按 runId / createdAt 重排导致用户消息错配。
+- 验证通过：`bun test apps/electron/src/renderer`，127 pass / 0 fail；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`，7 pass / 0 fail；`bun test packages/shared`，36 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/preload apps/electron/src/main/ipc apps/electron/src/main/lib apps/electron/src/renderer packages/shared tasks/todo.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`。
+- 补充验证：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer` 通过；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer` 通过；现有 5173 dev server 未携带 feature flag 时，Agent 配置页未出现 `Agent Runtime`。
+- 阶段边界：未接入真实 Codex SDK / CLI，未做打包发布验证，未修改根 `README.md` 或 `AGENTS.md`；Codex 仍走 Phase 4 mock runtime。

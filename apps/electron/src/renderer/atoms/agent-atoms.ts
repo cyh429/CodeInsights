@@ -7,7 +7,8 @@
 
 import { atom } from 'jotai'
 import { atomFamily } from 'jotai/utils'
-import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, CodeInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage, AgentStreamEnvelope, AgentRuntimeEvent, AgentRuntimeUsagePayload, AgentRuntimeRunnerMode } from '@codeinsights/shared'
+import type { AgentSessionMeta, AgentMessage, AgentEvent, AgentWorkspace, AgentPendingFile, RetryAttempt, CodeInsightsPermissionMode, PermissionRequest, AskUserRequest, ExitPlanModeRequest, ThinkingConfig, AgentEffort, TaskUsage, SDKMessage, AgentStreamEnvelope, AgentRuntimeEvent, AgentRuntimeUsagePayload, AgentRuntimeRunnerMode, CodingAgentRuntimeKind } from '@codeinsights/shared'
+import type { AgentCodexReasoningEffort, AgentCodexWebSearchMode } from '@/types/settings'
 
 /** 活动状态 */
 export type ActivityStatus = 'pending' | 'running' | 'completed' | 'error' | 'backgrounded'
@@ -79,6 +80,7 @@ export interface TeammateState {
 /** 工具历史最大记录数 */
 const MAX_TOOL_HISTORY = 20
 const EMPTY_SDK_MESSAGES: SDKMessage[] = []
+const EMPTY_RUNTIME_EVENTS: AgentStreamEnvelope[] = []
 const EMPTY_ATTACHED_DIRECTORIES: string[] = []
 
 /**
@@ -258,6 +260,18 @@ export const agentModelIdAtom = atom<string | null>(null)
 export const agentChannelIdsAtom = atom<string[]>([])
 /** Agent Runtime Runner 执行链路（新消息发送时生效） */
 export const agentRuntimeRunnerModeAtom = atom<AgentRuntimeRunnerMode>('runner-v2')
+/** Agent Coding Runtime 类型（新会话首次发送时生效） */
+export const agentRuntimeKindAtom = atom<CodingAgentRuntimeKind>('claude-code')
+/** Codex runtime 渠道 ID；null 表示显式使用 native auth */
+export const agentCodexChannelIdAtom = atom<string | null | undefined>(undefined)
+/** Codex runtime 模型 ID，独立于 Claude Agent 模型 */
+export const agentCodexModelIdAtom = atom<string | undefined>(undefined)
+/** Codex runtime 推理深度 */
+export const agentCodexReasoningEffortAtom = atom<AgentCodexReasoningEffort | undefined>(undefined)
+/** Codex runtime 网络访问开关 */
+export const agentCodexNetworkAccessEnabledAtom = atom<boolean | undefined>(undefined)
+/** Codex runtime Web Search 模式 */
+export const agentCodexWebSearchModeAtom = atom<AgentCodexWebSearchMode | undefined>(undefined)
 
 /** Per-session 渠道 ID Map — sessionId → channelId */
 export const agentSessionChannelMapAtom = atom<Map<string, string>>(new Map())
@@ -274,6 +288,8 @@ export const agentStreamingStatesAtom = atom<Map<string, AgentStreamState>>(new 
  * 流式完成后清空（持久化消息从 JSONL 加载）。
  */
 export const liveMessagesMapAtom = atom<Map<string, SDKMessage[]>>(new Map())
+/** 持久化 runtime events Map — Codex 会话历史回放主数据源 */
+export const agentRuntimeEventsMapAtom = atom<Map<string, AgentStreamEnvelope[]>>(new Map())
 
 export const agentPendingPromptAtom = atom<AgentPendingPrompt | null>(null)
 
@@ -1159,6 +1175,10 @@ export const sessionStreamingStateFamily = atomFamily((sessionId: string) =>
 
 export const sessionLiveMessagesFamily = atomFamily((sessionId: string) =>
   atom((get) => get(liveMessagesMapAtom).get(sessionId) ?? EMPTY_SDK_MESSAGES)
+)
+
+export const sessionRuntimeEventsFamily = atomFamily((sessionId: string) =>
+  atom((get) => get(agentRuntimeEventsMapAtom).get(sessionId) ?? EMPTY_RUNTIME_EVENTS)
 )
 
 export const sessionStreamErrorFamily = atomFamily((sessionId: string) =>

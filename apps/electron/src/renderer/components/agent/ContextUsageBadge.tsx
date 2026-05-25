@@ -31,7 +31,7 @@ interface ContextUsageBadgeProps {
   contextWindow?: number
   isCompacting: boolean
   isProcessing: boolean
-  onCompact: () => void
+  onCompact?: () => void
 }
 
 /** 格式化 token 数为可读字符串（如 1234 → "1.2k"） */
@@ -194,7 +194,7 @@ export function ContextUsageBadge({
     : undefined
 
   const handleCompactClick = (): void => {
-    if (isProcessing) return
+    if (isProcessing || !onCompact) return
     onCompact()
     setOpen(false)
   }
@@ -252,21 +252,25 @@ export function ContextUsageBadge({
             </>
           ) : null}
 
-          <div className="h-px bg-border my-0.5" />
-          <Button
-            type="button"
-            variant={isWarning ? 'default' : 'outline'}
-            size="sm"
-            className={cn(
-              'h-7 text-xs gap-1.5',
-              isWarning && 'bg-amber-500 hover:bg-amber-600 text-white',
-            )}
-            onClick={handleCompactClick}
-            disabled={isProcessing}
-          >
-            <Minimize2 className="size-3.5" />
-            {isProcessing ? '对话进行中' : '手动压缩'}
-          </Button>
+          {onCompact ? (
+            <>
+              <div className="h-px bg-border my-0.5" />
+              <Button
+                type="button"
+                variant={isWarning ? 'default' : 'outline'}
+                size="sm"
+                className={cn(
+                  'h-7 text-xs gap-1.5',
+                  isWarning && 'bg-amber-500 hover:bg-amber-600 text-white',
+                )}
+                onClick={handleCompactClick}
+                disabled={isProcessing}
+              >
+                <Minimize2 className="size-3.5" />
+                {isProcessing ? '对话进行中' : '手动压缩'}
+              </Button>
+            </>
+          ) : null}
         </div>
       </PopoverContent>
     </Popover>

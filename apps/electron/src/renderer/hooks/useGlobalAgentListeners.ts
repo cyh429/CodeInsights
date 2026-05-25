@@ -24,6 +24,7 @@ import {
   recentlyModifiedPathsAtom,
   RECENTLY_MODIFIED_TTL_MS,
   liveMessagesMapAtom,
+  agentRuntimeEventsMapAtom,
   agentSessionModelMapAtom,
   agentModelIdAtom,
   agentPermissionModeMapAtom,
@@ -687,6 +688,13 @@ export function useGlobalAgentListeners(): void {
         }
 
         if (runtimeEnvelopes.length > 0) {
+          store.set(agentRuntimeEventsMapAtom, (prev) => {
+            const map = new Map(prev)
+            const current = map.get(sessionId) ?? []
+            map.set(sessionId, [...current, ...runtimeEnvelopes])
+            return map
+          })
+
           store.set(agentStreamingStatesAtom, (prev) => {
             const baseState = prev.get(sessionId) ?? {
               running: true,

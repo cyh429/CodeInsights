@@ -31,6 +31,12 @@ import {
   agentMaxBudgetUsdAtom,
   agentMaxTurnsAtom,
   agentRuntimeRunnerModeAtom,
+  agentRuntimeKindAtom,
+  agentCodexChannelIdAtom,
+  agentCodexModelIdAtom,
+  agentCodexReasoningEffortAtom,
+  agentCodexNetworkAccessEnabledAtom,
+  agentCodexWebSearchModeAtom,
   agentSettingsReadyAtom,
 } from './atoms/agent-atoms'
 import { updateStatusAtom, initializeUpdater } from './atoms/updater'
@@ -61,6 +67,7 @@ import { toast } from 'sonner'
 import { diffCapabilities, migratePermissionMode } from '@codeinsights/shared'
 import type { WorkspaceCapabilities } from '@codeinsights/shared'
 import { showCapabilityChangeToasts } from './lib/capabilities-toast'
+import { cleanupAgentCodexChannelId, isAgentCodexRuntimeFeatureEnabled } from './lib/agent-runtime-ui'
 import { UpdateDialog } from './components/settings/UpdateDialog'
 import { GlobalShortcuts } from './components/shortcuts/GlobalShortcuts'
 import { TabSwitcher } from './components/tabs/TabSwitcher'
@@ -145,6 +152,12 @@ function AgentSettingsInitializer(): null {
   const setMaxBudget = useSetAtom(agentMaxBudgetUsdAtom)
   const setMaxTurns = useSetAtom(agentMaxTurnsAtom)
   const setRuntimeRunnerMode = useSetAtom(agentRuntimeRunnerModeAtom)
+  const setRuntimeKind = useSetAtom(agentRuntimeKindAtom)
+  const setCodexChannelId = useSetAtom(agentCodexChannelIdAtom)
+  const setCodexModelId = useSetAtom(agentCodexModelIdAtom)
+  const setCodexReasoningEffort = useSetAtom(agentCodexReasoningEffortAtom)
+  const setCodexNetworkAccessEnabled = useSetAtom(agentCodexNetworkAccessEnabledAtom)
+  const setCodexWebSearchMode = useSetAtom(agentCodexWebSearchModeAtom)
   const setPipelineCodexChannelId = useSetAtom(pipelineCodexChannelIdAtom)
 
   const setAgentSettingsReady = useSetAtom(agentSettingsReadyAtom)
@@ -237,6 +250,26 @@ function AgentSettingsInitializer(): null {
       if (settings.agentRuntimeRunnerMode === 'legacy' || settings.agentRuntimeRunnerMode === 'runner-v2') {
         setRuntimeRunnerMode(settings.agentRuntimeRunnerMode)
       }
+      const codexRuntimeEnabled = isAgentCodexRuntimeFeatureEnabled()
+      if (codexRuntimeEnabled) {
+        setRuntimeKind(settings.agentRuntimeKind ?? 'claude-code')
+      } else {
+        setRuntimeKind('claude-code')
+        if (settings.agentRuntimeKind === 'codex') {
+          console.warn('[AgentSettings] Codex runtime feature flag 已关闭，恢复 Claude Code')
+          window.electronAPI.updateSettings({ agentRuntimeKind: 'claude-code' }).catch(console.error)
+        }
+      }
+      const validAgentCodexChannelId = cleanupAgentCodexChannelId(settings.agentCodexChannelId, channels)
+      setCodexChannelId(validAgentCodexChannelId)
+      if (validAgentCodexChannelId !== settings.agentCodexChannelId) {
+        console.warn('[AgentSettings] agentCodexChannelId 指向不可用的 Codex 渠道，清除')
+        window.electronAPI.updateSettings({ agentCodexChannelId: undefined }).catch(console.error)
+      }
+      setCodexModelId(settings.agentCodexModelId)
+      setCodexReasoningEffort(settings.agentCodexReasoningEffort)
+      setCodexNetworkAccessEnabled(settings.agentCodexNetworkAccessEnabled)
+      setCodexWebSearchMode(settings.agentCodexWebSearchMode)
 
       const pipelineCodexChannel = settings.pipelineCodexChannelId
         ? channels.find((channel) => channel.id === settings.pipelineCodexChannelId)
@@ -273,7 +306,7 @@ function AgentSettingsInitializer(): null {
       console.error(err)
       setAgentSettingsReady(true) // 即使出错也标记就绪，避免永远阻塞
     })
-  }, [setAgentChannelId, setAgentModelId, setAgentChannelIds, setAgentWorkspaces, setCurrentWorkspaceId, setPermissionMode, setThinking, setEffort, setMaxBudget, setMaxTurns, setPipelineCodexChannelId, setChannels, setChannelsLoaded, setAgentSettingsReady])
+  }, [setAgentChannelId, setAgentModelId, setAgentChannelIds, setAgentWorkspaces, setCurrentWorkspaceId, setPermissionMode, setThinking, setEffort, setMaxBudget, setMaxTurns, setRuntimeRunnerMode, setRuntimeKind, setCodexChannelId, setCodexModelId, setCodexReasoningEffort, setCodexNetworkAccessEnabled, setCodexWebSearchMode, setPipelineCodexChannelId, setChannels, setChannelsLoaded, setAgentSettingsReady, store])
 
   // 工作区切换时重置能力缓存，预加载基线
   useEffect(() => {

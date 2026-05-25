@@ -9,8 +9,8 @@
  */
 
 import * as React from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
-import { Plus, Plug, Pencil, Trash2, Sparkles, FolderOpen, MessageSquare, ShieldCheck, ChevronDown, ChevronRight, Brain, ImagePlus, Settings, RefreshCw, Search } from 'lucide-react'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { Plus, Plug, Pencil, Trash2, Sparkles, FolderOpen, MessageSquare, ShieldCheck, ChevronDown, ChevronRight, Brain, ImagePlus, Settings, RefreshCw, Search, KeyRound, Globe2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -41,14 +41,23 @@ import {
   agentEffortAtom,
   agentMaxBudgetUsdAtom,
   agentMaxTurnsAtom,
+  agentRuntimeKindAtom,
+  agentCodexChannelIdAtom,
+  agentCodexModelIdAtom,
+  agentCodexReasoningEffortAtom,
+  agentCodexNetworkAccessEnabledAtom,
+  agentCodexWebSearchModeAtom,
 } from '@/atoms/agent-atoms'
 import { settingsTabAtom, settingsOpenAtom } from '@/atoms/settings-tab'
 import { appModeAtom } from '@/atoms/app-mode'
 import { chatToolsAtom } from '@/atoms/chat-tool-atoms'
-import type { McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@codeinsights/shared'
+import { channelsAtom } from '@/atoms/chat-atoms'
+import type { Channel, CodingAgentRuntimeKind, McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@codeinsights/shared'
+import type { AgentCodexReasoningEffort, AgentCodexWebSearchMode } from '@/types/settings'
 import { SettingsSection, SettingsCard, SettingsRow, SettingsSegmentedControl, SettingsInput } from './primitives'
 import { McpServerForm } from './McpServerForm'
 import { getSettingsDeleteDialogCopy } from './settings-ui-model'
+import { CODEX_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, isAgentCodexRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
 
 /** 组件视图模式 */
 type ViewMode = 'list' | 'create' | 'edit'
@@ -422,6 +431,9 @@ ${skillList}
   // 列表视图
   return (
     <div className="space-y-8">
+      {/* 区块：Agent Runtime */}
+      <AgentRuntimeSettings />
+
       {/* 区块零：Agent 高级设置 */}
       <AgentAdvancedSettings />
 
@@ -1059,6 +1071,25 @@ const EFFORT_OPTIONS = [
   { value: 'max', label: '最大' },
 ]
 
+const RUNTIME_OPTIONS = [
+  { value: 'claude-code', label: 'Claude Code' },
+  { value: 'codex', label: 'Codex' },
+]
+
+const CODEX_REASONING_OPTIONS = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'xhigh', label: 'XHigh' },
+]
+
+const CODEX_WEB_SEARCH_OPTIONS = [
+  { value: 'disabled', label: '关闭' },
+  { value: 'cached', label: '缓存' },
+  { value: 'live', label: '实时' },
+]
+
 /** 从 ThinkingConfig 转为 UI 字符串 */
 function thinkingToValue(config: ThinkingConfig | undefined): string {
   if (!config) return 'default'
@@ -1081,6 +1112,165 @@ function effortToValue(effort: AgentEffort | undefined): string {
 function valueToEffort(value: string): AgentEffort | undefined {
   if (value === 'default') return undefined
   return value as AgentEffort
+}
+
+function AgentRuntimeSettings(): React.ReactElement | null {
+  const codexFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
+  const channels = useAtomValue(channelsAtom)
+  const codexChannels = React.useMemo(() => getCodexCompatibleChannels(channels), [channels])
+  const [runtimeKind, setRuntimeKind] = useAtom(agentRuntimeKindAtom)
+  const [codexChannelId, setCodexChannelId] = useAtom(agentCodexChannelIdAtom)
+  const [codexModelId, setCodexModelId] = useAtom(agentCodexModelIdAtom)
+  const [reasoningEffort, setReasoningEffort] = useAtom(agentCodexReasoningEffortAtom)
+  const [networkAccessEnabled, setNetworkAccessEnabled] = useAtom(agentCodexNetworkAccessEnabledAtom)
+  const [webSearchMode, setWebSearchMode] = useAtom(agentCodexWebSearchModeAtom)
+
+  if (!codexFeatureEnabled) return null
+
+  const selectedChannel = typeof codexChannelId === 'string'
+    ? codexChannels.find((channel) => channel.id === codexChannelId) ?? null
+    : null
+  const authSourceValue = selectedChannel ? selectedChannel.id : CODEX_NATIVE_AUTH_SELECT_VALUE
+  const modelValue = codexModelId ?? ''
+  const effectiveReasoningEffort = reasoningEffort ?? 'medium'
+  const effectiveWebSearchMode = webSearchMode ?? 'disabled'
+
+  const updateRuntimeKind = (value: string): void => {
+    const next = value as CodingAgentRuntimeKind
+    setRuntimeKind(next)
+    window.electronAPI.updateSettings({
+      agentRuntimeKind: next,
+      ...(next === 'codex' && codexChannelId === undefined ? { agentCodexChannelId: null } : {}),
+    }).catch(console.error)
+    if (next === 'codex' && codexChannelId === undefined) {
+      setCodexChannelId(null)
+    }
+  }
+
+  const updateCodexAuthSource = (value: string): void => {
+    if (value === CODEX_NATIVE_AUTH_SELECT_VALUE) {
+      setCodexChannelId(null)
+      window.electronAPI.updateSettings({ agentCodexChannelId: null }).catch(console.error)
+      return
+    }
+
+    const channel = codexChannels.find((candidate) => candidate.id === value)
+    if (!channel) return
+    setCodexChannelId(channel.id)
+    const firstEnabledModel = channel.models.find((model) => model.enabled)
+    const nextModelId = codexModelId || firstEnabledModel?.id
+    if (nextModelId) setCodexModelId(nextModelId)
+    window.electronAPI.updateSettings({
+      agentCodexChannelId: channel.id,
+      ...(nextModelId ? { agentCodexModelId: nextModelId } : {}),
+    }).catch(console.error)
+  }
+
+  const updateCodexModel = (): void => {
+    const trimmed = modelValue.trim()
+    const next = trimmed || undefined
+    setCodexModelId(next)
+    window.electronAPI.updateSettings({ agentCodexModelId: next }).catch(console.error)
+  }
+
+  const updateReasoningEffort = (value: string): void => {
+    const next = value as AgentCodexReasoningEffort
+    setReasoningEffort(next)
+    window.electronAPI.updateSettings({ agentCodexReasoningEffort: next }).catch(console.error)
+  }
+
+  const updateNetworkAccess = (checked: boolean): void => {
+    setNetworkAccessEnabled(checked)
+    window.electronAPI.updateSettings({ agentCodexNetworkAccessEnabled: checked }).catch(console.error)
+  }
+
+  const updateWebSearchMode = (value: string): void => {
+    const next = value as AgentCodexWebSearchMode
+    setWebSearchMode(next)
+    window.electronAPI.updateSettings({ agentCodexWebSearchMode: next }).catch(console.error)
+  }
+
+  return (
+    <SettingsSection
+      title="Agent Runtime"
+      description="选择 Agent 模式使用的 Coding Runtime，新会话首次运行时绑定"
+    >
+      <SettingsCard>
+        <SettingsSegmentedControl
+          label="Runtime"
+          description="Claude Code 保持现有 Agent 行为；Codex 使用独立 runtime events 历史回放"
+          value={runtimeKind}
+          onValueChange={updateRuntimeKind}
+          options={RUNTIME_OPTIONS}
+        />
+
+        {runtimeKind === 'codex' && (
+          <>
+            <SettingsRow
+              label="Codex 认证来源"
+              icon={<KeyRound size={18} className="text-emerald-500" />}
+              description="本机 auth 使用 Codex 原生登录；渠道模式只列出已启用的 OpenAI / Custom 渠道"
+            >
+              <Select value={authSourceValue} onValueChange={updateCodexAuthSource}>
+                <SelectTrigger className="w-full sm:w-[260px]">
+                  <SelectValue placeholder="选择 Codex 认证来源" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CODEX_NATIVE_AUTH_SELECT_VALUE}>本机 Codex auth</SelectItem>
+                  {codexChannels.map((channel) => (
+                    <SelectItem key={channel.id} value={channel.id}>
+                      {formatCodexChannelLabel(channel)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+
+            <SettingsInput
+              label="Codex 模型"
+              description="独立于 Claude Agent 模型；留空时运行时使用 codex 默认模型"
+              value={modelValue}
+              onChange={setCodexModelId}
+              onBlur={updateCodexModel}
+              placeholder="例如: gpt-5.1-codex"
+            />
+
+            <SettingsSegmentedControl
+              label="推理深度"
+              description="控制 Codex runtime 的 reasoning effort"
+              value={effectiveReasoningEffort}
+              onValueChange={updateReasoningEffort}
+              options={CODEX_REASONING_OPTIONS}
+            />
+
+            <SettingsRow
+              label="网络访问"
+              icon={<Globe2 size={18} className="text-blue-500" />}
+              description="允许 Codex runtime 在任务中访问网络"
+            >
+              <Switch
+                checked={networkAccessEnabled ?? false}
+                onCheckedChange={updateNetworkAccess}
+                aria-label="切换 Codex 网络访问"
+              />
+            </SettingsRow>
+
+            <SettingsSegmentedControl
+              label="Web Search"
+              description="控制 Codex runtime 的 web search 策略"
+              value={effectiveWebSearchMode}
+              onValueChange={updateWebSearchMode}
+              options={CODEX_WEB_SEARCH_OPTIONS}
+            />
+          </>
+        )}
+      </SettingsCard>
+    </SettingsSection>
+  )
+}
+
+function formatCodexChannelLabel(channel: Channel): string {
+  return `${channel.name} · ${channel.provider === 'openai' ? 'OpenAI' : 'Custom'}`
 }
 
 /** 内置 Agent 工具状态展示 */

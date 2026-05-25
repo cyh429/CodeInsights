@@ -336,6 +336,7 @@ export type ErrorCode =
   | 'channel_not_found'
   | 'api_key_decrypt_failed'
   | 'claude_binary_not_found'
+  | 'codex_runtime_disabled'
   | 'session_busy'
   | 'unknown_error'
 
@@ -1207,6 +1208,8 @@ export const AGENT_IPC_CHANNELS = {
   GET_MESSAGES: 'agent:get-messages',
   /** 获取会话 SDKMessage（Phase 4 新格式） */
   GET_SDK_MESSAGES: 'agent:get-sdk-messages',
+  /** 获取会话 runtime events */
+  GET_RUNTIME_EVENTS: 'agent:get-runtime-events',
   /** 更新会话标题 */
   UPDATE_TITLE: 'agent:update-title',
   /** 删除会话 */

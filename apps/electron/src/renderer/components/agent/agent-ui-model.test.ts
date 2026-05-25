@@ -4,6 +4,7 @@ import {
   buildAgentRunnerModeControl,
   buildAgentHeaderMeta,
   formatPermissionMode,
+  formatRuntimeKind,
   getActiveAgentBanner,
   getBannerToneForPermission,
   getToolActivityTone,
@@ -21,6 +22,7 @@ describe('agent-ui-model', () => {
     })
 
     expect(meta).toEqual([
+      { key: 'runtime', label: 'Runtime', value: 'Claude Code', tone: 'neutral' },
       { key: 'workspace', label: '工作区', value: 'codeinsights', tone: 'neutral' },
       { key: 'model', label: '模型', value: 'Claude Sonnet', tone: 'neutral' },
       { key: 'permission', label: '权限', value: 'Plan', tone: 'waiting' },
@@ -35,8 +37,20 @@ describe('agent-ui-model', () => {
       permissionMode: 'default',
     })
 
-    expect(meta[0]).toEqual({ key: 'workspace', label: '工作区', value: '未选择工作区', tone: 'waiting' })
-    expect(meta[1]).toEqual({ key: 'model', label: '模型', value: '未选择模型', tone: 'waiting' })
+    expect(meta[1]).toEqual({ key: 'workspace', label: '工作区', value: '未选择工作区', tone: 'waiting' })
+    expect(meta[2]).toEqual({ key: 'model', label: '模型', value: '未选择模型', tone: 'waiting' })
+  })
+
+  test('runtime labels distinguish Claude Code and Codex sessions', () => {
+    expect(formatRuntimeKind('claude-code')).toBe('Claude Code')
+    expect(formatRuntimeKind('codex')).toBe('Codex')
+
+    expect(buildAgentHeaderMeta({
+      runtimeKind: 'codex',
+      workspaceName: 'codeinsights',
+      modelName: 'gpt-5.1-codex',
+      permissionMode: 'auto',
+    })[0]).toEqual({ key: 'runtime', label: 'Runtime', value: 'Codex', tone: 'running' })
   })
 
   test('permission and tool tones use shared status semantics', () => {
@@ -147,5 +161,20 @@ describe('agent-ui-model', () => {
       streaming: true,
       hasTextInput: true,
     }).canSend).toBe(true)
+  })
+
+  test('composer blocks Codex runtime queue message while streaming', () => {
+    expect(buildAgentComposerState({
+      hasChannel: true,
+      hasAvailableModel: true,
+      interactionLocked: false,
+      streaming: true,
+      hasTextInput: true,
+      queueUnsupported: true,
+    })).toEqual({
+      disabled: true,
+      canSend: false,
+      notice: 'Codex Runtime 暂不支持运行中追加消息，请先停止或等待完成',
+    })
   })
 })

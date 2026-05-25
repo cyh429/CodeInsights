@@ -20,6 +20,7 @@ import { channelsAtom } from '@/atoms/chat-atoms'
 import { cn } from '@/lib/utils'
 import { resolveModelDisplayName } from '@/lib/model-logo'
 import { buildAgentHeaderMeta } from './agent-ui-model'
+import type { CodingAgentRuntimeKind } from '@codeinsights/shared'
 
 /** AgentHeader 属性接口 */
 interface AgentHeaderProps {
@@ -29,6 +30,7 @@ interface AgentHeaderProps {
   permissionMode?: string | null
   streaming?: boolean
   planMode?: boolean
+  runtimeKind?: CodingAgentRuntimeKind
 }
 
 export function AgentHeader({
@@ -38,6 +40,7 @@ export function AgentHeader({
   permissionMode,
   streaming = false,
   planMode = false,
+  runtimeKind = 'claude-code',
 }: AgentHeaderProps): React.ReactElement | null {
   const sessions = useAtomValue(agentSessionsAtom)
   const session = sessions.find((s) => s.id === sessionId) ?? null
@@ -70,7 +73,8 @@ export function AgentHeader({
     permissionMode,
     streaming,
     planMode,
-  }), [modelName, permissionMode, planMode, streaming, workspaceName])
+    runtimeKind,
+  }), [modelName, permissionMode, planMode, runtimeKind, streaming, workspaceName])
   const missionState = streaming ? '同步中' : planMode ? '规划中' : '待命'
   const missionStateTone = streaming ? 'running' : planMode ? 'waiting' : 'neutral'
 
@@ -224,6 +228,7 @@ export function AgentHeader({
                     item.key === 'workspace' && 'max-w-[150px] 2xl:max-w-[190px]',
                     item.key === 'model' && 'max-w-[180px] 2xl:max-w-[220px]',
                     item.key === 'permission' && 'max-w-[112px] 2xl:max-w-[150px]',
+                    item.key === 'runtime' && 'max-w-[136px] 2xl:max-w-[160px]',
                     item.tone === 'running' && 'border-status-running-border bg-status-running-bg text-status-running-fg',
                     item.tone === 'waiting' && 'border-status-waiting-border bg-status-waiting-bg text-status-waiting-fg',
                     item.tone === 'neutral' && 'border-border-subtle text-text-secondary',
@@ -233,6 +238,7 @@ export function AgentHeader({
                   {item.key === 'workspace' && <Folder className="size-3.5 shrink-0" />}
                   {item.key === 'model' && <Cpu className="size-3.5 shrink-0" />}
                   {item.key === 'permission' && <ShieldCheck className="size-3.5 shrink-0" />}
+                  {item.key === 'runtime' && <Activity className="size-3.5 shrink-0" />}
                   <span className="hidden shrink-0 text-current/65 2xl:inline">{item.label}</span>
                   <span className="min-w-0 truncate font-medium">{item.value}</span>
                 </span>

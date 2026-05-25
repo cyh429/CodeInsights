@@ -35,11 +35,13 @@ mock.module('electron', () => ({
 }))
 
 const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+const originalCodexRuntimeFlag = process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
 let tempConfigDir = ''
 
 beforeEach(() => {
   tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-agent-orchestrator-'))
   process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
+  delete process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
 })
 
 afterEach(() => {
@@ -47,6 +49,11 @@ afterEach(() => {
     delete process.env.CODEINSIGHTS_CONFIG_DIR
   } else {
     process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
+  }
+  if (originalCodexRuntimeFlag === undefined) {
+    delete process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
+  } else {
+    process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = originalCodexRuntimeFlag
   }
   if (tempConfigDir) {
     rmSync(tempConfigDir, { recursive: true, force: true })
@@ -113,7 +120,47 @@ describe('AgentOrchestrator runtime routing selection', () => {
 })
 
 describe('AgentOrchestrator Codex runtime routing', () => {
+  test('Codex feature flag 关闭时主进程阻止继续执行既有 Codex 会话', async () => {
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const {
+      createAgentSession,
+      getAgentSessionRuntimeEvents,
+      getAgentSessionSDKMessages,
+      updateAgentSessionMeta,
+    } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'claude-code' })
+    const session = createAgentSession('Codex 已关闭会话')
+    updateAgentSessionMeta(session.id, {
+      runtimeKind: 'codex',
+      runtimeSession: {
+        kind: 'codex',
+        externalSessionId: 'codex-thread-disabled',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus())
+    const errors: string[] = []
+    const completions: unknown[] = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: (error) => errors.push(error),
+      onComplete: (_messages, opts) => completions.push(opts ?? {}),
+      onTitleUpdated: () => {},
+    })
+
+    expect(errors[0]).toContain('Codex Runtime 已关闭')
+    expect(completions).toHaveLength(1)
+    expect(getAgentSessionRuntimeEvents(session.id)).toEqual([])
+    const sdkMessages = getAgentSessionSDKMessages(session.id)
+    expect(sdkMessages).toHaveLength(1)
+    expect((sdkMessages[0] as unknown as { _errorCode?: string })._errorCode).toBe('codex_runtime_disabled')
+  })
+
   test('settings 选择 Codex 时持久化 runtimeSession 并写 runtime event log', async () => {
+    process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionMeta, getAgentSessionRuntimeEvents } = await import('./agent-session-manager')
@@ -156,6 +203,7 @@ describe('AgentOrchestrator Codex runtime routing', () => {
   })
 
   test('stop 后 Codex runtime 的 late run_completed 不会落入 event log', async () => {
+    process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionRuntimeEvents } = await import('./agent-session-manager')

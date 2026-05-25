@@ -33,6 +33,7 @@ import type {
   MessageSearchResult,
   AgentSessionMeta,
   AgentMessage,
+  AgentStreamEnvelope,
   SDKMessage,
   AgentSendInput,
   AgentStreamEvent,
@@ -443,6 +444,9 @@ export interface ElectronAPI {
 
   /** 获取 Agent 会话 SDKMessage（Phase 4 新格式） */
   getAgentSessionSDKMessages: (id: string) => Promise<SDKMessage[]>
+
+  /** 获取 Agent 会话 runtime events */
+  getAgentSessionRuntimeEvents: (id: string) => Promise<AgentStreamEnvelope[]>
 
   /** 更新 Agent 会话标题 */
   updateAgentSessionTitle: (id: string, title: string) => Promise<AgentSessionMeta>
@@ -1268,6 +1272,10 @@ const electronAPI: ElectronAPI = {
 
   getAgentSessionSDKMessages: (id: string) => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_SDK_MESSAGES, id)
+  },
+
+  getAgentSessionRuntimeEvents: (id: string) => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_RUNTIME_EVENTS, id)
   },
 
   updateAgentSessionTitle: (id: string, title: string) => {

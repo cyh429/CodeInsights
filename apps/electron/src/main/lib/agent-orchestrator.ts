@@ -114,6 +114,10 @@ export interface AgentOrchestratorOptions {
 
 // ===== 工具函数 =====
 
+function isCodexRuntimeFeatureEnabled(): boolean {
+  return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
+}
+
 /**
  * 从 stderr 中提取 API 错误信息
  *
@@ -600,6 +604,17 @@ export class AgentOrchestrator {
       defaultKind: 'claude-code',
     })
     console.log(`[Agent 编排] Runtime 选择: ${runtimeSelection.kind} (${runtimeSelection.source})`)
+
+    if (runtimeSelection.kind === 'codex' && !isCodexRuntimeFeatureEnabled()) {
+      reportPreflightError({
+        code: 'codex_runtime_disabled',
+        title: 'Codex Runtime 已关闭',
+        message: 'Codex Runtime 功能开关已关闭，此会话仅可查看历史，不能继续发送。',
+        actions: [],
+        canRetry: false,
+      })
+      return
+    }
 
     // 2. Claude Code 路径继续使用用户选择的渠道；Codex 路径使用独立 Codex 设置。
     const channel = runtimeSelection.kind === 'claude-code' ? getChannelById(channelId) : undefined

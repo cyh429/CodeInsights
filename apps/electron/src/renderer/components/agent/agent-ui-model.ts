@@ -1,5 +1,5 @@
 import type { ActivityStatus } from '@/atoms/agent-atoms'
-import type { AgentRuntimeRunnerMode, DangerLevel } from '@codeinsights/shared'
+import type { AgentRuntimeRunnerMode, CodingAgentRuntimeKind, DangerLevel } from '@codeinsights/shared'
 
 export type AgentBannerTone = 'neutral' | 'waiting' | 'danger' | 'planning'
 
@@ -9,10 +9,11 @@ export interface AgentHeaderMetaInput {
   permissionMode?: string | null
   streaming?: boolean
   planMode?: boolean
+  runtimeKind?: CodingAgentRuntimeKind
 }
 
 export interface AgentHeaderMetaItem {
-  key: 'workspace' | 'model' | 'permission' | 'state'
+  key: 'runtime' | 'workspace' | 'model' | 'permission' | 'state'
   label: string
   value: string
   tone: 'neutral' | 'running' | 'waiting'
@@ -20,6 +21,12 @@ export interface AgentHeaderMetaItem {
 
 export function buildAgentHeaderMeta(input: AgentHeaderMetaInput): AgentHeaderMetaItem[] {
   const items: AgentHeaderMetaItem[] = [
+    {
+      key: 'runtime',
+      label: 'Runtime',
+      value: formatRuntimeKind(input.runtimeKind),
+      tone: input.runtimeKind === 'codex' ? 'running' : 'neutral',
+    },
     {
       key: 'workspace',
       label: '工作区',
@@ -50,6 +57,10 @@ export function buildAgentHeaderMeta(input: AgentHeaderMetaInput): AgentHeaderMe
   }
 
   return items
+}
+
+export function formatRuntimeKind(kind?: CodingAgentRuntimeKind | null): string {
+  return kind === 'codex' ? 'Codex' : 'Claude Code'
 }
 
 export function formatPermissionMode(mode?: string | null): string {
@@ -106,6 +117,7 @@ export interface AgentComposerStateInput {
   interactionLocked: boolean
   streaming: boolean
   hasTextInput: boolean
+  queueUnsupported?: boolean
 }
 
 export interface AgentInteractionLockInput {
@@ -155,6 +167,14 @@ export function buildAgentComposerState(input: AgentComposerStateInput): AgentCo
       disabled: true,
       canSend: false,
       notice: '请先处理上方交互请求',
+    }
+  }
+
+  if (input.streaming && input.hasTextInput && input.queueUnsupported) {
+    return {
+      disabled: true,
+      canSend: false,
+      notice: 'Codex Runtime 暂不支持运行中追加消息，请先停止或等待完成',
     }
   }
 

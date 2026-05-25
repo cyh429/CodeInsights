@@ -22,6 +22,7 @@ import type {
   RewindSessionInput,
   RewindSessionResult,
   CodeInsightsPermissionMode,
+  AgentStreamEnvelope,
   SDKMessage,
   SkillMeta,
   StopTaskInput,
@@ -36,6 +37,7 @@ import {
   forkAgentSession,
   getAgentSessionMeta,
   getAgentSessionMessages,
+  getAgentSessionRuntimeEvents,
   getAgentSessionSDKMessages,
   listAgentSessions,
   migrateChatToAgentSession,
@@ -132,6 +134,14 @@ export function registerAgentIpcHandlers(): void {
     AGENT_IPC_CHANNELS.GET_SDK_MESSAGES,
     async (_, id: string): Promise<SDKMessage[]> => {
       return getAgentSessionSDKMessages(id)
+    }
+  )
+
+  // 获取 Agent 会话 runtime events
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_RUNTIME_EVENTS,
+    async (_, id: string): Promise<AgentStreamEnvelope[]> => {
+      return getAgentSessionRuntimeEvents(id)
     }
   )
 
