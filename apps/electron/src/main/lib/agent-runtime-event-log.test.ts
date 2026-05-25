@@ -26,12 +26,14 @@ mock.module('electron', () => ({
 const { getAgentSessionEventsPath } = await import('./config-paths')
 const { getAgentSessionRuntimeEvents } = await import('./agent-session-manager')
 const {
+  appendAgentRuntimeEnvelope,
   appendAskUserResolvedRuntimeEvent,
   appendExitPlanModeResolvedRuntimeEvent,
   appendPermissionResolvedRuntimeEvent,
   finishAgentRuntimeEventLogRun,
   startAgentRuntimeEventLogRun,
 } = await import('./agent-runtime-event-log')
+const { createAgentStreamEnvelope } = await import('@codeinsights/shared')
 
 let currentConfigDir: string | undefined
 
@@ -100,6 +102,44 @@ describe('Agent runtime event log', () => {
 
     const terminalEvents = getAgentSessionRuntimeEvents(sessionId).filter((event) => event.event.type.startsWith('run_') && event.event.type !== 'run_started')
     expect(terminalEvents.map((event) => event.event.type)).toEqual(['run_stopped'])
+  })
+
+  test('可直接写入 runtime 生成的 Codex envelope 且保留 runtimeKind', () => {
+    const sessionId = 'session-event-log-codex-envelope'
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      sessionId,
+      runId: 'run-codex',
+      sequence: 0,
+      source: 'runtime_service',
+      createdAt: '2026-05-25T00:00:00.000Z',
+      event: {
+        type: 'run_started',
+        model: 'codex-runtime-mock',
+        cwd: '/tmp/workspace',
+        permissionMode: 'auto',
+        runtimeHash: 'codex-agent-runtime',
+        runnerMode: 'runner-v2',
+        runtimeKind: 'codex',
+      },
+    }))
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      sessionId,
+      runId: 'run-codex',
+      sequence: 1,
+      source: 'codex_sdk',
+      createdAt: '2026-05-25T00:00:00.000Z',
+      event: {
+        type: 'sdk_session',
+        sdkSessionId: 'codex-thread-1',
+      },
+    }))
+
+    const events = getAgentSessionRuntimeEvents(sessionId)
+    expect(events.map((event) => event.event.type)).toEqual(['run_started', 'sdk_session'])
+    expect(events[0]?.event).toMatchObject({
+      type: 'run_started',
+      runtimeKind: 'codex',
+    })
   })
 
   test('同一 run 内重复 sdk_session 只写入一次', () => {

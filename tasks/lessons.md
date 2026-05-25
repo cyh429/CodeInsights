@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-25 Agent Runtime Routing 绑定与 generation
+
+- Orchestrator 的 active run generation 不能用 `Date.now()` 这类墙钟时间；同一毫秒 stop 后重跑可能让旧 run 的 finally 误删新 run，必须使用单调计数或唯一 token。
+- Coding runtime 首次绑定原生 session 时，不能只保存 external session id；还要固化当时的 channel/model 等 resume 必要上下文，避免 settings 后续变化后用错误账号或模型恢复旧 thread。
+- 对不支持运行中权限切换的 runtime，要先确认 runtime 接受该切换再更新本地权限状态；unsupported 不能污染 `sessionPermissionModes`。
+
 ## 2026-05-24 项目主页架构图留白
 
 - 给主页架构图、截图等 `<img>` 写 HTML `width` / `height` 属性时，CSS 基础规则必须同时包含 `width/max-width` 与 `height: auto`；否则窄列响应式布局会保留固定高度，SVG 默认居中适配后出现巨大上下白边。

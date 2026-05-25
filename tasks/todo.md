@@ -1,5 +1,38 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 5 计划
+
+范围确认：本轮只做 Phase 5 Orchestrator runtime routing；不混入 Phase 6 Renderer UI、Phase 7 真实 Codex SDK / CLI 集成、打包发布验证、README.md 或 AGENTS.md 修改。Codex 路径继续使用 Phase 4 mock runtime，不依赖本机登录或真实 API key。
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short`、`git branch --show-current` 和 `git log -1 --oneline`，确认当前分支为 `codex/agent-codex-runtime-phase-0`，工作树干净，最新提交为 `dab64231 docs: 同步 Agent Codex Runtime Phase 4 后续状态`。
+- [x] 读取开发清单“最新开发状态快照”、第 6 节 Phase 4 执行记录和第 7 节 Phase 5 范围。
+- [x] 梳理现有 Claude Orchestrator、Phase 4 `CodexAgentRuntime`、runtime event log、session/settings 契约和测试风格，确定最小 routing 改动。
+- [x] 先补 Phase 5 测试：默认 Claude、legacy `sdkSessionId`、settings 选择 Codex、新旧绑定不随 settings 切换、stop 不落 `run_completed`、Codex `thread.started` 持久化和 runtime 抛错清理 active run。
+- [x] 新增 `CodingAgentRuntimeRegistry`，实现 runtime 注册、默认 runtime、运行中切换保护和 session/settings/default 优先级解析。
+- [x] 必要时新增 `ClaudeCodeRuntime` 薄包装或等价 registry adapter，保持 Claude 默认路径行为不变。
+- [x] 更新 Orchestrator / service / event log / session manager / IPC handler 的最小 runtime routing 代码，让 Codex run 写 runtime event log，stop 同时触发 active abort controller 和 runtime abort。
+- [x] complete 前执行 active session / abort state 二次检查，runtime unsupported capability 透传为 UI 可处理的错误或状态。
+- [x] 运行 Phase 5 推荐验证：`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib apps/electron/src/main/ipc tasks/todo.md`。
+- [x] 在本节末尾追加 Review，确认阶段边界、验证结果和提交范围，并只提交 Phase 5 相关文件。
+
+## 2026-05-25 Agent Codex Runtime Phase 5 Review
+
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.ts`：统一注册/获取/释放 Coding Agent runtime，并提供 `resolveAgentRuntimeSelection()`，按 session runtimeSession > legacy sdkSessionId > settings > default 解析路由。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/claude-code-runtime.ts`：Claude Code 的 registry wrapper，保留现有 adapter 行为，queue / permission capability 仍返回结构化 unsupported。
+- 已在 `apps/electron/src/main/lib/agent-service.ts` 注入 runtime registry：默认注册 ClaudeCodeRuntime + Phase 5 mock Codex runtime；Codex 不调用真实 SDK / CLI / auth，只产出 mock envelopes。
+- 已更新 `apps/electron/src/main/lib/agent-orchestrator.ts`：先做 runtime 选择，再按 runtime 分支执行；Codex 分支消费 `AgentStreamEnvelope`、写 runtime event log、回填 `runtimeSession`，stop 同时 abort active controller 与 runtime，complete 前补做 active/abort 二次检查。
+- 已更新 `apps/electron/src/main/lib/agent-runtime-event-log.ts`：支持直接追加 runtime envelope；`startAgentRuntimeEventLogRun()` 可记录 `runtimeKind`。
+- 已更新 `apps/electron/src/main/lib/agent-runtime-runner.ts`：legacy Claude runner 继续写 `runtimeKind: 'claude-code'`。
+- 已扩展 `packages/shared/src/types/agent.ts` 的 `AgentRuntimeSessionRef`，Codex 绑定时固化 `channelId` / `model`；`@codeinsights/shared` patch 版本升至 `0.1.44`。
+- 已将 Orchestrator active run generation 从 `Date.now()` 改为单调计数，避免同一毫秒 stop + 重跑时旧 run 清理新 run。
+- 已调整运行中权限切换：Codex 等不支持 `setPermissionMode` 的 runtime 先返回 unsupported，再决定是否更新本地状态，避免本地状态被错误污染。
+- 已更新 `apps/electron/package.json` 版本到 `0.0.108`。
+- 已新增测试：`agent-orchestrator.test.ts`、`coding-agent-runtime-registry.test.ts`，并补充 `agent-runtime-event-log.test.ts`；覆盖默认 Claude、legacy sdkSessionId、settings Codex、新旧绑定不切换、Codex 运行时 event log、stop 后 late terminal 去重。
+- 代码审查：首轮审查指出 active generation 使用 `Date.now()`、Codex runtimeSession 未固化 channel/model、unsupported permission 切换先污染本地状态；均已修复，复审无 Critical / High / Medium findings。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`；`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`；`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test packages/shared`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib apps/electron/src/main/ipc packages/shared tasks/todo.md tasks/lessons.md`。
+- 阶段边界：未接入 Phase 6 Renderer UI、未做真实 Codex SDK / CLI 集成、未修改 README.md 或 AGENTS.md。
+
 ## 2026-05-25 Agent Codex Runtime Phase 4 后状态文档同步计划
 
 - [x] 更新 `docs/codex-support/README.md`：把最新状态从 Phase 3 切到 Phase 4，明确 Phase 5-8 未完成，下一步为 Phase 5。

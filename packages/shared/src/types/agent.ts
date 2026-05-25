@@ -537,6 +537,10 @@ export interface AgentRuntimeSessionRef {
   kind: CodingAgentRuntimeKind
   /** Runtime 侧原生会话 ID，例如 Claude SDK session id 或 Codex thread id */
   externalSessionId: string
+  /** Runtime 绑定的渠道 ID；null 表示显式使用本机认证 */
+  channelId?: string | null
+  /** Runtime 首次绑定时使用的模型 ID */
+  model?: string
   /** 创建时间戳 */
   createdAt: number
   /** 更新时间戳 */

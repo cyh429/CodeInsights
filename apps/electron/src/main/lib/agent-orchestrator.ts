@@ -18,8 +18,8 @@ import { randomUUID } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta, AgentRuntimeRunnerMode } from '@codeinsights/shared'
-import { SAFE_TOOLS, isAgentRuntimeTerminalEvent } from '@codeinsights/shared'
+import type { AgentSendInput, AgentMessage, AgentGenerateTitleInput, AgentProviderAdapter, TypedError, RetryAttempt, SDKMessage, SDKAssistantMessage, AgentStreamPayload, RewindSessionResult, SdkBeta, AgentRuntimeRunnerMode, AgentStreamEnvelope, AgentRuntimeEvent } from '@codeinsights/shared'
+import { SAFE_TOOLS, createAgentStreamEnvelope, isAgentRuntimeTerminalEvent } from '@codeinsights/shared'
 import type { PermissionRequest, CodeInsightsPermissionMode, AskUserRequest, ExitPlanModeRequest } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from './adapters/claude-agent-adapter'
 import { isPromptTooLongError, friendlyErrorMessage, mapSDKErrorToTypedError, extractErrorDetails, shouldKeepChannelOpen } from './adapters/claude-agent-adapter'
@@ -65,6 +65,7 @@ import {
 } from './agent-orchestrator/queued-message'
 import { sendCompletionSignal } from './agent-orchestrator/completion-signal'
 import {
+  appendAgentRuntimeEnvelope,
   finishAgentRuntimeEventLogRun,
   startAgentRuntimeEventLogRun,
   type AgentRuntimeEventLogWriter,
@@ -80,6 +81,15 @@ import {
 } from './agent-runtime-materializer'
 import { expandDmiSlashCommand } from './agent-plugin-catalog'
 import { AGENT_HOST_MCP_SERVER_NAME, createAgentHostMcpServer } from './agent-host-mcp-server'
+import {
+  CodingAgentRuntimeRegistry,
+  resolveAgentRuntimeSelection,
+  type AgentRuntimeSelection,
+} from './agent-runtimes/coding-agent-runtime-registry'
+import type {
+  CodexCodingAgentRuntimeRunInput,
+  CodingAgentRuntime,
+} from './agent-runtimes/coding-agent-runtime-types'
 
 // ===== 类型定义 =====
 
@@ -96,6 +106,10 @@ export interface SessionCallbacks {
   onComplete: (messages?: AgentMessage[], opts?: { stoppedByUser?: boolean; startedAt?: number; resultSubtype?: string }) => void
   /** 发送标题更新 */
   onTitleUpdated: (title: string) => void
+}
+
+export interface AgentOrchestratorOptions {
+  runtimeRegistry?: CodingAgentRuntimeRegistry
 }
 
 // ===== 工具函数 =====
@@ -240,7 +254,11 @@ function supports1MContext(modelId: string): boolean {
 export class AgentOrchestrator {
   private adapter: AgentProviderAdapter
   private eventBus: AgentEventBus
+  private runtimeRegistry: CodingAgentRuntimeRegistry
   private activeSessions = new Map<string, number>()
+  private activeRunAbortControllers = new Map<string, AbortController>()
+  private activeCodingRuntimes = new Map<string, CodingAgentRuntime>()
+  private nextRunGeneration = 0
 
   /** 队列消息本地记录（sessionId → UUID 集合，用于防重） */
   private queuedMessageUuids = new Map<string, Set<string>>()
@@ -254,9 +272,10 @@ export class AgentOrchestrator {
   /** 运行中会话的权限分派器（同步 plan 进入状态） */
   private sessionPermissionDispatchers = new Map<string, PermissionToolDispatcher>()
 
-  constructor(adapter: AgentProviderAdapter, eventBus: AgentEventBus) {
+  constructor(adapter: AgentProviderAdapter, eventBus: AgentEventBus, options: AgentOrchestratorOptions = {}) {
     this.adapter = adapter
     this.eventBus = eventBus
+    this.runtimeRegistry = options.runtimeRegistry ?? new CodingAgentRuntimeRegistry()
   }
 
   /**
@@ -573,9 +592,18 @@ export class AgentOrchestrator {
       }
     }
 
-    // 2. 获取渠道信息并解密 API Key
-    const channel = getChannelById(channelId)
-    if (!channel) {
+    const sessionMeta = getAgentSessionMeta(sessionId)
+    const appSettings = getSettings()
+    const runtimeSelection = resolveAgentRuntimeSelection({
+      sessionMeta,
+      settings: appSettings,
+      defaultKind: 'claude-code',
+    })
+    console.log(`[Agent 编排] Runtime 选择: ${runtimeSelection.kind} (${runtimeSelection.source})`)
+
+    // 2. Claude Code 路径继续使用用户选择的渠道；Codex 路径使用独立 Codex 设置。
+    const channel = runtimeSelection.kind === 'claude-code' ? getChannelById(channelId) : undefined
+    if (runtimeSelection.kind === 'claude-code' && !channel) {
       reportPreflightError({
         code: 'channel_not_found',
         title: '渠道不存在',
@@ -588,42 +616,51 @@ export class AgentOrchestrator {
       return
     }
 
-    let apiKey: string
-    try {
-      apiKey = decryptApiKey(channelId)
-    } catch {
-      reportPreflightError({
-        code: 'api_key_decrypt_failed',
-        title: 'API Key 解密失败',
-        message: '无法解密此渠道的 API Key，可能是系统密钥环异常。请到设置中重新填写 API Key。',
-        actions: [
-          { key: 's', label: '打开渠道设置', action: 'open_channel_settings' },
-        ],
-        canRetry: false,
-      })
-      return
+    let apiKey: string | undefined
+    if (runtimeSelection.kind === 'claude-code') {
+      try {
+        apiKey = decryptApiKey(channelId)
+      } catch {
+        reportPreflightError({
+          code: 'api_key_decrypt_failed',
+          title: 'API Key 解密失败',
+          message: '无法解密此渠道的 API Key，可能是系统密钥环异常。请到设置中重新填写 API Key。',
+          actions: [
+            { key: 's', label: '打开渠道设置', action: 'open_channel_settings' },
+          ],
+          canRetry: false,
+        })
+        return
+      }
     }
 
     // 2.1 立即抢占会话槽位（在所有同步检查通过后、第一个 await 之前）
     // 防止 buildSdkEnv 等 await 期间并发调用绕过上方的检查，导致多条重复消息写入 JSONL
     // finally 块会通过 generation 匹配来安全清理，不影响正常流程
-    const runGeneration = Date.now()
+    const runGeneration = this.nextRunGeneration += 1
     // 优先使用渲染进程传来的 startedAt（确保 STREAM_COMPLETE 竞态保护比较的是同一个值），
     // 否则用本地 runGeneration 作为回退（headless 模式等无渲染进程场景）
-    const streamStartedAt = input.startedAt ?? runGeneration
+    const streamStartedAt = input.startedAt ?? Date.now()
     this.activeSessions.set(sessionId, runGeneration)
+    const runAbortController = new AbortController()
+    this.activeRunAbortControllers.set(sessionId, runAbortController)
+    const selectedRuntime = this.runtimeRegistry.get(runtimeSelection.kind)
+    if (selectedRuntime) {
+      this.activeCodingRuntimes.set(sessionId, selectedRuntime)
+    }
 
     // 3. 构建环境变量
     // 不再同步凭证到 process.env：SDK 0.2.113+ 通过 options.env 传递给子进程，
     // 主进程内不直接发起 HTTP 请求。直接赋值 process.env 在多会话并发时存在竞态条件。
-    const sdkEnv = await buildSdkEnv({
-      apiKey,
-      baseUrl: channel.baseUrl,
-      provider: channel.provider,
-    })
+    const sdkEnv = runtimeSelection.kind === 'claude-code' && channel && apiKey
+      ? await buildSdkEnv({
+        apiKey,
+        baseUrl: channel.baseUrl,
+        provider: channel.provider,
+      })
+      : {}
 
     // 4. 读取已有的 SDK session ID（用于 resume）
-    const sessionMeta = getAgentSessionMeta(sessionId)
     let existingSdkSessionId = sessionMeta?.sdkSessionId
 
     // 4.1 检测回退后的 resume 截断点（快照回退功能）
@@ -660,47 +697,6 @@ export class AgentOrchestrator {
     let runtimeEventLog: AgentRuntimeEventLogWriter | null = null
 
     try {
-      // 8. 动态导入 SDK
-      const sdk = await import('@anthropic-ai/claude-agent-sdk')
-
-      // 9. 构建 SDK query
-      const cliPath = resolveSDKCliPath()
-
-      if (!existsSync(cliPath)) {
-        const subpkg = `@anthropic-ai/claude-agent-sdk-${process.platform}-${process.arch}`
-        console.error(`[Agent 编排] SDK native binary 不存在: ${cliPath}`)
-        reportPreflightError({
-          code: 'claude_binary_not_found',
-          title: 'Claude 核心未就绪',
-          message:
-            '应用安装包里缺少 Claude Agent SDK 的核心可执行文件（claude.exe）。这通常是打包时未包含当前平台的 SDK 组件导致。请重新下载最新安装包，或提交 issue 告知我们。',
-          details: [
-            `缺失文件: ${cliPath}`,
-            `需要的子包: ${subpkg}`,
-          ],
-          actions: [
-            {
-              key: 'd',
-              label: '下载最新安装包',
-              action: 'open_external',
-              payload: 'https://codeinsights.cool/download',
-            },
-            {
-              key: 'i',
-              label: '报告问题',
-              action: 'open_external',
-              payload: 'https://github.com/zcxGGmu/CodeInsights/issues/new',
-            },
-          ],
-          canRetry: false,
-        })
-        return
-      }
-
-      console.log(
-        `[Agent 编排] 启动 SDK — binary: ${cliPath}, 模型: ${modelId || DEFAULT_MODEL_ID}, resume: ${existingSdkSessionId ?? '无'}`,
-      )
-
       // 确定 Agent 工作目录
       agentCwd = homedir()
       workspaceSlug = undefined
@@ -763,7 +759,7 @@ export class AgentOrchestrator {
       // forkSourceDir 仅作为备用参考字段保留，不再影响 agentCwd。
 
       // 9.5 确保 SDK 项目设置（plansDirectory → .context）
-      if (!usesMaterializedRuntime) {
+      if (runtimeSelection.kind === 'claude-code' && !usesMaterializedRuntime) {
         const claudeSettingsDir = join(agentCwd, '.claude')
         if (!existsSync(claudeSettingsDir)) mkdirSync(claudeSettingsDir, { recursive: true })
         const settingsPath = join(claudeSettingsDir, 'settings.json')
@@ -793,21 +789,6 @@ export class AgentOrchestrator {
       // SDK 本身会优雅处理无效的 resume ID（回退为新会话），无需预验证。
       if (existingSdkSessionId) {
         console.log(`[Agent 编排] 将直接使用已保存的 sdkSessionId 进行 resume: ${existingSdkSessionId}`)
-      }
-
-      // 10. 构建 MCP 服务器配置 + 记忆工具 + 生图工具 + 自定义工具
-      const mcpServers = this.buildMcpServers(workspaceSlug)
-      await this.injectMemoryTools(sdk, mcpServers)
-      await this.injectNanoBananaTools(sdk, mcpServers, sessionId, agentCwd)
-      await this.injectHostBridgeTools(sdk, mcpServers, materializedRuntimeManifest)
-
-      // 合并外部注入的自定义 MCP 服务器（如飞书群聊工具）
-      if (customMcpServers) {
-        if (customMcpServers[AGENT_HOST_MCP_SERVER_NAME]) {
-          throw new Error(`自定义 MCP 不能覆盖内置 host bridge: ${AGENT_HOST_MCP_SERVER_NAME}`)
-        }
-        Object.assign(mcpServers, customMcpServers)
-        console.log(`[Agent 编排] 已合并 ${Object.keys(customMcpServers).length} 个自定义 MCP 服务器`)
       }
 
       // 11. 构建动态上下文和最终 prompt
@@ -861,7 +842,6 @@ export class AgentOrchestrator {
       }
 
       // 12. 读取应用设置 + 获取权限模式
-      const appSettings = getSettings()
       const initialPermissionMode: CodeInsightsPermissionMode = permissionModeOverride
         ?? (workspaceSlug
           ? getWorkspacePermissionMode(workspaceSlug)
@@ -873,6 +853,76 @@ export class AgentOrchestrator {
       this.sessionPermissionModes.set(sessionId, initialPermissionMode)
       console.log(`[Agent 编排] 权限模式: ${initialPermissionMode}${permissionModeOverride ? '（外部覆盖）' : ''}`)
       console.log(`[Agent 编排] Runtime Runner 链路: ${runnerModeResolution.mode} (${runnerModeResolution.source})`)
+
+      if (runtimeSelection.kind === 'codex') {
+        await this.runWithCodexRuntime({
+          sessionId,
+          prompt: finalPrompt,
+          model: runtimeSelection.model ?? appSettings.agentCodexModelId ?? 'codex',
+          cwd: agentCwd ?? homedir(),
+          permissionMode: initialPermissionMode,
+          runtimeSelection,
+          callbacks,
+          streamStartedAt,
+          runGeneration,
+          abortController: runAbortController,
+          additionalDirectories: this.buildRuntimeAdditionalDirectories(additionalDirectories, workspaceSlug),
+          runtimeHash: materializedRuntimeManifest?.runtimeHash,
+          repositoryRoot: agentCwd ?? homedir(),
+          settings: appSettings,
+        })
+        return
+      }
+
+      const cliPath = resolveSDKCliPath()
+      if (!existsSync(cliPath)) {
+        const subpkg = `@anthropic-ai/claude-agent-sdk-${process.platform}-${process.arch}`
+        console.error(`[Agent 编排] SDK native binary 不存在: ${cliPath}`)
+        reportPreflightError({
+          code: 'claude_binary_not_found',
+          title: 'Claude 核心未就绪',
+          message:
+            '应用安装包里缺少 Claude Agent SDK 的核心可执行文件（claude.exe）。这通常是打包时未包含当前平台的 SDK 组件导致。请重新下载最新安装包，或提交 issue 告知我们。',
+          details: [
+            `缺失文件: ${cliPath}`,
+            `需要的子包: ${subpkg}`,
+          ],
+          actions: [
+            {
+              key: 'd',
+              label: '下载最新安装包',
+              action: 'open_external',
+              payload: 'https://codeinsights.cool/download',
+            },
+            {
+              key: 'i',
+              label: '报告问题',
+              action: 'open_external',
+              payload: 'https://github.com/zcxGGmu/CodeInsights/issues/new',
+            },
+          ],
+          canRetry: false,
+        })
+        return
+      }
+
+      console.log(
+        `[Agent 编排] 启动 SDK — binary: ${cliPath}, 模型: ${modelId || DEFAULT_MODEL_ID}, resume: ${existingSdkSessionId ?? '无'}`,
+      )
+
+      const sdk = await import('@anthropic-ai/claude-agent-sdk')
+      const mcpServers = this.buildMcpServers(workspaceSlug)
+      await this.injectMemoryTools(sdk, mcpServers)
+      await this.injectNanoBananaTools(sdk, mcpServers, sessionId, agentCwd)
+      await this.injectHostBridgeTools(sdk, mcpServers, materializedRuntimeManifest)
+
+      if (customMcpServers) {
+        if (customMcpServers[AGENT_HOST_MCP_SERVER_NAME]) {
+          throw new Error(`自定义 MCP 不能覆盖内置 host bridge: ${AGENT_HOST_MCP_SERVER_NAME}`)
+        }
+        Object.assign(mcpServers, customMcpServers)
+        console.log(`[Agent 编排] 已合并 ${Object.keys(customMcpServers).length} 个自定义 MCP 服务器`)
+      }
 
       /** 读取当前会话的实时权限模式（支持运行中切换） */
       const getPermissionMode = (): CodeInsightsPermissionMode =>
@@ -886,6 +936,7 @@ export class AgentOrchestrator {
         resumeFrom: existingSdkSessionId,
         runtimeHash: materializedRuntimeManifest?.runtimeHash,
         runnerMode: runnerModeResolution.mode,
+        runtimeKind: 'claude-code',
       })
 
       // 始终创建 auto 权限回调（运行中可能切换到 auto）
@@ -1074,8 +1125,10 @@ export class AgentOrchestrator {
           runtimeEventLog,
           callbacks,
           streamStartedAt,
+          runGeneration,
           runtimeHash: materializedRuntimeManifest?.runtimeHash,
           runnerMode: runnerModeResolution.mode,
+          abortSignal: runAbortController.signal,
         })
         return
       }
@@ -1482,6 +1535,20 @@ export class AgentOrchestrator {
             console.log(`[Agent 编排] Plan 模式：已注入计划确认建议`)
           }
 
+          if (this.activeSessions.get(sessionId) !== runGeneration || runAbortController.signal.aborted) {
+            const wasStoppedByUser = this.stoppedBySessions.delete(sessionId)
+            runtimeEventLog?.completeIfMissing({ type: 'run_stopped', reason: 'user_abort', stoppedBy: wasStoppedByUser ? 'user' : 'system' })
+            runtimeEventLog?.shadowCompare('user_abort_before_complete')
+            try { updateAgentSessionMeta(sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
+            sendCompletionSignal({
+              callbacks,
+              messages: () => getAgentSessionMessages(sessionId),
+              startedAt: streamStartedAt,
+              options: { stoppedByUser: wasStoppedByUser },
+            })
+            return
+          }
+
           // 发送完成信号
           sendCompletionSignal({
             callbacks,
@@ -1674,12 +1741,252 @@ export class AgentOrchestrator {
         this.sessionPermissionModes.delete(sessionId)
         this.sessionPermissionDispatchers.delete(sessionId)
         this.queuedMessageUuids.delete(sessionId)
+        this.activeRunAbortControllers.delete(sessionId)
+        this.activeCodingRuntimes.delete(sessionId)
       }
       permissionService.clearSessionPending(sessionId)
       askUserService.clearSessionPending(sessionId)
       exitPlanService.clearSessionPending(sessionId)
       runtimeEventLog?.shadowCompare('finally')
       finishAgentRuntimeEventLogRun(sessionId, runtimeEventLog)
+    }
+  }
+
+  private buildRuntimeAdditionalDirectories(
+    additionalDirectories: string[] | undefined,
+    workspaceSlug: string | undefined,
+  ): string[] | undefined {
+    const allDirs = [...(additionalDirectories || [])]
+    if (workspaceSlug) {
+      const workspaceDirs = getWorkspaceAttachedDirectories(workspaceSlug)
+      for (const dir of workspaceDirs) {
+        if (!allDirs.includes(dir)) allDirs.push(dir)
+      }
+      const wsFilesDir = getWorkspaceFilesDir(workspaceSlug)
+      if (!allDirs.includes(wsFilesDir)) allDirs.push(wsFilesDir)
+    }
+    return allDirs.length > 0 ? allDirs : undefined
+  }
+
+  private async runWithCodexRuntime(input: {
+    sessionId: string
+    prompt: string
+    model: string
+    cwd: string
+    permissionMode: CodeInsightsPermissionMode
+    runtimeSelection: AgentRuntimeSelection
+    callbacks: SessionCallbacks
+    streamStartedAt: number
+    runGeneration: number
+    abortController: AbortController
+    additionalDirectories?: string[]
+    runtimeHash?: string
+    repositoryRoot?: string
+    settings: ReturnType<typeof getSettings>
+  }): Promise<void> {
+    const runtime = this.runtimeRegistry.require('codex')
+    this.activeCodingRuntimes.set(input.sessionId, runtime)
+    const runInput: CodexCodingAgentRuntimeRunInput = {
+      sessionId: input.sessionId,
+      prompt: input.prompt,
+      model: input.model,
+      workingDirectory: input.cwd,
+      additionalDirectories: input.additionalDirectories,
+      permissionMode: input.permissionMode,
+      externalSessionId: input.runtimeSelection.externalSessionId,
+      channelId: input.runtimeSelection.channelId,
+      runtimeHash: input.runtimeHash,
+      runnerMode: 'runner-v2',
+      repositoryRoot: input.repositoryRoot,
+      abortSignal: input.abortController.signal,
+      modelReasoningEffort: input.settings.agentCodexReasoningEffort,
+      networkAccessEnabled: input.settings.agentCodexNetworkAccessEnabled,
+      webSearchMode: input.settings.agentCodexWebSearchMode,
+    }
+
+    let terminalEvent: AgentRuntimeEvent | undefined
+    let resultSubtype: string | undefined
+    let completionError: string | undefined
+    let lastEnvelope: AgentStreamEnvelope | undefined
+
+    for await (const envelope of runtime.run(runInput)) {
+      lastEnvelope = envelope
+      let envelopeToPersist = envelope
+      if (
+        isAgentRuntimeTerminalEvent(envelope.event)
+        && !this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)
+      ) {
+        const wasStoppedByUser = this.stoppedBySessions.delete(input.sessionId)
+        envelopeToPersist = this.createStoppedEnvelopeFromRuntimeEnvelope(envelope, wasStoppedByUser)
+      }
+
+      appendAgentRuntimeEnvelope(envelopeToPersist)
+      this.persistCodexEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, input.model)
+
+      if (envelopeToPersist.event.type === 'sdk_session') {
+        this.persistRuntimeSessionRef({
+          sessionId: input.sessionId,
+          kind: 'codex',
+          externalSessionId: envelopeToPersist.event.sdkSessionId,
+          channelId: input.runtimeSelection.channelId,
+          model: input.model,
+        })
+      }
+
+      if (isAgentRuntimeTerminalEvent(envelopeToPersist.event)) {
+        terminalEvent = envelopeToPersist.event
+        if (envelopeToPersist.event.type === 'run_completed') {
+          resultSubtype = envelopeToPersist.event.resultSubtype
+        }
+        if (envelopeToPersist.event.type === 'run_failed') {
+          completionError = envelopeToPersist.event.error.message
+        }
+        break
+      }
+    }
+
+    if (!terminalEvent && !this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
+      const stoppedByUser = this.stoppedBySessions.delete(input.sessionId)
+      terminalEvent = { type: 'run_stopped', reason: 'user_abort', stoppedBy: stoppedByUser ? 'user' : 'system' }
+      appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+        sessionId: input.sessionId,
+        runId: lastEnvelope?.runId ?? `codex-runtime:${input.sessionId}`,
+        sequence: (lastEnvelope?.sequence ?? -1) + 1,
+        source: 'runtime_service',
+        event: terminalEvent,
+      }))
+    }
+
+    if (!this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
+      const wasStoppedByUser = terminalEvent?.type === 'run_stopped'
+        ? terminalEvent.stoppedBy === 'user'
+        : this.stoppedBySessions.delete(input.sessionId)
+      try { updateAgentSessionMeta(input.sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
+      sendCompletionSignal({
+        callbacks: input.callbacks,
+        messages: () => getAgentSessionMessages(input.sessionId),
+        startedAt: input.streamStartedAt,
+        options: { stoppedByUser: wasStoppedByUser },
+      })
+      return
+    }
+
+    if (terminalEvent?.type === 'run_stopped') {
+      const stoppedByUser = terminalEvent.stoppedBy === 'user'
+      try { updateAgentSessionMeta(input.sessionId, { stoppedByUser }) } catch { /* 会话可能已删除 */ }
+      sendCompletionSignal({
+        callbacks: input.callbacks,
+        messages: () => getAgentSessionMessages(input.sessionId),
+        startedAt: input.streamStartedAt,
+        options: { stoppedByUser },
+      })
+      return
+    }
+
+    sendCompletionSignal({
+      callbacks: input.callbacks,
+      error: completionError,
+      messages: () => getAgentSessionMessages(input.sessionId),
+      startedAt: input.streamStartedAt,
+      options: { resultSubtype },
+    })
+  }
+
+  private isRunGenerationActive(
+    sessionId: string,
+    runGeneration: number,
+    abortController: AbortController,
+  ): boolean {
+    return this.activeSessions.get(sessionId) === runGeneration && !abortController.signal.aborted
+  }
+
+  private createStoppedEnvelopeFromRuntimeEnvelope(
+    envelope: AgentStreamEnvelope,
+    stoppedByUser: boolean,
+  ): AgentStreamEnvelope {
+    return createAgentStreamEnvelope({
+      sessionId: envelope.sessionId,
+      runId: envelope.runId,
+      sequence: envelope.sequence,
+      source: 'runtime_service',
+      createdAt: new Date().toISOString(),
+      event: {
+        type: 'run_stopped',
+        reason: 'user_abort',
+        stoppedBy: stoppedByUser ? 'user' : 'system',
+      },
+    })
+  }
+
+  private persistRuntimeSessionRef(input: {
+    sessionId: string
+    kind: 'codex'
+    externalSessionId: string
+    channelId?: string | null
+    model?: string
+  }): void {
+    const current = getAgentSessionMeta(input.sessionId)
+    const now = Date.now()
+    updateAgentSessionMeta(input.sessionId, {
+      runtimeKind: input.kind,
+      runtimeSession: {
+        kind: input.kind,
+        externalSessionId: input.externalSessionId,
+        channelId: input.channelId,
+        model: input.model,
+        createdAt: current?.runtimeSession?.externalSessionId === input.externalSessionId
+          ? current.runtimeSession.createdAt
+          : now,
+        updatedAt: now,
+      },
+    })
+  }
+
+  private persistCodexEnvelopeAsSdkMessage(sessionId: string, envelope: AgentStreamEnvelope, model: string): void {
+    if (envelope.event.type === 'assistant_message') {
+      const message: SDKMessage = {
+        type: 'assistant',
+        message: {
+          content: Array.isArray(envelope.event.contentBlocks) ? envelope.event.contentBlocks : [],
+          model,
+        },
+        parent_tool_use_id: envelope.event.parentToolUseId ?? null,
+        uuid: envelope.event.messageId,
+        _createdAt: Date.now(),
+        _channelModelId: model,
+      } as unknown as SDKMessage
+      appendSDKMessages(sessionId, [message])
+      this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
+      return
+    }
+
+    if (envelope.event.type === 'run_completed') {
+      const usage = envelope.event.usage
+      const message: SDKMessage = {
+        type: 'result',
+        subtype: envelope.event.resultSubtype,
+        session_id: envelope.event.sdkSessionId,
+        usage: {
+          input_tokens: usage.inputTokens ?? 0,
+          output_tokens: usage.outputTokens ?? 0,
+          cache_read_input_tokens: usage.cacheReadTokens ?? 0,
+          cache_creation_input_tokens: usage.cacheCreationTokens ?? 0,
+        },
+        total_cost_usd: usage.costUsd ?? 0,
+        terminal_reason: envelope.event.terminalReason ?? 'completed',
+      } as unknown as SDKMessage
+      appendSDKMessages(sessionId, [message])
+      this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
+      return
+    }
+
+    if (envelope.event.type === 'run_failed') {
+      const message = createCatchErrorSDKMessage({
+        userFacingError: envelope.event.error.message,
+        isPromptTooLong: envelope.event.error.code === 'prompt_too_long',
+      })
+      appendSDKMessages(sessionId, [message])
+      this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
     }
   }
 
@@ -1695,8 +2002,10 @@ export class AgentOrchestrator {
     runtimeEventLog: AgentRuntimeEventLogWriter | null
     callbacks: SessionCallbacks
     streamStartedAt: number
+    runGeneration: number
     runtimeHash?: string
     runnerMode?: AgentRuntimeRunnerMode
+    abortSignal?: AbortSignal
   }): Promise<void> {
     console.log(`[Agent 编排] agentRuntimeRunnerV2 已启用，切换到 InProcessAgentRuntimeRunner`)
     const runner = new InProcessAgentRuntimeRunner({
@@ -1721,6 +2030,9 @@ export class AgentOrchestrator {
       },
     })
 
+    const runnerStillActive = (): boolean =>
+      this.activeSessions.get(input.sessionId) === input.runGeneration && !input.abortSignal?.aborted
+
     for await (const envelope of runner.run({
       sessionId: input.sessionId,
       prompt: input.prompt,
@@ -1732,8 +2044,9 @@ export class AgentOrchestrator {
       channelModelId: input.channelModelId,
       runtimeHash: input.runtimeHash ?? 'in-process-runner-v2',
       runnerMode: input.runnerMode,
+      abortSignal: input.abortSignal,
     })) {
-      if (!this.activeSessions.has(input.sessionId) && isAgentRuntimeTerminalEvent(envelope.event)) {
+      if (!runnerStillActive() && isAgentRuntimeTerminalEvent(envelope.event)) {
         continue
       }
       if (envelope.event.type === 'run_started' || envelope.event.type === 'sdk_session') {
@@ -1742,7 +2055,7 @@ export class AgentOrchestrator {
       input.runtimeEventLog?.appendRuntimeEvent(envelope.source, envelope.event)
     }
 
-    if (!this.activeSessions.has(input.sessionId)) {
+    if (!runnerStillActive()) {
       const wasStoppedByUser = this.stoppedBySessions.delete(input.sessionId)
       console.log(`[Agent 编排] 会话 ${input.sessionId} 已被用户中止（runner v2 正常结束）`)
       input.runtimeEventLog?.completeIfMissing({ type: 'run_stopped', reason: 'user_abort', stoppedBy: wasStoppedByUser ? 'user' : 'system' })
@@ -1779,7 +2092,15 @@ export class AgentOrchestrator {
       this.stoppedBySessions.add(sessionId)
     }
     this.queuedMessageUuids.delete(sessionId)
-    this.adapter.abort(sessionId)
+    this.activeRunAbortControllers.get(sessionId)?.abort()
+    this.activeRunAbortControllers.delete(sessionId)
+    const runtime = this.activeCodingRuntimes.get(sessionId)
+    this.activeCodingRuntimes.delete(sessionId)
+    if (runtime) {
+      runtime.abort(sessionId)
+    } else {
+      this.adapter.abort(sessionId)
+    }
     console.log(`[Agent 编排] 已中止会话: ${sessionId}`)
   }
 
@@ -1796,6 +2117,17 @@ export class AgentOrchestrator {
    */
   async updateSessionPermissionMode(sessionId: string, mode: CodeInsightsPermissionMode): Promise<void> {
     if (!this.activeSessions.has(sessionId)) return
+    const runtime = this.activeCodingRuntimes.get(sessionId)
+    if (runtime && runtime.kind !== 'claude-code') {
+      const result = await runtime.setPermissionMode(sessionId, mode)
+      if (!result.ok) {
+        throw new Error(result.message)
+      }
+      this.sessionPermissionModes.set(sessionId, mode)
+      this.sessionPermissionDispatchers.get(sessionId)?.syncPlanModeState(mode)
+      console.log(`[Agent 编排] 运行中权限模式已切换: sessionId=${sessionId}, mode=${mode}`)
+      return
+    }
     this.sessionPermissionModes.set(sessionId, mode)
     this.sessionPermissionDispatchers.get(sessionId)?.syncPlanModeState(mode)
     // 同步通知 SDK 侧
@@ -1895,8 +2227,17 @@ export class AgentOrchestrator {
       console.log(`[Agent 编排] 正在中止所有活跃会话 (${this.activeSessions.size} 个)...`)
     }
     // 即便 activeSessions 为空，也要调 dispose 清理可能残留的 pidMap / 子进程
-    this.adapter.dispose()
+    for (const controller of this.activeRunAbortControllers.values()) {
+      controller.abort()
+    }
+    const registryOwnsClaudeRuntime = this.runtimeRegistry.get('claude-code') != null
+    this.runtimeRegistry.dispose()
+    if (!registryOwnsClaudeRuntime) {
+      this.adapter.dispose()
+    }
     this.activeSessions.clear()
+    this.activeRunAbortControllers.clear()
+    this.activeCodingRuntimes.clear()
     this.sessionPermissionModes.clear()
     this.sessionPermissionDispatchers.clear()
     this.queuedMessageUuids.clear()
@@ -1921,6 +2262,19 @@ export class AgentOrchestrator {
   ): Promise<string> {
     if (!this.activeSessions.has(sessionId)) {
       throw new Error(`[Agent 编排] 会话未运行，无法追加消息: ${sessionId}`)
+    }
+
+    const runtime = this.activeCodingRuntimes.get(sessionId)
+    if (runtime && runtime.kind !== 'claude-code') {
+      const result = await runtime.queueMessage({
+        sessionId,
+        userMessage: text,
+        uuid: presetUuid,
+        interrupt: opts?.interrupt,
+      })
+      if (!result.ok) {
+        throw new Error(result.message)
+      }
     }
 
     if (!this.adapter.sendQueuedMessage) {

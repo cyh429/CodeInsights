@@ -13,6 +13,7 @@ import {
   type AgentStreamEnvelope,
   type AgentStreamPayload,
   type CodeInsightsPermissionMode,
+  type CodingAgentRuntimeKind,
   type SDKMessage,
 } from '@codeinsights/shared'
 import { appendAgentRuntimeEvents, getAgentSessionRuntimeEvents } from './agent-session-manager'
@@ -25,6 +26,7 @@ export interface AgentRuntimeRunStartInput {
   runtimeHash?: string
   resumeFrom?: string
   runnerMode?: AgentRuntimeRunnerMode
+  runtimeKind?: CodingAgentRuntimeKind
 }
 
 export interface AgentRuntimeEventLogWriter {
@@ -53,6 +55,7 @@ export function startAgentRuntimeEventLogRun(input: AgentRuntimeRunStartInput): 
     permissionMode: input.permissionMode,
     runtimeHash: input.runtimeHash ?? 'legacy-orchestrator',
     runnerMode: input.runnerMode ?? 'legacy',
+    runtimeKind: input.runtimeKind,
   })
   if (input.resumeFrom) {
     writer.appendRuntimeEvent('runtime_service', {
@@ -113,6 +116,16 @@ export function appendExitPlanModeResolvedRuntimeEvent(
     decision: 'approved',
     summary: feedback,
   })
+}
+
+export function appendAgentRuntimeEnvelope(envelope: AgentStreamEnvelope): AgentStreamEnvelope | null {
+  const validation = validateAgentStreamEnvelope(envelope)
+  if (!validation.ok) {
+    console.warn(`[Agent EventLog] runtime envelope 校验失败，已跳过: ${validation.errors.join('; ')}`)
+    return null
+  }
+  appendAgentRuntimeEvents(envelope.sessionId, [envelope])
+  return envelope
 }
 
 class JsonlAgentRuntimeEventLogWriter implements AgentRuntimeEventLogWriter {
