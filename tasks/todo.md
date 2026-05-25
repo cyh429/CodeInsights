@@ -1,5 +1,31 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 2 计划
+
+- [x] 复核现有 `codex-pipeline-node-runner.ts` 中 Codex binary、channel、auth、env、command guard 与 Git guard 的职责边界，确认哪些可以抽到公共 runtime core。
+- [x] 新增 `apps/electron/src/main/lib/codex-runtime/`，抽出 `codex-binary`、`codex-channel`、`codex-auth`、`codex-env`、`codex-command-guard` 与 barrel export。
+- [x] 加固 Codex auth / env：API key 模式隔离 `CODEX_HOME`，native auth 模式只传明确 `CODEX_HOME`，并清理 `ANTHROPIC_*`、GitHub token、Git 相关环境变量。
+- [x] 加固 command guard：按 Pipeline / Agent purpose 输出不同提示，阻断远端写和交互凭证，不能只依赖 PATH。
+- [x] 将 Pipeline Codex runner 改为引用公共 runtime core，保持 Pipeline prompt、JSON Schema、节点结果解析和外部行为不变。
+- [x] 补充 `codex-runtime/*.test.ts` 并确保既有 `codex-pipeline-node-runner.test.ts` 继续通过；默认测试不触发真实 Codex 调用。
+- [x] 运行 Phase 2 验证：`bun test apps/electron/src/main/lib/codex-runtime`、`bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/codex-runtime apps/electron/src/main/lib/codex-pipeline-node-runner.ts tasks/todo.md`。
+- [x] 在本节末尾追加 Review，确认阶段边界与验证结果，并只提交 Phase 2 相关文件。
+
+范围确认：本轮只做 Phase 2 Codex Runtime Core 抽取；不混入 Phase 3 event adapter、Phase 5 Orchestrator routing、Renderer UI、README/AGENTS 文档更新或真实 Codex 集成。
+
+## 2026-05-25 Agent Codex Runtime Phase 2 Review
+
+- 已新增 `apps/electron/src/main/lib/codex-runtime/` 公共 core：`codex-binary`、`codex-channel`、`codex-auth`、`codex-env`、`codex-command-guard` 和 `index.ts`。
+- 已将 Pipeline Codex runner 改为复用公共 core；Pipeline prompt、JSON Schema、节点结果解析、patch-work enrichment、stream event 和 v2 业务 Git guard snapshot / 事后校验仍保留在 runner 内，外部行为不变。
+- Auth / env 隔离已覆盖：API key 模式使用隔离 `CODEX_HOME`；native auth 模式只传明确 `CODEX_HOME` 并清理 `CODEX_API_KEY`；环境构建改为基础 allowlist，过滤 `CODEX_THREAD_ID`、`ANTHROPIC_*`、`OPENAI_API_KEY`、AWS / NPM 等宿主 secrets、GitHub token 和危险 Git env。
+- Command guard 已支持 `pipeline` / `agent` purpose 文案，继续通过 `git`/`gh`/`hub` shim、`GIT_DIR=/__codeinsights_git_disabled__`、remote `pushurl` 改写、`GIT_TERMINAL_PROMPT=0` 和 askpass/GCM 禁用来阻断 Git 远端写和交互凭证。
+- 已新增 runtime core 单测覆盖 binary 平台映射与 `.asar.unpacked`、channel resolution、auth 探测、env 清理、command guard 文案和隔离策略；默认测试均使用 fake / 纯函数，不调用真实 Codex。
+- Electron 包版本已从 `0.0.104` 升至 `0.0.105`。
+- 代码审查：首轮审查指出 env secret 透传风险，已改为 allowlist 并复审通过，无 Critical / High / Medium findings；Git guard 保持 Phase 2 边界（前置 command/env guard + Pipeline v2 snapshot 事后检测/回滚），不改 Pipeline cwd / patch-work 行为。
+- 验证通过：`bun test apps/electron/src/main/lib/codex-runtime`，18 pass / 0 fail；`bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`，30 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib/codex-runtime apps/electron/src/main/lib/codex-pipeline-node-runner.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/package.json tasks/todo.md`。
+- 补充验证：`bun test --isolate` 跑到 540 个用例时仅 `pipeline-git-submission-service` 一个 before/after hook 超时；该文件单独重跑 `bun test apps/electron/src/main/lib/pipeline-git-submission-service.test.ts` 21 pass / 0 fail，未指向本轮 Phase 2 改动。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Phase 3 event adapter、Phase 5 Orchestrator routing、Renderer UI 或真实 Codex 集成。
+
 ## 2026-05-24 README 功能演示视频内嵌播放器计划
 
 - [x] 复核当前中英文 README 功能演示区和四段功能视频文件，确认需要从海报链接改为 GitHub README 可直接播放的 `<video>`。

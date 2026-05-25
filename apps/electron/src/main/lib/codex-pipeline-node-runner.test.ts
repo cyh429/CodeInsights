@@ -1246,7 +1246,7 @@ describe('codex-pipeline-node-runner', () => {
       expect(sdkOptions[0]?.apiKey).toBeUndefined()
       expect(sdkOptions[0]?.baseUrl).toBeUndefined()
       expect(sdkOptions[0]?.env?.CODEX_API_KEY).toBe('codex-env-key')
-      expect(sdkOptions[0]?.env?.OPENAI_API_KEY).toBe('openai-env-key')
+      expect(sdkOptions[0]?.env?.OPENAI_API_KEY).toBeUndefined()
       expect(sdkOptions[0]?.env?.CODEX_HOME).not.toBe(ambientCodexHome)
       expect(sdkOptions[0]?.env?.CODEX_HOME).toContain('codeinsights-codex-home-')
       expect(sdkOptions[0]?.env?.CODEX_THREAD_ID).toBeUndefined()
