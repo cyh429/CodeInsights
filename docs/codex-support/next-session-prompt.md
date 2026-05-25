@@ -13,9 +13,9 @@
 - Phase 1 共享类型与设置契约已完成并提交：6127b46c。
 - Phase 2 Codex Runtime Core 已完成并提交：f04d893c。
 - Phase 3 Codex Event Adapter 已完成并提交：98914a42。
-- Phase 4 CodexAgentRuntime Mock 接入已完成；最新提交请以 `git log -1 --oneline` 为准。
+- Phase 4 CodexAgentRuntime Mock 接入已完成并提交：2c7ebb94。
 - Phase 5-8 尚未完成；下一步从 Phase 5：Orchestrator Runtime Routing 开始。
-- 当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
+- 最新文档状态同步提交请以 `git log -1 --oneline` 为准；当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
 - 产品决策门禁已确认，采用清单推荐值，以后无需再询问同一组门禁。
 - 用户已明确要求“不需要询问我，直接开发即可”；写入 tasks/todo.md 计划后直接执行。
 
