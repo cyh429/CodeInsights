@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 3 Codex Event Adapter 已完成，Phase 4 待启动
+状态：Phase 4 CodexAgentRuntime Mock 接入已完成，Phase 5 待启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 3 完成后
+更新时间：2026-05-25 Phase 4 完成后
 
 当前结论：
 
@@ -41,20 +41,21 @@
 - [x] Phase 1 共享类型与设置契约已完成、通过验证并提交：`6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
 - [x] Phase 2 Codex Runtime Core 抽取已完成、通过验证并提交：`f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`。
 - [x] Phase 3 Codex Event Adapter 已完成、通过验证并提交：`98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`。
-- [ ] Phase 4-8 的 CodexAgentRuntime mock、runtime routing、UI 接入、真实验证和发布维护尚未开始。
+- [x] Phase 4 CodexAgentRuntime Mock 接入已完成、通过验证；提交 hash 以本阶段提交后的 `git log -1 --oneline` 为准。
+- [ ] Phase 5-8 的 runtime routing、UI 接入、真实验证和发布维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新实现提交为 `98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`；本轮文档状态同步提交以 `git log -1 --oneline` 为准。
-- 下一步应从 Phase 4：CodexAgentRuntime Mock 接入开始。
+- 最新已记录实现提交为 `98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`；Phase 4 提交完成后以 `git log -1 --oneline` 为准。
+- 下一步应从 Phase 5：Orchestrator Runtime Routing 开始。
 
 下一步入口：
 
-1. 启动 Phase 4 前再次确认工作树与最新提交。
-2. 复习第 6 节 Phase 4 范围，只做 CodexAgentRuntime mock 接入，不接 Renderer UI 或真实 Codex 集成。
-3. 不要提前混入 Phase 5 Orchestrator runtime routing、Phase 6 Renderer UI 或 Phase 7 真实 Codex 集成。
+1. 启动 Phase 5 前再次确认工作树与最新提交。
+2. 复习第 7 节 Phase 5 范围，只做 Orchestrator runtime routing，保持 Claude 默认行为。
+3. 不要提前混入 Phase 6 Renderer UI 或 Phase 7 真实 Codex 集成。
 
 最新验证记录：
 
@@ -91,8 +92,8 @@
 | Phase 1 | [x] | 已完成 shared/settings/session 契约并提交 `6127b46c` |
 | Phase 2 | [x] | 已完成 Codex runtime core 抽取并提交 `f04d893c` |
 | Phase 3 | [x] | 已完成 Codex event adapter 与 fixtures 并提交 `98914a42` |
-| Phase 4 | [ ] | 待做 CodexAgentRuntime mock；下一步入口 |
-| Phase 5 | [ ] | 待接 Orchestrator runtime routing |
+| Phase 4 | [x] | 已完成 CodexAgentRuntime mock、SDK client factory 与 permission policy |
+| Phase 5 | [ ] | 待接 Orchestrator runtime routing；下一步入口 |
 | Phase 6 | [ ] | 待接 Renderer 设置、历史和 UX |
 | Phase 7 | [ ] | 待做真实 Codex 集成与打包验证 |
 | Phase 8 | [ ] | 待做文档发布和长期维护 |
@@ -413,50 +414,65 @@ Phase 3 执行记录：
 
 任务：
 
-- [ ] 定义 `CodingAgentRuntime` 主进程接口。
-- [ ] 定义 `CodingAgentRuntimeCapabilities`。
-- [ ] 实现 Codex SDK client factory，可注入 mock。
-- [ ] 实现 `CodexAgentRuntime.run()`。
-- [ ] 支持 `startThread()`。
-- [ ] 支持 `resumeThread(externalSessionId)`。
-- [ ] 支持 `runStreamed()` async generator。
-- [ ] 支持 `AbortSignal`。
-- [ ] 支持 `workingDirectory`、`additionalDirectories`、`model`。
-- [ ] 支持 `modelReasoningEffort`、`networkAccessEnabled`、`webSearchMode`。
-- [ ] 支持 `sandboxMode`、`approvalPolicy` 映射。
-- [ ] 支持 `thread.started` 后暴露 external session id。
-- [ ] `queueMessage()` 返回 structured unsupported。
-- [ ] `setPermissionMode()` 返回 structured unsupported。
-- [ ] 错误分类为 `codex_auth_missing`、`codex_binary_missing`、`codex_channel_invalid`、`codex_turn_failed` 等。
+- [x] 定义 `CodingAgentRuntime` 主进程接口。
+- [x] 定义 `CodingAgentRuntimeCapabilities`。
+- [x] 实现 Codex SDK client factory，可注入 mock。
+- [x] 实现 `CodexAgentRuntime.run()`。
+- [x] 支持 `startThread()`。
+- [x] 支持 `resumeThread(externalSessionId)`。
+- [x] 支持 `runStreamed()` async generator。
+- [x] 支持 `AbortSignal`。
+- [x] 支持 `workingDirectory`、`additionalDirectories`、`model`。
+- [x] 支持 `modelReasoningEffort`、`networkAccessEnabled`、`webSearchMode`。
+- [x] 支持 `sandboxMode`、`approvalPolicy` 映射。
+- [x] 支持 `thread.started` 后暴露 external session id。
+- [x] `queueMessage()` 返回 structured unsupported。
+- [x] `setPermissionMode()` 返回 structured unsupported。
+- [x] 错误分类为 `codex_auth_missing`、`codex_binary_missing`、`codex_channel_invalid`、`codex_turn_failed` 等。
 
 测试：
 
-- [ ] mock startThread 成功。
-- [ ] mock resumeThread 成功。
-- [ ] mock stream throw 映射 `run_failed`。
-- [ ] mock turn.failed 映射 `run_failed`。
-- [ ] abort before stream 映射 `run_stopped`。
-- [ ] abort during stream 映射 `run_stopped`。
-- [ ] stream 正常结束但 signal 已 aborted 时优先 `run_stopped`。
-- [ ] unsupported capability 返回结构化结果。
-- [ ] permission policy 单测覆盖 `plan`、`auto`、`bypassPermissions`。
+- [x] mock startThread 成功。
+- [x] mock resumeThread 成功。
+- [x] mock stream throw 映射 `run_failed`。
+- [x] mock turn.failed 映射 `run_failed`。
+- [x] abort before stream 映射 `run_stopped`。
+- [x] abort during stream 映射 `run_stopped`。
+- [x] stream 正常结束但 signal 已 aborted 时优先 `run_stopped`。
+- [x] unsupported capability 返回结构化结果。
+- [x] permission policy 单测覆盖 `plan`、`auto`、`bypassPermissions`。
 
 验证：
 
-- [ ] `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`
-- [ ] `bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`
-- [ ] `bun run --filter='@codeinsights/electron' typecheck`
-- [ ] `git diff --check -- apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime tasks/todo.md`
+- [x] `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`
+- [x] `bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`
+- [x] `bun run --filter='@codeinsights/electron' typecheck`
+- [x] `git diff --check -- apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime apps/electron/package.json tasks/todo.md tasks/lessons.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/next-session-prompt.md`
 
 退出标准：
 
-- [ ] Codex runtime 可在 mock 环境完整产出 runtime envelopes。
-- [ ] 无真实 API key 和 native auth 依赖。
-- [ ] 不影响 Claude Agent 默认路径。
+- [x] Codex runtime 可在 mock 环境完整产出 runtime envelopes。
+- [x] 无真实 API key 和 native auth 依赖。
+- [x] 不影响 Claude Agent 默认路径。
 
 回滚点：
 
-- [ ] Codex runtime 未被 Orchestrator 默认路由，失败可关闭 feature flag 或回滚 runner 文件。
+- [x] Codex runtime 未被 Orchestrator 默认路由，失败可关闭 feature flag 或回滚 runner 文件。
+
+Phase 4 执行记录：
+
+- 新增 `coding-agent-runtime-types.ts`，定义主进程 runtime 接口、capabilities、Codex run input、structured unsupported capability 结果和 permission policy 结果类型。
+- 新增 `codex-sdk-client.ts`，提供 `CodexSdkClientLike` / `CodexSdkThreadLike` / `CreateCodexSdkClient` 和默认动态 import factory；单测全部注入 mock client，不调用真实 SDK / CLI。
+- 新增 `codex-permission-policy.ts`，实现 `plan` / `auto` / `bypassPermissions` 到 Codex sandbox、approval、network、webSearch 和 command guard 策略的映射；`bypassPermissions` 默认不启用 `danger-full-access`。
+- 新增 `codex-runtime.ts`，复用 Phase 2 auth / env / command guard core 和 Phase 3 `CodexEventAdapter`，实现 mock 可测的 `CodexAgentRuntime.run()` start / resume / stream / abort / failure 流程。
+- 更新 `next-session-prompt.md`，下次启动入口改为 Phase 5 Orchestrator Runtime Routing；未修改 README.md / AGENTS.md。
+- Abort 加固：controller 在 `run_started` 前注册；`run_started` 后立即 stop 不会创建 client；等待下一条 SDK event 时可由 `runtime.abort()` 解除；同一 SDK 事件内 abort 不会让 `usage_updated` 后继续输出 `run_completed`；abort 后不会再启动下一次 SDK iterator 读取。
+- Auth / env 加固：显式 channel API key 模式不会把 ambient `CODEX_API_KEY` 继续传入 Codex client env；API key / native auth 仍由 Phase 2 core 判定，测试不依赖本机登录或真实 key。
+- `queueMessage()` 和 `setPermissionMode()` 返回 `runtime_capability_unsupported` 结构化结果，不伪造 Codex per-tool permission 或 queue 能力。
+- 版本：`@codeinsights/electron` patch 版本升至 `0.0.107`。
+- 代码审查：首轮审查发现 abort 注册、同事件终态、ambient key、测试证明力和 model 展示问题；均已修复。复审无 Critical / High，指出 lazy iterator 风险后已改为 lazy `raceWithAbort` 并补测。
+- 验证结果：`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts` 通过，13 pass / 0 fail；`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts` 通过，4 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck` 通过；`git diff --check -- apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime apps/electron/package.json tasks/todo.md tasks/lessons.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/next-session-prompt.md` 通过。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Phase 5 Orchestrator routing、Phase 6 Renderer UI 或 Phase 7 真实 Codex 集成。
 
 ## 7. Phase 5：Orchestrator Runtime Routing
 
@@ -740,7 +756,7 @@ UI：
 | Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | `6127b46c` | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
 | Phase 2 | [x] | `codex/agent-codex-runtime-phase-0` | `f04d893c` | `bun test apps/electron/src/main/lib/codex-runtime`、`bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium findings | `bun test --isolate` 曾遇到 `pipeline-git-submission-service` hook 偶发超时，单文件重跑通过；gitless workspace 未纳入 Phase 2 |
 | Phase 3 | [x] | `codex/agent-codex-runtime-phase-0` | `98914a42` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查无 Critical / High findings | Adapter 尚未接入 runtime，失败可独立回滚；未做真实 Codex SDK 调用 |
-| Phase 4 | [ ] | - | - | - | - |
+| Phase 4 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交 | `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High | 尚未接入 Orchestrator 默认路由、Renderer UI 或真实 Codex SDK 调用 |
 | Phase 5 | [ ] | - | - | - | - |
 | Phase 6 | [ ] | - | - | - | - |
 | Phase 7 | [ ] | - | - | - | - |

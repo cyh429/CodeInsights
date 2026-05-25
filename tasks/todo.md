@@ -1,5 +1,36 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 4 计划
+
+范围确认：本轮只做 Phase 4 `CodexAgentRuntime` mock 接入、Codex SDK client factory 和 permission policy；不混入 Phase 5 Orchestrator routing、Phase 6 Renderer UI、Phase 7 真实 Codex 集成，不调用真实 Codex SDK / CLI，不依赖本机登录或真实 API key。
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard 相关教训。
+- [x] 运行 `git status --short` 和 `git log -1 --oneline`，确认当前工作树干净，最新提交为 `37570294 docs: 同步 Agent Codex Runtime Phase 3 后续状态`。
+- [x] 读取开发清单“最新开发状态快照”、Phase 3 执行记录和第 6 节 Phase 4 范围。
+- [x] 梳理 Phase 2 `codex-runtime` core、Phase 3 `codex-event-adapter` 和现有 Agent runtime 事件契约，确认 Phase 4 复用点。
+- [x] 先写 `codex-runtime.test.ts` 和 `codex-permission-policy.test.ts`，覆盖 start/resume/abort/failure、unsupported capability 和 permission policy 行为。
+- [x] 新增或更新 `coding-agent-runtime-types.ts`，定义主进程 `CodingAgentRuntime`、capabilities、run input/result 和 structured unsupported 结果。
+- [x] 新增 `codex-sdk-client.ts`，提供可注入的 mock-friendly Codex SDK client factory，不触发真实 Codex 调用。
+- [x] 新增 `codex-permission-policy.ts`，把 Agent permission mode 映射到 Codex sandbox / approval / bypass 策略。
+- [x] 新增 `codex-runtime.ts`，复用 Phase 2 auth/env/guard core 与 Phase 3 event adapter，实现 `run()` 对 start/resume/abort/failure 的 mock runner 流程。
+- [x] 运行 Phase 4 验证：`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime apps/electron/package.json tasks/todo.md tasks/lessons.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/next-session-prompt.md`。
+- [x] 在本节末尾追加 Review，确认阶段边界、验证结果和提交范围，并只提交 Phase 4 相关文件。
+
+## 2026-05-25 Agent Codex Runtime Phase 4 Review
+
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-types.ts`：定义主进程 runtime 接口、capabilities、Codex run input、structured unsupported capability 结果和 permission policy 结果类型。
+- 已新增 `apps/electron/src/main/lib/codex-runtime/codex-sdk-client.ts`：提供 mock 可注入的 Codex SDK client factory，默认 factory 仅在真实使用时动态 import `@openai/codex-sdk`。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.ts`：`plan` 映射 read-only / never / network false / web search disabled；`auto` 映射 workspace-write / never / network false；`bypassPermissions` 默认仍是 workspace-write，仅显式高级开关允许 danger-full-access。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/codex-runtime.ts`：复用 Phase 2 `codex-runtime` auth/env/guard core 和 Phase 3 `CodexEventAdapter`，实现 start / resume / runStreamed / abort / failure 的 mock runner 流程。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动入口改为 Phase 5 Orchestrator Runtime Routing；未修改任何 README.md 或 AGENTS.md。
+- Abort 已加固：controller 在 `run_started` 前注册；`run_started` 后立即 stop 不创建 Codex client；等待下一条 SDK event 时可由 `runtime.abort()` 解除；同一 SDK 事件内 abort 不会让 `usage_updated` 后继续输出 `run_completed`；abort 后不会再启动下一次 SDK iterator 读取。
+- Auth / env 已加固：显式 channel API key 模式不向 Codex client env 透传 ambient `CODEX_API_KEY`；单测全部使用 mock client，不调用真实 Codex SDK / CLI，不依赖本机登录或真实 API key。
+- `queueMessage()` 和 `setPermissionMode()` 返回 `runtime_capability_unsupported` 结构化结果，不伪造 Codex per-tool permission 或 queue 能力。
+- Electron 包版本已从 `0.0.106` 升至 `0.0.107`。
+- 代码审查：首轮审查指出 abort 注册、同事件终态、ambient key、测试证明力和实际 model 展示问题，均已修复；复审无 Critical / High，指出 lazy iterator 风险后已改为 lazy `raceWithAbort` 并补测。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`，13 pass / 0 fail；`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`，4 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime apps/electron/package.json tasks/todo.md tasks/lessons.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/next-session-prompt.md`。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Phase 5 Orchestrator routing、Phase 6 Renderer UI 或 Phase 7 真实 Codex 集成。
+
 ## 2026-05-25 Agent Codex Runtime Phase 3 后状态文档同步计划
 
 - [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：把 Phase 3 提交号 `98914a42` 写入最新状态、阶段记录和下一步入口，明确 Phase 4-8 未完成。
