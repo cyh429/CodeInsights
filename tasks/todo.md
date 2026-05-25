@@ -2897,3 +2897,60 @@ Phase 8 禁止事项：
 - 验证四角 alpha 均为 0，去除了 README 图标周围可见白圈，只保留中间 CI 主体。
 - 验证通过：PIL 尺寸/alpha 抽样；`sips -g pixelWidth -g pixelHeight -g hasAlpha assets/icon/CodeInsights.png`；`git diff --check -- README.md assets/icon/CodeInsights.png tasks/lessons.md tasks/todo.md`。
 - 当前原工作树仍保留既有 `.DS_Store` 和任务记录未提交状态，本轮远程 `main` 提交未纳入这些噪音。
+
+## 2026-05-25 Agent 模式 Codex Runtime 接入方案计划
+
+- [x] 复习 `tasks/lessons.md`，确认本轮需要优先保护 Agent Runtime 新旧 session、Codex auth 隔离、真实 stop、权限/AskUser 字段契约等既有教训。
+- [x] 明确需求边界：不是新增普通模型 Provider，而是在 Agent 模式下新增可插拔 Coding Agent Runtime 后端，直接复用完整 Codex runtime。
+- [x] 调研当前 Agent 模式 Claude Code 运行链路，梳理 UI / IPC / Orchestrator / Adapter / Runtime Runner 的耦合点。
+- [x] 调研当前 Pipeline Codex runner，区分可复用基础能力和 Pipeline 专用逻辑。
+- [x] 核对本地 `@openai/codex-sdk` / `@openai/codex` 接口与官方文档，记录 thread、stream、env、auth、MCP、sandbox 等事实边界。
+- [x] 在 `docs/codex-support/` 下撰写详细开发方案，覆盖架构目标、抽象设计、数据契约、迁移步骤、测试验证、风险与阶段计划。
+- [x] 自检方案是否足够优雅且最小影响，运行 Markdown 静态检查和 diff 检查。
+- [x] 在本节追加 Review，记录文档产物、关键结论、验证结果和未覆盖风险。
+
+## 2026-05-25 Agent 模式 Codex Runtime 接入方案 Review
+
+- 已新增 `docs/codex-support/2026-05-25-agent-codex-runtime-integration-plan.md`，作为 Agent 模式 Codex Runtime 接入的主开发方案文档。
+- 方案明确需求边界：这不是新增普通 OpenAI Provider，而是新增可插拔 Coding Agent Runtime 后端；CodeInsights 只做代理层和体验层，Codex 能力由完整 Codex runtime 提供。
+- 已结合现有代码事实：Agent 当前链路仍由 `ClaudeAgentAdapter` / `ClaudeAgentQueryOptions` 强耦合；Runner v2 和 runtime envelope 已存在但尚未完全中立；Pipeline Codex runner 可复用 binary/env/auth/packaging 经验，但不能直接复用节点式 JSON Schema 执行逻辑。
+- 已核对本地 `@openai/codex-sdk@0.130.0` / `@openai/codex@0.130.0` README、类型定义、CLI help，以及 OpenAI Codex 官方仓库的 SDK / AGENTS / config / skills 文档入口；文档中记录了 `runStreamed()`、`resumeThread()`、env 替换、sandbox、approval、Codex event item 类型和当前 SDK 未暴露 per-tool permission callback 的限制。
+- 方案建议三阶段策略：先抽中立 `CodingAgentRuntime` 边界并保持 Claude 行为不变；再用 Codex SDK `runStreamed()` 接入 `CodexAgentRuntime`；最后按真实 SDK 能力补齐 MCP、permission、fork、rewind 等差异能力。
+- 已明确首版风险和非等价能力：Codex 首版不应伪造成 Claude SDKMessage，不承诺 per-tool permission parity，不支持或需禁用 rewind / soft interrupt / 运行中队列注入；Codex 会话历史应优先从 runtime events 回放。
+- 验证通过：Markdown code fence 平衡检查；标题层级检查；`git diff --check -- docs/codex-support/2026-05-25-agent-codex-runtime-integration-plan.md tasks/todo.md`。
+- 本轮只新增设计文档和任务记录，未修改运行时代码，未运行 TypeScript typecheck 或 Electron 构建。
+
+## 2026-05-25 Agent 模式 Codex Runtime 接入方案二次细化计划
+
+- [x] 复习 `tasks/lessons.md` 中 Codex auth 隔离、Agent stop、runtime event 去重、新旧 session、Git 防护等相关教训。
+- [x] 复查现有方案结构，找出仍偏抽象的章节和缺少落地路径的风险点。
+- [x] 在既有方案文档内补充更细的接口、文件级改动、事件适配、auth/env、设置迁移、UI 历史回放、测试夹具、回滚和阶段 DoD。
+- [x] 新增或完善 `docs/codex-support/` 目录入口，方便后续按主题继续追加调研文档。
+- [x] 运行 Markdown 静态检查和 diff 空白检查，确认文档可维护。
+- [x] 在本节追加 Review，记录补充内容、验证结果和仍需用户决策的问题。
+
+## 2026-05-25 Agent 模式 Codex Runtime 接入方案二次细化 Review
+
+- 已在 `docs/codex-support/2026-05-25-agent-codex-runtime-integration-plan.md` 追加二次细化章节，覆盖 runtime 边界落地、registry 选择规则、运行中状态机、Codex core 抽取、auth/env/command guard、event adapter、Codex runtime 执行流程、数据迁移、Renderer UX、权限 sandbox、测试矩阵、feature flag、回滚和各阶段 Definition of Done。
+- 已新增 `docs/codex-support/README.md`，作为 Codex support 文档索引，明确当前主文档和后续建议拆分的调研主题。
+- 本轮明确了实现拆分策略：先公共契约，再抽 Codex core，再做 event adapter，再接 mock runtime，最后接 UI 和真实 Codex；避免一次性混改抽象、SDK、UI 和打包。
+- 已补充需要用户确认的产品决策：Codex 首版是否接受无逐工具权限 UI、是否隐藏 rewind/fork/soft interrupt/queue message、Agent Codex 是否默认 native auth、`danger-full-access` 是否单独开关、历史是否以 runtime events 为主数据。
+- 验证通过：Markdown code fence 行级检查；标题层级检查；关键术语覆盖检查；`docs/codex-support/README.md` 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+- 本轮仍是文档方案细化，未修改运行时代码，未运行 `bun run typecheck` 或 Electron 构建。
+
+## 2026-05-25 Agent Codex Runtime 开发进度清单计划
+
+- [x] 基于现有 Codex Runtime 接入方案提炼可执行的阶段任务、PR 拆分、验收门禁和验证命令。
+- [x] 在 `docs/codex-support/` 下新增开发进度跟踪清单，使用可勾选条目支持后续迭代维护。
+- [x] 更新 `docs/codex-support/README.md`，把开发进度清单加入索引。
+- [x] 运行 Markdown 结构检查、相对链接检查和 diff 空白检查。
+- [x] 在本节追加 Review，记录文档产物和验证结果。
+
+## 2026-05-25 Agent Codex Runtime 开发进度清单 Review
+
+- 已新增 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`，作为后续 Agent Codex Runtime 迭代开发的主进度跟踪清单。
+- 清单按 Phase 0-8 拆分：基线冻结、共享契约、Codex core 抽取、event adapter、Codex runtime mock、Orchestrator routing、Renderer 设置与历史、真实集成打包、文档发布维护。
+- 每个阶段都包含目标、依赖、推荐 PR、涉及文件、任务 checkbox、测试、验证命令、退出标准和回滚点；同时补充产品决策门禁、横向质量门禁、阶段提交记录和当前未解决问题。
+- 已更新 `docs/codex-support/README.md`，将开发进度清单加入 Codex support 文档索引。
+- 验证通过：Markdown code fence 检查；标题层级检查；相对链接检查；清单必备章节检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+- 本轮仅新增/更新文档和任务记录，未修改运行时代码，未运行 `bun run typecheck` 或 Electron 构建。
