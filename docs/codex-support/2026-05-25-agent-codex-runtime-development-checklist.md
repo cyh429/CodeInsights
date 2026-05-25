@@ -1,8 +1,9 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：待启动
+状态：文档准备完成，代码开发待启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
+下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
 
 ## 0. 使用方式
 
@@ -22,6 +23,63 @@
 - Agent Codex 设置与 Pipeline Codex 设置分离。
 - Codex 会话历史以 runtime events 为主数据，不长期伪造成 Claude SDKMessage。
 - 所有真实 Codex 集成验证必须和 mock 单测分离，默认 CI 不依赖本机登录或真实 API key。
+
+## 0.1 最新开发状态快照
+
+更新时间：2026-05-25
+
+当前结论：
+
+- [x] 需求理解与方案调研已完成。
+- [x] Agent Codex Runtime 主方案已完成并提交：`feb46548 docs: 规划 Agent Codex Runtime 接入`。
+- [x] 开发进度跟踪清单已完成并提交：`feb46548 docs: 规划 Agent Codex Runtime 接入`。
+- [x] Codex support 文档索引已建立。
+- [x] 阶段完成即提交的长期纪律已记录到 `tasks/lessons.md`。
+- [ ] 产品决策门禁尚未确认，见第 1 节。
+- [ ] Phase 0 基线冻结与实施准备尚未开始。
+- [ ] Phase 1-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
+
+当前仓库状态要求：
+
+- 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
+- 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
+- 下一步应从 Phase 0 开始，不要直接进入 Phase 1 代码实现。
+
+下一步入口：
+
+1. 复查本清单第 1 节产品决策门禁。
+2. 若用户同意推荐决策，标记第 1 节决策状态并记录。
+3. 启动 Phase 0：基线冻结与实施准备。
+4. 完成 Phase 0 验证后，立即更新本清单、`tasks/todo.md`，并提交 Phase 0。
+
+最新验证记录：
+
+- [x] Markdown code fence 检查通过。
+- [x] 文档相对链接检查通过。
+- [x] 开发清单必备章节检查通过。
+- [x] `git diff --cached --check` 在文档准备提交前通过。
+- [ ] 尚未运行本轮代码基线验证：`bun run typecheck`。
+- [ ] 尚未运行本轮完整测试：`bun test --isolate`。
+- [ ] 尚未运行本轮 Electron 构建：`bun run electron:build`。
+
+## 0.2 当前完成/未完成总览
+
+| 类别 | 状态 | 说明 |
+| --- | --- | --- |
+| 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
+| 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
+| 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
+| 下次启动提示词 | [x] | 已新增 `docs/codex-support/next-session-prompt.md` |
+| 产品决策 | [ ] | 需要用户确认第 1 节门禁 |
+| Phase 0 | [ ] | 待做基线冻结和验证 |
+| Phase 1 | [ ] | 待做 shared/settings/session 契约 |
+| Phase 2 | [ ] | 待抽 Codex runtime core |
+| Phase 3 | [ ] | 待做 Codex event adapter |
+| Phase 4 | [ ] | 待做 CodexAgentRuntime mock |
+| Phase 5 | [ ] | 待接 Orchestrator runtime routing |
+| Phase 6 | [ ] | 待接 Renderer 设置、历史和 UX |
+| Phase 7 | [ ] | 待做真实 Codex 集成与打包验证 |
+| Phase 8 | [ ] | 待做文档发布和长期维护 |
 
 ## 1. 产品决策门禁
 
@@ -603,6 +661,7 @@ UI：
 
 | Phase | 状态 | 分支 / PR | 提交 | 验证摘要 | 残余风险 |
 | --- | --- | --- | --- | --- | --- |
+| 文档准备 | [x] | `agent-mode-codex` | `feb46548` + 最新状态同步提交 | 文档结构、相对链接、章节检查、diff 空白检查通过 | 未运行代码验证 |
 | Phase 0 | [ ] | - | - | - | - |
 | Phase 1 | [ ] | - | - | - | - |
 | Phase 2 | [ ] | - | - | - | - |

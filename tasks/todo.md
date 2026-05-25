@@ -2954,3 +2954,20 @@ Phase 8 禁止事项：
 - 已更新 `docs/codex-support/README.md`，将开发进度清单加入 Codex support 文档索引。
 - 验证通过：Markdown code fence 检查；标题层级检查；相对链接检查；清单必备章节检查；`git diff --check -- docs/codex-support tasks/todo.md`。
 - 本轮仅新增/更新文档和任务记录，未修改运行时代码，未运行 `bun run typecheck` 或 Electron 构建。
+
+## 2026-05-25 Agent Codex Runtime 最新状态同步计划
+
+- [x] 更新 `docs/codex-support/` 中的最新开发状态，明确已完成文档准备、尚未开始代码阶段和下一步入口。
+- [x] 新增下次启动提示词文档，方便重新启动 Codex 会话后直接继续 Phase 0。
+- [x] 更新 Codex support 索引，加入最新状态和提示词入口。
+- [x] 运行 Markdown 结构、相对链接和 diff 空白检查。
+- [x] 提交本阶段文档状态同步改动，并在本节追加 Review。
+
+## 2026-05-25 Agent Codex Runtime 最新状态同步 Review
+
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：状态改为“文档准备完成，代码开发待启动”，新增最新开发状态快照、当前完成/未完成总览和文档准备阶段提交记录。
+- 已新增 `docs/codex-support/next-session-prompt.md`，包含下次启动可直接复制给 Codex 的提示词，明确从 Phase 0 基线冻结开始，不直接进入 Phase 1 代码实现。
+- 已更新 `docs/codex-support/README.md`，加入最新状态、已提交 commit、未完成阶段和下次启动提示词入口。
+- 当前明确状态：已完成需求调研、主方案、二次细化、开发进度清单、文档索引和下次启动提示词；产品决策门禁和 Phase 0-8 均未完成。
+- 验证通过：Markdown code fence 检查；标题层级检查；相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+- 本轮仍为文档状态同步，未修改运行时代码，未运行 `bun run typecheck`、`bun test --isolate` 或 Electron 构建。

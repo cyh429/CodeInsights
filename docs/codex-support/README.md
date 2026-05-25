@@ -6,6 +6,16 @@
 
 - [Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 - [Agent 模式 Codex Runtime 开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md)
+- [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
+
+## 最新状态
+
+更新时间：2026-05-25
+
+- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词。
+- 已提交：主方案与开发清单提交为 `feb46548 docs: 规划 Agent Codex Runtime 接入`；最新状态同步提交以 `git log -1 --oneline` 为准。
+- 未完成：产品决策门禁、Phase 0-8 全部开发阶段。
+- 下一步：从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 的 Phase 0 开始做基线冻结与实施准备。
 
 ## 设计定位
 
