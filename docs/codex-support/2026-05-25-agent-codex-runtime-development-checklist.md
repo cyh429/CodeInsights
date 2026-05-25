@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：文档准备完成，代码开发待启动
+状态：Phase 0 基线冻结完成，Phase 1 代码实现待用户确认产品门禁后启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25
+更新时间：2026-05-25 Phase 0
 
 当前结论：
 
@@ -35,22 +35,21 @@
 - [x] 开发进度跟踪清单已完成并提交：`feb46548 docs: 规划 Agent Codex Runtime 接入`。
 - [x] Codex support 文档索引已建立。
 - [x] 阶段完成即提交的长期纪律已记录到 `tasks/lessons.md`。
-- [ ] 产品决策门禁尚未确认，见第 1 节。
-- [ ] Phase 0 基线冻结与实施准备尚未开始。
+- [ ] 产品决策门禁尚未确认，见第 1 节；本轮仅按推荐值作为 Phase 0 验证假设。
+- [x] Phase 0 基线冻结与实施准备已完成，未开始功能代码改动。
 - [ ] Phase 1-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 下一步应从 Phase 0 开始，不要直接进入 Phase 1 代码实现。
+- 下一步应先确认第 1 节产品决策门禁，再进入 Phase 1 代码实现。
 
 下一步入口：
 
-1. 复查本清单第 1 节产品决策门禁。
+1. 请用户确认第 1 节产品决策门禁是否采用推荐值。
 2. 若用户同意推荐决策，标记第 1 节决策状态并记录。
-3. 启动 Phase 0：基线冻结与实施准备。
-4. 完成 Phase 0 验证后，立即更新本清单、`tasks/todo.md`，并提交 Phase 0。
+3. 启动 Phase 1：共享类型与设置契约；提交边界仅包含 shared/settings/session 契约，不混入 Codex runtime core。
 
 最新验证记录：
 
@@ -58,9 +57,10 @@
 - [x] 文档相对链接检查通过。
 - [x] 开发清单必备章节检查通过。
 - [x] `git diff --cached --check` 在文档准备提交前通过。
-- [ ] 尚未运行本轮代码基线验证：`bun run typecheck`。
-- [ ] 尚未运行本轮完整测试：`bun test --isolate`。
-- [ ] 尚未运行本轮 Electron 构建：`bun run electron:build`。
+- [x] 本轮代码基线验证通过：`bun run typecheck`。
+- [x] 本轮完整测试通过：`bun test --isolate`，508 pass / 0 fail。
+- [x] 本轮 Electron 构建通过：`bun run electron:build`，保留 Vite 大 chunk 警告。
+- [x] 本轮 diff 空白检查通过：`git diff --check`。
 
 ## 0.2 当前完成/未完成总览
 
@@ -70,8 +70,8 @@
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
 | 下次启动提示词 | [x] | 已新增 `docs/codex-support/next-session-prompt.md` |
-| 产品决策 | [ ] | 需要用户确认第 1 节门禁 |
-| Phase 0 | [ ] | 待做基线冻结和验证 |
+| 产品决策 | [ ] | 需要用户确认第 1 节门禁；Phase 0 仅按推荐值作为验证假设 |
+| Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
 | Phase 1 | [ ] | 待做 shared/settings/session 契约 |
 | Phase 2 | [ ] | 待抽 Codex runtime core |
 | Phase 3 | [ ] | 待做 Codex event adapter |
@@ -84,6 +84,8 @@
 ## 1. 产品决策门禁
 
 这些决策确认前，不应进入 UI 暴露和真实发布阶段。
+
+Phase 0 记录：用户尚未明确确认下表决策，本轮未将其标记为已确认；仅按推荐值执行基线验证，并暂停在 Phase 1 代码实现之前。
 
 | 状态 | 决策项 | 推荐值 | 影响 |
 | --- | --- | --- | --- |
@@ -108,31 +110,45 @@
 
 任务：
 
-- [ ] 复查当前工作树，记录已有未提交改动，避免误纳入实现阶段。
-- [ ] 运行并记录基线验证：`bun run typecheck`。
-- [ ] 运行并记录基线测试：`bun test --isolate`。
-- [ ] 运行并记录 Electron 构建基线：`bun run electron:build`。
-- [ ] 记录当前 `@openai/codex-sdk`、`@openai/codex`、`@anthropic-ai/claude-agent-sdk` 版本。
-- [ ] 记录当前 `apps/electron/electron-builder.yml` 中 Codex / Claude binary 打包规则。
-- [ ] 复查 `tasks/lessons.md` 中 Codex auth、Agent stop、runtime event、Git guard 相关教训。
-- [ ] 建立阶段分支，建议命名 `codex/agent-codex-runtime-phase-0` 或按实际阶段命名。
+- [x] 复查当前工作树，记录已有未提交改动，避免误纳入实现阶段。
+- [x] 运行并记录基线验证：`bun run typecheck`。
+- [x] 运行并记录基线测试：`bun test --isolate`。
+- [x] 运行并记录 Electron 构建基线：`bun run electron:build`。
+- [x] 记录当前 `@openai/codex-sdk`、`@openai/codex`、`@anthropic-ai/claude-agent-sdk` 版本。
+- [x] 记录当前 `apps/electron/electron-builder.yml` 中 Codex / Claude binary 打包规则。
+- [x] 复查 `tasks/lessons.md` 中 Codex auth、Agent stop、runtime event、Git guard 相关教训。
+- [x] 建立阶段分支，建议命名 `codex/agent-codex-runtime-phase-0` 或按实际阶段命名。
 
 验证：
 
-- [ ] `bun run typecheck`
-- [ ] `bun test --isolate`
-- [ ] `bun run electron:build`
-- [ ] `git diff --check`
+- [x] `bun run typecheck`
+- [x] `bun test --isolate`
+- [x] `bun run electron:build`
+- [x] `git diff --check`
 
 退出标准：
 
-- [ ] 基线验证结果记录到 `tasks/todo.md`。
-- [ ] 未开始功能改动。
-- [ ] 已确认后续阶段的提交边界。
+- [x] 基线验证结果记录到 `tasks/todo.md`。
+- [x] 未开始功能改动。
+- [x] 已确认后续阶段的提交边界。
 
 回滚点：
 
-- [ ] 当前阶段仅记录基线；如验证失败，先修复既有基线或明确标记为非本任务阻塞。
+- [x] 当前阶段仅记录基线；如验证失败，先修复既有基线或明确标记为非本任务阻塞。
+
+Phase 0 执行记录：
+
+- 分支：`codex/agent-codex-runtime-phase-0`。
+- 启动基线：`git status --short` 为空；最新提交为 `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`。
+- 产品门禁：未收到明确确认，本轮只按第 1 节推荐值作为 Phase 0 验证假设，不进入 Phase 1。
+- 依赖版本：`@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、`@anthropic-ai/claude-agent-sdk@0.2.123`；`packages/core` peer 仍是 `@anthropic-ai/claude-agent-sdk >=0.2.123`。
+- Claude Agent 基线：`agent-service.ts` 当前仍创建单例 `ClaudeAgentAdapter`；`stopAgent(sessionId)` 转发到 `orchestrator.stop(sessionId)`；`ClaudeAgentAdapter` 通过 `@anthropic-ai/claude-agent-sdk query()`、`AbortController` 和自定义 `spawnClaudeCodeProcess` 管理 SDK 子进程。
+- Pipeline Codex 基线：`CodexSdkPipelineNodeRunner` 当前通过 `@openai/codex-sdk` 创建 `Codex` client，调用 `startThread()` + `thread.run()`，不是 Agent UI 需要的 `runStreamed()`；节点 sandbox 按节点映射，approval 为 `never`，network 为 `false`。
+- Codex auth / Git guard 基线：Pipeline Codex runner 会构造隔离 `HOME` / `USERPROFILE` / `XDG_CONFIG_HOME` / `CODEX_HOME`，显式 API key 模式使用临时 Codex home；Git 写入防护包含 PATH shim、`GIT_DIR` 失效、`GIT_CONFIG_NOSYSTEM` 和 token/askpass 清理。
+- runtime events 基线：`packages/shared/src/agent/runtime-events.ts` 定义 `AgentRuntimeEvent` / envelope / adapter / validator；`agent-runtime-event-log.ts` 写 JSONL runtime events，启动时写 `run_started`，同一 run 内对 `sdk_session` 去重，并阻止重复终态。
+- 打包规则：`apps/electron/package.json` 的 main build external 化 `electron`、`@anthropic-ai/claude-agent-sdk`、`@openai/codex-sdk`、`@openai/codex`；`electron-builder.yml` 设置 `asar: false`，files 包含 Claude SDK 主包和 `darwin-arm64` / `darwin-x64` / `win32-x64` 子包，包含 Codex SDK/CLI 主包和 `darwin-arm64` / `darwin-x64` / `linux-arm64` / `linux-x64` / `win32-arm64` / `win32-x64` 子包。
+- 验证结果：`bun run typecheck` 通过；`bun test --isolate` 通过，508 pass / 0 fail；`bun run electron:build` 通过，Vite 大 chunk 警告未阻塞；`git diff --check` 通过。
+- 残余风险：产品决策门禁仍未确认；Phase 0 未运行真实 Codex Agent 集成或打包安装验证；未修改 README.md / AGENTS.md；未开始 Phase 1 功能代码。
 
 ## 3. Phase 1：共享类型与设置契约
 
@@ -662,7 +678,7 @@ UI：
 | Phase | 状态 | 分支 / PR | 提交 | 验证摘要 | 残余风险 |
 | --- | --- | --- | --- | --- | --- |
 | 文档准备 | [x] | `agent-mode-codex` | `feb46548` + 最新状态同步提交 | 文档结构、相对链接、章节检查、diff 空白检查通过 | 未运行代码验证 |
-| Phase 0 | [ ] | - | - | - | - |
+| Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交，哈希以 `git log -1 --oneline` 为准 | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 产品门禁未确认；未做真实 Codex Agent 集成 |
 | Phase 1 | [ ] | - | - | - | - |
 | Phase 2 | [ ] | - | - | - | - |
 | Phase 3 | [ ] | - | - | - | - |

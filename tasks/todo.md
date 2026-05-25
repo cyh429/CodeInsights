@@ -2971,3 +2971,27 @@ Phase 8 禁止事项：
 - 当前明确状态：已完成需求调研、主方案、二次细化、开发进度清单、文档索引和下次启动提示词；产品决策门禁和 Phase 0-8 均未完成。
 - 验证通过：Markdown code fence 检查；标题层级检查；相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
 - 本轮仍为文档状态同步，未修改运行时代码，未运行 `bun run typecheck`、`bun test --isolate` 或 Electron 构建。
+
+## 2026-05-25 Agent Codex Runtime Phase 0 基线冻结计划
+
+- [x] 复习 `AGENTS.md`、`tasks/lessons.md` 和 Codex support 清单，确认阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard 等约束。
+- [x] 运行 `git status --short` 和 `git log -1 --oneline`，记录当前工作树与最新提交；不回滚用户改动。
+- [x] 复查产品决策门禁：未收到明确确认时，只按清单推荐值作为 Phase 0 验证假设，不标记为已确认，也不进入 Phase 1。
+- [x] 建立 Phase 0 阶段分支，使用 `codex/agent-codex-runtime-phase-0`。
+- [x] 确认当前 Claude Agent、Pipeline Codex、runtime events 相关基线文件和打包配置，不做功能代码改动。
+- [x] 记录当前 `@openai/codex-sdk`、`@openai/codex`、`@anthropic-ai/claude-agent-sdk` 版本。
+- [x] 记录 `apps/electron/electron-builder.yml` 中 Codex / Claude binary 打包规则。
+- [x] 运行并记录 `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check`。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md` 与本节 Review，记录 Phase 0 验证结果、残余风险和后续阶段提交边界。
+- [x] 提交 Phase 0 相关文件，提交信息使用详细中文，且只 stage 本阶段相关文件。
+
+## 2026-05-25 Agent Codex Runtime Phase 0 基线冻结 Review
+
+- 已建立阶段分支：`codex/agent-codex-runtime-phase-0`；启动时 `git status --short` 为空，最新提交为 `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`。
+- 产品决策门禁仍未由用户明确确认；本轮仅按清单推荐值作为 Phase 0 验证假设，未标记门禁为已确认，也未开始 Phase 1 代码改动。
+- 已记录依赖版本：`@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、`@anthropic-ai/claude-agent-sdk@0.2.123`。
+- 已记录打包规则：main build external 化 Claude / Codex SDK 与 CLI 包；`electron-builder.yml` 使用 `asar: false`，files 包含 Claude SDK 主包及 darwin-arm64 / darwin-x64 / win32-x64 子包，包含 Codex SDK/CLI 主包及 darwin / linux / win32 的 arm64 与 x64 子包。
+- 已确认基线：Agent 模式仍走 `ClaudeAgentAdapter` + Claude SDK `query()`；Pipeline Codex 仍走 `CodexSdkPipelineNodeRunner` 的 `startThread()` + `thread.run()`；runtime events 已有 JSONL writer、validator、SDKMessage adapter、`sdk_session` 去重和终态去重。
+- 已复习相关 lessons：Codex auth 要隔离宿主 `HOME` / `CODEX_HOME`，Agent stop 要覆盖 iterator 正常结束路径，runtime events 的 `sdk_session` 去重应在 writer 层，Git guard 不能只靠 PATH，阶段完成后要单独提交。
+- 验证通过：`bun run typecheck`；`bun test --isolate`（508 pass / 0 fail）；`bun run electron:build`（通过，保留 Vite 大 chunk 警告）；`git diff --check`。
+- 本轮只修改 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md` 与 `tasks/todo.md`，未修改 README.md / AGENTS.md，未修改运行时代码。
