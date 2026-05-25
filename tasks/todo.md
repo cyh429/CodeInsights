@@ -1,5 +1,19 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 3 后状态文档同步计划
+
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：把 Phase 3 提交号 `98914a42` 写入最新状态、阶段记录和下一步入口，明确 Phase 4-8 未完成。
+- [x] 更新 `docs/codex-support/README.md`：同步已完成/未完成项、最新提交列表和下一步 Phase 4。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 4 启动提示词。
+- [x] 运行文档级验证、diff 检查，在本节末尾追加 Review 并单独提交状态同步。
+
+## 2026-05-25 Agent Codex Runtime Phase 3 后状态文档同步 Review
+
+- 已更新开发清单：顶部状态、最新开发状态快照、Phase 总览和阶段提交记录均指向 Phase 3 提交 `98914a42`，下一步入口改为第 6 节 Phase 4“CodexAgentRuntime Mock 接入”。
+- 已更新 `docs/codex-support/README.md`：已完成项加入 Phase 3，未完成项从 Phase 4 开始，提交列表加入 `ac2e06d6` 与 `98914a42`。
+- 已重写 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 4，明确只做 CodexAgentRuntime mock 接入和 permission policy，不混入 Orchestrator routing、Renderer UI 或真实 Codex 集成。
+- 验证通过：Codex support 三份文档旧状态关键字扫描无命中；Markdown code fence 检查通过；Markdown 相对链接检查通过；`git diff --check -- docs/codex-support/README.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/next-session-prompt.md tasks/todo.md` 通过。
+
 ## 2026-05-25 Agent Codex Runtime Phase 3 计划
 
 范围确认：本轮只做 Phase 3 Codex Event Adapter 和 fixtures；不混入 Phase 4 `CodexAgentRuntime` mock、Phase 5 Orchestrator routing、Renderer UI、真实 Codex client 创建、真实 `runStreamed()` 调用、README.md 或 AGENTS.md 修改。

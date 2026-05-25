@@ -40,14 +40,14 @@
 - [x] Phase 0 基线冻结与实施准备已完成并提交：`29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`。
 - [x] Phase 1 共享类型与设置契约已完成、通过验证并提交：`6127b46c feat(agent): 完成 Codex Runtime Phase 1 共享契约`。
 - [x] Phase 2 Codex Runtime Core 抽取已完成、通过验证并提交：`f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`。
-- [x] Phase 3 Codex Event Adapter 已完成、通过验证；本阶段提交创建后以 `git log -1 --oneline` 为准。
+- [x] Phase 3 Codex Event Adapter 已完成、通过验证并提交：`98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`。
 - [ ] Phase 4-8 的 CodexAgentRuntime mock、runtime routing、UI 接入、真实验证和发布维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已知实现提交为 `f04d893c refactor(codex): 抽取 Codex Runtime Phase 2 core`；Phase 3 完成提交创建后以 `git log -1 --oneline` 为准。
+- 最新实现提交为 `98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`；本轮文档状态同步提交以 `git log -1 --oneline` 为准。
 - 下一步应从 Phase 4：CodexAgentRuntime Mock 接入开始。
 
 下一步入口：
@@ -85,12 +85,12 @@
 | 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
-| 下次启动提示词 | [x] | 当前文件已更新为 Phase 4 入口；`next-session-prompt.md` 待后续状态同步 |
+| 下次启动提示词 | [x] | 已更新为 Phase 4 启动入口 |
 | 产品决策 | [x] | 用户已确认采用第 1 节推荐值；后续无需再次询问同一门禁 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
 | Phase 1 | [x] | 已完成 shared/settings/session 契约并提交 `6127b46c` |
 | Phase 2 | [x] | 已完成 Codex runtime core 抽取并提交 `f04d893c` |
-| Phase 3 | [x] | 已完成 Codex event adapter 与 fixtures；本阶段提交创建后以 `git log -1` 为准 |
+| Phase 3 | [x] | 已完成 Codex event adapter 与 fixtures 并提交 `98914a42` |
 | Phase 4 | [ ] | 待做 CodexAgentRuntime mock；下一步入口 |
 | Phase 5 | [ ] | 待接 Orchestrator runtime routing |
 | Phase 6 | [ ] | 待接 Renderer 设置、历史和 UX |
@@ -739,7 +739,7 @@ UI：
 | Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 当时产品门禁未确认，后续已在 Phase 1 前确认；未做真实 Codex Agent 集成 |
 | Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | `6127b46c` | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
 | Phase 2 | [x] | `codex/agent-codex-runtime-phase-0` | `f04d893c` | `bun test apps/electron/src/main/lib/codex-runtime`、`bun test apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium findings | `bun test --isolate` 曾遇到 `pipeline-git-submission-service` hook 偶发超时，单文件重跑通过；gitless workspace 未纳入 Phase 2 |
-| Phase 3 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交创建后以 `git log -1` 为准 | `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过 | Adapter 尚未接入 runtime，失败可独立回滚；未做真实 Codex SDK 调用 |
+| Phase 3 | [x] | `codex/agent-codex-runtime-phase-0` | `98914a42` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查无 Critical / High findings | Adapter 尚未接入 runtime，失败可独立回滚；未做真实 Codex SDK 调用 |
 | Phase 4 | [ ] | - | - | - | - |
 | Phase 5 | [ ] | - | - | - | - |
 | Phase 6 | [ ] | - | - | - | - |
