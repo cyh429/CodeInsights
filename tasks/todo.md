@@ -1,5 +1,19 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-25 Agent Codex Runtime Phase 2 后状态文档同步计划
+
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：标明 Phase 2 已完成并提交，Phase 3-8 未完成，下一步从 Phase 3 开始。
+- [x] 更新 `docs/codex-support/README.md`：同步最新提交、已完成/未完成项和下次入口。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 3 启动提示词。
+- [x] 运行文档级验证和 diff 检查，在本节末尾追加 Review 并单独提交状态同步。
+
+## 2026-05-25 Agent Codex Runtime Phase 2 后状态文档同步 Review
+
+- 已同步 Codex support 开发清单：顶部状态更新为 Phase 2 已提交、Phase 3 待启动；0.1 快照、0.2 总览、Phase 2 checkbox、Phase 2 执行记录和阶段提交记录均已指向 `f04d893c`。
+- 已同步 `docs/codex-support/README.md`：已完成项加入 Phase 2，未完成项从 Phase 3 开始，下一步改为第 5 节 Phase 3“Codex Event Adapter”。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 3，明确只做 event adapter / fixtures，不混入 CodexAgentRuntime、Orchestrator routing、Renderer UI 或真实 Codex 集成。
+- 验证通过：旧状态关键字扫描无命中；Markdown code fence 检查通过；Markdown 相对链接检查通过；`git diff --check -- docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/README.md docs/codex-support/next-session-prompt.md tasks/todo.md` 通过。
+
 ## 2026-05-25 Agent Codex Runtime Phase 2 计划
 
 - [x] 复核现有 `codex-pipeline-node-runner.ts` 中 Codex binary、channel、auth、env、command guard 与 Git guard 的职责边界，确认哪些可以抽到公共 runtime core。
