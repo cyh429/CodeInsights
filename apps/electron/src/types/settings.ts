@@ -4,7 +4,7 @@
  * 主题模式、IPC 通道等设置相关定义。
  */
 
-import type { EnvironmentCheckResult, CodeInsightsPermissionMode, ThinkingConfig, AgentEffort, AgentRuntimeRunnerMode } from '@codeinsights/shared'
+import type { EnvironmentCheckResult, CodeInsightsPermissionMode, ThinkingConfig, AgentEffort, AgentRuntimeRunnerMode, CodingAgentRuntimeKind } from '@codeinsights/shared'
 
 /** 通知音场景类型 */
 export type NotificationSoundType = 'taskComplete' | 'permissionRequest' | 'exitPlanMode'
@@ -41,6 +41,15 @@ export const DEFAULT_THEME_MODE: ThemeMode = 'dark'
 
 /** 默认特殊风格 */
 export const DEFAULT_THEME_STYLE: ThemeStyle = 'default'
+
+/** 默认 Agent Runtime */
+export const DEFAULT_AGENT_RUNTIME_KIND: CodingAgentRuntimeKind = 'claude-code'
+
+/** Codex 推理深度 */
+export type AgentCodexReasoningEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
+
+/** Codex Web Search 模式 */
+export type AgentCodexWebSearchMode = 'disabled' | 'cached' | 'live'
 
 /** 应用设置 */
 export interface AppSettings {
@@ -82,6 +91,18 @@ export interface AppSettings {
   agentMaxTurns?: number
   /** Agent Runtime Runner 执行链路 */
   agentRuntimeRunnerMode?: AgentRuntimeRunnerMode
+  /** Agent Coding Runtime 类型 */
+  agentRuntimeKind?: CodingAgentRuntimeKind
+  /** Agent Codex 渠道 ID；null 表示显式使用本机 Codex auth / CODEX_API_KEY */
+  agentCodexChannelId?: string | null
+  /** Agent Codex 默认模型 ID */
+  agentCodexModelId?: string
+  /** Agent Codex 推理深度 */
+  agentCodexReasoningEffort?: AgentCodexReasoningEffort
+  /** Agent Codex 是否允许网络访问 */
+  agentCodexNetworkAccessEnabled?: boolean
+  /** Agent Codex Web Search 模式 */
+  agentCodexWebSearchMode?: AgentCodexWebSearchMode
   /** Pipeline Codex 节点使用的 OpenAI / Custom 渠道 ID；null 表示显式使用本机 Codex auth / CODEX_API_KEY */
   pipelineCodexChannelId?: string | null
   /** 教程推荐横幅是否已关闭 */

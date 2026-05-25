@@ -3011,3 +3011,28 @@ Phase 8 禁止事项：
 - 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 0 后续开发入口，要求先读清单第 1 节和 Phase 1，用户确认产品门禁前不开始代码改动。
 - 验证通过：Codex support Markdown code fence 平衡检查；Codex support Markdown 相对链接检查；`git diff --check`。
 - 本轮仍未修改运行时代码，未修改根 `README.md` 或 `AGENTS.md`。
+
+## 2026-05-25 Agent Codex Runtime Phase 1 启动前门禁计划
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md`，重点确认阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard 相关纪律。
+- [x] 运行 `git status --short` 和 `git log -1 --oneline`，确认当前工作树干净且最新提交为 `ecb84a81 docs: 同步 Agent Codex Runtime Phase 0 后续状态`。
+- [x] 读取开发清单的最新开发状态快照、第 1 节产品决策门禁和第 3 节 Phase 1 范围。
+- [x] 确认当前分支为 `codex/agent-codex-runtime-phase-0`，本轮不回滚任何用户改动。
+- [x] 向用户确认是否采用产品决策推荐值；确认前不开始 Phase 1 代码改动。
+- [x] 用户已确认采用推荐值，并说明后续无需再就同一组推荐值询问。
+- [x] 将产品决策结果写回开发清单，并在本节记录。
+- [x] 启动并完成 Phase 1：仅实现 shared/settings/session 契约，不混入 Codex runtime core、event adapter、UI 或真实 Codex 集成。
+- [x] 运行 Phase 1 验证：`bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check`。
+- [x] Phase 1 验证通过后，按阶段提交纪律只 stage 本阶段相关文件并提交详细中文提交信息。
+
+## 2026-05-25 Agent Codex Runtime Phase 1 共享契约 Review
+
+- 已确认产品决策门禁：采用推荐值，后续无需再就同一组推荐值询问；结果已写回 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`。
+- 已在 `@codeinsights/shared` 新增 runtime-neutral 契约：`CodingAgentRuntimeKind`、`AgentRuntimeSessionRef`、`AgentSessionMeta.runtimeKind` / `runtimeSession`，并保留 `sdkSessionId` 作为 Claude legacy 字段。
+- 已扩展 runtime events：支持 `codex_sdk` / `codex_cli` source、`run_started.runtimeKind`，并为 usage 预留 `reasoningOutputTokens`；Codex SDK 具体 usage 映射留到 Phase 3 event adapter。
+- 已扩展 Electron settings 契约：`agentRuntimeKind`、`agentCodexChannelId`、`agentCodexModelId`、`agentCodexReasoningEffort`、`agentCodexNetworkAccessEnabled`、`agentCodexWebSearchMode`；默认 runtime 仍为 `claude-code`，不复用或迁移 `pipelineCodexChannelId`，损坏枚举读取时回落到安全默认值。
+- 已实现 Agent session meta lazy normalization：旧 Claude session 读取期视为 `claude-code`，写回时补 `runtimeSession`；清理 Claude `sdkSessionId` 会同步清理 `runtimeSession`；Codex session 仅写 `runtimeSession`，不写 `sdkSessionId`，并清理 Claude legacy 字段。
+- 已新增/更新测试：`runtime-events.test.ts`、`settings-service.test.ts`、`agent-session-manager.test.ts`。
+- 已按版本纪律递增 `@codeinsights/shared` 到 `0.1.43`，递增 `@codeinsights/electron` 到 `0.0.104`。
+- 验证通过：`bun test packages/shared`；`bun test apps/electron/src/main/lib/settings-service.test.ts`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test --isolate`（522 pass / 0 fail）；`bun run typecheck`；`git diff --check`。
+- 阶段边界保持：未修改 README.md / AGENTS.md，未进入 Codex runtime core、event adapter、Renderer UI 或真实 Codex 集成。

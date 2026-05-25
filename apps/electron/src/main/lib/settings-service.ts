@@ -7,8 +7,44 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { getSettingsPath } from './config-paths'
-import { DEFAULT_THEME_MODE } from '../../types'
+import { DEFAULT_AGENT_RUNTIME_KIND, DEFAULT_THEME_MODE } from '../../types'
 import type { AppSettings } from '../../types'
+
+const AGENT_RUNTIME_KINDS = ['claude-code', 'codex'] as const
+const AGENT_CODEX_REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high', 'xhigh'] as const
+const AGENT_CODEX_WEB_SEARCH_MODES = ['disabled', 'cached', 'live'] as const
+
+function normalizeSettings(data: Partial<AppSettings>): AppSettings {
+  return {
+    ...data,
+    themeMode: data.themeMode || DEFAULT_THEME_MODE,
+    onboardingCompleted: data.onboardingCompleted ?? false,
+    environmentCheckSkipped: data.environmentCheckSkipped ?? false,
+    notificationsEnabled: data.notificationsEnabled ?? true,
+    agentRuntimeKind: normalizeEnum(data.agentRuntimeKind, AGENT_RUNTIME_KINDS, DEFAULT_AGENT_RUNTIME_KIND),
+    agentCodexReasoningEffort: normalizeOptionalEnum(data.agentCodexReasoningEffort, AGENT_CODEX_REASONING_EFFORTS),
+    agentCodexWebSearchMode: normalizeOptionalEnum(data.agentCodexWebSearchMode, AGENT_CODEX_WEB_SEARCH_MODES),
+  }
+}
+
+function normalizeEnum<const T extends readonly string[]>(
+  value: unknown,
+  allowedValues: T,
+  fallback: T[number],
+): T[number] {
+  return isAllowedValue(value, allowedValues) ? value : fallback
+}
+
+function normalizeOptionalEnum<const T extends readonly string[]>(
+  value: unknown,
+  allowedValues: T,
+): T[number] | undefined {
+  return isAllowedValue(value, allowedValues) ? value : undefined
+}
+
+function isAllowedValue<const T extends readonly string[]>(value: unknown, allowedValues: T): value is T[number] {
+  return typeof value === 'string' && (allowedValues as readonly string[]).includes(value)
+}
 
 /**
  * 获取应用设置
@@ -19,32 +55,16 @@ export function getSettings(): AppSettings {
   const filePath = getSettingsPath()
 
   if (!existsSync(filePath)) {
-    return {
-      themeMode: DEFAULT_THEME_MODE,
-      onboardingCompleted: false,
-      environmentCheckSkipped: false,
-      notificationsEnabled: true,
-    }
+    return normalizeSettings({})
   }
 
   try {
     const raw = readFileSync(filePath, 'utf-8')
     const data = JSON.parse(raw) as Partial<AppSettings>
-    return {
-      ...data,
-      themeMode: data.themeMode || DEFAULT_THEME_MODE,
-      onboardingCompleted: data.onboardingCompleted ?? false,
-      environmentCheckSkipped: data.environmentCheckSkipped ?? false,
-      notificationsEnabled: data.notificationsEnabled ?? true,
-    }
+    return normalizeSettings(data)
   } catch (error) {
     console.error('[设置] 读取失败:', error)
-    return {
-      themeMode: DEFAULT_THEME_MODE,
-      onboardingCompleted: false,
-      environmentCheckSkipped: false,
-      notificationsEnabled: true,
-    }
+    return normalizeSettings({})
   }
 }
 
@@ -55,10 +75,10 @@ export function getSettings(): AppSettings {
  */
 export function updateSettings(updates: Partial<AppSettings>): AppSettings {
   const current = getSettings()
-  const updated: AppSettings = {
+  const updated = normalizeSettings({
     ...current,
     ...updates,
-  }
+  })
 
   const filePath = getSettingsPath()
 

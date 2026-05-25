@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 0 基线冻结完成，Phase 1 待产品门禁确认后启动
+状态：Phase 1 共享类型与设置契约完成，Phase 2 待启动
 日期：2026-05-25
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 0 后状态同步
+更新时间：2026-05-25 Phase 1 完成
 
 当前结论：
 
@@ -36,22 +36,23 @@
 - [x] Codex support 文档索引已建立。
 - [x] 最新状态同步文档已建立：`c546bc4e docs: 同步 Agent Codex Runtime 开发状态`。
 - [x] 阶段完成即提交的长期纪律已记录到 `tasks/lessons.md`。
-- [ ] 产品决策门禁尚未确认，见第 1 节；本轮仅按推荐值作为 Phase 0 验证假设。
+- [x] 产品决策门禁已确认，见第 1 节；采用清单推荐值作为后续实现默认策略。
 - [x] Phase 0 基线冻结与实施准备已完成并提交：`29e48a93 docs: 完成 Agent Codex Runtime Phase 0 基线冻结`。
-- [ ] Phase 1-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
+- [x] Phase 1 共享类型与设置契约已完成并通过验证。
+- [ ] Phase 2-8 代码实现、UI 接入、真实验证和发布维护均尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
 - 最新状态同步提交以 `git log -1 --oneline` 为准。
-- 下一步应先确认第 1 节产品决策门禁，再进入 Phase 1 代码实现。
+- 下一步应在 Phase 1 提交后，从 Phase 2：Codex Runtime Core 抽取开始。
 
 下一步入口：
 
-1. 请用户确认第 1 节产品决策门禁是否采用推荐值。
-2. 若用户同意推荐决策，标记第 1 节决策状态并记录。
-3. 启动 Phase 1：共享类型与设置契约；提交边界仅包含 shared/settings/session 契约，不混入 Codex runtime core。
+1. 提交 Phase 1 阶段成果，提交边界仅包含 shared/settings/session 契约和对应测试/记录。
+2. 启动 Phase 2 前再次确认工作树与最新提交。
+3. Phase 2 只抽 Codex runtime core，保持 Pipeline 行为不变。
 
 最新验证记录：
 
@@ -72,9 +73,9 @@
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
 | 下次启动提示词 | [x] | 已更新为 Phase 0 后继续开发入口 |
-| 产品决策 | [ ] | 需要用户确认第 1 节门禁；Phase 0 仅按推荐值作为验证假设 |
+| 产品决策 | [x] | 用户已确认采用第 1 节推荐值；后续无需再次询问同一门禁 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
-| Phase 1 | [ ] | 待做 shared/settings/session 契约 |
+| Phase 1 | [x] | 已完成 shared/settings/session 契约 |
 | Phase 2 | [ ] | 待抽 Codex runtime core |
 | Phase 3 | [ ] | 待做 Codex event adapter |
 | Phase 4 | [ ] | 待做 CodexAgentRuntime mock |
@@ -87,20 +88,20 @@
 
 这些决策确认前，不应进入 UI 暴露和真实发布阶段。
 
-Phase 0 记录：用户尚未明确确认下表决策，本轮未将其标记为已确认；仅按推荐值执行基线验证，并暂停在 Phase 1 代码实现之前。
+Phase 1 启动记录：用户已明确确认采用下表推荐值，并说明后续无需再就同一组推荐值询问。后续实现以这些决策作为默认策略。
 
 | 状态 | 决策项 | 推荐值 | 影响 |
 | --- | --- | --- | --- |
-| [ ] | Codex 首版是否接受无逐工具权限 UI | 接受，仅提供 sandbox 级权限说明 | 影响 PermissionBanner、权限文案和安全边界 |
-| [ ] | Codex 首版是否隐藏 rewind/fork/soft interrupt/queue message | 隐藏或禁用，并给出明确 tooltip | 影响 Agent header、会话操作菜单和输入区 |
-| [ ] | Agent Codex 默认认证来源 | 本机 Codex auth / `CODEX_API_KEY`，不复用 Pipeline Codex channel | 影响 settings 默认值和迁移 |
-| [ ] | `bypassPermissions` 是否默认允许 `danger-full-access` | 不允许，必须单独高级开关 | 影响 sandbox 策略和安全提示 |
-| [ ] | Codex 历史是否以 runtime events 为主数据 | 是 | 影响 session manager、renderer history 和测试 |
-| [ ] | 是否允许首版仅使用 Codex 自身 MCP 配置 | 允许，CodeInsights workspace MCP 映射后续单独验证 | 影响 materializer 和 MCP 设置页 |
+| [x] | Codex 首版是否接受无逐工具权限 UI | 接受，仅提供 sandbox 级权限说明 | 影响 PermissionBanner、权限文案和安全边界 |
+| [x] | Codex 首版是否隐藏 rewind/fork/soft interrupt/queue message | 隐藏或禁用，并给出明确 tooltip | 影响 Agent header、会话操作菜单和输入区 |
+| [x] | Agent Codex 默认认证来源 | 本机 Codex auth / `CODEX_API_KEY`，不复用 Pipeline Codex channel | 影响 settings 默认值和迁移 |
+| [x] | `bypassPermissions` 是否默认允许 `danger-full-access` | 不允许，必须单独高级开关 | 影响 sandbox 策略和安全提示 |
+| [x] | Codex 历史是否以 runtime events 为主数据 | 是 | 影响 session manager、renderer history 和测试 |
+| [x] | 是否允许首版仅使用 Codex 自身 MCP 配置 | 允许，CodeInsights workspace MCP 映射后续单独验证 | 影响 materializer 和 MCP 设置页 |
 
 门禁验收：
 
-- [ ] 决策结果写回主方案或本清单。
+- [x] 决策结果写回主方案或本清单。
 - [ ] 相关 UI 文案和默认值与决策一致。
 - [ ] 若用户选择与推荐值不同，补充风险说明和额外测试项。
 
@@ -172,44 +173,56 @@ Phase 0 执行记录：
 
 任务：
 
-- [ ] 增加 `CodingAgentRuntimeKind = 'claude-code' | 'codex'`。
-- [ ] 增加 `AgentRuntimeSessionRef`。
-- [ ] 扩展 `AgentSessionMeta.runtimeKind`、`AgentSessionMeta.runtimeSession`。
-- [ ] 保留 `sdkSessionId` 作为 Claude legacy 字段并标注迁移语义。
-- [ ] 扩展 `AgentEventSource`，增加 `codex_sdk`、`codex_cli`。
-- [ ] 扩展 `run_started.runtimeKind?: CodingAgentRuntimeKind`。
-- [ ] 扩展 usage，可选支持 `reasoningOutputTokens`。
-- [ ] 扩展 `AppSettings.agentRuntimeKind`。
-- [ ] 增加 `agentCodexChannelId?: string | null`。
-- [ ] 增加 `agentCodexModelId?: string`。
-- [ ] 增加 `agentCodexReasoningEffort`、`agentCodexNetworkAccessEnabled`、`agentCodexWebSearchMode`。
-- [ ] 实现旧 session lazy normalization：无 `runtimeKind` 且有 `sdkSessionId` 时视为 `claude-code`。
-- [ ] 确保旧 settings 文件读取不需要一次性迁移。
+- [x] 增加 `CodingAgentRuntimeKind = 'claude-code' | 'codex'`。
+- [x] 增加 `AgentRuntimeSessionRef`。
+- [x] 扩展 `AgentSessionMeta.runtimeKind`、`AgentSessionMeta.runtimeSession`。
+- [x] 保留 `sdkSessionId` 作为 Claude legacy 字段并标注迁移语义。
+- [x] 扩展 `AgentEventSource`，增加 `codex_sdk`、`codex_cli`。
+- [x] 扩展 `run_started.runtimeKind?: CodingAgentRuntimeKind`。
+- [x] 扩展 usage，契约预留 `reasoningOutputTokens`；Codex SDK 具体映射留到 Phase 3 event adapter。
+- [x] 扩展 `AppSettings.agentRuntimeKind`。
+- [x] 增加 `agentCodexChannelId?: string | null`。
+- [x] 增加 `agentCodexModelId?: string`。
+- [x] 增加 `agentCodexReasoningEffort`、`agentCodexNetworkAccessEnabled`、`agentCodexWebSearchMode`。
+- [x] 实现旧 session lazy normalization：无 `runtimeKind` 且有 `sdkSessionId` 时视为 `claude-code`。
+- [x] 确保旧 settings 文件读取不需要一次性迁移。
 
 测试：
 
-- [ ] `runtime-events.test.ts` 覆盖新 source validator。
-- [ ] `runtime-events.test.ts` 覆盖 `run_started.runtimeKind` 可选字段。
-- [ ] `settings-service.test.ts` 覆盖新增 settings 字段读写。
-- [ ] session manager 测试覆盖旧 `sdkSessionId` 会话归一化。
-- [ ] 测试 Codex session 不写 `sdkSessionId` 的目标行为。
+- [x] `runtime-events.test.ts` 覆盖新 source validator。
+- [x] `runtime-events.test.ts` 覆盖 `run_started.runtimeKind` 可选字段。
+- [x] `settings-service.test.ts` 覆盖新增 settings 字段读写。
+- [x] session manager 测试覆盖旧 `sdkSessionId` 会话归一化。
+- [x] 测试 Codex session 不写 `sdkSessionId` 的目标行为。
 
 验证：
 
-- [ ] `bun test packages/shared`
-- [ ] `bun test apps/electron/src/main/lib/settings-service.test.ts`
-- [ ] `bun run typecheck`
-- [ ] `git diff --check -- packages/shared apps/electron/src/types apps/electron/src/main/lib tasks/todo.md`
+- [x] `bun test packages/shared`
+- [x] `bun test apps/electron/src/main/lib/settings-service.test.ts`
+- [x] `bun test apps/electron/src/main/lib/agent-session-manager.test.ts`
+- [x] `bun test --isolate`
+- [x] `bun run typecheck`
+- [x] `git diff --check`
 
 退出标准：
 
-- [ ] 旧 Claude Agent session 可以继续打开。
-- [ ] 新字段不会改变默认 Agent runtime。
-- [ ] Renderer 尚不暴露 Codex runtime UI。
+- [x] 旧 Claude Agent session 可以继续打开。
+- [x] 新字段不会改变默认 Agent runtime。
+- [x] Renderer 尚不暴露 Codex runtime UI。
 
 回滚点：
 
-- [ ] 可回滚 shared/settings 类型改动；无持久化破坏性迁移。
+- [x] 可回滚 shared/settings 类型改动；无持久化破坏性迁移。
+
+Phase 1 执行记录：
+
+- 产品门禁：用户已确认采用第 1 节推荐值，并说明后续无需再就同一组推荐值询问。
+- shared 契约：新增 `CodingAgentRuntimeKind`、`AgentRuntimeSessionRef`、`AgentSessionMeta.runtimeKind` / `runtimeSession`，保留 `sdkSessionId` 作为 Claude legacy 字段；runtime events 增加 `codex_sdk` / `codex_cli` source、`run_started.runtimeKind`，并预留 `reasoningOutputTokens`。
+- settings 契约：新增 `agentRuntimeKind` 与 Agent Codex 独立设置字段；默认 runtime 仍为 `claude-code`，不会从 `pipelineCodexChannelId` 自动迁移到 `agentCodexChannelId`，损坏枚举读取时回落到安全默认值。
+- session 契约：旧 Claude session 读取期惰性补齐 runtime 字段；更新旧 session 时写回 `runtimeSession`；清理 `sdkSessionId` 时同步清理 Claude `runtimeSession`；Codex session 仅写 `runtimeSession`，不写 `sdkSessionId`，并会清理 Claude legacy 字段。
+- 版本：`@codeinsights/shared` patch 版本升至 `0.1.43`，`@codeinsights/electron` patch 版本升至 `0.0.104`。
+- 验证结果：`bun test packages/shared` 通过；`bun test apps/electron/src/main/lib/settings-service.test.ts` 通过；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts` 通过；`bun test --isolate` 通过，522 pass / 0 fail；`bun run typecheck` 通过；`git diff --check` 通过。
+- 阶段边界：未修改 README.md / AGENTS.md，未接入 Codex runtime core、event adapter、Renderer UI 或真实 Codex SDK 运行路径。
 
 ## 4. Phase 2：Codex Runtime Core 抽取
 
@@ -681,7 +694,7 @@ UI：
 | --- | --- | --- | --- | --- | --- |
 | 文档准备 | [x] | `agent-mode-codex` | `feb46548` + `c546bc4e` | 文档结构、相对链接、章节检查、diff 空白检查通过 | 当时未运行代码验证 |
 | Phase 0 | [x] | `codex/agent-codex-runtime-phase-0` | `29e48a93` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`git diff --check` 通过 | 产品门禁未确认；未做真实 Codex Agent 集成 |
-| Phase 1 | [ ] | - | - | - | - |
+| Phase 1 | [x] | `codex/agent-codex-runtime-phase-0` | 本阶段提交 | `bun test packages/shared`、`bun test apps/electron/src/main/lib/settings-service.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test --isolate`、`bun run typecheck`、`git diff --check` 通过 | 尚未接入 runtime core / UI / 真实 Codex |
 | Phase 2 | [ ] | - | - | - | - |
 | Phase 3 | [ ] | - | - | - | - |
 | Phase 4 | [ ] | - | - | - | - |

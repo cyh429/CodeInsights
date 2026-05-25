@@ -1,0 +1,235 @@
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { AgentSessionMeta } from '@codeinsights/shared'
+
+mock.module('electron', () => ({
+  app: {
+    isPackaged: false,
+    getPath: () => '',
+  },
+  BrowserWindow: {
+    getFocusedWindow: () => null,
+    getAllWindows: () => [],
+  },
+  dialog: {
+    showOpenDialog: async () => ({ canceled: true, filePaths: [] }),
+  },
+  safeStorage: {
+    isEncryptionAvailable: () => true,
+    encryptString: (value: string) => Buffer.from(value),
+    decryptString: (value: Buffer) => value.toString(),
+  },
+}))
+
+interface AgentSessionsIndexFixture {
+  version: number
+  sessions: AgentSessionMeta[]
+}
+
+const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
+const originalClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR
+let tempConfigDir = ''
+
+beforeEach(() => {
+  tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-agent-sessions-'))
+  process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
+})
+
+afterEach(() => {
+  if (originalConfigDir === undefined) {
+    delete process.env.CODEINSIGHTS_CONFIG_DIR
+  } else {
+    process.env.CODEINSIGHTS_CONFIG_DIR = originalConfigDir
+  }
+  if (originalClaudeConfigDir === undefined) {
+    delete process.env.CLAUDE_CONFIG_DIR
+  } else {
+    process.env.CLAUDE_CONFIG_DIR = originalClaudeConfigDir
+  }
+  if (tempConfigDir) {
+    rmSync(tempConfigDir, { recursive: true, force: true })
+    tempConfigDir = ''
+  }
+})
+
+async function loadSessionManager(): Promise<typeof import('./agent-session-manager')> {
+  return import('./agent-session-manager')
+}
+
+function writeSessionIndex(sessions: AgentSessionMeta[]): void {
+  writeFileSync(
+    join(tempConfigDir, 'agent-sessions.json'),
+    JSON.stringify({ version: 1, sessions } satisfies AgentSessionsIndexFixture, null, 2),
+    'utf-8',
+  )
+}
+
+function readSessionIndex(): AgentSessionsIndexFixture {
+  return JSON.parse(readFileSync(join(tempConfigDir, 'agent-sessions.json'), 'utf-8')) as AgentSessionsIndexFixture
+}
+
+describe('agent-session-manager runtime metadata', () => {
+  test('读取旧 Claude 会话时惰性补齐 runtime 字段且不立即写回', async () => {
+    writeSessionIndex([
+      {
+        id: 'legacy-session',
+        title: '旧 Claude 会话',
+        sdkSessionId: 'sdk-session-1',
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { getAgentSessionMeta, listAgentSessions } = await loadSessionManager()
+
+    const meta = getAgentSessionMeta('legacy-session')
+
+    expect(meta?.runtimeKind).toBe('claude-code')
+    expect(meta?.runtimeSession).toEqual({
+      kind: 'claude-code',
+      externalSessionId: 'sdk-session-1',
+      createdAt: 100,
+      updatedAt: 200,
+    })
+    expect(listAgentSessions()[0]?.runtimeKind).toBe('claude-code')
+    expect(readSessionIndex().sessions[0]?.runtimeKind).toBeUndefined()
+  })
+
+  test('更新旧 Claude 会话时写回 runtimeSession 并保留 sdkSessionId 兼容字段', async () => {
+    writeSessionIndex([
+      {
+        id: 'legacy-session',
+        title: '旧 Claude 会话',
+        sdkSessionId: 'sdk-session-1',
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { updateAgentSessionMeta } = await loadSessionManager()
+
+    const updated = updateAgentSessionMeta('legacy-session', { title: '已更新' })
+
+    expect(updated.runtimeKind).toBe('claude-code')
+    expect(updated.runtimeSession?.externalSessionId).toBe('sdk-session-1')
+    expect(updated.sdkSessionId).toBe('sdk-session-1')
+    const stored = readSessionIndex().sessions[0]
+    expect(stored?.runtimeKind).toBe('claude-code')
+    expect(stored?.runtimeSession?.externalSessionId).toBe('sdk-session-1')
+    expect(stored?.sdkSessionId).toBe('sdk-session-1')
+  })
+
+  test('Claude 会话捕获 sdkSessionId 时同步写入 runtimeSession', async () => {
+    const { createAgentSession, updateAgentSessionMeta } = await loadSessionManager()
+    const session = createAgentSession('新 Agent 会话')
+
+    const updated = updateAgentSessionMeta(session.id, { sdkSessionId: 'sdk-session-new' })
+
+    expect(session.runtimeKind).toBe('claude-code')
+    expect(updated.runtimeKind).toBe('claude-code')
+    expect(updated.runtimeSession?.kind).toBe('claude-code')
+    expect(updated.runtimeSession?.externalSessionId).toBe('sdk-session-new')
+    expect(updated.sdkSessionId).toBe('sdk-session-new')
+  })
+
+  test('清除 Claude sdkSessionId 时同步清除 runtimeSession', async () => {
+    const { createAgentSession, updateAgentSessionMeta } = await loadSessionManager()
+    const session = createAgentSession('待清理会话')
+    updateAgentSessionMeta(session.id, { sdkSessionId: 'sdk-session-stale' })
+
+    const cleared = updateAgentSessionMeta(session.id, { sdkSessionId: undefined })
+
+    expect(cleared.runtimeKind).toBe('claude-code')
+    expect(cleared.sdkSessionId).toBeUndefined()
+    expect(cleared.runtimeSession).toBeUndefined()
+    const stored = readSessionIndex().sessions.find((item) => item.id === session.id)
+    expect(stored?.sdkSessionId).toBeUndefined()
+    expect(stored?.runtimeSession).toBeUndefined()
+  })
+
+  test('只有 runtimeSession 的 Codex 会话会推断为 codex', async () => {
+    writeSessionIndex([
+      {
+        id: 'codex-session',
+        title: 'Codex 会话',
+        runtimeSession: {
+          kind: 'codex',
+          externalSessionId: 'codex-thread-1',
+          createdAt: 100,
+          updatedAt: 200,
+        },
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { getAgentSessionMeta } = await loadSessionManager()
+
+    const meta = getAgentSessionMeta('codex-session')
+
+    expect(meta?.runtimeKind).toBe('codex')
+    expect(meta?.runtimeSession?.externalSessionId).toBe('codex-thread-1')
+    expect(meta?.sdkSessionId).toBeUndefined()
+  })
+
+  test('Codex 会话只写 runtimeSession，不写 sdkSessionId', async () => {
+    const { createAgentSession, updateAgentSessionMeta } = await loadSessionManager()
+    const session = createAgentSession('Codex 会话')
+    const now = Date.now()
+
+    const updated = updateAgentSessionMeta(session.id, {
+      runtimeKind: 'codex',
+      runtimeSession: {
+        kind: 'codex',
+        externalSessionId: 'codex-thread-1',
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+
+    expect(updated.runtimeKind).toBe('codex')
+    expect(updated.runtimeSession?.externalSessionId).toBe('codex-thread-1')
+    expect(updated.sdkSessionId).toBeUndefined()
+    const stored = readSessionIndex().sessions.find((item) => item.id === session.id)
+    expect(stored?.runtimeKind).toBe('codex')
+    expect(stored?.runtimeSession?.externalSessionId).toBe('codex-thread-1')
+    expect(stored?.sdkSessionId).toBeUndefined()
+  })
+
+  test('旧 Claude 会话切到 Codex 时清理 Claude legacy 字段', async () => {
+    writeSessionIndex([
+      {
+        id: 'legacy-session',
+        title: '旧 Claude 会话',
+        sdkSessionId: 'sdk-session-1',
+        forkSourceSdkSessionId: 'fork-source-sdk',
+        resumeAtMessageUuid: 'message-1',
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { updateAgentSessionMeta } = await loadSessionManager()
+    const now = Date.now()
+
+    const updated = updateAgentSessionMeta('legacy-session', {
+      runtimeKind: 'codex',
+      runtimeSession: {
+        kind: 'codex',
+        externalSessionId: 'codex-thread-1',
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+
+    expect(updated.runtimeKind).toBe('codex')
+    expect(updated.runtimeSession?.externalSessionId).toBe('codex-thread-1')
+    expect(updated.sdkSessionId).toBeUndefined()
+    expect(updated.forkSourceSdkSessionId).toBeUndefined()
+    expect(updated.resumeAtMessageUuid).toBeUndefined()
+    const stored = readSessionIndex().sessions[0]
+    expect(stored?.runtimeKind).toBe('codex')
+    expect(stored?.runtimeSession?.externalSessionId).toBe('codex-thread-1')
+    expect(stored?.sdkSessionId).toBeUndefined()
+    expect(stored?.forkSourceSdkSessionId).toBeUndefined()
+    expect(stored?.resumeAtMessageUuid).toBeUndefined()
+  })
+})

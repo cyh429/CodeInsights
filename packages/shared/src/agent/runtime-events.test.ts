@@ -103,6 +103,42 @@ describe('Agent runtime event contract', () => {
     expect(isAgentStreamEnvelope(legacyEnvelope)).toBe(true)
   })
 
+  test('accepts Codex event sources and run_started runtime kind', () => {
+    const codexEnvelope = createAgentStreamEnvelope({
+      sessionId,
+      runId,
+      sequence: 1,
+      createdAt,
+      source: 'codex_sdk',
+      event: {
+        type: 'run_started',
+        model: 'gpt-5.1-codex',
+        cwd: '/tmp/workspace',
+        permissionMode: 'auto',
+        runtimeHash: 'hash-codex',
+        runtimeKind: 'codex',
+      },
+    })
+
+    expect(validateAgentStreamEnvelope(codexEnvelope)).toEqual({ ok: true, errors: [] })
+    expect(validateAgentStreamEnvelope({ ...codexEnvelope, source: 'codex_cli' })).toEqual({ ok: true, errors: [] })
+  })
+
+  test('rejects invalid run_started runtime kind', () => {
+    const invalid = envelope(1, {
+      type: 'run_started',
+      model: 'test',
+      cwd: '/tmp/workspace',
+      permissionMode: 'auto',
+      runtimeHash: 'hash-1',
+      runtimeKind: 'unknown-runtime',
+    } as unknown as AgentRuntimeEvent)
+
+    const result = validateAgentStreamEnvelope(invalid)
+    expect(result.ok).toBe(false)
+    expect(result.errors).toContain('run_started.runtimeKind 非法')
+  })
+
   test('rejects invalid envelope shape', () => {
     const invalid = { ...envelopeFixture[0]!, sessionId: '', sequence: -1, createdAt: 'not-a-date' }
     const result = validateAgentStreamEnvelope(invalid)
@@ -169,12 +205,16 @@ describe('Agent runtime event contract', () => {
 
   test('adapts legacy AgentEvent usage, complete and error directly', () => {
     const legacyEvents: AgentEvent[] = [
-      { type: 'usage_update', usage: { inputTokens: 10, outputTokens: 4 } },
+      { type: 'usage_update', usage: { inputTokens: 10, outputTokens: 4, reasoningOutputTokens: 2 } },
       { type: 'complete', stopReason: 'completed', usage: { inputTokens: 10, outputTokens: 4 } },
       { type: 'error', message: '失败' },
     ]
     const runtimeTypes = legacyEvents.flatMap(adaptAgentEventToRuntimeEvent).map((event) => event.type)
     expect(runtimeTypes).toEqual(['usage_updated', 'run_completed', 'run_failed'])
+    expect(legacyEvents.flatMap(adaptAgentEventToRuntimeEvent)[0]).toEqual({
+      type: 'usage_updated',
+      usage: { inputTokens: 10, outputTokens: 4, reasoningOutputTokens: 2 },
+    })
   })
 
   test('replays envelopes with idempotent sequence handling', () => {

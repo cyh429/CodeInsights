@@ -383,6 +383,7 @@ export interface TypedError {
 export interface AgentEventUsage {
   inputTokens: number
   outputTokens?: number
+  reasoningOutputTokens?: number
   cacheReadTokens?: number
   cacheCreationTokens?: number
   costUsd?: number
@@ -527,6 +528,21 @@ export type AgentStreamPayload =
 
 // ===== Agent 会话管理 =====
 
+/** Coding Agent Runtime 类型 */
+export type CodingAgentRuntimeKind = 'claude-code' | 'codex'
+
+/** Runtime 原生会话引用 */
+export interface AgentRuntimeSessionRef {
+  /** Runtime 类型 */
+  kind: CodingAgentRuntimeKind
+  /** Runtime 侧原生会话 ID，例如 Claude SDK session id 或 Codex thread id */
+  externalSessionId: string
+  /** 创建时间戳 */
+  createdAt: number
+  /** 更新时间戳 */
+  updatedAt: number
+}
+
 /**
  * Agent 会话轻量索引项
  *
@@ -540,7 +556,14 @@ export interface AgentSessionMeta {
   title: string
   /** 使用的渠道 ID */
   channelId?: string
-  /** SDK 内部会话 ID（用于 resume 衔接上下文） */
+  /** 会话绑定的 Coding Agent Runtime */
+  runtimeKind?: CodingAgentRuntimeKind
+  /** Runtime 原生会话引用 */
+  runtimeSession?: AgentRuntimeSessionRef
+  /**
+   * @deprecated Claude Code legacy SDK session id。
+   * 迁移期继续读写，最终由 runtimeSession.externalSessionId 取代。
+   */
   sdkSessionId?: string
   /** 所属工作区 ID */
   workspaceId?: string

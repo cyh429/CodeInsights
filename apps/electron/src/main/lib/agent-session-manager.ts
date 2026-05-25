@@ -77,11 +77,73 @@ function writeIndex(index: AgentSessionsIndex): void {
 }
 
 /**
+ * 读取期惰性归一化 Agent 会话 runtime 字段。
+ *
+ * 旧 Claude 会话可能只有 sdkSessionId；这里只返回内存态补齐，不主动批量改写索引文件。
+ */
+export function normalizeAgentSessionMeta(meta: AgentSessionMeta): AgentSessionMeta {
+  const runtimeKind = meta.runtimeKind ?? meta.runtimeSession?.kind ?? 'claude-code'
+
+  if (runtimeKind === 'codex') {
+    return {
+      ...meta,
+      runtimeKind,
+      runtimeSession: meta.runtimeSession?.kind === 'codex' ? meta.runtimeSession : undefined,
+      sdkSessionId: undefined,
+      forkSourceSdkSessionId: undefined,
+      resumeAtMessageUuid: undefined,
+    }
+  }
+
+  const runtimeSession = meta.sdkSessionId
+    ? createRuntimeSessionRef('claude-code', meta.sdkSessionId, meta.createdAt, meta.updatedAt)
+    : meta.runtimeSession?.kind === 'claude-code'
+      ? meta.runtimeSession
+      : undefined
+
+  return {
+    ...meta,
+    runtimeKind,
+    runtimeSession,
+  }
+}
+
+function normalizeAgentSessionMetaForWrite(meta: AgentSessionMeta): AgentSessionMeta {
+  const normalized = normalizeAgentSessionMeta(meta)
+  if (normalized.runtimeKind === 'claude-code' && normalized.sdkSessionId) {
+    return {
+      ...normalized,
+      runtimeSession: createRuntimeSessionRef(
+        'claude-code',
+        normalized.sdkSessionId,
+        normalized.runtimeSession?.createdAt ?? normalized.createdAt,
+        normalized.updatedAt,
+      ),
+    }
+  }
+  return normalized
+}
+
+function createRuntimeSessionRef(
+  kind: 'claude-code' | 'codex',
+  externalSessionId: string,
+  createdAt: number,
+  updatedAt: number,
+): NonNullable<AgentSessionMeta['runtimeSession']> {
+  return {
+    kind,
+    externalSessionId,
+    createdAt,
+    updatedAt,
+  }
+}
+
+/**
  * 获取所有会话（按 updatedAt 降序）
  */
 export function listAgentSessions(): AgentSessionMeta[] {
   const index = readIndex()
-  return index.sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+  return index.sessions.map(normalizeAgentSessionMeta).sort((a, b) => b.updatedAt - a.updatedAt)
 }
 
 /**
@@ -89,7 +151,8 @@ export function listAgentSessions(): AgentSessionMeta[] {
  */
 export function getAgentSessionMeta(id: string): AgentSessionMeta | undefined {
   const index = readIndex()
-  return index.sessions.find((s) => s.id === id)
+  const meta = index.sessions.find((s) => s.id === id)
+  return meta ? normalizeAgentSessionMeta(meta) : undefined
 }
 
 /**
@@ -107,6 +170,7 @@ export function createAgentSession(
     id: randomUUID(),
     title: title || '新 Agent 会话',
     channelId,
+    runtimeKind: 'claude-code',
     workspaceId,
     createdAt: now,
     updatedAt: now,
@@ -332,7 +396,7 @@ function convertLegacyMessage(legacy: AgentMessage): SDKMessage {
  */
 export function updateAgentSessionMeta(
   id: string,
-  updates: Partial<Pick<AgentSessionMeta, 'title' | 'channelId' | 'sdkSessionId' | 'workspaceId' | 'pinned' | 'archived' | 'attachedDirectories' | 'forkSourceDir' | 'forkSourceSdkSessionId' | 'resumeAtMessageUuid' | 'stoppedByUser'>>,
+  updates: Partial<Pick<AgentSessionMeta, 'title' | 'channelId' | 'runtimeKind' | 'runtimeSession' | 'sdkSessionId' | 'workspaceId' | 'pinned' | 'archived' | 'attachedDirectories' | 'forkSourceDir' | 'forkSourceSdkSessionId' | 'resumeAtMessageUuid' | 'manualWorking' | 'stoppedByUser'>>,
 ): AgentSessionMeta {
   const index = readIndex()
   const idx = index.sessions.findIndex((s) => s.id === id)
@@ -341,16 +405,25 @@ export function updateAgentSessionMeta(
     throw new Error(`Agent 会话不存在: ${id}`)
   }
 
-  const existing = index.sessions[idx]!
+  const existing = normalizeAgentSessionMeta(index.sessions[idx]!)
   // 非手动归档操作时，若会话已归档则自动恢复为活跃（仅更新 stoppedByUser 不触发解归档）
   const isStoppedByUserOnly = Object.keys(updates).every((k) => k === 'stoppedByUser')
   const autoUnarchive = existing.archived && !('archived' in updates) && !isStoppedByUserOnly
-  const updated: AgentSessionMeta = {
+  let updated: AgentSessionMeta = {
     ...existing,
     ...updates,
     ...(autoUnarchive ? { archived: false } : {}),
     updatedAt: Date.now(),
   }
+  if (
+    'sdkSessionId' in updates
+    && updates.sdkSessionId === undefined
+    && !('runtimeSession' in updates)
+    && updated.runtimeKind === 'claude-code'
+  ) {
+    updated = { ...updated, runtimeSession: undefined }
+  }
+  updated = normalizeAgentSessionMetaForWrite(updated)
 
   index.sessions[idx] = updated
   writeIndex(index)
@@ -423,7 +496,7 @@ export function moveSessionToWorkspace(sessionId: string, targetWorkspaceId: str
     throw new Error(`Agent 会话不存在: ${sessionId}`)
   }
 
-  const session = index.sessions[idx]!
+  const session = normalizeAgentSessionMeta(index.sessions[idx]!)
 
   // 源 == 目标 → 直接返回
   if (session.workspaceId === targetWorkspaceId) return session
@@ -470,6 +543,7 @@ export function moveSessionToWorkspace(sessionId: string, targetWorkspaceId: str
     ...session,
     workspaceId: targetWorkspaceId,
     sdkSessionId: undefined, // SDK 上下文与工作区 cwd 绑定，必须清空
+    runtimeSession: undefined,
     updatedAt: Date.now(),
   }
   index.sessions[idx] = updated
@@ -604,15 +678,13 @@ export async function forkAgentSession(input: ForkSessionInput): Promise<AgentSe
     sourceMeta.workspaceId,
   )
 
-  updateAgentSessionMeta(newMeta.id, {
+  const updatedForkMeta = updateAgentSessionMeta(newMeta.id, {
     sdkSessionId: forkResult.sessionId,
     forkSourceDir: sourceDir,
     forkSourceSdkSessionId: forkSourceSdkSessionId,
   })
   // 同步返回值（updateAgentSessionMeta 已写入磁盘，这里让调用方拿到最新值）
-  newMeta.sdkSessionId = forkResult.sessionId
-  newMeta.forkSourceDir = sourceDir
-  newMeta.forkSourceSdkSessionId = forkSourceSdkSessionId
+  Object.assign(newMeta, updatedForkMeta)
 
   // 4.5 将 SDK session JSONL 复制到 fork 自己的 project-hash 目录
   // SDK forkSession() 在源 cwd 的 project-hash 下创建 JSONL（如 projects/<hash-of-sourceDir>/<newId>.jsonl），

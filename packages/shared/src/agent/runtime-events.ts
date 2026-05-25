@@ -3,6 +3,7 @@ import type {
   AgentEventUsage,
   AgentStreamPayload,
   AgentRuntimeRunnerMode,
+  CodingAgentRuntimeKind,
   AskUserRequest,
   DangerLevel,
   ExitPlanModeRequest,
@@ -27,6 +28,8 @@ export const agentRuntimeEventsV2 = {
 
 export type AgentEventSource =
   | 'claude_sdk'
+  | 'codex_sdk'
+  | 'codex_cli'
   | 'codeinsights'
   | 'permission_service'
   | 'ask_user_service'
@@ -52,12 +55,13 @@ export interface AgentRuntimeUsagePayload {
   cacheReadTokens?: number
   cacheCreationTokens?: number
   cacheTokens?: number
+  reasoningOutputTokens?: number
   costUsd?: number
   contextWindow?: number
 }
 
 export type AgentRuntimeEvent =
-  | { type: 'run_started'; model: string; cwd: string; permissionMode: CodeInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode }
+  | { type: 'run_started'; model: string; cwd: string; permissionMode: CodeInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode; runtimeKind?: CodingAgentRuntimeKind }
   | { type: 'sdk_session'; sdkSessionId: string; resumeFrom?: string }
   | { type: 'assistant_delta'; messageId: string; delta: string; parentToolUseId?: string }
   | { type: 'assistant_message'; messageId: string; contentBlocks: unknown[]; status: 'complete' | 'error'; parentToolUseId?: string }
@@ -158,6 +162,13 @@ export function validateAgentRuntimeEvent(event: AgentRuntimeEvent): string[] {
         && event.runnerMode !== 'legacy'
       ) {
         errors.push('run_started.runnerMode 非法')
+      }
+      if (
+        event.runtimeKind !== undefined
+        && event.runtimeKind !== 'claude-code'
+        && event.runtimeKind !== 'codex'
+      ) {
+        errors.push('run_started.runtimeKind 非法')
       }
       break
     case 'sdk_session':
@@ -545,6 +556,7 @@ function adaptUsage(usage?: Partial<AgentEventUsage>): AgentRuntimeUsagePayload 
   return {
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
+    reasoningOutputTokens: usage.reasoningOutputTokens,
     cacheReadTokens: usage.cacheReadTokens,
     cacheCreationTokens: usage.cacheCreationTokens,
     costUsd: usage.costUsd,
@@ -558,7 +570,7 @@ function adaptTaskUsage(usage?: { totalTokens: number }): AgentRuntimeUsagePaylo
 }
 
 function isKnownEventSource(source: string): source is AgentEventSource | LegacyAgentEventSource {
-  return ['claude_sdk', 'codeinsights', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
+  return ['claude_sdk', 'codex_sdk', 'codex_cli', 'codeinsights', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
 }
 
 function isSDKAssistantMessage(message: SDKMessage): message is SDKAssistantMessage {
