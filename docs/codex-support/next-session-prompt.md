@@ -17,7 +17,7 @@
 - Phase 5 Orchestrator Runtime Routing 已完成并提交：40441fe8。
 - Phase 6 Renderer 设置、历史与 UX 已完成并提交：58164e35。
 - Phase 7 真实 Codex SDK / CLI 接入、打包验证、安全加固和 smoke 记录已完成并提交：1b94f9ad。
-- Phase 7 仍有外部凭证阻塞项：native / workspace-write / read-only / resume / web-search / history reload 成功路径需要有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；当前记录为本机 native auth 返回 `401 invalid_api_key`，channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
+- Phase 7 仍有外部网络/凭证阻塞项：native / workspace-write / read-only / resume / web-search / history reload 成功路径需要有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`；2026-05-26 补跑时隔离 native smoke 创建 thread 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针持续 reconnect / stream disconnected 后 90 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
 - Phase 8 文档、发布与长期维护尚未开始。
 - 当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
 - 产品决策门禁已确认，采用清单推荐值，以后无需再询问同一组门禁。
@@ -31,9 +31,9 @@
 5. 启动前确认本轮边界：先补跑 Phase 7 凭证阻塞的真实成功路径 smoke；补跑通过后再进入 Phase 8。不要把未验证成功路径写成已通过，也不要修改根 README.md / AGENTS.md，除非用户明确允许。
 
 下一步优先级：
-1. 若当前机器有有效 Codex native auth，使用隔离 `CODEINSIGHTS_CONFIG_DIR` 重跑 `native`、`readonly`、`workspace-write`、`resume`、`web-search`、`history reload` 相关 smoke。
+1. 先确认当前机器能访问 `api.openai.com`、`chatgpt.com` 和 Codex plugin GitHub 相关地址；若网络恢复且有有效 Codex native auth，使用隔离 `CODEINSIGHTS_CONFIG_DIR` 重跑 `native`、`readonly`、`workspace-write`、`resume`、`web-search`、`history reload` 相关 smoke。
 2. 若提供了 `CODEX_SMOKE_API_KEY`，重跑 channel API key 模式 smoke；不要默认读取 ambient `OPENAI_API_KEY`，除非显式 opt-in。
-3. 若凭证仍不可用，将相关项保持为 `[!]` 阻塞，记录真实错误和环境，不伪造成功。
+3. 若网络或凭证仍不可用，将相关项保持为 `[!]` 阻塞，记录真实错误和环境，不伪造成功。
 4. 凭证成功路径关闭后，进入 Phase 8：同步主方案与实际实现、补充真实 smoke test 记录、SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
 
 Phase 7 已通过验证：

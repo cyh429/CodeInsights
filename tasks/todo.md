@@ -1,5 +1,32 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime Phase 7 成功路径补跑与 Phase 8 启动计划
+
+范围确认：本轮先补跑 Phase 7 凭证阻塞的真实 Codex 成功路径 smoke；只有 native / API key 成功路径关闭后，才进入 Phase 8 文档、发布和长期维护。若凭证仍不可用，保持 `[!]` 阻塞并记录真实错误，不伪造通过。不修改根 `README.md` / `AGENTS.md`，不默认提交 `apps/electron/out/` 打包产物。
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树仅有未跟踪 `apps/electron/out/`，当前最新提交为 `7d864d16 docs(agent): 同步 Codex Runtime Phase 7 后续状态`。
+- [x] 读取开发清单“最新开发状态快照”、第 9 节 Phase 7 执行记录、第 10 节 Phase 8 和第 13 节当前未解决问题。
+- [x] 复核 `agent-codex-smoke.ts` 参数、凭证隔离策略和产物记录方式，确认不默认读取 ambient `OPENAI_API_KEY`。
+- [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 补跑 native smoke：创建 thread 后 120 秒超时，终态 `run_stopped`；随后隔离 CLI 探针创建 thread 后持续 reconnect / stream disconnected 并 90 秒超时。readonly / workspace-write / resume / web-search / history reload 因没有可用 native/API key 成功路径且网络探针超时，保持 `[!]` 阻塞，不伪造通过。
+- [x] 若存在 `CODEX_SMOKE_API_KEY`，补跑 channel API key 模式 smoke；若不存在，只记录 skipped，不读取 ambient `OPENAI_API_KEY`。
+- [x] 根据真实 smoke 结果更新开发清单和本 Review：成功则关闭对应 `[!]`，失败则记录具体错误、命令范围和环境边界。
+- [x] 判断是否进入 Phase 8：本轮 Phase 7 成功路径未关闭，因此不进入 Phase 8 正文发布维护。
+- [x] 运行对应阶段验证：文档 code fence 检查、docs 相对链接检查、`git diff --check -- docs/codex-support tasks/todo.md`；必要时补充 smoke 脚本验证。
+- [x] 在本节末尾追加 Review，并按阶段纪律只提交本阶段相关文件。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 成功路径补跑 Review
+
+- 已复核 `apps/electron/scripts/agent-codex-smoke.ts`：支持 `--only binary|native|api-key|workspace-write|readonly|stop|resume|web-search|mcp`；API key smoke 默认只读取 `CODEX_SMOKE_API_KEY`，`OPENAI_API_KEY` 只有显式 `--use-openai-api-key` 才会使用；默认清理隔离 auth 副本和临时产物。
+- 当前环境检查：`~/.codex/auth.json` 存在；`CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME` 均未设置；`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` 均未设置。
+- Native smoke 补跑：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only native` 使用隔离 `CODEINSIGHTS_CONFIG_DIR` / `CODEX_HOME`，创建 thread `019e6329-a3bc-73c1-9b30-095a8223360e` 后 120 秒内未完成成功回答，终态 `run_stopped`，命令退出码 1。
+- API key smoke 补跑：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY`，按预期 skipped，命令退出码 0。
+- CLI 探针：隔离 `codex exec --skip-git-repo-check --ignore-user-config --ignore-rules -s read-only --json` 创建 thread `019e632e-5007-7b33-9789-bf5f8a0294b3`，随后出现 `Reconnecting...`、`stream disconnected` 和 Codex plugin sync timeout，90 秒超时。
+- 网络探针：`curl -I --max-time 20 https://api.openai.com/v1/models`、`https://chatgpt.com/backend-api/plugins/featured?platform=codex`、`https://github.com/openai/plugins.git` 均超时；本轮没有可验证的成功 Codex 请求路径。
+- 结果判断：Phase 7 native / readonly / workspace-write / resume / web-search / history reload 成功路径继续保持 `[!]` 阻塞；history reload 仍没有独立 smoke 脚本，需要成功生成可回放会话后通过 Electron / packaged app 手动验证；Phase 8 不启动。
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`、`docs/codex-support/README.md`、`docs/codex-support/next-session-prompt.md`，记录本轮真实错误和网络环境；未修改根 `README.md` / `AGENTS.md`，未处理 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 后状态文档同步计划
 
 范围确认：本轮只同步 Phase 7 提交后的最新开发状态、未完成项和下次启动提示词；不进入 Phase 8 正文发布维护、不修改根 `README.md` / `AGENTS.md`、不处理打包产物 `apps/electron/out/`。
