@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime Phase 7 API Key 残余复核计划
+
+范围确认：本轮先复核 Phase 7 唯一残余 `CODEX_SMOKE_API_KEY` channel API key smoke；不默认读取 ambient `OPENAI_API_KEY`，不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物。若凭证仍未提供，则保持 Phase 7 残余阻塞，只记录真实环境与验证结果，不进入 Phase 8 正文发布维护。
+
+- [x] 复习 `AGENTS.md`、`tasks/lessons.md` 和开发清单中的阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前工作树只有未跟踪 `apps/electron/out/`，最新提交为 `525327cd docs(agent): 同步 Codex Runtime 最新开发状态`。
+- [x] 读取开发清单“最新开发状态快照”、第 9 节 Phase 7、第 10 节 Phase 8 和第 13 节当前未解决问题。
+- [x] 检查当前环境是否显式提供 `CODEX_SMOKE_API_KEY`，只记录是否存在，不输出 secret；不使用 `OPENAI_API_KEY`，除非有显式 opt-in。
+- [x] 若 `CODEX_SMOKE_API_KEY` 存在，补跑 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 并按真实结果更新 Phase 7 状态；若不存在，运行同一 smoke 确认 skipped，并保持 `[!]`。
+- [x] 根据真实结果更新开发清单、support README、next-session prompt 和本 Review；只有 API key smoke 通过后才启动 Phase 8 文档发布与长期维护。
+- [x] 运行文档 code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 按阶段纪律提交本轮记录；提交只包含相关文档/任务文件，不纳入 `apps/electron/out/`。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 API Key 残余复核 Review
+
+- 当前环境检查：`CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；本轮没有显式 opt-in 使用 `OPENAI_API_KEY`。
+- API key smoke：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 退出码 0，`channel-api-key.readonly` 结果为 skipped，原因是未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key`。
+- 结果判断：Phase 7 唯一残余项仍保持 `[!]` 阻塞；本轮不进入 Phase 8 文档发布维护，不伪造 channel API key 成功。
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`、`docs/codex-support/README.md` 和 `docs/codex-support/next-session-prompt.md`，记录本轮真实环境与 skipped 结果。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime history reload 后文档状态同步计划
 
 范围确认：本轮只把最新 HEAD `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`、Phase 7 已完成/未完成项和下次启动提示词同步到 Codex support 文档；不修改根 `README.md` / `AGENTS.md`，不处理未跟踪 `apps/electron/out/` 打包产物。

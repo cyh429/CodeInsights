@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 7 真实 Codex 集成、打包验证、native 成功路径、history reload UI smoke 和 workspace MCP 注入均已提交；Phase 7 仅剩 channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 阻塞；Phase 8 未开始
+状态：Phase 7 真实 Codex 集成、打包验证、native 成功路径、history reload UI smoke 和 workspace MCP 注入均已提交；2026-05-26 复核 channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` skipped；Phase 8 未开始
 日期：2026-05-26
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-26 Phase 7 workspace MCP 注入提交后状态同步
+更新时间：2026-05-26 Phase 7 channel API key 残余复核后状态同步
 
 当前结论：
 
@@ -52,14 +52,15 @@
 - [x] Phase 7 history reload fixture-based packaged UI reload smoke 已完成并提交：`79c7fc92 test(agent): 补齐 Codex history reload UI smoke`。
 - [x] Phase 7 history reload fixture-based packaged UI reload smoke 通过：新增 packaged app UI smoke，使用隔离 `CODEINSIGHTS_CONFIG_DIR` 预置 Codex 会话与 active tab，启动 `out/mac-arm64/CodeInsights.app` 两次并通过 CDP 确认真实 UI 展示历史标题、用户消息和 Codex assistant 消息；会话 `history-reload-smoke-4f4c4be2`。该验证覆盖重开后的 main/preload/renderer 读取与渲染链路，不替代真实 Codex 写入链路验证。
 - [x] Phase 7 CodeInsights workspace MCP 到 Codex 原生配置注入已完成并提交：`dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`。Agent Codex runtime 会把工作区 enabled stdio/http MCP 映射到 SDK `config.mcp_servers`；stdio env 使用 `env_vars`、HTTP headers 使用 `env_http_headers`，真实 secret 通过 Codex 子进程 env 间接注入而不进入 SDK `--config` argv；workspace MCP env 不能覆盖 Git guard/base env，HTTP header name 暂限 SDK-safe bare key；`mcp.config-injection` smoke 通过，Codex CLI `mcp list --json` 可识别生成的 stdio/http 原生配置。
-- [!] Phase 7 仍有残余阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 仍 skipped。
+- [x] 最新状态同步已提交：`525327cd docs(agent): 同步 Codex Runtime 最新开发状态`。
+- [!] Phase 7 仍有残余阻塞：2026-05-26 复核当前环境未设置 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 仍 skipped，未显式传 `--use-openai-api-key`。
 - [ ] Phase 8 文档发布和长期维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；下次启动时以 `git log -1 --oneline` 为准，预期最新提交为该提交或其后的状态同步提交。
+- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `525327cd docs(agent): 同步 Codex Runtime 最新开发状态`；下次启动时以 `git log -1 --oneline` 为准，预期最新提交为该提交或其后的状态同步提交。
 - 下次启动时若仍看到 `apps/electron/out/` 未跟踪，这是本地打包产物，不应默认 stage / commit。
 - 下一步应先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke（若提供）；该残余项关闭后，再进入 Phase 8。
 
@@ -119,7 +120,7 @@
 - [x] Phase 7 web-search smoke 通过：`web-search.current-support` 返回 npm 最新版本 `0.133.0`，thread `019e63a7-0b84-7993-bf33-028d39b15593`，终态 `run_completed`。
 - [x] Phase 7 history reload fixture-based packaged UI reload smoke 通过：`bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui` 启动 packaged app 两次，均通过 CDP 确认 `History Reload Smoke 4f4c4be2`、`codeinsights-history-user-4f4c4be2`、`codeinsights-history-assistant-4f4c4be2` 出现在真实 UI。
 - [x] Phase 7 MCP config injection smoke 通过：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp`，`mcp.config-injection` passed，Codex CLI `mcp list --json` 可识别 CodeInsights workspace MCP 映射出的 stdio/http `mcp_servers` 配置。
-- [!] Phase 7 channel API key smoke 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 仍 skipped。
+- [!] Phase 7 channel API key smoke 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 仍 skipped；2026-05-26 已复核同一命令路径，脚本按预期 skipped。
 
 ## 0.2 当前完成/未完成总览
 
@@ -138,7 +139,7 @@
 | Phase 5 | [x] | 已完成 Orchestrator runtime routing、runtime registry、Codex mock 路由与 stop/complete 竞态防护并提交 `40441fe8` |
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
 | Phase 7 实现与打包验证 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录并提交 `1b94f9ad` |
-| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；channel API key smoke 仍需 `CODEX_SMOKE_API_KEY` |
+| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；2026-05-26 复核 channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` skipped |
 | Phase 8 | [ ] | 待做文档发布和长期维护 |
 
 ## 1. 产品决策门禁
@@ -698,7 +699,7 @@ Phase 6 执行记录：
 - [x] 确认 Windows x64 binary 策略。
 - [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 做真实 smoke。
 - [x] native auth 模式：修正 native smoke 隔离逻辑后会复制同源 `config.toml` 中转 API 配置，并尊重其中 `model_reasoning_effort`；`native-auth.readonly` 返回 `codeinsights-codex-native-ok`，thread `019e63a4-3186-7f40-a97b-a0cd2a6a0932`，终态 `run_completed`。
-- [!] channel API key 模式：本轮确认当前环境未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY`，跳过；未读取 ambient `OPENAI_API_KEY`。
+- [!] channel API key 模式：2026-05-26 复核当前环境未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY`，执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 仍 skipped；未读取 ambient `OPENAI_API_KEY`。
 - [x] workspace-write 模式：`workspace-write.file-edit` 只改目标文件为 `phase7 workspace write ok`，thread `019e63a5-7da1-7fb3-ace8-deec5f2dc74d`，终态 `run_completed`。
 - [x] read-only plan 模式：`readonly-plan.no-write` 保持文件内容 `before-readonly`，thread `019e63a5-0a1d-7571-a7f9-2ea212be46b5`，终态 `run_completed`。
 - [x] stop 长任务，最终状态为 stopped。
@@ -751,6 +752,7 @@ Phase 7 执行记录：
 - 2026-05-26 修正后成功路径：`native-auth.readonly` passed，thread `019e63a4-3186-7f40-a97b-a0cd2a6a0932`；`readonly-plan.no-write` passed，thread `019e63a5-0a1d-7571-a7f9-2ea212be46b5`；`workspace-write.file-edit` passed，thread `019e63a5-7da1-7fb3-ace8-deec5f2dc74d`；`resume.context` passed，thread `019e63a6-5806-7013-a8af-651efad3ffe5`；`web-search.current-support` passed，thread `019e63a7-0b84-7993-bf33-028d39b15593`，返回 `0.133.0`；`stop.long-run` 重跑 passed，终态 `run_stopped`。
 - 2026-05-26 MCP 注入验证：`bun test apps/electron/src/main/lib/codex-runtime apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts apps/electron/scripts/agent-codex-smoke.test.ts` 通过，54 pass / 0 fail；`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp` 通过，`mcp.config-injection` passed，Codex CLI `mcp list --json` 可识别 CodeInsights workspace MCP 映射出的原生 stdio/http `mcp_servers` 配置，且 smoke 从真实 helper 输出派生 CLI override。
 - 2026-05-26 history reload UI smoke：新增 `apps/electron/scripts/agent-history-reload-ui-smoke.ts` 和 `smoke:agent-history-reload-ui` 命令，并提交为 `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`；脚本预置隔离 `agent-sessions.json`、SDKMessage JSONL、runtime events JSONL 和 `settings.tabState`，启动 packaged app 两次，通过 CDP 读取真实 `document.body.innerText`，确认 `History Reload Smoke 4f4c4be2`、`codeinsights-history-user-4f4c4be2`、`codeinsights-history-assistant-4f4c4be2` 均出现；两轮 `history-reload.first-open` / `history-reload.reopen` passed。该脚本是 fixture-based packaged UI reload smoke，验证重开读取/恢复/渲染链路，不声称覆盖真实 Codex 写入链路。
+- 2026-05-26 API key 残余复核：当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 返回退出码 0，结果为 `channel-api-key.readonly` skipped，原因是未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key`。本轮未读取 ambient `OPENAI_API_KEY`，Phase 8 不启动。
 - 打包验证：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast` 成功生成 `out/CodeInsights-0.0.112-arm64.dmg`；packaged app 内 `@openai/codex-sdk`、`@openai/codex`、`@openai/codex-darwin-arm64` 存在，native binary 与 CLI wrapper 均输出 `codex-cli 0.130.0`。
 - Packaged startup smoke：使用隔离 `CODEINSIGHTS_CONFIG_DIR` 启动 `out/mac-arm64/CodeInsights.app/Contents/MacOS/CodeInsights` 8 秒未退出，运行时初始化、默认 workspace 和 IPC 注册完成；存在非 Codex 阻断的 icon 路径 warning。
 - 验证通过：`bun run typecheck`；`bun test --isolate`，600 pass / 0 fail；`bun run electron:build`；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`；`bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui`；`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp`；packaged app startup smoke；`git diff --check`。
