@@ -1,10 +1,20 @@
 import { app, BrowserWindow, Menu, screen, shell } from 'electron'
-import { basename, dirname, join } from 'path'
+import { basename, dirname, join, resolve } from 'path'
 import { cpSync, existsSync, mkdirSync } from 'fs'
 
-// Dev 与正式版使用独立的 userData 目录，避免共享 Chromium SingletonLock 导致 dev 启动被静默退出
-// 必须在任何会读取 userData 路径的模块加载之前执行
-if (!app.isPackaged) {
+// Smoke / 自动化验证可显式隔离 Electron userData，避免单实例锁影响真实客户端。
+// 必须在任何会读取 userData 路径的模块加载之前执行。
+const userDataOverride = process.env.CODEINSIGHTS_USER_DATA_DIR?.trim()
+const configDirOverride = process.env.CODEINSIGHTS_CONFIG_DIR?.trim()
+const isAutomationLaunch = process.env.CODEINSIGHTS_AUTOMATION === '1'
+if (userDataOverride && isAutomationLaunch && configDirOverride) {
+  const resolvedUserDataOverride = resolve(userDataOverride)
+  mkdirSync(resolvedUserDataOverride, { recursive: true })
+  app.setPath('userData', resolvedUserDataOverride)
+} else if (userDataOverride) {
+  console.warn('[配置] 忽略 CODEINSIGHTS_USER_DATA_DIR：该覆盖仅允许在 CODEINSIGHTS_AUTOMATION=1 且 CODEINSIGHTS_CONFIG_DIR 已设置时使用。')
+} else if (!app.isPackaged) {
+  // Dev 与正式版使用独立的 userData 目录，避免共享 Chromium SingletonLock 导致 dev 启动被静默退出
   app.setPath('userData', join(app.getPath('appData'), '@codeinsights/electron-dev'))
 }
 

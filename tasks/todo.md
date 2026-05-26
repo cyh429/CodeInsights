@@ -1,5 +1,34 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime Phase 7 残余验证与 Phase 8 启动计划
+
+范围确认：本轮先关闭 Phase 7 残余验证项，再按条件进入 Phase 8 文档、发布与长期维护。继续遵守“不再等待确认”：计划写入后直接执行；不修改根 `README.md` / `AGENTS.md`，不默认 stage / commit `apps/electron/out/` 打包产物，不默认读取 ambient `OPENAI_API_KEY`。
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前工作树只有未跟踪 `apps/electron/out/`，最新提交为 `d0783599 docs(agent): 固化 Codex Runtime native 修正后状态`。
+- [x] 读取开发清单“最新开发状态快照”、第 9 节 Phase 7、第 10 节 Phase 8 和第 13 节当前未解决问题。
+- [x] 梳理 `agent-codex-smoke.ts`、packaged app / Electron smoke 脚本和 history reload UI 入口，确认最小独立验证路径。
+- [x] 若当前环境提供 `CODEX_SMOKE_API_KEY`，补跑 `channel-api-key.readonly` smoke；若未提供，只记录 skipped，不读取 `OPENAI_API_KEY`。
+- [x] 为 history reload 增加或执行 Electron/packaged app 重开 UI 独立成功验证，不只用 runtime 单测替代。
+- [x] 根据真实结果更新开发清单、support README、next-session prompt 和本 Review；成功才关闭对应 `[!]`。
+- [x] 判断是否进入 Phase 8：Phase 7 残余项尚未全部关闭，本轮不启动 Phase 8 正文发布维护。
+- [x] 运行必要验证：针对新增脚本/测试的 Bun 测试、文档 code fence / 相对链接检查、`git diff --check`；非文档改动按影响范围补充 typecheck。
+- [x] 按阶段纪律提交本轮成果；提交只包含相关代码/文档，不纳入无关打包产物。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 残余验证与 Phase 8 启动 Review
+
+- 当前环境未设置 `CODEX_SMOKE_API_KEY`，`OPENAI_API_KEY` 也未设置；已执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key`，`channel-api-key.readonly` 按预期 skipped，未传 `--use-openai-api-key`。
+- 已新增 `CODEINSIGHTS_USER_DATA_DIR` 自动化隔离入口，并收紧为必须同时满足 `CODEINSIGHTS_AUTOMATION=1` 和 `CODEINSIGHTS_CONFIG_DIR`，避免普通 packaged/dev 进程误用独立 Electron profile 但共享真实配置目录。
+- 已新增 `apps/electron/scripts/agent-history-reload-ui-smoke.ts` 和 `smoke:agent-history-reload-ui`：脚本预置隔离 Codex agent session、SDKMessage、runtime events 和 `settings.tabState`，启动 packaged app 两次，通过 CDP 断言真实 UI 文本包含历史标题、用户消息和 Codex assistant 消息。该脚本是 fixture-based packaged UI reload smoke，覆盖重开读取与渲染链路，不声称覆盖真实 Codex 写入链路；脚本子进程环境已改为 allowlist，并对失败日志做 secret 脱敏。
+- 已按版本规则将 `@codeinsights/electron` 从 `0.0.111` 升至 `0.0.112`。
+- 打包验证通过：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`，生成 `out/CodeInsights-0.0.112-arm64.dmg`。
+- History reload fixture-based packaged UI reload smoke 通过：修正审查问题后复验会话 `history-reload-smoke-4f4c4be2`；两轮 `history-reload.first-open` / `history-reload.reopen` 均 passed，目标 URL 为 packaged `file://.../dist/renderer/index.html`。
+- 已更新开发清单、support README 和 next-session prompt：history reload 从 `[!]` 关闭为通过；Phase 7 残余项剩余 `CODEX_SMOKE_API_KEY` channel API key smoke 和 MCP 注入 Codex 原生配置。
+- Phase 8 未启动：残余项尚未全部关闭，尤其 MCP 注入仍待实现验证。
+- 代码审查整改：修复 High secret 透传/日志泄露风险；修复 `CODEINSIGHTS_USER_DATA_DIR` 缺少自动化门禁风险；收紧 CDP target 判定为 packaged renderer；文档已明确 history reload 为 fixture-based UI reload smoke。
+- 最终代码复审：无 Critical / High / Medium；确认 secret 脱敏、env allowlist、packaged target 限制和 fixture-based 文档措辞均已关闭。
+- 验证通过：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key`（skipped，未读取 `OPENAI_API_KEY`）；`bun run --filter='@codeinsights/electron' typecheck`；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`；`bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui`；Markdown code fence 检查；Markdown 相对链接检查；`git diff --check`。
+
 ## 2026-05-26 Agent Codex Runtime 最新状态固化计划
 
 范围确认：本轮只把最新提交 `a439d541`、Phase 7 已完成/未完成项和下次启动提示词固化到 Codex support 文档；不修改根 `README.md` / `AGENTS.md`，不处理 `apps/electron/out/`。
