@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime 最新状态与启动提示词同步计划
+
+范围确认：本轮只更新 Codex support 文档的最新开发状态和下次启动提示词，明确完成项、未完成项和继续开发入口；不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物。
+
+- [x] 复习 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前最新提交为 `b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核`，工作树仅有未跟踪 `apps/electron/out/`。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：把最新状态推进到 `b2d8bc5f`，明确 Phase 0-7 主体完成、Phase 7 channel API key smoke 和 Phase 8 未完成。
+- [x] 更新 `docs/codex-support/README.md`：同步最新提交列表、完成/未完成状态和下次启动入口。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的最新延续提示词。
+- [x] 运行 Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 在本节追加 Review，并按阶段纪律提交本轮文档状态同步。
+
+## 2026-05-26 Agent Codex Runtime 最新状态与启动提示词同步 Review
+
+- 已将开发清单顶部状态和最新开发状态快照同步到 `b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核` 后：Phase 0-7 主体实现与真实 smoke 已完成；Phase 7 唯一残余仍是缺少 `CODEX_SMOKE_API_KEY` 的 channel API key smoke；Phase 8 文档、故障排查、发布说明和长期维护记录未开始。
+- 已更新 support README：提交列表加入 `b2d8bc5f`，最新复核保留 API key smoke skipped 事实，不把 skipped 写成通过。
+- 已更新 next-session prompt：下次启动先确认 `b2d8bc5f` 或其后的状态同步提交，若只看到 `apps/electron/out/` 未跟踪则继续忽略；下一步先处理 `CODEX_SMOKE_API_KEY`，残余关闭后再进入 Phase 8。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 API Key 最终残余复核计划
 
 范围确认：本轮只复核 Phase 7 唯一残余 `CODEX_SMOKE_API_KEY` channel API key smoke，并把真实结果同步到 Codex support 文档；当前环境未提供 `CODEX_SMOKE_API_KEY` 时保持 `[!]` 阻塞，不默认读取 ambient `OPENAI_API_KEY`，不进入 Phase 8 正文发布维护。不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物；用户已要求不再等待确认，计划写入后直接执行。

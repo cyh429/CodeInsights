@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 7 真实 Codex 集成、打包验证、native 成功路径、history reload UI smoke、workspace MCP 注入和 API key 残余复核均已提交；本轮再次确认 channel API key smoke 仍需 `CODEX_SMOKE_API_KEY`；Phase 8 未开始
+状态：Phase 0-7 主体实现与真实 smoke 已完成并提交；Phase 7 channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 仍为唯一残余阻塞；Phase 8 文档、故障排查、发布说明和长期维护记录未开始
 日期：2026-05-26
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-26 Phase 7 API key 最终残余复核后状态同步
+更新时间：2026-05-26 最新状态同步到 `b2d8bc5f` 后
 
 当前结论：
 
@@ -55,6 +55,7 @@
 - [x] 最新状态同步已提交：`525327cd docs(agent): 同步 Codex Runtime 最新开发状态`。
 - [x] Phase 7 API key 残余复核记录已完成并提交：`217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核`。
 - [x] 最新进度同步已提交：`7467ab24 docs(agent): 同步 Codex Runtime 最新进度`。
+- [x] Phase 7 API key 最终残余复核已完成并提交：`b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核`。
 - [!] Phase 7 仍有残余阻塞：2026-05-26 本轮复核当前环境未设置 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 仍 skipped，未显式传 `--use-openai-api-key`。
 - [ ] Phase 8 文档发布和长期维护尚未开始。
 
@@ -62,7 +63,7 @@
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `7467ab24 docs(agent): 同步 Codex Runtime 最新进度`；下次启动时以 `git log -1 --oneline` 为准，预期最新提交为该提交或其后的状态同步提交。
+- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核`；下次启动时以 `git log -1 --oneline` 为准，预期最新提交为该提交或其后的状态同步提交。
 - 下次启动时若仍看到 `apps/electron/out/` 未跟踪，这是本地打包产物，不应默认 stage / commit。
 - 下一步应先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke（若提供）；该残余项关闭后，再进入 Phase 8。
 
@@ -141,7 +142,7 @@
 | Phase 5 | [x] | 已完成 Orchestrator runtime routing、runtime registry、Codex mock 路由与 stop/complete 竞态防护并提交 `40441fe8` |
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
 | Phase 7 实现与打包验证 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录并提交 `1b94f9ad` |
-| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；API key 残余复核已提交 `217ed1f0`，最新进度同步已提交 `7467ab24`，channel API key smoke 本轮仍因缺少 `CODEX_SMOKE_API_KEY` skipped |
+| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；API key 最终残余复核已提交 `b2d8bc5f`，channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` skipped |
 | Phase 8 | [ ] | 待做文档发布、故障排查、发布说明和长期维护记录；等 channel API key 残余关闭后启动 |
 
 ## 1. 产品决策门禁
