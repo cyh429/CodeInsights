@@ -23,19 +23,19 @@
 - Phase 7 history reload fixture-based packaged UI reload smoke 已完成并提交：79c7fc92。新增 `smoke:agent-history-reload-ui`，通过 CDP 启动 packaged app 两次并确认真实 UI 展示 Codex 历史标题、用户消息和 assistant 消息；该验证覆盖重开读取与渲染，不替代真实 Codex 写入链路。
 - Phase 7 CodeInsights workspace MCP 到 Codex 原生配置注入已完成并提交：dae13cd7。Agent Codex runtime 会把工作区 enabled stdio/http MCP 映射到 SDK `config.mcp_servers`；stdio env 使用 `env_vars`、HTTP headers 使用 `env_http_headers`，真实 secret 通过 Codex 子进程 env 间接注入，不进入 SDK `--config` argv；workspace MCP env 不能覆盖 Git guard/base env，HTTP header name 暂限 SDK-safe bare key；`smoke:agent-codex -- --only mcp` 的 `mcp.config-injection` 已通过，Codex CLI `mcp list --json` 可识别生成的 stdio/http 配置。
 - 最新开发状态已同步并提交：525327cd。
-- 2026-05-26 已复核 channel API key 残余项：当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 按预期 skipped，未显式传 `--use-openai-api-key`。
-- 最新提交号以 `git log -1 --oneline` 为准，预期最新提交为 `525327cd docs(agent): 同步 Codex Runtime 最新开发状态` 或其后的状态同步提交。
+- Phase 7 channel API key 残余复核已完成并提交：217ed1f0。当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 按预期 skipped，未显式传 `--use-openai-api-key`。
+- 最新提交号以 `git log -1 --oneline` 为准，预期最新提交为 `217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核` 或其后的状态同步提交。
 - 2026-05-26 已修正 native smoke 隔离逻辑：复制主机 `~/.codex/auth.json` 时也复制同源 `config.toml`，保留中转 API `model_provider` / `base_url` 配置；同时不再默认强制 `modelReasoningEffort: "minimal"`，改为尊重 `config.toml`，仅在设置 `CODEX_SMOKE_REASONING_EFFORT` 时覆盖。
 - Phase 7 native / read-only / workspace-write / resume / web-search / stop 成功路径已通过真实 smoke：native thread `019e63a4-3186-7f40-a97b-a0cd2a6a0932`，read-only thread `019e63a5-0a1d-7571-a7f9-2ea212be46b5`，workspace-write thread `019e63a5-7da1-7fb3-ace8-deec5f2dc74d`，resume thread `019e63a6-5806-7013-a8af-651efad3ffe5`，web-search thread `019e63a7-0b84-7993-bf33-028d39b15593`。
 - Phase 7 仍有残余阻塞项：channel API key smoke 需要 `CODEX_SMOKE_API_KEY` 补跑；不得默认读取 ambient `OPENAI_API_KEY`，除非显式 opt-in。
-- Phase 8 文档、发布与长期维护尚未开始。
+- Phase 8 文档、故障排查、发布说明和长期维护记录尚未开始。
 - 当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
 - 产品决策门禁已确认，采用清单推荐值，以后无需再询问同一组门禁。
 - 用户已明确要求“不需要询问我，直接开发即可”；写入 tasks/todo.md 计划后直接执行。
 
 请先执行：
 1. 读取 AGENTS.md / 项目指令，并复习 tasks/lessons.md 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新提交为 `525327cd docs(agent): 同步 Codex Runtime 最新开发状态` 或其后的状态同步提交。不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新提交为 `217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核` 或其后的状态同步提交。不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
 3. 读取开发清单的“最新开发状态快照”、第 9 节 Phase 7 执行记录、第 10 节 Phase 8 和第 13 节当前未解决问题。
 4. 在 tasks/todo.md 写入本轮计划，然后直接开始执行。
 5. 启动前确认本轮边界：先补齐 Phase 7 残余的 channel API key smoke（若提供凭证）；该残余项通过后再进入 Phase 8。不要把未验证成功路径写成已通过，也不要修改根 README.md / AGENTS.md，除非用户明确允许。

@@ -10,9 +10,9 @@
 
 ## 最新状态
 
-更新时间：2026-05-26 Phase 7 channel API key 残余复核后
+更新时间：2026-05-26 Phase 7 API key 残余复核提交后
 
-- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置/历史/UX、Phase 7 真实 Codex runtime 接入、打包验证、安全加固和 smoke 记录。
+- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置/历史/UX、Phase 7 真实 Codex runtime 接入、打包验证、安全加固、native/read-only/workspace-write/resume/web-search/stop/history reload/MCP smoke 记录，以及 API key 残余复核记录。
 - 已提交：
   - `feb46548 docs: 规划 Agent Codex Runtime 接入`
   - `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`
@@ -35,11 +35,12 @@
   - `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`
   - `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`
   - `525327cd docs(agent): 同步 Codex Runtime 最新开发状态`
+  - `217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核`
 - 已补跑通过：修正 native smoke 隔离逻辑后会复制 `~/.codex/config.toml` 中的中转 API 配置，并尊重其中 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 成功路径均已通过真实 smoke；history reload 已通过 `79c7fc92` 新增的 fixture-based packaged UI reload smoke，覆盖重开后的读取与渲染链路；workspace MCP 已安全映射到 Codex 原生 `mcp_servers` 配置，MCP env/header secret 通过环境变量间接注入而不进入 SDK `--config` argv，并通过 `mcp.config-injection` smoke 验证 stdio/http 配置可识别。
 - 最新复核：2026-05-26 当前环境未设置 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 仍 skipped，未显式 opt-in `OPENAI_API_KEY`。
-- 未完成 / 阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；Phase 8 文档发布维护尚未开始。
+- 未完成 / 阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；Phase 8 文档发布、故障排查、发布说明和长期维护记录尚未开始。
 - 下一步：若提供 `CODEX_SMOKE_API_KEY` 则补跑 channel API key smoke；残余项关闭后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
-- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交为 `525327cd docs(agent): 同步 Codex Runtime 最新开发状态` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
+- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交为 `217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位
 
