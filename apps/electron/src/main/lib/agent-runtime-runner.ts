@@ -117,6 +117,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
           if (attemptEnvelope) yield attemptEnvelope
           await timerWithAbort(delayMs, input.abortSignal)
           if (input.abortSignal?.aborted) {
+            await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
             const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
             if (stoppedEnvelope) yield stoppedEnvelope
             return
@@ -141,6 +142,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
 
             if (raceResult.kind === 'watchdog_tick') {
               if (input.abortSignal?.aborted) {
+                await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
                 const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
                 if (stoppedEnvelope) yield stoppedEnvelope
                 return
@@ -162,6 +164,7 @@ export class InProcessAgentRuntimeRunner implements AgentRuntimeRunner {
 
             for (const sideEnvelope of drainSideQueue(sideQueue)) yield sideEnvelope
             if (input.abortSignal?.aborted) {
+              await this.flushMessages(input.sessionId, accumulatedMessages, Date.now() - queryStartedAt)
               const stoppedEnvelope = makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
               if (stoppedEnvelope) yield stoppedEnvelope
               return

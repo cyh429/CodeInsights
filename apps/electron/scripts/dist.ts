@@ -10,7 +10,7 @@
  * - 支持只构建 DMG 或 ZIP（--dmg / --zip）
  *
  * 使用：
- * bun run scripts/dist.ts                          # 完整打包（双架构 + DMG + ZIP）
+ * bun run scripts/dist.ts                          # 按 electron-builder 配置打包当前平台
  * bun run scripts/dist.ts --current-arch            # 只构建当前架构（快速）
  * bun run scripts/dist.ts --current-arch --verbose   # 当前架构 + 详细日志
  * bun run scripts/dist.ts --current-arch --dmg       # 当前架构 + 只构建 DMG
@@ -128,6 +128,12 @@ function runStep(
   return { name, duration, success: result.status === 0, skipped: false }
 }
 
+function pushStepResult(results: StepResult[], result: StepResult): StepResult {
+  results.push(result)
+  printStepResult(result)
+  return result
+}
+
 // ============================================
 // 主流程
 // ============================================
@@ -161,7 +167,7 @@ function main(): void {
   // 打印配置信息
   console.log(`\n${color.bgBlue}${color.bold} CodeInsights 打包工具 ${color.reset}\n`)
   console.log(`  ${color.bold}平台${color.reset}:     ${opts.platform}`)
-  console.log(`  ${color.bold}架构${color.reset}:     ${opts.currentArch ? arch + ' (仅当前)' : 'arm64 + x64'}`)
+  console.log(`  ${color.bold}架构${color.reset}:     ${opts.currentArch ? arch + ' (仅当前)' : 'electron-builder 默认（CI 矩阵显式指定）'}`)
   console.log(`  ${color.bold}格式${color.reset}:     ${opts.targetFormat}`)
   console.log(`  ${color.bold}签名${color.reset}:     ${opts.noSign ? '跳过' : '启用'}`)
   console.log(`  ${color.bold}详细日志${color.reset}: ${opts.verbose ? '开启' : '关闭'}`)
@@ -173,37 +179,33 @@ function main(): void {
   // ── 步骤 1: 构建主进程 ──
   step++
   printStepStart(step, totalSteps, '构建主进程 (esbuild)')
-  results.push(
+  const mainBuild = pushStepResult(results,
     runStep('构建主进程', 'bun', ['run', 'build:main'], { verbose: opts.verbose })
   )
-  printStepResult(results[results.length - 1])
-  if (!results[results.length - 1].success) return printSummary(results)
+  if (!mainBuild.success) return printSummary(results)
 
   // ── 步骤 2: 构建 Preload ──
   step++
   printStepStart(step, totalSteps, '构建 Preload (esbuild)')
-  results.push(
+  const preloadBuild = pushStepResult(results,
     runStep('构建 Preload', 'bun', ['run', 'build:preload'], { verbose: opts.verbose })
   )
-  printStepResult(results[results.length - 1])
-  if (!results[results.length - 1].success) return printSummary(results)
+  if (!preloadBuild.success) return printSummary(results)
 
   // ── 步骤 3: 构建渲染进程 ──
   step++
   printStepStart(step, totalSteps, '构建渲染进程 (Vite)')
-  results.push(
+  const rendererBuild = pushStepResult(results,
     runStep('构建渲染进程', 'bun', ['run', 'build:renderer'], { verbose: opts.verbose })
   )
-  printStepResult(results[results.length - 1])
-  if (!results[results.length - 1].success) return printSummary(results)
+  if (!rendererBuild.success) return printSummary(results)
 
   // ── 步骤 4: 复制资源文件 ──
   step++
   printStepStart(step, totalSteps, '复制资源文件')
-  results.push(
+  pushStepResult(results,
     runStep('复制资源文件', 'bun', ['run', 'build:resources'], { verbose: opts.verbose })
   )
-  printStepResult(results[results.length - 1])
 
   // ── 步骤 5: electron-builder 打包 ──
   step++
@@ -234,13 +236,12 @@ function main(): void {
     builderEnv['DEBUG'] = 'electron-builder,electron-builder:*'
   }
 
-  results.push(
+  pushStepResult(results,
     runStep('Electron Builder', 'bunx', builderArgs, {
       verbose: true, // 打包步骤始终显示输出
       env: builderEnv,
     })
   )
-  printStepResult(results[results.length - 1])
 
   printSummary(results)
 }

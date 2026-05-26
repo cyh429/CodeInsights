@@ -280,6 +280,61 @@ describe('CodexEventAdapter', () => {
     }])
   })
 
+  test('重连中的顶层 error 记录为进度事件，不提前终止 turn', () => {
+    const events = runtimeEvents(adaptEvents([
+      { type: 'thread.started', thread_id: 'thread-reconnect' },
+      { type: 'turn.started' },
+      { type: 'error', message: 'Reconnecting... 1/5 (stream disconnected)' },
+      { type: 'item.completed', item: { id: 'msg-after-reconnect', type: 'agent_message', text: 'ok' } },
+      {
+        type: 'turn.completed',
+        usage: {
+          input_tokens: 1,
+          cached_input_tokens: 0,
+          output_tokens: 1,
+          reasoning_output_tokens: 0,
+        },
+      },
+    ]))
+
+    expect(events.map((event) => event.type)).toEqual([
+      'sdk_session',
+      'agent_task_started',
+      'agent_task_progress',
+      'assistant_message',
+      'usage_updated',
+      'run_completed',
+    ])
+    expect(eventsOfType(events, 'run_failed')).toEqual([])
+    expect(eventsOfType(events, 'agent_task_progress')[0]?.message).toContain('Reconnecting')
+    expect(eventsOfType(events, 'run_completed')[0]?.sdkSessionId).toBe('thread-reconnect')
+  })
+
+  test('resume 模式可用初始 thread id 补齐 run_completed sdkSessionId', () => {
+    const adapter = new CodexEventAdapter({
+      sessionId: 'session-codex',
+      runId: 'run-resume',
+      initialThreadId: 'thread-resumed',
+      createdAt: () => createdAt,
+    })
+    const envelopes = [
+      ...adapter.adapt({ type: 'turn.started' }),
+      ...adapter.adapt({
+        type: 'turn.completed',
+        usage: {
+          input_tokens: 1,
+          cached_input_tokens: 0,
+          output_tokens: 1,
+          reasoning_output_tokens: 0,
+        },
+      }),
+    ]
+    const events = runtimeEvents(envelopes)
+
+    expect(eventsOfType(events, 'sdk_session')).toEqual([])
+    expect(eventsOfType(events, 'run_completed')[0]?.sdkSessionId).toBe('thread-resumed')
+  })
+
   test('非致命 error item 映射为工具错误而不是运行终态', () => {
     const events = runtimeEvents(adaptEvents([
       { type: 'item.completed', item: { id: 'nonfatal-1', type: 'error', message: 'lint warning' } },

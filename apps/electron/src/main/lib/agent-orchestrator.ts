@@ -118,6 +118,14 @@ function isCodexRuntimeFeatureEnabled(): boolean {
   return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
 }
 
+function normalizeCodexModelForPersistence(model?: string): string | undefined {
+  const trimmed = model?.trim()
+  if (!trimmed) return undefined
+  const normalized = trimmed.toLowerCase()
+  if (normalized === 'codex' || normalized === 'codex default') return undefined
+  return trimmed
+}
+
 /**
  * 从 stderr 中提取 API 错误信息
  *
@@ -870,10 +878,13 @@ export class AgentOrchestrator {
       console.log(`[Agent 编排] Runtime Runner 链路: ${runnerModeResolution.mode} (${runnerModeResolution.source})`)
 
       if (runtimeSelection.kind === 'codex') {
+        const codexModelForRun = runtimeSelection.source === 'session'
+          ? runtimeSelection.model
+          : runtimeSelection.model ?? appSettings.agentCodexModelId
         await this.runWithCodexRuntime({
           sessionId,
           prompt: finalPrompt,
-          model: runtimeSelection.model ?? appSettings.agentCodexModelId ?? 'codex',
+          model: codexModelForRun,
           cwd: agentCwd ?? homedir(),
           permissionMode: initialPermissionMode,
           runtimeSelection,
@@ -1786,7 +1797,7 @@ export class AgentOrchestrator {
   private async runWithCodexRuntime(input: {
     sessionId: string
     prompt: string
-    model: string
+    model?: string
     cwd: string
     permissionMode: CodeInsightsPermissionMode
     runtimeSelection: AgentRuntimeSelection
@@ -1823,6 +1834,7 @@ export class AgentOrchestrator {
     let resultSubtype: string | undefined
     let completionError: string | undefined
     let lastEnvelope: AgentStreamEnvelope | undefined
+    let effectiveModel = normalizeCodexModelForPersistence(input.model)
 
     for await (const envelope of runtime.run(runInput)) {
       lastEnvelope = envelope
@@ -1836,7 +1848,10 @@ export class AgentOrchestrator {
       }
 
       appendAgentRuntimeEnvelope(envelopeToPersist)
-      this.persistCodexEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, input.model)
+      if (envelopeToPersist.event.type === 'run_started') {
+        effectiveModel = normalizeCodexModelForPersistence(envelopeToPersist.event.model) ?? effectiveModel
+      }
+      this.persistCodexEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, effectiveModel ?? 'Codex default')
 
       if (envelopeToPersist.event.type === 'sdk_session') {
         this.persistRuntimeSessionRef({
@@ -1844,7 +1859,7 @@ export class AgentOrchestrator {
           kind: 'codex',
           externalSessionId: envelopeToPersist.event.sdkSessionId,
           channelId: input.runtimeSelection.channelId,
-          model: input.model,
+          model: effectiveModel,
         })
       }
 

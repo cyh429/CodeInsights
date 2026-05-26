@@ -1,5 +1,56 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime Phase 7 计划
+
+范围确认：本轮只做 Phase 7 真实 Codex SDK / CLI 集成与指定验证；不混入 Phase 8 文档发布、发布说明、README.md / AGENTS.md 修改或长期维护。产品决策门禁沿用清单推荐值，不再等待确认。
+
+- [x] 复习 `AGENTS.md` 和 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short`、`git log -1 --oneline` 和 `git branch --show-current`，确认当前分支与工作树状态，不回滚任何用户改动。
+- [x] 读取开发清单“最新开发状态快照”、第 8 节 Phase 6 执行记录和第 9 节 Phase 7 范围。
+- [x] 确认 `@openai/codex-sdk` / `@openai/codex` 当前本地版本、官方 SDK 接口和可用平台 binary 包策略。
+- [x] 审计并修正 `apps/electron/package.json` 的 esbuild external，确保 Codex SDK / CLI 不被主进程打包吞掉。
+- [x] 审计 `apps/electron/electron-builder.yml` 的 files，确认 SDK、CLI 和平台 binary 包进入 packaged app。
+- [x] 确认 macOS arm64 binary 可解析，并记录 macOS x64 与 Windows x64 binary 策略。
+- [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 设计/执行真实 Agent Codex smoke：native auth、channel API key、workspace-write、read-only plan、stop、resume、history reload。
+- [x] 按当前真实支持情况记录 web search / MCP smoke 结果。
+- [x] 执行 Phase 7 推荐验证：`bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`。
+- [x] 打包后运行 Agent Codex smoke，记录 packaged app 结果。
+- [x] 在本节末尾追加 Review，更新开发清单 Phase 7 状态与验证证据，并按阶段纪律单独提交 Phase 7 成果。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 Review
+
+- 已将 Agent 服务里的 Codex runtime 从 Phase 5/6 mock 切到真实 `CodexAgentRuntime`，保留 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` feature flag。
+- 已确认本地依赖：`@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`；npm 最新为 `0.133.0`，本阶段未升级依赖，只验证当前锁定版本。
+- 已确认官方 TypeScript SDK 契约仍是 `@openai/codex-sdk`、`Codex().startThread()` / `resumeThread()` / streaming API；本地实现继续动态 import SDK。
+- 已确认 esbuild `build:main` / `watch:main` external 包含 `@openai/codex-sdk` 与 `@openai/codex`。
+- 已确认 `electron-builder.yml` files 包含 `@openai/codex-sdk`、`@openai/codex` 和 Codex 平台包；本机 Bun 仅安装并打包 `@openai/codex-darwin-arm64`，macOS x64 / Windows x64 依赖对应平台 runner 安装 optionalDependencies。
+- macOS arm64 binary 验证通过：本地与 packaged app 内 `codex` / `codex.js` 均输出 `codex-cli 0.130.0`。
+- 已新增 `apps/electron/scripts/agent-codex-smoke.ts` 和 `smoke:agent-codex` 脚本，默认使用隔离 `CODEINSIGHTS_CONFIG_DIR`、隔离 `CODEX_HOME` 和临时 workspace；支持 binary、native、api-key、workspace-write、readonly、stop、resume、web-search、MCP 记录；默认清理临时 auth 副本，保留产物需要显式 `--keep-artifacts`。
+- 已修复代码审查指出的 Codex resume 模型漂移风险：已绑定 Codex thread 只使用 session 绑定模型，不再回退当前全局设置；首次 `run_started` 会回填实际可持久化模型，`Codex default` 不伪造为模型 ID。
+- 已修复 Runner v2 stop 竞态下 abort 分支未 flush 已累计 assistant 消息的问题，并补充 runtime event 等待测试。
+- 已修复安全审查指出的 Agent Codex Git guard 绕过风险：真实运行前对 `repositoryRoot`、`workingDirectory` 和 `additionalDirectories` 内的 Git repo 建立快照，终态前校验并回滚真实 commit / refs / index / config 污染。
+- 已收紧 smoke 凭证处理：复制的 native `auth.json` 使用 `0600` 权限，正常和异常路径都会清理；`OPENAI_API_KEY` 只有显式 `--use-openai-api-key` 才会作为 API key smoke 输入。
+- 真实 smoke 结果：`binary.darwin-arm64` 通过；`stop.long-run` 通过，最终终态 `run_stopped`；`channel-api-key.readonly` 因未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key` 跳过。
+- 真实 native auth / readonly / workspace-write / resume / web-search 均实际创建 Codex thread，但本机 native auth 中的 OpenAI key 被后端返回 `401 invalid_api_key`，因此成功回答、写文件、resume 上下文和 web search 成功路径未能完成；readonly 文件在失败时保持未写入。
+- MCP 当前记录为 skipped：Phase 7 尚未把 CodeInsights workspace MCP 注入 Codex 原生配置。
+- 打包验证通过：`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast` 生成 `CodeInsights-0.0.110-arm64.dmg`；packaged app 启动 8 秒未退出，隔离配置目录初始化成功；存在非本阶段阻断的 icon 路径 warning。
+- 验证通过：`bun run typecheck`；`bun test --isolate`，600 pass / 0 fail；`bun run electron:build`；`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`；packaged app startup smoke；`git diff --check`（提交前重跑）。
+- 阶段边界：未修改根 `README.md` / `AGENTS.md`，未进入 Phase 8 发布文档或长期维护；真实成功路径残留阻塞是本机 Codex 凭证无效，需要有效 native auth 或 `CODEX_SMOKE_API_KEY` 后重跑 smoke。
+
+### Phase 7 安全审查整改
+
+- [x] 为 Agent Codex runtime 增加 Git 快照校验，覆盖绝对路径 `git` 绕过 PATH/env guard 后创建 commit、修改 refs、index 或 config 的场景。
+- [x] 收紧 `agent-codex-smoke.ts` 凭证处理：默认清理临时 auth 副本，保留产物需要显式 opt-in；复制 auth 后限制权限。
+- [x] 取消 smoke 默认读取 ambient `OPENAI_API_KEY`，改为 `CODEX_SMOKE_API_KEY` 优先，`OPENAI_API_KEY` 需要显式 opt-in。
+- [x] 针对整改重跑 Codex guard/runtime/smoke 相关测试、`bun run typecheck`、`bun test --isolate` 和 `git diff --check`。
+
+安全整改验证：
+
+- `bun test apps/electron/src/main/lib/codex-runtime/codex-command-guard.test.ts apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts` 通过，19 pass / 0 fail。
+- `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only binary` 通过，且 summary 不再输出 auth 目录路径。
+- `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 在未设置 `CODEX_SMOKE_API_KEY` 且未 opt-in `OPENAI_API_KEY` 时按预期 skipped。
+- 安全复审确认原 High / Medium / Critical 已关闭，无新的 Critical / High / Medium。
+
 ## 2026-05-25 Agent Codex Runtime Phase 5 后状态文档同步计划
 
 - [x] 检查当前工作树和最新提交，确认 Phase 5 已提交且文档同步从干净状态开始。

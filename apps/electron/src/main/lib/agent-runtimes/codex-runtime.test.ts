@@ -1,4 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import {
   validateAgentStreamEnvelope,
   type AgentRuntimeEvent,
@@ -21,6 +25,13 @@ import type {
 } from '../codex-runtime/codex-sdk-client'
 
 const createdAt = '2026-05-25T00:00:00.000Z'
+
+function git(repoRoot: string, args: string[]): string {
+  return execFileSync('git', ['-C', repoRoot, ...args], {
+    encoding: 'utf-8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  }).trim()
+}
 
 interface MockCodexRuntime {
   runtime: CodexAgentRuntime
@@ -256,6 +267,47 @@ describe('CodexAgentRuntime', () => {
       sdkSessionId: 'thread-existing',
       resumeFrom: 'thread-existing',
     })
+  })
+
+  test('Agent Git 快照拦截 Codex 运行期间创建的真实 commit', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-runtime-git-guard-'))
+    try {
+      git(repoRoot, ['init'])
+      git(repoRoot, ['config', 'user.email', 'codex-runtime@example.test'])
+      git(repoRoot, ['config', 'user.name', 'Codex Runtime'])
+      writeFileSync(join(repoRoot, 'tracked.txt'), 'before\n', 'utf-8')
+      git(repoRoot, ['add', 'tracked.txt'])
+      git(repoRoot, ['commit', '-m', 'initial'])
+      const initialHead = git(repoRoot, ['rev-parse', 'HEAD'])
+      const { runtime } = createMockRuntime(async function* () {
+        yield { type: 'thread.started', thread_id: 'thread-git-guard' }
+        writeFileSync(join(repoRoot, 'tracked.txt'), 'after\n', 'utf-8')
+        execFileSync('git', ['-C', repoRoot, 'add', 'tracked.txt'], { stdio: 'ignore' })
+        execFileSync('git', ['-C', repoRoot, 'commit', '-m', 'bypass guard'], { stdio: 'ignore' })
+        yield { type: 'turn.completed', usage: usage() }
+      })
+
+      const terminal = lastEvent(await collect(runtime.run({
+        sessionId: 'session-git-guard',
+        prompt: '尝试 commit',
+        model: 'gpt-5.1-codex',
+        workingDirectory: repoRoot,
+        repositoryRoot: repoRoot,
+        permissionMode: 'auto',
+      })))
+
+      expect(terminal).toMatchObject({
+        type: 'run_failed',
+        error: {
+          code: 'codex_git_guard_violation',
+        },
+      })
+      expect(git(repoRoot, ['rev-parse', 'HEAD'])).toBe(initialHead)
+      expect(git(repoRoot, ['diff', '--name-only', 'HEAD'])).toBe('tracked.txt')
+      expect(git(repoRoot, ['diff', '--cached', '--name-only'])).toBe('')
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
   })
 
   test('mock stream throw 映射 run_failed', async () => {

@@ -39,6 +39,7 @@ interface TodoTaskState {
 export interface CodexEventAdapterContext {
   sessionId: string
   runId: string
+  initialThreadId?: string
   source?: CodexEventSource
   createdAt?: () => string
   nextSequence?: () => number
@@ -65,7 +66,9 @@ export class CodexEventAdapter {
   private readonly outputByItemId = new Map<string, string>()
   private readonly todoTasks = new Map<string, TodoTaskState>()
 
-  constructor(private readonly context: CodexEventAdapterContext) {}
+  constructor(private readonly context: CodexEventAdapterContext) {
+    this.threadId = context.initialThreadId
+  }
 
   adapt(event: ThreadEvent): AgentStreamEnvelope[] {
     if (this.terminalWritten) return []
@@ -89,6 +92,9 @@ export class CodexEventAdapter {
       case 'turn.failed':
         return [createRunFailed('codex_turn_failed', 'Codex 回合执行失败', event.error.message)]
       case 'error':
+        if (isTransientCodexStreamError(event.message)) {
+          return this.adaptTransientStreamError(event.message)
+        }
         return [createRunFailed('codex_stream_error', 'Codex 流式事件失败', event.message)]
       case 'item.started':
         return this.adaptItem('started', event.item)
@@ -333,6 +339,17 @@ export class CodexEventAdapter {
     return events
   }
 
+  private adaptTransientStreamError(message: string): AgentRuntimeEvent[] {
+    return [
+      ...this.ensureTaskStarted('codex-stream-reconnect', 'Codex stream reconnect'),
+      {
+        type: 'agent_task_progress',
+        taskId: 'codex-stream-reconnect',
+        message,
+      },
+    ]
+  }
+
   private adaptErrorItem(phase: CodexEventPhase, item: ErrorItem): AgentRuntimeEvent[] {
     const events = this.ensureToolStarted(item.id, 'CodexError', item.message, 'normal')
     if (phase === 'completed') {
@@ -407,6 +424,10 @@ export class CodexEventAdapter {
     }
     return envelope
   }
+}
+
+function isTransientCodexStreamError(message: string): boolean {
+  return /^Reconnecting\.\.\.\s+\d+\/\d+/i.test(message.trim())
 }
 
 function updateTextMap(values: Map<string, string>, itemId: string, nextText: string): TextUpdate {

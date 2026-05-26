@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentMessage, AgentProviderAdapter, AgentQueryInput, AgentSendInput, SDKAssistantMessage, SDKMessage, SDKResultMessage } from '@codeinsights/shared'
+import type { AgentMessage, AgentProviderAdapter, AgentQueryInput, AgentRuntimeEvent, AgentSendInput, SDKAssistantMessage, SDKMessage, SDKResultMessage } from '@codeinsights/shared'
 import type { ClaudeAgentQueryOptions } from '../adapters/claude-agent-adapter'
 import type { AgentOrchestrator as AgentOrchestratorInstance, SessionCallbacks } from '../agent-orchestrator'
 
@@ -202,6 +202,14 @@ async function withImmediateTimers<T>(action: () => Promise<T>): Promise<T> {
   }
 }
 
+async function waitForRuntimeEventType(sessionId: string, type: AgentRuntimeEvent['type']): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    if (getAgentSessionRuntimeEvents(sessionId).some((event) => event.event.type === type)) return
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  }
+  throw new Error(`等待 Runtime 事件超时: ${type}`)
+}
+
 describe('AgentOrchestrator completion signal', () => {
   test('并发拒绝先发送错误，再用输入 startedAt 完成且不持久化消息', async () => {
     const input = createMissingChannelInput(1_001)
@@ -348,8 +356,7 @@ describe('AgentOrchestrator completion signal', () => {
 
     const runPromise = orchestrator.sendMessage(input, recorder.callbacks)
 
-    await Promise.resolve()
-    await Promise.resolve()
+    await waitForRuntimeEventType(input.sessionId, 'assistant_message')
     orchestrator.stop(input.sessionId)
     resolveStop?.()
     await runPromise
@@ -384,8 +391,7 @@ describe('AgentOrchestrator completion signal', () => {
 
     const runPromise = orchestrator.sendMessage(input, recorder.callbacks)
 
-    await Promise.resolve()
-    await Promise.resolve()
+    await waitForRuntimeEventType(input.sessionId, 'assistant_message')
     orchestrator.stop(input.sessionId)
     resolveStop?.()
     await runPromise

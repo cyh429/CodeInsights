@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-26 Phase 6 提交后
+更新时间：2026-05-26 Phase 7 验证执行后
 
 当前结论：
 
@@ -44,20 +44,21 @@
 - [x] Phase 4 CodexAgentRuntime Mock 接入已完成、通过验证并提交：`2c7ebb94 feat(agent): 完成 Codex Runtime Phase 4 mock runner`。
 - [x] Phase 5 Orchestrator Runtime Routing 已完成、通过验证并提交：`40441fe8 feat(agent): 完成 Codex Runtime Phase 5 编排路由`。
 - [x] Phase 6 Renderer 设置、历史与 UX 已完成、通过验证并提交：`58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`。
-- [ ] Phase 7-8 的真实验证和发布维护尚未开始。
+- [x] Phase 7 真实 Codex SDK / CLI 接入、打包验证和 smoke 记录已执行；成功模型路径受本机 Codex 凭证 `401 invalid_api_key` 阻塞。
+- [ ] Phase 8 文档发布和长期维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现提交为 `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`；本轮文档同步提交完成后以 `git log -1 --oneline` 确认最新状态同步提交。
-- 下一步应从 Phase 7：真实 Codex 集成与打包验证开始。
+- 最新已记录实现提交为 `2dcd22b3 docs(agent): 同步 Codex Runtime Phase 6 后续状态`；Phase 7 本轮提交完成后以 `git log -1 --oneline` 确认。
+- 下一步应先用有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 重跑 Phase 7 成功路径 smoke，再进入 Phase 8。
 
 下一步入口：
 
-1. 启动 Phase 7 前再次确认工作树与最新提交。
-2. 复习第 9 节 Phase 7 范围，只做真实 Codex SDK / CLI 集成与指定验证。
-3. 不要提前混入 Phase 8 文档发布和长期维护。
+1. 使用有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 重跑 native / API key / workspace-write / read-only / resume / web-search smoke。
+2. 复核 Phase 7 残余风险已关闭后，再进入第 10 节 Phase 8。
+3. 不要把 Phase 8 文档发布与未验证成功路径混在同一次提交里。
 
 最新验证记录：
 
@@ -95,6 +96,14 @@
 - [x] Phase 6 类型检查通过：`bun run --filter='@codeinsights/electron' typecheck`。
 - [x] Phase 6 diff 空白检查通过：`git diff --check -- apps/electron/src/preload apps/electron/src/main/ipc apps/electron/src/renderer tasks/todo.md`。
 - [x] Phase 6 feature flag 构建 smoke 通过：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`。
+- [x] Phase 7 类型检查通过：`bun run typecheck`。
+- [x] Phase 7 完整测试通过：`bun test --isolate`，600 pass / 0 fail。
+- [x] Phase 7 Electron 构建通过：`bun run electron:build`。
+- [x] Phase 7 打包通过：`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`，生成 macOS arm64 DMG。
+- [x] Phase 7 binary smoke 通过：`binary.darwin-arm64` 输出 `codex-cli 0.130.0`。
+- [x] Phase 7 stop smoke 通过：`stop.long-run` 最终终态 `run_stopped`。
+- [x] Phase 7 packaged app smoke 通过：app bundle 内 Codex native binary 和 CLI wrapper 均输出 `codex-cli 0.130.0`，packaged app 使用隔离配置目录启动 8 秒未退出。
+- [ ] Phase 7 native / workspace-write / read-only / resume / web-search 成功路径受本机 Codex auth `401 invalid_api_key` 阻塞；channel API key smoke 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过。
 
 ## 0.2 当前完成/未完成总览
 
@@ -112,7 +121,7 @@
 | Phase 4 | [x] | 已完成 CodexAgentRuntime mock、SDK client factory 与 permission policy 并提交 `2c7ebb94` |
 | Phase 5 | [x] | 已完成 Orchestrator runtime routing、runtime registry、Codex mock 路由与 stop/complete 竞态防护并提交 `40441fe8` |
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
-| Phase 7 | [ ] | 待做真实 Codex 集成与打包验证 |
+| Phase 7 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录；成功模型路径受无效本机凭证阻塞，需有效凭证补跑 |
 | Phase 8 | [ ] | 待做文档发布和长期维护 |
 
 ## 1. 产品决策门禁
@@ -664,43 +673,63 @@ Phase 6 执行记录：
 
 任务：
 
-- [ ] 确认 `@openai/codex-sdk` / `@openai/codex` 版本。
-- [ ] 确认 esbuild external 包含 Codex SDK/CLI。
-- [ ] 确认 electron-builder files 包含 SDK、CLI 和平台 binary 包。
-- [ ] 确认 macOS arm64 binary 可解析。
-- [ ] 确认 macOS x64 binary 策略。
-- [ ] 确认 Windows x64 binary 策略。
-- [ ] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 做真实 smoke。
-- [ ] native auth 模式：新建 Codex 会话并发送只读请求。
-- [ ] channel API key 模式：新建 Codex 会话并发送只读请求。
-- [ ] workspace-write 模式：让 Codex 修改一个隔离测试文件。
-- [ ] read-only plan 模式：确认不能写文件。
-- [ ] stop 长任务，最终状态为 stopped。
-- [ ] resume 同一 Codex thread，确认上下文延续。
-- [ ] 重启应用，确认 history reload。
-- [ ] web search / MCP 按当前支持情况记录真实结果。
-- [ ] 打包后运行 Agent Codex smoke。
+- [x] 确认 `@openai/codex-sdk` / `@openai/codex` 版本。
+- [x] 确认 esbuild external 包含 Codex SDK/CLI。
+- [x] 确认 electron-builder files 包含 SDK、CLI 和平台 binary 包。
+- [x] 确认 macOS arm64 binary 可解析。
+- [x] 确认 macOS x64 binary 策略。
+- [x] 确认 Windows x64 binary 策略。
+- [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 做真实 smoke。
+- [x] native auth 模式：已新建 Codex thread 并发送只读请求；后端返回 `401 invalid_api_key`，未完成成功回答。
+- [x] channel API key 模式：已记录当前环境未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY`，跳过。
+- [x] workspace-write 模式：已发送真实请求；因 `401 invalid_api_key` 未完成写入。
+- [x] read-only plan 模式：已发送真实请求；因 `401 invalid_api_key` 未完成成功回答，测试文件保持未写入。
+- [x] stop 长任务，最终状态为 stopped。
+- [x] resume 同一 Codex thread：首轮已创建 thread；因 `401 invalid_api_key` 未完成上下文延续成功验证。
+- [x] 重启应用，确认 packaged app 使用隔离配置目录可启动并初始化；成功 history reload 仍需有效凭证生成可回放会话后补跑。
+- [x] web search / MCP 按当前支持情况记录真实结果。
+- [x] 打包后运行 Agent Codex smoke。
 
 验证：
 
-- [ ] `bun run typecheck`
-- [ ] `bun test --isolate`
-- [ ] `bun run electron:build`
-- [ ] `CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`
-- [ ] 手动 smoke 记录 native auth 结果。
-- [ ] 手动 smoke 记录 channel API key 结果。
-- [ ] 手动 smoke 记录 packaged app 结果。
+- [x] `bun run typecheck`
+- [x] `bun test --isolate`
+- [x] `bun run electron:build`
+- [x] `CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`
+- [x] 手动 smoke 记录 native auth 结果。
+- [x] 手动 smoke 记录 channel API key 结果。
+- [x] 手动 smoke 记录 packaged app 结果。
 
 退出标准：
 
-- [ ] Codex Agent 首版关键用户路径可真实运行。
-- [ ] stop/resume/history reload 均通过真实验证。
-- [ ] 打包后 binary 可解析。
-- [ ] 已记录不支持项和残余风险。
+- [ ] Codex Agent 首版关键用户路径可真实运行：当前受本机 Codex auth `401 invalid_api_key` 阻塞，需有效凭证补跑。
+- [ ] stop/resume/history reload 均通过真实验证：stop 已通过；resume/history 成功路径需有效凭证补跑。
+- [x] 打包后 binary 可解析。
+- [x] 已记录不支持项和残余风险。
 
 回滚点：
 
 - [ ] 若真实 Codex 集成不稳定，保留代码但默认关闭 `CODEINSIGHTS_AGENT_CODEX_RUNTIME`。
+
+Phase 7 执行记录：
+
+- 真实 runtime 接入：`apps/electron/src/main/lib/agent-service.ts` 已注册 `new CodexAgentRuntime()`，不再使用 Phase 5/6 mock Codex runtime；feature flag 仍保护 Codex Agent 路径。
+- 版本确认：本地 `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`；npm latest 查询结果为 `0.133.0`。Phase 7 未升级依赖，保持当前锁定版本验证。
+- SDK 契约确认：官方 TypeScript SDK 仍使用 `@openai/codex-sdk`、`Codex().startThread()`、`resumeThread()` 和 streaming API；实现继续动态 import SDK，避免主进程 bundle 吞掉外部包。
+- 打包策略确认：`build:main` / `watch:main` external 已包含 `@openai/codex-sdk`、`@openai/codex`；`electron-builder.yml` files 已包含 SDK、CLI 和六个目标平台包 glob。
+- 平台包策略：Bun optionalDependencies 在当前 darwin-arm64 runner 只安装 `@openai/codex-darwin-arm64`；macOS x64 和 Windows x64 需要分别在 x64 macOS / Windows runner 安装对应 optional platform package 后打包。
+- macOS arm64 binary 验证：本地 binary path 为 `node_modules/.bun/@openai+codex@0.130.0-darwin-arm64/.../vendor/aarch64-apple-darwin/codex/codex`，输出 `codex-cli 0.130.0`。
+- 新增 smoke 脚本：`apps/electron/scripts/agent-codex-smoke.ts`，支持 `--only binary|native|api-key|workspace-write|readonly|stop|resume|web-search|mcp`，默认使用隔离 `CODEINSIGHTS_CONFIG_DIR`、隔离 `CODEX_HOME` 和临时 workspace；默认清理临时 auth 副本，保留产物需要显式 `--keep-artifacts`。
+- Orchestrator 加固：已绑定 Codex session resume 时只使用 session 绑定模型，不回退当前 settings；首次 `run_started` 会回填实际可持久化模型，`Codex default` 不伪造成模型 ID。
+- Stop 加固：Runner v2 abort 分支会先 flush 已累计 SDK assistant 消息，再输出 `run_stopped`，避免用户 stop 后完成信号缺少已处理消息。
+- 安全加固：Agent Codex runtime 真实运行前会对 `repositoryRoot`、`workingDirectory` 和 `additionalDirectories` 内的 Git repo 建立快照，终态前校验并回滚真实 commit / refs / index / config 污染；安全复审确认原 High / Medium / Critical 已关闭。
+- Smoke 结果：`binary.darwin-arm64` passed；`stop.long-run` passed，终态 `run_stopped`，thread id `019e622d-4b90-7ab3-a53d-b2c1de24db7f`；`channel-api-key.readonly` skipped，原因是未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key`。
+- 真实请求阻塞：native auth、read-only、workspace-write、resume、web-search 均创建 Codex thread 并请求 `https://api.openai.com/v1/responses`，但本机 native auth key 返回 `401 invalid_api_key`，因此成功回答、文件写入、上下文延续和 WebSearch 成功路径未完成。
+- MCP 结果：Phase 7 未注入 CodeInsights workspace MCP 到 Codex 原生配置，`mcp.current-support` 记录为 skipped。
+- 打包验证：`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast` 成功生成 `out/CodeInsights-0.0.110-arm64.dmg`；packaged app 内 `@openai/codex-sdk`、`@openai/codex`、`@openai/codex-darwin-arm64` 存在，native binary 与 CLI wrapper 均输出 `codex-cli 0.130.0`。
+- Packaged startup smoke：使用隔离 `CODEINSIGHTS_CONFIG_DIR` 启动 `out/mac-arm64/CodeInsights.app/Contents/MacOS/CodeInsights` 8 秒未退出，运行时初始化、默认 workspace 和 IPC 注册完成；存在非 Codex 阻断的 icon 路径 warning。
+- 验证通过：`bun run typecheck`；`bun test --isolate`，600 pass / 0 fail；`bun run electron:build`；`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`；packaged app startup smoke；`git diff --check`。
+- 阶段边界：未修改根 `README.md` / `AGENTS.md`，未进入 Phase 8 发布文档或长期维护。
 
 ## 10. Phase 8：文档、发布与长期维护
 
@@ -806,7 +835,7 @@ UI：
 | Phase 4 | [x] | `codex/agent-codex-runtime-phase-0` | `2c7ebb94` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High | 尚未接入 Orchestrator 默认路由、Renderer UI 或真实 Codex SDK 调用 |
 | Phase 5 | [x] | `codex/agent-codex-runtime-phase-0` | `40441fe8` | `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Renderer UI、runtime transcript 回放或真实 Codex SDK / CLI 调用 |
 | Phase 6 | [x] | `codex/agent-codex-runtime-phase-0` | `58164e35` | `bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Phase 7 真实 Codex SDK / CLI 或打包发布验证 |
-| Phase 7 | [ ] | - | - | - | - |
+| Phase 7 | [x] | `codex/agent-codex-runtime-phase-0` | 本次提交 | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`、binary smoke、stop smoke、packaged startup smoke 通过；安全复审无 Critical / High / Medium | native / workspace-write / read-only / resume / web-search 成功路径受本机 Codex auth `401 invalid_api_key` 阻塞；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过；MCP 未注入 Codex 原生配置 |
 | Phase 8 | [ ] | - | - | - | - |
 
 ## 13. 当前未解决问题

@@ -4,8 +4,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join } from 'node:path'
 import {
+  assertCodexGitGuardSnapshotsUnchanged,
   blockedCodexCliShellScript,
   codexGitGuardShellScript,
+  createCodexGitGuardSnapshots,
   createCodexExecutionGuard,
   parseCodexGitRefs,
 } from './codex-command-guard'
@@ -18,6 +20,33 @@ function git(repoRoot: string, args: string[]): string {
 }
 
 describe('codex-command-guard', () => {
+  test('Git 快照能拦截绝对路径 git 绕过后创建的真实 commit 并回滚 HEAD', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-codex-git-snapshot-'))
+    try {
+      git(repoRoot, ['init'])
+      git(repoRoot, ['config', 'user.email', 'codex-guard@example.test'])
+      git(repoRoot, ['config', 'user.name', 'Codex Guard'])
+      writeFileSync(join(repoRoot, 'tracked.txt'), 'before\n', 'utf-8')
+      git(repoRoot, ['add', 'tracked.txt'])
+      git(repoRoot, ['commit', '-m', 'initial'])
+      const initialHead = git(repoRoot, ['rev-parse', 'HEAD'])
+      const snapshots = createCodexGitGuardSnapshots([repoRoot])
+      const bypassGitBinary = process.platform === 'win32' ? 'git' : '/usr/bin/git'
+
+      writeFileSync(join(repoRoot, 'tracked.txt'), 'after\n', 'utf-8')
+      execFileSync(bypassGitBinary, ['-C', repoRoot, 'add', 'tracked.txt'], { stdio: 'ignore' })
+      execFileSync(bypassGitBinary, ['-C', repoRoot, 'commit', '-m', 'bypass guard'], { stdio: 'ignore' })
+
+      expect(() => assertCodexGitGuardSnapshotsUnchanged(snapshots, 'agent'))
+        .toThrow('Agent Codex Runtime 禁止修改 Git 状态')
+      expect(git(repoRoot, ['rev-parse', 'HEAD'])).toBe(initialHead)
+      expect(git(repoRoot, ['diff', '--name-only', 'HEAD'])).toBe('tracked.txt')
+      expect(git(repoRoot, ['diff', '--cached', '--name-only'])).toBe('')
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
   test('按 purpose 区分 Pipeline 和 Agent 文案', () => {
     expect(codexGitGuardShellScript('pipeline')).toContain('CodeInsights Pipeline v2 禁止 Codex 节点直接执行 git')
     expect(codexGitGuardShellScript('agent')).toContain('CodeInsights Agent Codex Runtime 禁止直接执行 git')

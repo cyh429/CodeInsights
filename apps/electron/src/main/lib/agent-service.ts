@@ -12,11 +12,9 @@
 
 import { join, dirname } from 'node:path'
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
-import { randomUUID } from 'node:crypto'
 import { BrowserWindow } from 'electron'
 import type { WebContents } from 'electron'
 import { AGENT_IPC_CHANNELS } from '@codeinsights/shared'
-import type { ThreadEvent } from '@openai/codex-sdk'
 import type {
   AgentSendInput,
   AgentGenerateTitleInput,
@@ -36,10 +34,6 @@ import { ElectronAgentChannel } from './agent-channel'
 import { ClaudeCodeRuntime } from './agent-runtimes/claude-code-runtime'
 import { CodexAgentRuntime } from './agent-runtimes/codex-runtime'
 import { CodingAgentRuntimeRegistry } from './agent-runtimes/coding-agent-runtime-registry'
-import type {
-  CodexSdkClientLike,
-  CodexSdkThreadLike,
-} from './codex-runtime/codex-sdk-client'
 
 // ===== 实例创建 =====
 
@@ -47,74 +41,11 @@ const eventBus = new AgentEventBus()
 const adapter = new ClaudeAgentAdapter()
 const runtimeRegistry = new CodingAgentRuntimeRegistry()
 runtimeRegistry.register(new ClaudeCodeRuntime(adapter))
-runtimeRegistry.register(createPhase5MockCodexRuntime())
+runtimeRegistry.register(new CodexAgentRuntime())
 const orchestrator = new AgentOrchestrator(adapter, eventBus, { runtimeRegistry })
 
 /** 导出 EventBus 供飞书 Bridge 等外部服务订阅事件 */
 export { eventBus as agentEventBus }
-
-function createPhase5MockCodexRuntime(): CodexAgentRuntime {
-  return new CodexAgentRuntime({
-    createCodexClient: async () => createMockCodexClient(),
-    resolveCodexRuntime: () => ({
-      model: 'codex-runtime-mock',
-    }),
-    buildCodexEnv: async () => ({
-      PATH: process.env.PATH ?? '/usr/bin',
-      CODEX_API_KEY: 'codeinsights-phase-5-mock',
-    }),
-    resolveCodexAuth: () => ({ kind: 'api_key' }),
-    createExecutionGuard: async (env) => ({
-      env,
-      cleanup: async () => {},
-    }),
-    resolveCodexCliPath: () => '/__codeinsights_phase5_mock__/codex',
-  })
-}
-
-function createMockCodexClient(): CodexSdkClientLike {
-  return {
-    startThread() {
-      return createMockCodexThread(`codex-mock-${randomUUID()}`, false)
-    },
-    resumeThread(id: string) {
-      return createMockCodexThread(id, true)
-    },
-  }
-}
-
-function createMockCodexThread(threadId: string, resumed: boolean): CodexSdkThreadLike {
-  return {
-    id: threadId,
-    async runStreamed() {
-      return { events: mockCodexRuntimeEvents(threadId, resumed) }
-    },
-  }
-}
-
-async function* mockCodexRuntimeEvents(threadId: string, resumed: boolean): AsyncGenerator<ThreadEvent> {
-  if (!resumed) {
-    yield { type: 'thread.started', thread_id: threadId }
-  }
-  yield { type: 'turn.started' }
-  yield {
-    type: 'item.completed',
-    item: {
-      id: `codex-mock-message-${threadId}`,
-      type: 'agent_message',
-      text: 'Codex Runtime mock 已接入 Orchestrator routing。真实 Codex SDK / CLI 集成将在后续 Phase 处理。',
-    },
-  }
-  yield {
-    type: 'turn.completed',
-    usage: {
-      input_tokens: 0,
-      cached_input_tokens: 0,
-      output_tokens: 0,
-      reasoning_output_tokens: 0,
-    },
-  }
-}
 
 /**
  * 会话 → webContents 映射

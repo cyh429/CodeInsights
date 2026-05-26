@@ -229,7 +229,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const codexRuntimeFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
   const isCodexRuntime = currentRuntimeKind === 'codex'
   const codexRuntimeUnavailable = isCodexRuntime && !codexRuntimeFeatureEnabled
-  const runtimeModelId = isCodexRuntime ? (agentCodexModelId?.trim() || 'codex') : (agentModelId || undefined)
+  const codexConfiguredModelId = agentCodexModelId?.trim() || undefined
+  const runtimeModelId = isCodexRuntime ? (codexConfiguredModelId ?? 'Codex default') : (agentModelId || undefined)
   // 从会话元数据派生 workspaceId：会话数据已加载时以自身为准，未加载时回退全局 atom
   const currentWorkspaceId = React.useMemo(() => {
     if (!sessionMeta) return globalWorkspaceId // 数据未加载，回退全局
@@ -442,7 +443,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const runtimeSendChannelId = isCodexRuntime
     ? (typeof agentCodexChannelId === 'string' ? agentCodexChannelId : CODEX_NATIVE_AUTH_SELECT_VALUE)
     : agentChannelId
-  const runtimeSendModelId = runtimeModelId
+  const runtimeSendModelId = isCodexRuntime ? codexConfiguredModelId : runtimeModelId
 
   // 监听消息刷新版本号
   const refreshVersion = useAtomValue(sessionMessageRefreshFamily(sessionId))

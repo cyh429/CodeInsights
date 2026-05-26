@@ -20,6 +20,9 @@ import {
 } from '../codex-runtime/codex-auth'
 import {
   createCodexExecutionGuard as defaultCreateCodexExecutionGuard,
+  assertCodexGitGuardSnapshotsUnchanged,
+  createCodexGitGuardSnapshots,
+  type CodexGitGuardSnapshot,
   type CodexCommandGuard,
   type CodexExecutionGuardPurpose,
 } from '../codex-runtime/codex-command-guard'
@@ -45,6 +48,7 @@ export type CodexAgentRuntimeErrorCode =
   | 'codex_auth_missing'
   | 'codex_binary_missing'
   | 'codex_channel_invalid'
+  | 'codex_git_guard_violation'
   | 'codex_stream_error'
   | 'codex_stream_ended_without_terminal'
   | 'codex_runtime_error'
@@ -91,6 +95,8 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
     let terminalWritten = false
     const seenSdkSessionIds = new Set<string>()
     let commandGuard: CodexCommandGuard | undefined
+    let gitGuardSnapshots: CodexGitGuardSnapshot[] = []
+    let gitGuardAsserted = false
 
     const nextSequence = (): number => {
       const sequence = nextSequenceValue
@@ -118,6 +124,13 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
     }
     const makeStoppedEnvelope = (): AgentStreamEnvelope | null =>
       makeEnvelope({ type: 'run_stopped', reason: 'user_abort', stoppedBy: 'user' }, 'runtime_service')
+    const assertGitGuardBeforeTerminal = (): void => {
+      if (gitGuardAsserted) return
+      gitGuardAsserted = true
+      assertCodexGitGuardSnapshotsUnchanged(gitGuardSnapshots, 'agent')
+    }
+    const makeGitGuardFailureEnvelope = (error: unknown): AgentStreamEnvelope | null =>
+      makeEnvelope(createRunFailedEventFromError(error), 'runtime_service')
 
     const onExternalAbort = (): void => {
       abortController.abort()
@@ -132,10 +145,11 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
 
     try {
       const runtime = await this.resolveCodexRuntime(input.channelId ?? undefined)
-      const model = input.model ?? runtime.model ?? 'codex'
+      const model = normalizeOptionalModel(input.model) ?? normalizeOptionalModel(runtime.model)
+      const displayModel = model ?? 'Codex default'
       const runStarted = makeEnvelope({
         type: 'run_started',
-        model,
+        model: displayModel,
         cwd: input.workingDirectory,
         permissionMode: input.permissionMode,
         runtimeHash: input.runtimeHash ?? 'codex-agent-runtime',
@@ -157,8 +171,14 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         input.repositoryRoot ?? input.workingDirectory,
         { auth, purpose: 'agent' },
       )
+      gitGuardSnapshots = createCodexGitGuardSnapshots([
+        input.repositoryRoot ?? input.workingDirectory,
+        input.workingDirectory,
+        ...(input.additionalDirectories ?? []),
+      ])
 
       if (abortController.signal.aborted) {
+        assertGitGuardBeforeTerminal()
         const stoppedEnvelope = makeStoppedEnvelope()
         if (stoppedEnvelope) yield stoppedEnvelope
         return
@@ -170,10 +190,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         baseUrl: runtime.baseUrl,
         env: buildCodexClientEnv(commandGuard.env, runtime),
       })
-      const threadOptions = buildCodexThreadOptions({
-        ...input,
-        model,
-      })
+      const threadOptions = buildCodexThreadOptions({ ...input, model })
       const thread = input.externalSessionId
         ? client.resumeThread(input.externalSessionId, threadOptions)
         : client.startThread(threadOptions)
@@ -188,6 +205,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
       }
 
       if (abortController.signal.aborted) {
+        assertGitGuardBeforeTerminal()
         const stoppedEnvelope = makeStoppedEnvelope()
         if (stoppedEnvelope) yield stoppedEnvelope
         return
@@ -196,6 +214,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
       const adapter = new CodexEventAdapter({
         sessionId: input.sessionId,
         runId,
+        initialThreadId: input.externalSessionId,
         nextSequence,
         createdAt: this.deps.now,
       })
@@ -204,6 +223,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         abortController.signal,
       )
       if (streamedResult.kind === 'aborted') {
+        assertGitGuardBeforeTerminal()
         const stoppedEnvelope = makeStoppedEnvelope()
         if (stoppedEnvelope) yield stoppedEnvelope
         return
@@ -214,6 +234,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         const nextResult = await raceWithAbort(() => iterator.next(), abortController.signal)
         if (nextResult.kind === 'aborted') {
           iterator.return?.(undefined as never).catch(() => {})
+          assertGitGuardBeforeTerminal()
           const stoppedEnvelope = makeStoppedEnvelope()
           if (stoppedEnvelope) yield stoppedEnvelope
           return
@@ -223,6 +244,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
 
         for (const envelope of adapter.adapt(event)) {
           if (abortController.signal.aborted) {
+            assertGitGuardBeforeTerminal()
             const stoppedEnvelope = makeStoppedEnvelope()
             if (stoppedEnvelope) yield stoppedEnvelope
             return
@@ -233,6 +255,13 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
           }
           if (isAgentRuntimeTerminalEvent(envelope.event)) {
             if (terminalWritten) continue
+            try {
+              assertGitGuardBeforeTerminal()
+            } catch (error) {
+              const failureEnvelope = makeGitGuardFailureEnvelope(error)
+              if (failureEnvelope) yield failureEnvelope
+              return
+            }
             terminalWritten = true
           }
           yield envelope
@@ -241,6 +270,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
       }
 
       if (!terminalWritten) {
+        assertGitGuardBeforeTerminal()
         const envelope = abortController.signal.aborted
           ? makeStoppedEnvelope()
           : makeEnvelope(createRunFailedEvent(
@@ -251,9 +281,17 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         if (envelope) yield envelope
       }
     } catch (error) {
-      const envelope = abortController.signal.aborted
+      let terminalError = error
+      if (!gitGuardAsserted) {
+        try {
+          assertGitGuardBeforeTerminal()
+        } catch (guardError) {
+          terminalError = guardError
+        }
+      }
+      const envelope = abortController.signal.aborted && terminalError === error
         ? makeStoppedEnvelope()
-        : makeEnvelope(createRunFailedEventFromError(error), 'runtime_service')
+        : makeEnvelope(createRunFailedEventFromError(terminalError), 'runtime_service')
       if (envelope) yield envelope
     } finally {
       input.abortSignal?.removeEventListener('abort', onExternalAbort)
@@ -320,7 +358,7 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
 }
 
 export function buildCodexThreadOptions(
-  input: CodexCodingAgentRuntimeRunInput & { model: string },
+  input: CodexCodingAgentRuntimeRunInput & { model?: string },
 ): ThreadOptions {
   const policy = resolveCodexPermissionPolicy(input.permissionMode, {
     networkAccessEnabled: input.networkAccessEnabled,
@@ -328,7 +366,7 @@ export function buildCodexThreadOptions(
     allowDangerFullAccess: input.allowDangerFullAccess,
   })
   return {
-    model: input.model,
+    ...(input.model ? { model: input.model } : {}),
     sandboxMode: policy.sandboxMode,
     workingDirectory: input.workingDirectory,
     skipGitRepoCheck: true,
@@ -338,6 +376,12 @@ export function buildCodexThreadOptions(
     approvalPolicy: policy.approvalPolicy,
     additionalDirectories: input.additionalDirectories,
   }
+}
+
+function normalizeOptionalModel(model: string | undefined): string | undefined {
+  const trimmed = model?.trim()
+  if (!trimmed || trimmed === 'codex') return undefined
+  return trimmed
 }
 
 function unsupportedCapability(capability: UnsupportedRuntimeCapability): UnsupportedRuntimeCapabilityResult {
@@ -420,6 +464,9 @@ function classifyCodexRuntimeErrorCode(message: string): CodexAgentRuntimeErrorC
   ) {
     return 'codex_channel_invalid'
   }
+  if (message.includes('Agent Codex Runtime 禁止修改 Git 状态')) {
+    return 'codex_git_guard_violation'
+  }
   if (message.includes('without a terminal event')) {
     return 'codex_stream_ended_without_terminal'
   }
@@ -434,6 +481,8 @@ function titleForCodexRuntimeErrorCode(code: CodexAgentRuntimeErrorCode): string
       return 'Codex CLI 不可用'
     case 'codex_channel_invalid':
       return 'Codex 渠道不可用'
+    case 'codex_git_guard_violation':
+      return 'Codex Git 防护拦截'
     case 'codex_stream_ended_without_terminal':
       return 'Codex 流式事件异常结束'
     case 'codex_stream_error':

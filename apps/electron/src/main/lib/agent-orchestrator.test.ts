@@ -202,6 +202,45 @@ describe('AgentOrchestrator Codex runtime routing', () => {
     ])
   })
 
+  test('已绑定 Codex session resume 不回退当前设置模型', async () => {
+    process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionMeta, updateAgentSessionMeta } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({
+      agentRuntimeKind: 'codex',
+      agentCodexModelId: 'new-settings-model',
+    })
+    const session = createAgentSession('Codex 已绑定会话')
+    updateAgentSessionMeta(session.id, {
+      runtimeKind: 'codex',
+      runtimeSession: {
+        kind: 'codex',
+        externalSessionId: 'codex-thread-existing',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const runModels: Array<string | undefined> = []
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeCodexRuntime([
+      { type: 'run_started', model: 'Codex default' },
+      { type: 'sdk_session', id: 'codex-thread-existing' },
+      { type: 'run_completed' },
+    ], undefined, (input) => runModels.push(input.model)))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: () => {},
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(runModels).toEqual([undefined])
+    expect(getAgentSessionMeta(session.id)?.runtimeSession?.model).toBeUndefined()
+  })
+
   test('stop 后 Codex runtime 的 late run_completed 不会落入 event log', async () => {
     process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
@@ -263,7 +302,7 @@ function createUnusedAdapter(): AgentProviderAdapter {
 }
 
 type FakeCodexStep =
-  | { type: 'run_started' }
+  | { type: 'run_started'; model?: string }
   | { type: 'sdk_session'; id: string }
   | { type: 'assistant_message' }
   | { type: 'run_completed' }
@@ -272,11 +311,13 @@ type FakeCodexStep =
 function createFakeCodexRuntime(
   steps: FakeCodexStep[],
   afterSdkSession?: () => void,
+  onRun?: (input: CodingAgentRuntimeRunInput) => void,
 ): CodingAgentRuntime {
   return {
     kind: 'codex',
     getCapabilities: () => codexCapabilities(),
     run: async function* (input: CodingAgentRuntimeRunInput): AsyncIterable<AgentStreamEnvelope> {
+      onRun?.(input)
       let sequence = 0
       const nextEnvelope = (event: AgentStreamEnvelope['event']): AgentStreamEnvelope => createAgentStreamEnvelope({
         sessionId: input.sessionId,
@@ -291,7 +332,7 @@ function createFakeCodexRuntime(
         if (step.type === 'run_started') {
           yield nextEnvelope({
             type: 'run_started',
-            model: input.model ?? 'codex-mock-model',
+            model: step.model ?? input.model ?? 'codex-mock-model',
             cwd: input.workingDirectory,
             permissionMode: input.permissionMode,
             runtimeHash: 'codex-test',

@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { delimiter, join } from 'node:path'
+import { delimiter, join, resolve } from 'node:path'
 import type { CodexAuthState } from './codex-auth'
 import { buildInternalGitEnv } from './codex-env'
 
@@ -15,6 +16,17 @@ export interface CodexCommandGuard {
 export interface CodexCommandGuardOptions {
   auth: CodexAuthState
   purpose?: CodexExecutionGuardPurpose
+}
+
+export interface CodexGitGuardSnapshot {
+  repositoryRoot: string
+  headCommit: string
+  refs: string
+  stagedStatus: string
+  dirtyPaths: string[]
+  configPath: string
+  configExists: boolean
+  configContent: string
 }
 
 export function runCodexGuardedGitOrNull(repositoryRoot: string, args: string[]): string | null {
@@ -50,6 +62,155 @@ export function parseCodexGitRefs(output: string): Map<string, string> {
       refs.set(refName, objectName)
     })
   return refs
+}
+
+export function createCodexGitGuardSnapshots(paths: Array<string | undefined>): CodexGitGuardSnapshot[] {
+  const snapshots: CodexGitGuardSnapshot[] = []
+  const seenRoots = new Set<string>()
+
+  for (const path of paths) {
+    if (!path) continue
+    const snapshot = createCodexGitGuardSnapshot(path)
+    if (!snapshot || seenRoots.has(snapshot.repositoryRoot)) continue
+    seenRoots.add(snapshot.repositoryRoot)
+    snapshots.push(snapshot)
+  }
+
+  return snapshots
+}
+
+export function createCodexGitGuardSnapshot(path: string): CodexGitGuardSnapshot | null {
+  const repositoryRoot = runCodexGuardedGitOrNull(path, ['rev-parse', '--show-toplevel'])
+  if (!repositoryRoot) return null
+
+  const headCommit = runCodexGuardedGitOrNull(repositoryRoot, ['rev-parse', 'HEAD'])
+  if (!headCommit) return null
+
+  return {
+    repositoryRoot,
+    headCommit,
+    refs: runCodexGuardedGitOrNull(repositoryRoot, [
+      'for-each-ref',
+      '--format=%(refname):%(objectname)',
+      'refs',
+    ]) ?? '',
+    stagedStatus: readCodexGitStagedStatus(repositoryRoot),
+    dirtyPaths: readCodexGitDirtyPaths(repositoryRoot),
+    ...readCodexGitConfigSnapshot(repositoryRoot),
+  }
+}
+
+export function assertCodexGitGuardSnapshotsUnchanged(
+  snapshots: CodexGitGuardSnapshot[],
+  purpose: CodexExecutionGuardPurpose = 'pipeline',
+): void {
+  const violations = snapshots.flatMap((snapshot) => assertCodexGitGuardSnapshotUnchanged(snapshot))
+  if (violations.length > 0) {
+    throw new Error(`${codexGuardName(purpose)} 禁止修改 Git 状态：${violations.join('、')}`)
+  }
+}
+
+function assertCodexGitGuardSnapshotUnchanged(snapshot: CodexGitGuardSnapshot): string[] {
+  const violations: string[] = []
+  const currentHead = runCodexGuardedGitOrNull(snapshot.repositoryRoot, ['rev-parse', 'HEAD'])
+  if (!currentHead) {
+    violations.push(`${snapshot.repositoryRoot} 读取 Git HEAD 失败`)
+  } else if (currentHead !== snapshot.headCommit) {
+    runCodexGuardedGitOrNull(snapshot.repositoryRoot, ['reset', '--soft', snapshot.headCommit])
+    violations.push(`${snapshot.repositoryRoot} 创建真实 Git commit`)
+  }
+
+  const currentRefsOutput = runCodexGuardedGitOrNull(snapshot.repositoryRoot, [
+    'for-each-ref',
+    '--format=%(refname):%(objectname)',
+    'refs',
+  ]) ?? ''
+  if (currentRefsOutput !== snapshot.refs) {
+    restoreCodexGitRefs(snapshot, currentRefsOutput)
+    violations.push(`${snapshot.repositoryRoot} 修改 Git refs`)
+  }
+
+  const currentStagedStatus = readCodexGitStagedStatus(snapshot.repositoryRoot)
+  if (currentStagedStatus !== snapshot.stagedStatus) {
+    if (!snapshot.stagedStatus.trim()) {
+      runCodexGuardedGitOrNull(snapshot.repositoryRoot, ['reset', '-q'])
+    }
+    violations.push(`${snapshot.repositoryRoot} 修改 Git index`)
+  }
+
+  const currentConfigExists = existsSync(snapshot.configPath)
+  const currentConfigContent = currentConfigExists ? readFileSync(snapshot.configPath, 'utf-8') : ''
+  if (currentConfigExists !== snapshot.configExists || currentConfigContent !== snapshot.configContent) {
+    if (snapshot.configExists) {
+      writeFileSync(snapshot.configPath, snapshot.configContent, 'utf-8')
+    } else {
+      rmSync(snapshot.configPath, { force: true })
+    }
+    violations.push(`${snapshot.repositoryRoot} 修改 Git config`)
+  }
+
+  const currentDirtyPaths = readCodexGitDirtyPaths(snapshot.repositoryRoot)
+  if (snapshot.dirtyPaths.length > 0 && currentDirtyPaths.length === 0) {
+    violations.push(`${snapshot.repositoryRoot} 丢弃工作区补丁`)
+  }
+
+  return violations
+}
+
+function restoreCodexGitRefs(snapshot: CodexGitGuardSnapshot, currentRefsOutput: string): void {
+  const expectedRefs = parseCodexGitRefs(snapshot.refs)
+  const currentRefs = parseCodexGitRefs(currentRefsOutput)
+  for (const [refName] of currentRefs) {
+    if (!expectedRefs.has(refName)) {
+      runCodexGuardedGitOrNull(snapshot.repositoryRoot, ['update-ref', '-d', refName])
+    }
+  }
+  for (const [refName, objectName] of expectedRefs) {
+    if (currentRefs.get(refName) !== objectName) {
+      runCodexGuardedGitOrNull(snapshot.repositoryRoot, ['update-ref', refName, objectName])
+    }
+  }
+}
+
+function readCodexGitConfigSnapshot(
+  repositoryRoot: string,
+): Pick<CodexGitGuardSnapshot, 'configPath' | 'configExists' | 'configContent'> {
+  const configPathRaw = runCodexGuardedGitOrNull(repositoryRoot, ['rev-parse', '--git-path', 'config']) ?? '.git/config'
+  const configPath = resolve(repositoryRoot, configPathRaw)
+  const configExists = existsSync(configPath)
+  return {
+    configPath,
+    configExists,
+    configContent: configExists ? readFileSync(configPath, 'utf-8') : '',
+  }
+}
+
+function readCodexGitStagedStatus(repositoryRoot: string): string {
+  return runCodexGuardedGitOrNull(repositoryRoot, [
+    'diff',
+    '--cached',
+    '--name-status',
+    '--',
+    '.',
+  ]) ?? ''
+}
+
+function readCodexGitDirtyPaths(repositoryRoot: string): string[] {
+  const output = runCodexGuardedGitOrNull(repositoryRoot, [
+    'diff',
+    '--name-only',
+    'HEAD',
+    '--',
+    '.',
+  ]) ?? ''
+  return output.split('\n')
+    .map((line) => line.trim().replace(/\\/g, '/'))
+    .filter(Boolean)
+    .sort()
+}
+
+function codexGuardName(purpose: CodexExecutionGuardPurpose): string {
+  return purpose === 'agent' ? 'Agent Codex Runtime' : 'Pipeline v2 Codex 节点'
 }
 
 function codexGuardMessage(
