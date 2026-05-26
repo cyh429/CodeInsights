@@ -29,11 +29,13 @@
   - `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`
   - `7d864d16 docs(agent): 同步 Codex Runtime Phase 7 后续状态`
   - `a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`
-  - 本轮最新状态固化提交完成后以 `git log -1 --oneline` 为准
+  - `4e210364 docs(agent): 固化 Codex Runtime 最新开发状态`
+  - `1ebde36e docs(agent): 同步 Codex Runtime Phase 7 再次补跑状态`
+  - `a439d541 test(agent): 修正 Codex native smoke 中转配置`
 - 已补跑通过：修正 native smoke 隔离逻辑后会复制 `~/.codex/config.toml` 中的中转 API 配置，并尊重其中 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 成功路径均已通过真实 smoke。
 - 未完成 / 阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；history reload 仍需 Electron/packaged app 重开 UI 独立验证；MCP 仍未注入 Codex 原生配置；Phase 8 文档发布维护尚未开始。
 - 下一步：先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke 和 history reload 独立验证；残余项关闭后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
-- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
+- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交标题为 `test(agent): 修正 Codex native smoke 中转配置` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位
 

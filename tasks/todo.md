@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime 最新状态固化计划
+
+范围确认：本轮只把最新提交 `a439d541`、Phase 7 已完成/未完成项和下次启动提示词固化到 Codex support 文档；不修改根 `README.md` / `AGENTS.md`，不处理 `apps/electron/out/`。
+
+- [x] 确认当前工作树状态：仅 `apps/electron/out/` 未跟踪，最新提交为 `a439d541 test(agent): 修正 Codex native smoke 中转配置`。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：将 `a439d541` 写入最新状态快照、仓库状态要求、Phase 7 记录和阶段提交表。
+- [x] 更新 `docs/codex-support/README.md`：同步最新提交列表、已完成/未完成范围和下次启动检查。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的最新延续提示词。
+- [x] 运行文档 code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 在本节末尾追加 Review，并按阶段纪律提交本轮文档状态固化。
+
+## 2026-05-26 Agent Codex Runtime 最新状态固化 Review
+
+- 已确认当前 HEAD：`a439d541 test(agent): 修正 Codex native smoke 中转配置`；工作树仅有 `apps/electron/out/` 未跟踪。
+- 已更新开发清单：最新状态快照明确 Phase 7 native / read-only / workspace-write / resume / web-search 已通过，channel API key、history reload、MCP 和 Phase 8 仍未完成；下次启动预期最新提交改为 `a439d541` 或后续状态同步提交。
+- 已更新 docs index：提交列表加入 `4e210364`、`1ebde36e`、`a439d541`，下一步改为先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke 与 history reload 独立验证。
+- 已更新 next-session prompt：可直接复制给下次 Codex，从当前进度继续开发。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime native config 修正计划
 
 范围确认：用户指出当前主机 Codex native auth 使用 `config.toml` 配置中转 API。本轮修正 Phase 7 smoke 隔离逻辑，让 native auth 补跑复制同源 `config.toml`，避免隔离环境丢失 `model_provider` / `base_url` 后误判。不修改根 `README.md` / `AGENTS.md`，不默认提交 `apps/electron/out/`。
