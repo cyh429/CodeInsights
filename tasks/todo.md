@@ -3554,3 +3554,21 @@ Phase 8 禁止事项：
 - 验证通过：`git diff --check -- apps/electron/package.json apps/electron/scripts/agent-codex-smoke.ts apps/electron/src/main/lib/agent-orchestrator.ts apps/electron/src/main/lib/agent-orchestrator.test.ts apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime bun.lock tasks/todo.md`。
 - 代码复审通过：`code-reviewer` 确认上一轮 `codexConfigEnv` 覆盖 Git guard / 运行环境的 Block 已关闭，本轮无 Critical / High / Medium findings。
 - 阶段边界：未修改根 `README.md` / `AGENTS.md`，未默认 stage `apps/electron/out/`，未进入 Phase 8 文档发布维护。
+
+## 2026-05-26 Agent Codex Runtime 最新开发状态文档同步计划
+
+范围确认：本轮只把最新提交 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`、Phase 7 已完成/未完成项和下次启动提示词同步到 Codex support 文档；不修改根 `README.md` / `AGENTS.md`，不处理未跟踪 `apps/electron/out/` 打包产物。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前仅 `apps/electron/out/` 未跟踪，最新提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`。
+- [x] 更新 `docs/codex-support/README.md`：最新提交列表加入 `dae13cd7`，下次启动检查改为确认该提交或其后的状态同步提交。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：状态栏、最新快照、仓库状态要求、完成/未完成总览和阶段提交表均落到 `dae13cd7`。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：提示词明确 Phase 7 workspace MCP 注入已提交 `dae13cd7`，下一步先处理 `CODEX_SMOKE_API_KEY` channel smoke，之后进入 Phase 8。
+- [x] 运行 Markdown fence/link 检查和 `git diff --check`。
+- [x] 提交本轮文档状态同步改动，并在本节追加 Review。
+
+## 2026-05-26 Agent Codex Runtime 最新开发状态文档同步 Review
+
+- 已同步最新实现提交：`dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`。
+- 已明确当前完成状态：Phase 0-6 完成；Phase 7 真实 Codex runtime、打包验证、native/read-only/workspace-write/resume/web-search/stop、history reload UI smoke 和 workspace MCP 注入均完成；channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` 阻塞；Phase 8 未开始。
+- 已更新下次启动提示词：新会话应先检查 `git status --short` / `git log -3 --oneline`，确认 `apps/electron/out/` 不纳入提交；若提供 `CODEX_SMOKE_API_KEY` 才补跑 channel API key smoke，否则保持阻塞并进入 Phase 8 前不要伪造通过。
+- 验证通过：Codex support Markdown code fence / relative link check；`git diff --check -- docs/codex-support tasks/todo.md`。
