@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-25 Phase 6 完成后
+更新时间：2026-05-26 Phase 6 提交后
 
 当前结论：
 
@@ -43,14 +43,14 @@
 - [x] Phase 3 Codex Event Adapter 已完成、通过验证并提交：`98914a42 feat(agent): 完成 Codex Runtime Phase 3 事件适配`。
 - [x] Phase 4 CodexAgentRuntime Mock 接入已完成、通过验证并提交：`2c7ebb94 feat(agent): 完成 Codex Runtime Phase 4 mock runner`。
 - [x] Phase 5 Orchestrator Runtime Routing 已完成、通过验证并提交：`40441fe8 feat(agent): 完成 Codex Runtime Phase 5 编排路由`。
-- [x] Phase 6 Renderer 设置、历史与 UX 已完成、通过验证，阶段提交随本轮落地。
+- [x] Phase 6 Renderer 设置、历史与 UX 已完成、通过验证并提交：`58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`。
 - [ ] Phase 7-8 的真实验证和发布维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现提交为 `40441fe8 feat(agent): 完成 Codex Runtime Phase 5 编排路由`；Phase 6 阶段提交以本轮 `git log -1 --oneline` 为准。
+- 最新已记录实现提交为 `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`；本轮文档同步提交完成后以 `git log -1 --oneline` 确认最新状态同步提交。
 - 下一步应从 Phase 7：真实 Codex 集成与打包验证开始。
 
 下一步入口：
@@ -103,7 +103,7 @@
 | 需求理解 | [x] | 已确认 Codex 是 Coding Agent Runtime，不是普通 Provider |
 | 主方案 | [x] | 已覆盖架构、契约、事件、auth/env、权限、UI、测试、回滚 |
 | 开发清单 | [x] | 已拆 Phase 0-8，支持后续逐阶段打勾推进 |
-| 下次启动提示词 | [x] | 当前仍需后续同步为 Phase 7 启动入口 |
+| 下次启动提示词 | [x] | 已同步为 Phase 7 启动入口 |
 | 产品决策 | [x] | 用户已确认采用第 1 节推荐值；后续无需再次询问同一门禁 |
 | Phase 0 | [x] | 基线冻结和验证已完成，未开始功能改动 |
 | Phase 1 | [x] | 已完成 shared/settings/session 契约并提交 `6127b46c` |
@@ -641,6 +641,7 @@ Phase 6 执行记录：
 - 代码审查发现新建未运行 session 会因默认 `runtimeKind: 'claude-code'` 被 Renderer 误判为 Claude；已修复为未运行会话跟随当前 default runtime，只有 `runtimeSession`、明确 `runtimeKind: 'codex'` 或 legacy `sdkSessionId` 形成绑定。
 - runtime transcript selector 已改为保留 JSONL / live append 顺序，并补充多轮同时间戳测试，避免按 runId / createdAt 重排导致用户消息错配。
 - 版本更新：`@codeinsights/electron` 升至 `0.0.109`，`@codeinsights/shared` 升至 `0.1.45`。
+- 阶段提交：`58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`。
 - 验证通过：`bun test apps/electron/src/renderer`，127 pass / 0 fail；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`，7 pass / 0 fail；`bun test packages/shared`，36 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/preload apps/electron/src/main/ipc apps/electron/src/main/lib apps/electron/src/renderer packages/shared tasks/todo.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`。
 - 补充验证：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`；现有 5173 dev server 未携带 feature flag 时，Agent 配置页未出现 `Agent Runtime`。
 - 阶段边界：未接入 Phase 7 真实 Codex SDK / CLI，未做打包发布验证，未修改根 `README.md` 或 `AGENTS.md`。
@@ -804,7 +805,7 @@ UI：
 | Phase 3 | [x] | `codex/agent-codex-runtime-phase-0` | `98914a42` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查无 Critical / High findings | Adapter 尚未接入 runtime，失败可独立回滚；未做真实 Codex SDK 调用 |
 | Phase 4 | [x] | `codex/agent-codex-runtime-phase-0` | `2c7ebb94` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High | 尚未接入 Orchestrator 默认路由、Renderer UI 或真实 Codex SDK 调用 |
 | Phase 5 | [x] | `codex/agent-codex-runtime-phase-0` | `40441fe8` | `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Renderer UI、runtime transcript 回放或真实 Codex SDK / CLI 调用 |
-| Phase 6 | [x] | `codex/agent-codex-runtime-phase-0` | 本轮阶段提交 | `bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Phase 7 真实 Codex SDK / CLI 或打包发布验证 |
+| Phase 6 | [x] | `codex/agent-codex-runtime-phase-0` | `58164e35` | `bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Phase 7 真实 Codex SDK / CLI 或打包发布验证 |
 | Phase 7 | [ ] | - | - | - | - |
 | Phase 8 | [ ] | - | - | - | - |
 

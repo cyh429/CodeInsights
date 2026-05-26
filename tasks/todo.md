@@ -3267,3 +3267,21 @@ Phase 8 禁止事项：
 - 验证通过：`bun test apps/electron/src/renderer`，127 pass / 0 fail；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`，7 pass / 0 fail；`bun test packages/shared`，36 pass / 0 fail；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/preload apps/electron/src/main/ipc apps/electron/src/main/lib apps/electron/src/renderer packages/shared tasks/todo.md docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`。
 - 补充验证：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer` 通过；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer` 通过；现有 5173 dev server 未携带 feature flag 时，Agent 配置页未出现 `Agent Runtime`。
 - 阶段边界：未接入真实 Codex SDK / CLI，未做打包发布验证，未修改根 `README.md` 或 `AGENTS.md`；Codex 仍走 Phase 4 mock runtime。
+
+## 2026-05-26 Agent Codex Runtime Phase 6 后状态文档同步计划
+
+- [x] 复查当前工作树和最新提交，确认 Phase 6 已提交为 `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`，且不回滚任何用户改动。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`，明确 Phase 0-6 已完成、Phase 7-8 未完成，下一步从 Phase 7 真实 Codex 集成与打包验证开始。
+- [x] 更新 `docs/codex-support/README.md`，同步最新提交列表、未完成项和下一步入口。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`，让下次启动提示词直接从 Phase 7 继续。
+- [x] 运行文档状态扫描和 `git diff --check -- docs/codex-support tasks/todo.md`。
+- [x] 提交本轮文档状态同步改动，并在本节追加 Review。
+
+## 2026-05-26 Agent Codex Runtime Phase 6 后状态文档同步 Review
+
+- 已确认启动时工作树干净，最新实现提交为 `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`。
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：最新快照、完成/未完成总览、Phase 6 执行记录和阶段提交表均明确 Phase 0-6 已完成，Phase 7-8 尚未完成，下一步为 Phase 7 真实 Codex 集成与打包验证。
+- 已更新 `docs/codex-support/README.md`：最新状态加入 Phase 6 提交，未完成项改为 Phase 7-8。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 7 入口，要求先读清单第 8 节 Phase 6 和第 9 节 Phase 7，并明确不混入 Phase 8。
+- 验证通过：Codex support Markdown code fence 检查；旧 Phase 6 待启动状态短语扫描；`git diff --check -- docs/codex-support tasks/todo.md`。
+- 本轮只修改文档和任务记录，未修改根 `README.md` 或 `AGENTS.md`，未进入 Phase 7 真实 Codex SDK / CLI 集成。
