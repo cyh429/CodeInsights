@@ -1,5 +1,26 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent Codex Runtime Phase 8 文档发布与长期维护计划
+
+范围确认：本轮直接进入 Phase 8 文档、故障排查、发布说明和长期维护记录；`CODEX_SMOKE_API_KEY` channel API key smoke 继续暂缓，不主动补跑，不读取 ambient `OPENAI_API_KEY`。不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物；用户已要求不再等待确认，计划写入后直接执行。
+
+- [x] 复习 `AGENTS.md`、`tasks/lessons.md` 和开发清单中的阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认最新提交为 `2cd195b1 docs(agent): 暂缓 Codex API key smoke`，当前仅有未跟踪 `apps/electron/out/`。
+- [x] 读取开发清单“最新开发状态快照”、第 9 节 Phase 7、第 10 节 Phase 8 和第 13 节当前未解决问题。
+- [x] 回填主方案中与 Phase 7 实际实现不一致的地方，补充真实 runtime、packaged smoke、MCP 注入和 API key smoke 暂缓边界。
+- [x] 更新开发清单 Phase 8：同步阶段状态、真实 smoke test 记录、SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
+- [x] 更新 `docs/codex-support/README.md` 和 `docs/codex-support/next-session-prompt.md`，让下次启动入口进入 Phase 8 后续维护而不是 API key smoke。
+- [x] 运行 Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 在本节追加 Review，并按阶段纪律提交 Phase 8 文档成果。
+
+## 2026-05-27 Agent Codex Runtime Phase 8 文档发布与长期维护 Review
+
+- 已更新主方案：状态从设计方案同步为 Phase 8 实现状态，回填 runtime registry、CodexAgentRuntime、runtime events 历史、feature flag、workspace MCP 注入、真实 smoke 和 channel API key smoke 暂缓边界。
+- 已更新开发清单：Phase 8 标记完成，补充真实 smoke test 记录、SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
+- 已更新 support README 和 next-session prompt：最新基线同步到 `2cd195b1 docs(agent): 暂缓 Codex API key smoke` 后状态，下次启动入口改为 Phase 8 后续维护，不再优先补跑 API key smoke。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未读取 ambient `OPENAI_API_KEY`，未补跑 `CODEX_SMOKE_API_KEY`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；docs 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-27 Agent Codex Runtime 暂缓 API Key Smoke 提示词更新计划
 
 范围确认：用户明确要求暂时不做 `CODEX_SMOKE_API_KEY` channel API key smoke 的“有凭证则补跑 / 无凭证则记录阻塞”两项。本轮只更新 Codex support 文档和下次启动提示词，把该 smoke 标为暂缓项，不再作为下次启动优先级或 Phase 8 启动阻塞；不修改根 `README.md` / `AGENTS.md`，不提交 `apps/electron/out/` 打包产物。

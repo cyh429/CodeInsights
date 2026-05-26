@@ -1,13 +1,27 @@
 # Agent 模式 Codex Runtime 接入开发方案
 
-状态：设计方案
+状态：Phase 8 文档同步
 日期：2026-05-25
-最近更新：2026-05-25 二次细化
+最近更新：2026-05-27 Phase 8 实现状态回填
 目标目录：`docs/codex-support/`
+
+## 0. 当前实现状态快照
+
+截至 2026-05-27，Agent 模式 Codex Runtime 的 Phase 0-7 主体实现、真实 runtime 接入、打包验证和成功路径 smoke 已完成。当前文档从原始设计方案升级为实现对照文档：保留方案推理，同时记录已经落地的实现差异、验证证据和长期维护入口。
+
+已落地的关键状态：
+
+- Agent 主进程已注册 `CodexAgentRuntime`，通过 `CodingAgentRuntimeRegistry` 在 Claude Code 与 Codex 之间选择 runtime；`CODEINSIGHTS_AGENT_CODEX_RUNTIME` 继续作为显式 feature flag 边界。
+- Codex runtime 使用 `@openai/codex-sdk@0.130.0` / `@openai/codex@0.130.0`，真实运行走 `runStreamed()`，并把 Codex `ThreadEvent` 映射到 CodeInsights runtime events。
+- Renderer 已接入 Agent runtime 设置、Codex auth/model/reasoning/network/web-search 配置、runtime badge 和 Codex runtime transcript 历史回放。
+- Phase 7 已验证 native / read-only / workspace-write / resume / web-search / stop / packaged startup / packaged history reload / MCP config injection。
+- CodeInsights workspace stdio/http MCP 已安全映射到 Codex 原生 `mcp_servers` 配置；secret 只通过 Codex 子进程 env 间接注入，不进入 SDK `--config` argv。
+- `CODEX_SMOKE_API_KEY` channel API key smoke 暂缓：除非用户重新明确要求，不主动补跑，不读取 ambient `OPENAI_API_KEY`，该项作为已知未完成验证保留，不阻塞 Phase 8 文档。
+- 根 `README.md` / `AGENTS.md` 仍未修改；若公开文档需要同步，必须先获得用户明确允许。
 
 ## 1. 背景与目标
 
-CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的后端主要由 `@anthropic-ai/claude-agent-sdk` 驱动，应用层负责会话、工作区、权限、MCP 配置、消息持久化、事件转发和 UI 展示。Pipeline 模式已经接入 `@openai/codex-sdk` / `@openai/codex`，但该接入是面向 Pipeline 节点的结构化一次性执行，不是自由对话式 Agent runtime。
+CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的默认后端仍是 `@anthropic-ai/claude-agent-sdk`，但现在已经具备可插拔 `CodingAgentRuntime` 边界，并在 feature flag 下接入 Agent Codex runtime。应用层负责会话、工作区、权限、MCP 配置、消息持久化、事件转发和 UI 展示；Claude / Codex 只承担具体 coding-agent runtime 执行。Pipeline 模式也已经接入 `@openai/codex-sdk` / `@openai/codex`，但该接入仍是面向 Pipeline 节点的结构化一次性执行，不等同于 Agent 自由对话 runtime。
 
 本方案的目标是在 Agent 模式新增一个 **Codex Runtime 后端接入点**。这不是新增一个普通 OpenAI 模型 Provider，也不是用 Responses API 或自研工具循环重写 Codex 能力，而是让 CodeInsights 作为 Coding Agent 产品的代理层，直接复用完整 Codex runtime：
 
@@ -16,7 +30,7 @@ CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的后端
 - Codex 升级后，只要 SDK/CLI 事件与配置契约兼容，Agent 模式应尽量自动受益，而不是每次重新适配工具细节。
 - 未来同一抽象还应能接入更多 coding-agent runtime。
 
-推荐结论：**先把 Agent 执行层从 `ClaudeAgentAdapter.query(SDKMessage)` 升级为可插拔 `CodingAgentRuntime`，再新增 `CodexAgentRuntime`。不要把 Codex 硬塞进 Claude SDKMessage 结构。**
+推荐结论已落地：**Agent 执行层已从 `ClaudeAgentAdapter.query(SDKMessage)` 升级为可插拔 `CodingAgentRuntime`，并新增 `CodexAgentRuntime`。Codex 会话优先持久化 runtime events，不把 Codex 长期伪造成 Claude SDKMessage。**
 
 ## 2. 需求边界
 
@@ -41,7 +55,7 @@ CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的后端
 
 ### 3.1 Agent 模式现有链路
 
-发送链路：
+当前发送链路：
 
 ```text
 AgentView
@@ -50,8 +64,9 @@ AgentView
   -> main/ipc/agent-handlers.ts
   -> runAgent(input, webContents)
   -> AgentOrchestrator.sendMessage()
-  -> ClaudeAgentAdapter.query()
-  -> @anthropic-ai/claude-agent-sdk query()
+  -> CodingAgentRuntimeRegistry.resolve()
+  -> ClaudeCodeRuntime | CodexAgentRuntime
+  -> @anthropic-ai/claude-agent-sdk query() | @openai/codex-sdk runStreamed()
 ```
 
 关键文件：
@@ -59,18 +74,19 @@ AgentView
 - `apps/electron/src/renderer/components/agent/AgentView.tsx`：构造 `AgentSendInput`，发送消息和停止。
 - `apps/electron/src/preload/index.ts`：暴露 `sendAgentMessage`、`stopAgent`、流式事件监听和权限响应。
 - `apps/electron/src/main/ipc/agent-handlers.ts`：注册 Agent IPC handler。
-- `apps/electron/src/main/lib/agent-service.ts`：创建 `ClaudeAgentAdapter`、`AgentEventBus`、`AgentOrchestrator`。
-- `apps/electron/src/main/lib/agent-orchestrator.ts`：当前 Agent 主编排层。
-- `apps/electron/src/main/lib/adapters/claude-agent-adapter.ts`：动态导入 `@anthropic-ai/claude-agent-sdk` 并调用 `sdk.query()`。
+- `apps/electron/src/main/lib/agent-service.ts`：创建 runtime registry，注册 `ClaudeCodeRuntime` 与 `CodexAgentRuntime`，再创建 `AgentEventBus`、`AgentOrchestrator`。
+- `apps/electron/src/main/lib/agent-orchestrator.ts`：当前 Agent 主编排层，负责 runtime 选择、会话绑定、事件持久化、停止与标题生成。
+- `apps/electron/src/main/lib/agent-runtimes/claude-code-runtime.ts`：封装 Claude SDK 路径。
+- `apps/electron/src/main/lib/agent-runtimes/codex-runtime.ts`：动态导入 `@openai/codex-sdk` 并调用 `runStreamed()`。
+- `apps/electron/src/main/lib/agent-runtimes/codex-event-adapter.ts`：将 Codex `ThreadEvent` 映射为 CodeInsights runtime event。
 
-当前耦合点：
+已收敛的原耦合点：
 
-- `agent-service.ts` 直接 `new ClaudeAgentAdapter()`。
-- `AgentOrchestrator` 虽然持有 `AgentProviderAdapter`，但实际导入 `ClaudeAgentQueryOptions` 和 Claude 错误映射 helper。
-- `AgentRuntimeRunInput.queryOptions` 仍是 `ClaudeAgentQueryOptions`。
-- `InProcessAgentRuntimeRunner` 仍使用 Claude SDKMessage 转换和 Claude 错误语义。
-- Renderer 的实时消息和历史消息仍主要依赖 Claude SDKMessage 结构，runtime envelope 还没有成为持久展示的唯一真相源。
-- Runtime materializer 当前生成 `.claude/settings.json`、`CLAUDE.md`、Claude plugins / skills snapshot，不是通用 runtime manifest。
+- `agent-service.ts` 不再只注册 Claude；Codex runtime 在 feature flag 保护下可被选择。
+- `AgentOrchestrator` 仍负责产品层编排，但 runtime 具体执行已下沉到 `CodingAgentRuntime` 实现。
+- Codex 会话历史通过 runtime events 回放，Claude legacy 会话继续兼容 SDKMessage。
+- Runtime materializer 已能保留 runtime-specific 信息；Codex 不复用 `.claude` 目录语义。
+- 运行中会话 runtime 绑定已固化，避免 settings 后续变化污染已有 Codex thread resume。
 
 ### 3.2 Agent 侧已有可复用基础设施
 
@@ -492,7 +508,8 @@ Codex materializer 首版建议：
 
 - 在 session cwd 写入 `AGENTS.md`，内容等价当前 `CLAUDE.md` 的工作区说明，但不包含 Claude 专属指令。
 - 写入 runtime-scoped Codex config，优先通过 SDK `config` override 传递，减少直接污染用户 `$CODEX_HOME/config.toml`。
-- Workspace `mcp.json` 映射到 Codex 原生 MCP 配置时必须以当前 Codex CLI 文档和类型为准；若接口未稳定，首版仅支持 Codex 自身已配置的 MCP，并把 CodeInsights workspace MCP 标记为暂不注入。
+- Workspace `mcp.json` 已在 Phase 7 映射到 Codex 原生 MCP 配置：enabled stdio/http server 会进入 SDK `config.mcp_servers`；stdio env 使用 `env_vars`，HTTP headers 使用 `env_http_headers`，真实 secret 只通过 Codex 子进程 env 间接注入，不进入 SDK `--config` argv。
+- Workspace MCP 注入仍保留安全限制：legacy SSE 暂不映射，复杂 HTTP header key 暂跳过，workspace env 不能覆盖 Git guard/base env、proxy、Codex auth/home 等保留变量。
 - Skills / plugins 不做手工复刻。Codex 原生支持前，只把 CodeInsights workspace 规则写入 `AGENTS.md`，不尝试模拟 Claude plugins。
 
 ## 10. Orchestrator 接入策略
@@ -561,7 +578,7 @@ resolve Codex auth/channel
 | --- | --- | --- | --- |
 | 基本文本对话 | 支持 | 支持 | Codex `agent_message` 映射 |
 | 工具活动展示 | 支持 | 支持 | command/file/mcp/web_search/todo 映射 |
-| MCP | 支持 CodeInsights workspace 注入 | 分阶段 | 优先 Codex 原生配置；不要模拟 |
+| MCP | 支持 CodeInsights workspace 注入 | stdio/http 原生配置注入已验证 | legacy SSE、复杂 header key 和真实模型强制 MCP tool-call smoke 后续评估 |
 | 工作区 cwd | 支持 | 支持 | `workingDirectory` + session cwd |
 | additional directories | 支持 | 支持 | `additionalDirectories` |
 | 图片输入 | 支持 | 支持 | Codex SDK `local_image` |
@@ -695,10 +712,10 @@ resolve Codex auth/channel
 交付：
 
 - 本机 Codex auth 模式真实运行。
-- OpenAI / Custom API key 模式真实运行。
+- OpenAI / Custom API key 模式 smoke 保留为暂缓验证；除非用户重新明确要求，不主动补跑 `CODEX_SMOKE_API_KEY`，不读取 ambient `OPENAI_API_KEY`。
 - workspace-write 修改文件。
 - read-only plan 模式不写文件。
-- MCP / web_search 能力按当前支持情况记录。
+- MCP / web_search 能力按当前支持情况记录；Phase 7 已通过 web-search 真实 runtime smoke 和 MCP config injection smoke。
 - 打包后 binary 路径验证。
 
 验证：
@@ -706,7 +723,17 @@ resolve Codex auth/channel
 - `bun run typecheck`
 - `bun test --isolate`
 - `bun run electron:build`
-- `CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast` 后手动验证 Agent Codex。
+- `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`
+- `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only binary|native|readonly|workspace-write|resume|web-search|stop|mcp`
+- `bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui`
+
+Phase 7 实际结果：
+
+- `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、binary `codex-cli 0.130.0` 已验证；npm latest 查询记录为 `0.133.0`，本阶段未升级依赖。
+- native auth 隔离 smoke 会复制同源 `auth.json` 与 `config.toml`，保留中转 `model_provider` / `base_url`，并尊重 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 已通过。
+- packaged history reload 使用 fixture-based UI smoke 验证重开读取和渲染链路；它不替代真实 Codex 写入链路验证。
+- workspace MCP config injection smoke 已通过，Codex CLI `mcp list --json` 可识别 CodeInsights workspace 映射出的 stdio/http `mcp_servers`。
+- channel API key smoke 仍未通过真实 API key 路径验证，按用户要求暂缓，不再阻塞 Phase 8。
 
 ## 14. 测试矩阵
 
@@ -770,8 +797,10 @@ resolve Codex auth/channel
 处理：
 
 - Runtime manifest 拆分 runtime-specific 字段。
-- CodeInsights workspace MCP 映射到 Codex 原生配置前必须做真实验证。
-- 首版允许“Codex 使用自身配置的 MCP”，不强行模拟 Claude plugins。
+- CodeInsights workspace stdio/http MCP 已映射到 Codex 原生 `mcp_servers` 并通过 config injection smoke。
+- 不把 MCP secret 写入 SDK `config` / CLI argv；只传环境变量名，真实值通过 Codex 子进程 env 注入。
+- legacy SSE、复杂 HTTP header key 和真实模型强制调用本地 MCP 的 smoke 仍需后续评估。
+- 不强行模拟 Claude plugins；Codex skills/plugin 与 CodeInsights skills/plugin 的长期关系另行设计。
 
 ### 15.5 打包体积与平台包
 
@@ -820,7 +849,7 @@ Codex Agent 首版可标记完成，必须同时满足：
 - 会话重开后能通过 runtime event 历史恢复主要对话和工具活动。
 - Codex thread id 能持久化，并可用 `resumeThread()` 继续下一轮。
 - Claude Agent 默认路径无行为回归。
-- API key 模式和 native auth 模式都通过环境隔离测试。
+- native auth 模式已通过环境隔离测试；channel API key 模式保留为暂缓的已知未完成验证。
 - 打包后能解析 Codex binary。
 - 文档记录首版不支持 per-tool permission parity、rewind、soft interrupt 的边界。
 
@@ -1616,21 +1645,39 @@ export interface CodexThreadLike {
 
 ### 27.3 集成验证
 
-真实 Codex smoke test 不进入默认 CI，原因是需要凭证和 binary。建议做脚本或手动清单：
+真实 Codex smoke test 不进入默认 CI，原因是需要凭证、native auth、网络和 packaged binary。Phase 7 已新增独立脚本，默认使用隔离 `CODEINSIGHTS_CONFIG_DIR`、隔离 `CODEX_HOME` 和临时 workspace：
 
-```text
-CODEINSIGHTS_CONFIG_DIR=/tmp/codeinsights-codex-agent-smoke
-bun run dev
+```bash
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only binary
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only native
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only readonly
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only workspace-write
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only resume
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only web-search
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only stop
+bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp
+bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui
 ```
 
-手动验证：
+已验证记录：
 
-- native auth 新建 Codex 会话，问一个只读问题。
-- channel API key 新建 Codex 会话，生成一个小文件。
-- stop 长任务，最终状态为 stopped。
-- 重启 Electron，历史能回放。
+- native auth 新建 Codex 会话，返回 `codeinsights-codex-native-ok`。
+- read-only plan 保持目标文件不变。
+- workspace-write 只修改目标临时文件。
+- resume 同一 Codex thread 能记住首轮口令。
+- web-search 返回 npm latest `@openai/codex` 版本记录。
+- stop 长任务最终状态为 `run_stopped`。
+- 重启 packaged Electron 后，fixture-based Codex 历史能回放到真实 UI。
+- MCP config injection 从真实 helper 输出派生 CLI override，`codex mcp list --json` 可识别 stdio/http 配置。
+
+暂缓验证：
+
+- channel API key 新建 Codex 会话仍未走真实 API key 成功路径；除非用户重新明确要求，不主动补跑 `CODEX_SMOKE_API_KEY`，不读取 ambient `OPENAI_API_KEY`。
+
+仍建议后续人工检查：
+
 - 删除 channel 后，设置页能清理无效 `agentCodexChannelId`。
-- 打包后 Codex binary 路径可解析。
+- macOS x64 / Windows x64 runner 上打包后 Codex binary 路径可解析。
 
 ### 27.4 文档级验证
 
@@ -1679,9 +1726,12 @@ git diff --check -- docs/codex-support tasks/todo.md
 
 - `electron-builder.yml` 包含 `@openai/codex`、`@openai/codex-sdk` 和平台 binary 包。
 - esbuild external 不遗漏 `@openai/codex-sdk` / `@openai/codex`。
-- macOS arm64、macOS x64、Windows x64 的 binary 包安装策略明确。
+- macOS arm64 已本地验证；macOS x64 和 Windows x64 需要分别在对应 runner 安装 optional platform package 后验证。
+- Linux platform packages 已列入打包配置，但 Linux packaged binary 是否进入首版支持矩阵仍未定。
 - Codex runtime 关闭 flag 时，UI 不显示不可用入口。
 - settings 中的 `agentCodexChannelId` 不影响 Pipeline Codex。
+- native auth smoke 隔离 `CODEX_HOME` 时必须同步复制同源 `config.toml`，否则会丢失用户配置的中转 provider。
+- MCP secret 不得出现在 SDK `config`、CLI argv、日志或 smoke summary 中。
 
 ## 29. 分阶段 Definition of Done
 
@@ -1728,7 +1778,7 @@ git diff --check -- docs/codex-support tasks/todo.md
 
 ### Phase 7 DoD
 
-- native auth 和 channel API key 模式均真实验证。
+- native auth 模式真实验证通过；channel API key 模式暂缓，不再作为 Phase 8 阻塞项。
 - read-only plan 模式不写文件。
 - workspace-write 能修改 workspace 文件。
 - stop、resume、history reload、packaged binary smoke 均通过。
