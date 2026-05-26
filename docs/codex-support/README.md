@@ -32,10 +32,11 @@
   - `4e210364 docs(agent): 固化 Codex Runtime 最新开发状态`
   - `1ebde36e docs(agent): 同步 Codex Runtime Phase 7 再次补跑状态`
   - `a439d541 test(agent): 修正 Codex native smoke 中转配置`
-- 已补跑通过：修正 native smoke 隔离逻辑后会复制 `~/.codex/config.toml` 中的中转 API 配置，并尊重其中 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 成功路径均已通过真实 smoke；history reload 已通过 fixture-based packaged UI reload smoke，覆盖重开后的读取与渲染链路。
+  - `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`
+- 已补跑通过：修正 native smoke 隔离逻辑后会复制 `~/.codex/config.toml` 中的中转 API 配置，并尊重其中 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 成功路径均已通过真实 smoke；history reload 已通过 `79c7fc92` 新增的 fixture-based packaged UI reload smoke，覆盖重开后的读取与渲染链路。
 - 未完成 / 阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；MCP 仍未注入 Codex 原生配置；Phase 8 文档发布维护尚未开始。
 - 下一步：若提供 `CODEX_SMOKE_API_KEY` 则补跑 channel API key smoke；继续实现并验证 CodeInsights workspace MCP 到 Codex 原生配置的注入；残余项关闭后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
-- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交标题为本轮 history reload UI smoke 提交或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
+- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交为 `79c7fc92 test(agent): 补齐 Codex history reload UI smoke` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位
 

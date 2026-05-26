@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime history reload 后文档状态同步计划
+
+范围确认：本轮只把最新 HEAD `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`、Phase 7 已完成/未完成项和下次启动提示词同步到 Codex support 文档；不修改根 `README.md` / `AGENTS.md`，不处理未跟踪 `apps/electron/out/` 打包产物。
+
+- [x] 确认当前工作树状态：仅 `apps/electron/out/` 未跟踪，最新提交为 `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：将 `79c7fc92` 写入最新状态快照、仓库状态要求、Phase 7 记录和阶段提交表，明确 history reload 已完成，API key smoke / MCP / Phase 8 仍未完成。
+- [x] 更新 `docs/codex-support/README.md`：同步提交列表、已完成/未完成范围和下次启动检查。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的最新延续提示词。
+- [x] 运行文档 code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 在本节末尾追加 Review，并按阶段纪律提交本轮文档状态同步。
+
+## 2026-05-26 Agent Codex Runtime history reload 后文档状态同步 Review
+
+- 当前 HEAD：`79c7fc92 test(agent): 补齐 Codex history reload UI smoke`；工作树除本轮文档改动外，仅有未跟踪 `apps/electron/out/` 打包产物。
+- 已更新开发清单：最新状态快照、仓库状态要求、Phase 7 执行记录、第 12 节阶段提交表和第 13 节未解决问题均写入 `79c7fc92`；明确 history reload fixture-based packaged UI reload smoke 已完成，channel API key smoke、MCP 注入和 Phase 8 仍未完成。
+- 已更新 docs index：提交列表加入 `79c7fc92`，下次启动检查改为确认该提交或其后的状态同步提交。
+- 已更新 next-session prompt：下次 Codex 可直接从 Phase 7 残余项继续，优先处理 `CODEX_SMOKE_API_KEY` channel smoke 和 MCP 注入，残余项关闭后再进入 Phase 8。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 残余验证与 Phase 8 启动计划
 
 范围确认：本轮先关闭 Phase 7 残余验证项，再按条件进入 Phase 8 文档、发布与长期维护。继续遵守“不再等待确认”：计划写入后直接执行；不修改根 `README.md` / `AGENTS.md`，不默认 stage / commit `apps/electron/out/` 打包产物，不默认读取 ambient `OPENAI_API_KEY`。
