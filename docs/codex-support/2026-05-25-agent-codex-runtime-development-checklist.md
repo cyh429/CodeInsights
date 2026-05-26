@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 7 真实 Codex 集成与打包验证已提交；Phase 7 成功路径 smoke 补跑后仍受外部网络/凭证阻塞；Phase 8 未开始
+状态：Phase 7 真实 Codex 集成与打包验证已提交；Phase 7 成功路径 smoke 再次补跑后仍受外部网络/凭证阻塞；Phase 8 未开始
 日期：2026-05-26
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-26 Phase 7 成功路径 smoke 补跑后状态同步
+更新时间：2026-05-26 Phase 7 成功路径 smoke 再次补跑后状态同步
 
 当前结论：
 
@@ -47,7 +47,7 @@
 - [x] Phase 7 真实 Codex SDK / CLI 接入、打包验证和 smoke 记录已执行并提交：`1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`。
 - [x] Phase 7 smoke 补跑状态已同步并提交：`a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`。
 - [x] 最新开发状态文档已固化；提交号以 `git log -1 --oneline` 为准，预期提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。
-- [!] Phase 7 成功路径 smoke 仍受外部网络/凭证阻塞：历史记录中过本机 native auth 返回 `401 invalid_api_key`；本轮隔离 native smoke 创建 thread 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针创建 thread 后持续 reconnect / stream disconnected 并 90 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
+- [!] Phase 7 成功路径 smoke 仍受外部网络/凭证阻塞：历史记录中过本机 native auth 返回 `401 invalid_api_key`；2026-05-26 再次补跑时隔离 native smoke 创建 thread `019e6365-c0e0-7911-a2e0-7b6ef311c091` 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针创建 thread `019e6368-829b-75f3-9384-a8c22d5f61b7` 后持续 reconnect / stream disconnected 并 100 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
 - [ ] Phase 8 文档发布和长期维护尚未开始。
 
 当前仓库状态要求：
@@ -107,7 +107,7 @@
 - [x] Phase 7 binary smoke 通过：`binary.darwin-arm64` 输出 `codex-cli 0.130.0`。
 - [x] Phase 7 stop smoke 通过：`stop.long-run` 最终终态 `run_stopped`。
 - [x] Phase 7 packaged app smoke 通过：app bundle 内 Codex native binary 和 CLI wrapper 均输出 `codex-cli 0.130.0`，packaged app 使用隔离配置目录启动 8 秒未退出。
-- [!] Phase 7 native / workspace-write / read-only / resume / web-search 成功路径仍受外部网络/凭证阻塞；本轮 native smoke 终态 `run_stopped`，CLI 探针持续 reconnect 后超时，`api.openai.com` / `chatgpt.com` / `github.com/openai/plugins.git` 20 秒连通性探针均超时；channel API key smoke 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过。
+- [!] Phase 7 native / workspace-write / read-only / resume / web-search 成功路径仍受外部网络/凭证阻塞；2026-05-26 再次补跑 native smoke 终态 `run_stopped`，CLI 探针持续 reconnect / stream disconnected 后超时，`api.openai.com` / `chatgpt.com` / `github.com/openai/plugins.git` 20 秒连通性探针均超时；channel API key smoke 因未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过。
 
 ## 0.2 当前完成/未完成总览
 
@@ -126,7 +126,7 @@
 | Phase 5 | [x] | 已完成 Orchestrator runtime routing、runtime registry、Codex mock 路由与 stop/complete 竞态防护并提交 `40441fe8` |
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
 | Phase 7 实现与打包验证 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录并提交 `1b94f9ad` |
-| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search / history reload 成功路径仍受外部网络/凭证阻塞；本轮网络探针显示 OpenAI / ChatGPT / Codex plugin GitHub 访问超时；channel API key smoke 需 `CODEX_SMOKE_API_KEY` |
+| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search / history reload 成功路径仍受外部网络/凭证阻塞；2026-05-26 再次补跑显示 native / CLI 探针均创建 thread 后超时，OpenAI / ChatGPT / Codex plugin GitHub 访问超时；channel API key smoke 需 `CODEX_SMOKE_API_KEY` |
 | Phase 8 | [ ] | 待做文档发布和长期维护 |
 
 ## 1. 产品决策门禁
@@ -685,7 +685,7 @@ Phase 6 执行记录：
 - [x] 确认 macOS x64 binary 策略。
 - [x] 确认 Windows x64 binary 策略。
 - [x] 使用隔离 `CODEINSIGHTS_CONFIG_DIR` 做真实 smoke。
-- [!] native auth 模式：历史补跑曾新建 Codex thread 并发送只读请求，后端返回 `401 invalid_api_key`；本轮隔离 native smoke 新建 thread `019e6329-a3bc-73c1-9b30-095a8223360e` 后 120 秒超时，终态 `run_stopped`，未完成成功回答。
+- [!] native auth 模式：历史补跑曾新建 Codex thread 并发送只读请求，后端返回 `401 invalid_api_key`；2026-05-26 再次补跑时隔离 native smoke 新建 thread `019e6365-c0e0-7911-a2e0-7b6ef311c091` 后 120 秒超时，终态 `run_stopped`，未完成成功回答。
 - [!] channel API key 模式：本轮确认当前环境未设置 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY`，跳过。
 - [!] workspace-write 模式：历史补跑曾发送真实请求但因 `401 invalid_api_key` 未完成写入；本轮 native / API key 成功凭证不可用且 OpenAI / ChatGPT / GitHub 连通性超时，未继续消耗长超时重跑。
 - [!] read-only plan 模式：历史补跑曾发送真实请求但因 `401 invalid_api_key` 未完成成功回答；本轮 native / API key 成功凭证不可用且 OpenAI / ChatGPT / GitHub 连通性超时，未继续消耗长超时重跑。
@@ -732,6 +732,7 @@ Phase 7 执行记录：
 - 真实请求阻塞：native auth、read-only、workspace-write、resume、web-search 均创建 Codex thread 并请求 `https://api.openai.com/v1/responses`，但本机 native auth key 返回 `401 invalid_api_key`，因此成功回答、文件写入、上下文延续和 WebSearch 成功路径未完成。
 - 2026-05-26 补跑记录：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only native` 使用隔离 `CODEINSIGHTS_CONFIG_DIR` / `CODEX_HOME` 创建 thread `019e6329-a3bc-73c1-9b30-095a8223360e`，120 秒内未完成成功回答，终态 `run_stopped`；`--only api-key` 因未设置 `CODEX_SMOKE_API_KEY` 且未 opt-in `OPENAI_API_KEY` 继续 skipped。
 - 2026-05-26 CLI / 网络探针：隔离 `codex exec --skip-git-repo-check --ignore-user-config --ignore-rules -s read-only --json` 创建 thread `019e632e-5007-7b33-9789-bf5f8a0294b3`，随后出现 `Reconnecting...`、`stream disconnected` 和 Codex plugin sync timeout，90 秒超时；`curl -I --max-time 20 https://api.openai.com/v1/models`、`https://chatgpt.com/backend-api/plugins/featured?platform=codex`、`https://github.com/openai/plugins.git` 均超时；当前环境无 `HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY`。
+- 2026-05-26 再次补跑记录：`binary.darwin-arm64` 仍 passed，输出 `codex-cli 0.130.0`；当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置，`~/.codex/auth.json` 存在但只能作为隔离 native auth 复制源；`--only api-key` 继续 skipped。`--only native` 创建 thread `019e6365-c0e0-7911-a2e0-7b6ef311c091` 后 120 秒内未完成 token 响应，终态 `run_stopped`。隔离 CLI 探针创建 thread `019e6368-829b-75f3-9384-a8c22d5f61b7`，随后出现 `Reconnecting...`、`stream disconnected`、plugin sync warning、GitHub clone `early EOF`，100 秒外层超时。`curl -I --max-time 20 https://api.openai.com/v1/models`、`https://chatgpt.com/backend-api/plugins/featured?platform=codex`、`https://github.com/openai/plugins.git` 均超时；`git ls-remote https://github.com/openai/plugins.git` 30 秒超时。由于没有可用 native / API key 成功路径，workspace-write、read-only、resume、web-search 和 history reload 成功路径继续保持阻塞，未伪造通过。
 - MCP 结果：Phase 7 未注入 CodeInsights workspace MCP 到 Codex 原生配置，`mcp.current-support` 记录为 skipped。
 - 打包验证：`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast` 成功生成 `out/CodeInsights-0.0.110-arm64.dmg`；packaged app 内 `@openai/codex-sdk`、`@openai/codex`、`@openai/codex-darwin-arm64` 存在，native binary 与 CLI wrapper 均输出 `codex-cli 0.130.0`。
 - Packaged startup smoke：使用隔离 `CODEINSIGHTS_CONFIG_DIR` 启动 `out/mac-arm64/CodeInsights.app/Contents/MacOS/CodeInsights` 8 秒未退出，运行时初始化、默认 workspace 和 IPC 注册完成；存在非 Codex 阻断的 icon 路径 warning。
@@ -842,7 +843,7 @@ UI：
 | Phase 4 | [x] | `codex/agent-codex-runtime-phase-0` | `2c7ebb94` | `bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-permission-policy.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High | 尚未接入 Orchestrator 默认路由、Renderer UI 或真实 Codex SDK 调用 |
 | Phase 5 | [x] | `codex/agent-codex-runtime-phase-0` | `40441fe8` | `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Renderer UI、runtime transcript 回放或真实 Codex SDK / CLI 调用 |
 | Phase 6 | [x] | `codex/agent-codex-runtime-phase-0` | `58164e35` | `bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Phase 7 真实 Codex SDK / CLI 或打包发布验证 |
-| Phase 7 | [x] | `codex/agent-codex-runtime-phase-0` | `1b94f9ad` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`、binary smoke、stop smoke、packaged startup smoke 通过；安全复审无 Critical / High / Medium | native / workspace-write / read-only / resume / web-search 成功路径仍受外部网络/凭证阻塞；历史记录中过本机 Codex auth `401 invalid_api_key`，本轮 native / CLI 探针均创建 thread 后超时，OpenAI / ChatGPT / GitHub 连通性探针超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过；MCP 未注入 Codex 原生配置 |
+| Phase 7 | [x] | `codex/agent-codex-runtime-phase-0` | `1b94f9ad` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist:fast`、binary smoke、stop smoke、packaged startup smoke 通过；安全复审无 Critical / High / Medium | native / workspace-write / read-only / resume / web-search 成功路径仍受外部网络/凭证阻塞；历史记录中过本机 Codex auth `401 invalid_api_key`，2026-05-26 再次补跑 native / CLI 探针均创建 thread 后超时，OpenAI / ChatGPT / GitHub 连通性探针超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过；MCP 未注入 Codex 原生配置 |
 | Phase 8 | [ ] | - | - | - | - |
 
 ## 13. 当前未解决问题

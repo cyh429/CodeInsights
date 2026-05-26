@@ -19,7 +19,7 @@
 - Phase 7 真实 Codex SDK / CLI 接入、打包验证、安全加固和 smoke 记录已完成并提交：1b94f9ad。
 - Phase 7 smoke 补跑状态已同步并提交：a02cbbf5。
 - 最新开发状态文档已固化；提交号以 `git log -1 --oneline` 为准，预期提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。
-- Phase 7 仍有外部网络/凭证阻塞项：native / workspace-write / read-only / resume / web-search / history reload 成功路径需要有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`；2026-05-26 补跑时隔离 native smoke 创建 thread 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针持续 reconnect / stream disconnected 后 90 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
+- Phase 7 仍有外部网络/凭证阻塞项：native / workspace-write / read-only / resume / web-search / history reload 成功路径需要有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`；2026-05-26 再次补跑时隔离 native smoke 创建 thread `019e6365-c0e0-7911-a2e0-7b6ef311c091` 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针创建 thread `019e6368-829b-75f3-9384-a8c22d5f61b7` 后持续 reconnect / stream disconnected 并 100 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
 - Phase 8 文档、发布与长期维护尚未开始。
 - 当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
 - 产品决策门禁已确认，采用清单推荐值，以后无需再询问同一组门禁。
