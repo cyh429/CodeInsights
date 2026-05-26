@@ -10,9 +10,9 @@
 
 ## 最新状态
 
-更新时间：2026-05-26 Phase 6 提交后
+更新时间：2026-05-26 Phase 7 提交后
 
-- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置、历史与 UX。
+- 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置/历史/UX、Phase 7 真实 Codex runtime 接入、打包验证、安全加固和 smoke 记录。
 - 已提交：
   - `feb46548 docs: 规划 Agent Codex Runtime 接入`
   - `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`
@@ -26,10 +26,11 @@
   - `2c7ebb94 feat(agent): 完成 Codex Runtime Phase 4 mock runner`
   - `40441fe8 feat(agent): 完成 Codex Runtime Phase 5 编排路由`
   - `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`
+  - `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`
   - 本轮文档状态同步提交完成后以 `git log -1 --oneline` 为准
-- 未完成：Phase 7 真实 Codex 集成与打包验证、Phase 8 文档发布维护。
-- 下一步：从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 9 节 Phase 7“真实 Codex 集成与打包验证”开始；不要混入 Phase 8 文档发布和长期维护。
-- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新实现提交为 `58164e35` 或其后的文档同步提交。
+- 未完成 / 阻塞：Phase 7 native / workspace-write / read-only / resume / web-search / history reload 成功路径需有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；当前本机 native auth 返回 `401 invalid_api_key`，channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；Phase 8 文档发布维护尚未开始。
+- 下一步：从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 9 节 Phase 7 残余 smoke 补跑开始；成功路径补跑通过后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
+- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新实现提交为 `1b94f9ad` 或其后的文档同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位
 

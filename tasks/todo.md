@@ -1,5 +1,26 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime Phase 7 后状态文档同步计划
+
+范围确认：本轮只同步 Phase 7 提交后的最新开发状态、未完成项和下次启动提示词；不进入 Phase 8 正文发布维护、不修改根 `README.md` / `AGENTS.md`、不处理打包产物 `apps/electron/out/`。
+
+- [x] 复习 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认最新实现提交为 `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`，工作树仅有未跟踪打包产物 `apps/electron/out/`。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：标注 Phase 7 已提交、Phase 7 成功路径凭证补跑仍阻塞、Phase 8 未开始。
+- [x] 更新 `docs/codex-support/README.md`：同步最新状态、提交列表、未完成范围和下一步入口。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的延续提示词。
+- [x] 运行文档级旧状态扫描、Markdown code fence 检查、相对链接检查和 diff 空白检查。
+- [x] 在本节末尾追加 Review，并单独提交本轮状态同步文档。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 后状态文档同步 Review
+
+- 已更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：顶部状态、最新开发状态快照、当前完成/未完成总览、第 9 节 Phase 7 和阶段提交记录均写入 Phase 7 提交 `1b94f9ad`。
+- 已将 Phase 7 状态拆清：真实 Codex runtime 接入、打包验证、安全加固和可离线 smoke 已完成；native / workspace-write / read-only / resume / web-search / history reload 成功路径仍因外部凭证阻塞标为 `[!]`。
+- 已更新 `docs/codex-support/README.md`：最新状态加入 Phase 7，未完成范围改为 Phase 7 凭证成功路径补跑与 Phase 8，下一步入口改为先补跑残余 smoke。
+- 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 7 残余 smoke 补跑优先，补跑通过后再进入 Phase 8；明确 `apps/electron/out/` 是本地打包产物，不应默认提交。
+- 验证通过：旧状态关键字扫描无过期命中；Markdown code fence 检查通过；Markdown 相对链接检查通过；`git diff --check -- docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md docs/codex-support/README.md docs/codex-support/next-session-prompt.md tasks/todo.md` 通过。
+- 阶段边界：未修改根 `README.md` / `AGENTS.md`，未进入 Phase 8 正文发布维护，未提交 `apps/electron/out/` 打包产物。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 计划
 
 范围确认：本轮只做 Phase 7 真实 Codex SDK / CLI 集成与指定验证；不混入 Phase 8 文档发布、发布说明、README.md / AGENTS.md 修改或长期维护。产品决策门禁沿用清单推荐值，不再等待确认。
