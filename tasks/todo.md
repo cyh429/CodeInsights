@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent Codex Runtime 暂缓 API Key Smoke 提示词更新计划
+
+范围确认：用户明确要求暂时不做 `CODEX_SMOKE_API_KEY` channel API key smoke 的“有凭证则补跑 / 无凭证则记录阻塞”两项。本轮只更新 Codex support 文档和下次启动提示词，把该 smoke 标为暂缓项，不再作为下次启动优先级或 Phase 8 启动阻塞；不修改根 `README.md` / `AGENTS.md`，不提交 `apps/electron/out/` 打包产物。
+
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前最新提交为 `d989ae4f docs(agent): 同步 Codex Runtime 最新状态`，工作树仅有未跟踪 `apps/electron/out/`。
+- [x] 复习 `tasks/lessons.md` 中阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、runtime binding 和“不再等待确认”相关教训。
+- [x] 更新开发清单：将 channel API key smoke 从“下一步先补齐”改为“暂缓/已知未完成，不阻塞 Phase 8”。
+- [x] 更新 support README：同步当前未完成项和下一步入口，明确 Phase 8 可继续启动。
+- [x] 更新 next-session prompt：移除“若提供凭证则补跑 / 若未提供则记录阻塞”的启动优先级，改为除非用户重新要求否则不要跑该 smoke。
+- [x] 运行 Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 在本节追加 Review，并按阶段纪律提交本轮文档更新。
+
+## 2026-05-27 Agent Codex Runtime 暂缓 API Key Smoke 提示词更新 Review
+
+- 已更新开发清单：Phase 7 channel API key smoke 从“下次先补跑”改为“暂缓的已知未完成验证”，除非用户重新明确要求，否则不再作为下次启动优先级或 Phase 8 阻塞项。
+- 已更新 support README：下一步改为直接进入 Phase 8 文档、故障排查、发布说明和长期维护记录。
+- 已更新 next-session prompt：移除“若提供 `CODEX_SMOKE_API_KEY` 则补跑 / 若未提供则记录阻塞”的优先级，明确不要主动补跑，也不要读取 ambient `OPENAI_API_KEY`。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime 最新状态与启动提示词同步计划
 
 范围确认：本轮只更新 Codex support 文档的最新开发状态和下次启动提示词，明确完成项、未完成项和继续开发入口；不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物。

@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 0-7 主体实现与真实 smoke 已完成并提交；Phase 7 channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 仍为唯一残余阻塞；Phase 8 文档、故障排查、发布说明和长期维护记录未开始
+状态：Phase 0-7 主体实现与真实 smoke 已完成并提交；Phase 7 channel API key smoke 暂缓，不再作为下次启动或 Phase 8 阻塞项；Phase 8 文档、故障排查、发布说明和长期维护记录未开始
 日期：2026-05-26
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-26 最新状态同步到 `b2d8bc5f` 后
+更新时间：2026-05-27 暂缓 channel API key smoke 后
 
 当前结论：
 
@@ -56,22 +56,23 @@
 - [x] Phase 7 API key 残余复核记录已完成并提交：`217ed1f0 docs(agent): 记录 Codex API key smoke 残余复核`。
 - [x] 最新进度同步已提交：`7467ab24 docs(agent): 同步 Codex Runtime 最新进度`。
 - [x] Phase 7 API key 最终残余复核已完成并提交：`b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核`。
-- [!] Phase 7 仍有残余阻塞：2026-05-26 本轮复核当前环境未设置 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY`；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 后 `channel-api-key.readonly` 仍 skipped，未显式传 `--use-openai-api-key`。
+- [x] 最新状态同步已提交：`d989ae4f docs(agent): 同步 Codex Runtime 最新状态`。
+- [!] Phase 7 channel API key smoke 暂缓：2026-05-27 用户明确要求暂时不做“若提供 `CODEX_SMOKE_API_KEY` 则补跑 / 若未提供则记录阻塞”两项；保留为已知未完成验证，不默认读取 ambient `OPENAI_API_KEY`，不再阻塞 Phase 8 启动。
 - [ ] Phase 8 文档发布和长期维护尚未开始。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `b2d8bc5f docs(agent): 记录 Codex API key 最终残余复核`；下次启动时以 `git log -1 --oneline` 为准，预期最新提交为该提交或其后的状态同步提交。
+- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `d989ae4f docs(agent): 同步 Codex Runtime 最新状态` 或其后的提示词更新提交；下次启动时以 `git log -1 --oneline` 为准。
 - 下次启动时若仍看到 `apps/electron/out/` 未跟踪，这是本地打包产物，不应默认 stage / commit。
-- 下一步应先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke（若提供）；该残余项关闭后，再进入 Phase 8。
+- 下一步不再优先补跑 channel API key smoke；除非用户重新明确要求，否则把它作为已知暂缓项，直接进入 Phase 8 文档、故障排查、发布说明和长期维护记录。
 
 下一步入口：
 
-1. 若提供了 `CODEX_SMOKE_API_KEY`，补跑 channel API key 模式 smoke；不要默认读取 ambient `OPENAI_API_KEY`，除非显式 opt-in。
-2. 若未提供凭证，保持 channel API key smoke 为 `[!]` 阻塞，不默认读取 ambient `OPENAI_API_KEY`。
-3. 残余项关闭后，再进入第 10 节 Phase 8；不要把 Phase 8 文档发布与未验证成功路径混在同一次提交里。
+1. 暂缓 channel API key smoke：即使环境里出现 `CODEX_SMOKE_API_KEY`，也不要在下次启动时主动补跑，除非用户重新明确要求。
+2. 继续保持安全边界：不得默认读取 ambient `OPENAI_API_KEY`，不得把 skipped 伪造成 passed。
+3. 直接进入第 10 节 Phase 8：同步主方案与实际实现、补充真实 smoke test 记录、SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
 
 最新验证记录：
 
@@ -142,8 +143,8 @@
 | Phase 5 | [x] | 已完成 Orchestrator runtime routing、runtime registry、Codex mock 路由与 stop/complete 竞态防护并提交 `40441fe8` |
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
 | Phase 7 实现与打包验证 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录并提交 `1b94f9ad` |
-| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；API key 最终残余复核已提交 `b2d8bc5f`，channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` skipped |
-| Phase 8 | [ ] | 待做文档发布、故障排查、发布说明和长期维护记录；等 channel API key 残余关闭后启动 |
+| Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；API key smoke 已复核为 skipped，2026-05-27 用户要求暂缓，不再作为 Phase 8 阻塞 |
+| Phase 8 | [ ] | 下一步启动：文档发布、故障排查、发布说明和长期维护记录 |
 
 ## 1. 产品决策门禁
 
@@ -757,6 +758,7 @@ Phase 7 执行记录：
 - 2026-05-26 history reload UI smoke：新增 `apps/electron/scripts/agent-history-reload-ui-smoke.ts` 和 `smoke:agent-history-reload-ui` 命令，并提交为 `79c7fc92 test(agent): 补齐 Codex history reload UI smoke`；脚本预置隔离 `agent-sessions.json`、SDKMessage JSONL、runtime events JSONL 和 `settings.tabState`，启动 packaged app 两次，通过 CDP 读取真实 `document.body.innerText`，确认 `History Reload Smoke 4f4c4be2`、`codeinsights-history-user-4f4c4be2`、`codeinsights-history-assistant-4f4c4be2` 均出现；两轮 `history-reload.first-open` / `history-reload.reopen` passed。该脚本是 fixture-based packaged UI reload smoke，验证重开读取/恢复/渲染链路，不声称覆盖真实 Codex 写入链路。
 - 2026-05-26 API key 残余复核：当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 返回退出码 0，结果为 `channel-api-key.readonly` skipped，原因是未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key`。本轮未读取 ambient `OPENAI_API_KEY`，Phase 8 不启动。
 - 2026-05-26 本轮最终残余复核：当前环境 `CODEX_SMOKE_API_KEY`、`OPENAI_API_KEY`、`CODEX_HOME`、`HTTP_PROXY`、`HTTPS_PROXY`、`ALL_PROXY` 均未设置；执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 返回退出码 0，脚本确认 `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、binary `codex-cli 0.130.0`，`channel-api-key.readonly` 仍 skipped，原因是未设置 `CODEX_SMOKE_API_KEY` 且未显式传 `--use-openai-api-key`。本轮未读取 ambient `OPENAI_API_KEY`，Phase 8 不启动。
+- 2026-05-27 暂缓记录：用户明确要求暂时不做 channel API key smoke 的“有凭证则补跑 / 无凭证则记录阻塞”两项；后续启动不再把该 smoke 作为 Phase 8 前置阻塞，除非用户重新明确要求，否则不主动补跑，也不读取 ambient `OPENAI_API_KEY`。
 - 打包验证：`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast` 成功生成 `out/CodeInsights-0.0.112-arm64.dmg`；packaged app 内 `@openai/codex-sdk`、`@openai/codex`、`@openai/codex-darwin-arm64` 存在，native binary 与 CLI wrapper 均输出 `codex-cli 0.130.0`。
 - Packaged startup smoke：使用隔离 `CODEINSIGHTS_CONFIG_DIR` 启动 `out/mac-arm64/CodeInsights.app/Contents/MacOS/CodeInsights` 8 秒未退出，运行时初始化、默认 workspace 和 IPC 注册完成；存在非 Codex 阻断的 icon 路径 warning。
 - 验证通过：`bun run typecheck`；`bun test --isolate`，600 pass / 0 fail；`bun run electron:build`；`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`；`bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui`；`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp`；packaged app startup smoke；`git diff --check`。
@@ -873,7 +875,7 @@ UI：
 
 - [ ] Codex TypeScript SDK 是否会暴露 approval request/response 通道。
 - [ ] Codex CLI fork/resume 能力是否可稳定从 SDK 调用。
-- [ ] `CODEX_SMOKE_API_KEY` channel API key smoke 仍需在提供凭证后补跑；不得默认读取 ambient `OPENAI_API_KEY`。
+- [ ] `CODEX_SMOKE_API_KEY` channel API key smoke 暂缓；除非用户重新明确要求，否则不再作为启动优先级或 Phase 8 阻塞项，不得默认读取 ambient `OPENAI_API_KEY`。
 - [ ] Codex workspace MCP 已支持 stdio/http 原生配置安全注入；legacy SSE 映射、含复杂 header key 的无泄漏保真映射和真实模型强制调用本地 MCP 的 smoke 仍需后续评估。
 - [ ] Codex skills/plugin 与 CodeInsights skills/plugin 的长期关系。
 - [ ] Phase 8 文档、发布说明、故障排查和长期维护记录尚未开始。
