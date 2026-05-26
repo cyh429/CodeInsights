@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-26 Codex native auth 中转配置
+
+- Codex native auth 隔离 smoke 不能只复制 `auth.json`；如果主机 `~/.codex/config.toml` 里配置了 `model_provider` / `model_providers.*.base_url` 等中转 API 信息，隔离 `CODEX_HOME` 缺少该文件会错误回落到默认 OpenAI 路径，导致 smoke 误判为凭证或网络问题。
+- 复制 native auth 到临时 `CODEX_HOME` 时，要把同一来源目录下的 `config.toml` 一并复制并设为 `0600`，清理时同时删除；日志和 summary 不能输出配置内容或 secret。
+- 记录 Codex native smoke 失败时，先检查隔离环境是否保留了主机 Codex 配置语义，再判断外部网络/凭证是否真的阻塞。
+
 ## 2026-05-25 Agent Runtime Routing 绑定与 generation
 
 - Orchestrator 的 active run generation 不能用 `Date.now()` 这类墙钟时间；同一毫秒 stop 后重跑可能让旧 run 的 finally 误删新 run，必须使用单调计数或唯一 token。

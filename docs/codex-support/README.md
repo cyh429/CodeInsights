@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-26 Phase 7 成功路径 smoke 再次补跑后
+更新时间：2026-05-26 Phase 7 native config 修正与成功路径补跑后
 
 - 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置/历史/UX、Phase 7 真实 Codex runtime 接入、打包验证、安全加固和 smoke 记录。
 - 已提交：
@@ -30,8 +30,9 @@
   - `7d864d16 docs(agent): 同步 Codex Runtime Phase 7 后续状态`
   - `a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`
   - 本轮最新状态固化提交完成后以 `git log -1 --oneline` 为准
-- 未完成 / 阻塞：Phase 7 native / workspace-write / read-only / resume / web-search / history reload 成功路径仍需有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`，2026-05-26 再次补跑时隔离 native smoke 创建 thread `019e6365-c0e0-7911-a2e0-7b6ef311c091` 后终态 `run_stopped`，隔离 CLI 探针创建 thread `019e6368-829b-75f3-9384-a8c22d5f61b7` 后持续 reconnect / stream disconnected 并超时，OpenAI / ChatGPT / GitHub 连通性探针也超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；Phase 8 文档发布维护尚未开始。
-- 下一步：先恢复 Codex 所需网络连通性，再从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 9 节 Phase 7 残余 smoke 补跑开始；成功路径补跑通过后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
+- 已补跑通过：修正 native smoke 隔离逻辑后会复制 `~/.codex/config.toml` 中的中转 API 配置，并尊重其中 `model_reasoning_effort`；native / read-only / workspace-write / resume / web-search / stop 成功路径均已通过真实 smoke。
+- 未完成 / 阻塞：channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；history reload 仍需 Electron/packaged app 重开 UI 独立验证；MCP 仍未注入 Codex 原生配置；Phase 8 文档发布维护尚未开始。
+- 下一步：先补齐 `CODEX_SMOKE_API_KEY` channel API key smoke 和 history reload 独立验证；残余项关闭后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
 - 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位

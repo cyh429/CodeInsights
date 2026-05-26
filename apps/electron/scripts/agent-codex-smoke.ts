@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { createRequire } from 'node:module'
 import type {
   AgentRuntimeEvent,
@@ -21,6 +22,7 @@ interface SmokeOptions {
   cleanup: boolean
   only?: Set<string>
   model?: string
+  modelReasoningEffort?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
   baseUrl?: string
   apiKey?: string
 }
@@ -32,6 +34,7 @@ interface SmokeContext {
   readonly apiKeyCodexHome: string
   readonly workspaceDir: string
   readonly model?: string
+  readonly modelReasoningEffort?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
 }
 
 type SmokeStatus = 'passed' | 'failed' | 'skipped'
@@ -58,20 +61,32 @@ interface AvailableCredential {
   auth: CodexAuthState
 }
 
-const options = parseOptions(process.argv.slice(2))
-let context: SmokeContext | undefined
-let exitCode = 1
-
-try {
-  context = await createSmokeContext(options)
-  exitCode = await runSmoke(options, context)
-} finally {
-  if (context) {
-    await cleanupSmokeContext(context, options)
-  }
+export interface NativeCodexSource {
+  authPath: string
+  configPath?: string
 }
 
-process.exit(exitCode)
+if (isMainModule()) {
+  const options = parseOptions(process.argv.slice(2))
+  let context: SmokeContext | undefined
+  let exitCode = 1
+
+  try {
+    context = await createSmokeContext(options)
+    exitCode = await runSmoke(options, context)
+  } finally {
+    if (context) {
+      await cleanupSmokeContext(context, options)
+    }
+  }
+
+  process.exit(exitCode)
+}
+
+function isMainModule(): boolean {
+  const entryPoint = process.argv[1]
+  return Boolean(entryPoint) && import.meta.url === pathToFileURL(entryPoint!).href
+}
 
 async function runSmoke(options: SmokeOptions, context: SmokeContext): Promise<number> {
   const results: SmokeResult[] = []
@@ -136,6 +151,7 @@ function parseOptions(args: string[]): SmokeOptions {
     cleanup: !args.includes('--keep-artifacts'),
     only,
     model: process.env.CODEX_SMOKE_MODEL || process.env.CODEINSIGHTS_AGENT_CODEX_MODEL,
+    modelReasoningEffort: parseReasoningEffort(process.env.CODEX_SMOKE_REASONING_EFFORT),
     baseUrl: process.env.CODEX_SMOKE_BASE_URL,
     apiKey: process.env.CODEX_SMOKE_API_KEY
       || (args.includes('--use-openai-api-key') ? process.env.OPENAI_API_KEY : undefined),
@@ -145,6 +161,19 @@ function parseOptions(args: string[]): SmokeOptions {
     options.model = args[modelIndex + 1]
   }
   return options
+}
+
+function parseReasoningEffort(value: string | undefined): SmokeOptions['modelReasoningEffort'] {
+  if (
+    value === 'minimal'
+    || value === 'low'
+    || value === 'medium'
+    || value === 'high'
+    || value === 'xhigh'
+  ) {
+    return value
+  }
+  return undefined
 }
 
 function parseOnly(args: string[]): Set<string> | undefined {
@@ -184,11 +213,9 @@ async function createSmokeContext(options: SmokeOptions): Promise<SmokeContext> 
     await mkdir(apiKeyCodexHome, { recursive: true })
     await mkdir(workspaceDir, { recursive: true })
 
-    const sourceAuthPath = resolveNativeAuthPath()
-    if (sourceAuthPath) {
-      const targetAuthPath = join(nativeCodexHome, 'auth.json')
-      await copyFile(sourceAuthPath, targetAuthPath)
-      await chmod(targetAuthPath, 0o600)
+    const nativeSource = resolveNativeCodexSource()
+    if (nativeSource) {
+      await copyNativeCodexSource(nativeSource, nativeCodexHome)
     }
 
     return {
@@ -198,6 +225,7 @@ async function createSmokeContext(options: SmokeOptions): Promise<SmokeContext> 
       apiKeyCodexHome,
       workspaceDir,
       model: options.model,
+      modelReasoningEffort: options.modelReasoningEffort,
     }
   } catch (error) {
     await rm(rootDir, { recursive: true, force: true })
@@ -208,20 +236,50 @@ async function createSmokeContext(options: SmokeOptions): Promise<SmokeContext> 
 async function cleanupSmokeContext(context: SmokeContext, options: SmokeOptions): Promise<void> {
   await Promise.all([
     rm(join(context.nativeCodexHome, 'auth.json'), { force: true }),
+    rm(join(context.nativeCodexHome, 'config.toml'), { force: true }),
     rm(join(context.apiKeyCodexHome, 'auth.json'), { force: true }),
+    rm(join(context.apiKeyCodexHome, 'config.toml'), { force: true }),
   ])
   if (options.cleanup) {
     await rm(context.rootDir, { recursive: true, force: true })
   }
 }
 
-function resolveNativeAuthPath(): string | null {
-  const explicitCodexHome = process.env.CODEX_HOME?.trim()
+export function resolveNativeCodexSource(env: NodeJS.ProcessEnv = process.env): NativeCodexSource | null {
+  const explicitCodexHome = env.CODEX_HOME?.trim()
+  const homeDir = env.HOME || env.USERPROFILE || homedir()
   const candidates = [
-    explicitCodexHome ? join(explicitCodexHome, 'auth.json') : '',
-    join(homedir(), '.codex', 'auth.json'),
+    explicitCodexHome ? explicitCodexHome : '',
+    join(homeDir, '.codex'),
   ].filter(Boolean)
-  return candidates.find((candidate) => existsSync(candidate)) ?? null
+
+  for (const codexHome of candidates) {
+    const authPath = join(codexHome, 'auth.json')
+    if (!existsSync(authPath)) continue
+    const configPath = join(codexHome, 'config.toml')
+    return {
+      authPath,
+      configPath: existsSync(configPath) ? configPath : undefined,
+    }
+  }
+
+  return null
+}
+
+export async function copyNativeCodexSource(
+  source: NativeCodexSource,
+  targetCodexHome: string,
+): Promise<void> {
+  await mkdir(targetCodexHome, { recursive: true })
+  const targetAuthPath = join(targetCodexHome, 'auth.json')
+  await copyFile(source.authPath, targetAuthPath)
+  await chmod(targetAuthPath, 0o600)
+
+  if (source.configPath) {
+    const targetConfigPath = join(targetCodexHome, 'config.toml')
+    await copyFile(source.configPath, targetConfigPath)
+    await chmod(targetConfigPath, 0o600)
+  }
 }
 
 async function runNativeAuthSmoke(
@@ -587,7 +645,7 @@ async function runRuntimeScenario(input: {
       runnerMode: 'runner-v2',
       repositoryRoot: input.context.workspaceDir,
       abortSignal: signal,
-      modelReasoningEffort: 'minimal',
+      modelReasoningEffort: input.context.modelReasoningEffort,
       networkAccessEnabled: input.networkAccessEnabled,
       webSearchMode: input.webSearchMode ?? 'disabled',
     })) {

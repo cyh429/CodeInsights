@@ -1,5 +1,30 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime native config 修正计划
+
+范围确认：用户指出当前主机 Codex native auth 使用 `config.toml` 配置中转 API。本轮修正 Phase 7 smoke 隔离逻辑，让 native auth 补跑复制同源 `config.toml`，避免隔离环境丢失 `model_provider` / `base_url` 后误判。不修改根 `README.md` / `AGENTS.md`，不默认提交 `apps/electron/out/`。
+
+- [x] 将本次纠正写入 `tasks/lessons.md`，记录 native auth 隔离必须保留 `config.toml` 中转配置。
+- [x] 梳理 Codex runtime / smoke 中 `CODEX_HOME`、`auth.json`、`config.toml` 的处理边界，确认真实 app 路径与 smoke 路径差异。
+- [x] 修改 `apps/electron/scripts/agent-codex-smoke.ts`：native smoke 从同一 Codex home 复制 `auth.json` 和可选 `config.toml` 到隔离 `CODEX_HOME`，设置 `0600` 并清理，不输出配置内容。
+- [x] 为 native config 复制逻辑补充可执行测试或等价脚本级验证。
+- [x] 重跑相关验证：smoke 脚本测试/检查、`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only native`，以及必要的 `git diff --check`。
+- [x] 根据重跑结果更新开发清单、support README、next-session prompt 和本 Review；如果 native 成功，再继续补跑 readonly/workspace-write/resume/web-search/history reload。
+- [x] 按阶段纪律提交本轮修复与记录，不纳入 `apps/electron/out/`。
+
+## 2026-05-26 Agent Codex Runtime native config 修正 Review
+
+- 根因确认：主机 `~/.codex/config.toml` 使用 `model_provider = "cch"` 和 `[model_providers.cch] base_url = "https://claude.hanbbq.top/v1"` 中转 API；此前 smoke 只复制 `auth.json` 到隔离 `CODEX_HOME`，导致 native smoke 丢失 provider / base_url 配置。
+- 进一步定位：带 `--ignore-user-config` 的 CLI 探针会显式忽略 `config.toml`，因此仍请求默认 `api.openai.com`；去掉该参数并复制 `config.toml` 后，隔离 CLI 探针成功返回 `codeinsights-cli-config-probe-ok`。
+- SDK 失败点：`@openai/codex-sdk` 路径在读取中转配置后请求已打到 `https://claude.hanbbq.top/v1/responses`，但原 smoke 硬编码 `modelReasoningEffort: 'minimal'`，中转返回 `level "minimal" not supported`；已改为默认尊重 `config.toml`，仅在显式设置 `CODEX_SMOKE_REASONING_EFFORT` 时覆盖。
+- 已修改 `apps/electron/scripts/agent-codex-smoke.ts`：直接执行时才运行 smoke；导出可测试的 native source 解析/复制函数；复制 `auth.json` 和同源可选 `config.toml` 到隔离 `CODEX_HOME`，均设置为 `0600`，清理时删除，不输出配置内容。
+- 已新增 `apps/electron/scripts/agent-codex-smoke.test.ts`，覆盖复制 `config.toml` 和缺少 `config.toml` 时只复制 `auth.json` 两种路径。
+- 已按项目规则将 `@codeinsights/electron` 版本从 `0.0.110` 升至 `0.0.111`。
+- 修正后真实 smoke：`native-auth.readonly` passed，thread `019e63a4-3186-7f40-a97b-a0cd2a6a0932`，终态 `run_completed`，assistant 返回 `codeinsights-codex-native-ok`。
+- 补跑成功路径：`readonly-plan.no-write` passed，thread `019e63a5-0a1d-7571-a7f9-2ea212be46b5`；`workspace-write.file-edit` passed，thread `019e63a5-7da1-7fb3-ace8-deec5f2dc74d`；`resume.context` passed，thread `019e63a6-5806-7013-a8af-651efad3ffe5`；`web-search.current-support` passed，thread `019e63a7-0b84-7993-bf33-028d39b15593`；`stop.long-run` passed，终态 `run_stopped`。
+- 仍未关闭：`channel-api-key.readonly` 因未设置 `CODEX_SMOKE_API_KEY` 仍 skipped；history reload 仍缺少 Electron/packaged app 重开 UI 的独立成功验证；MCP 仍未注入 Codex 原生配置。
+- 验证通过：`bun test apps/electron/scripts/agent-codex-smoke.test.ts`；`bun test apps/electron/src/main/lib/codex-runtime/codex-auth.test.ts apps/electron/src/main/lib/codex-runtime/codex-env.test.ts apps/electron/src/main/lib/codex-runtime/codex-command-guard.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 成功路径再次补跑计划
 
 范围确认：本轮先补跑 Phase 7 凭证/网络阻塞的真实 Codex 成功路径 smoke；只有 native / API key 成功路径验证通过后，才进入 Phase 8 文档、发布与长期维护。若凭证或网络仍不可用，保持 `[!]` 阻塞并记录真实错误，不把未验证成功路径写成已通过。不修改根 `README.md` / `AGENTS.md`，不默认提交 `apps/electron/out/` 打包产物。
