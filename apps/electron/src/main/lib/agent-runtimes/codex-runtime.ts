@@ -29,6 +29,7 @@ import {
 import {
   resolveCodexCliPath as defaultResolveCodexCliPath,
 } from '../codex-runtime/codex-binary'
+import { isReservedCodexMcpEnvName } from '../codex-runtime/codex-mcp-config'
 import type { CodexRuntimeOptions } from '../codex-runtime/codex-channel'
 import {
   createDefaultCodexSdkClient,
@@ -188,7 +189,8 @@ export class CodexAgentRuntime implements CodingAgentRuntime {
         codexPathOverride: this.resolveCodexCliPath(),
         apiKey: runtime.apiKey,
         baseUrl: runtime.baseUrl,
-        env: buildCodexClientEnv(commandGuard.env, runtime),
+        ...(input.codexConfig ? { config: input.codexConfig } : {}),
+        env: buildCodexClientEnv(commandGuard.env, runtime, input.codexConfigEnv),
       })
       const threadOptions = buildCodexThreadOptions({ ...input, model })
       const thread = input.externalSessionId
@@ -397,11 +399,25 @@ function unsupportedCapability(capability: UnsupportedRuntimeCapability): Unsupp
 function buildCodexClientEnv(
   env: Record<string, string>,
   runtime: CodexRuntimeOptions,
+  configEnv: Record<string, string> | undefined,
 ): Record<string, string> {
-  if (!runtime.apiKey) return env
   const clientEnv = { ...env }
+  mergeCodexConfigEnv(clientEnv, configEnv)
+  if (!runtime.apiKey) return clientEnv
   delete clientEnv.CODEX_API_KEY
   return clientEnv
+}
+
+function mergeCodexConfigEnv(
+  targetEnv: Record<string, string>,
+  configEnv: Record<string, string> | undefined,
+): void {
+  for (const [key, value] of Object.entries(configEnv ?? {})) {
+    if (isReservedCodexMcpEnvName(key) || Object.prototype.hasOwnProperty.call(targetEnv, key)) {
+      throw new Error(`禁止 MCP env 覆盖 Codex 运行环境: ${key}`)
+    }
+    targetEnv[key] = value
+  }
 }
 
 function createRunFailedEvent(

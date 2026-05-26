@@ -90,6 +90,7 @@ import type {
   CodexCodingAgentRuntimeRunInput,
   CodingAgentRuntime,
 } from './agent-runtimes/coding-agent-runtime-types'
+import { buildCodexMcpConfigFromWorkspace } from './codex-runtime/codex-mcp-config'
 
 // ===== 类型定义 =====
 
@@ -330,6 +331,25 @@ export class AgentOrchestrator {
     }
 
     return mcpServers
+  }
+
+  private buildCodexMcpConfig(workspaceSlug: string | undefined): Pick<CodexCodingAgentRuntimeRunInput, 'codexConfig' | 'codexConfigEnv'> | undefined {
+    if (!workspaceSlug) return undefined
+
+    const result = buildCodexMcpConfigFromWorkspace(getWorkspaceMcpConfig(workspaceSlug), {
+      pathEnv: process.env.PATH,
+    })
+    if (result.serverCount > 0) {
+      console.log(`[Agent 编排] 已注入 ${result.serverCount} 个 Codex MCP 服务器`)
+    }
+    for (const skipped of result.skipped) {
+      console.warn(`[Agent 编排] 跳过 Codex MCP 服务器 ${skipped.name}: ${skipped.reason}`)
+    }
+    if (!result.config) return undefined
+    return {
+      codexConfig: result.config,
+      ...(Object.keys(result.env).length > 0 ? { codexConfigEnv: result.env } : {}),
+    }
   }
 
   /**
@@ -881,6 +901,7 @@ export class AgentOrchestrator {
         const codexModelForRun = runtimeSelection.source === 'session'
           ? runtimeSelection.model
           : runtimeSelection.model ?? appSettings.agentCodexModelId
+        const codexMcpConfig = this.buildCodexMcpConfig(workspaceSlug)
         await this.runWithCodexRuntime({
           sessionId,
           prompt: finalPrompt,
@@ -896,6 +917,8 @@ export class AgentOrchestrator {
           runtimeHash: materializedRuntimeManifest?.runtimeHash,
           repositoryRoot: agentCwd ?? homedir(),
           settings: appSettings,
+          ...(codexMcpConfig?.codexConfig ? { codexConfig: codexMcpConfig.codexConfig } : {}),
+          ...(codexMcpConfig?.codexConfigEnv ? { codexConfigEnv: codexMcpConfig.codexConfigEnv } : {}),
         })
         return
       }
@@ -1809,6 +1832,8 @@ export class AgentOrchestrator {
     runtimeHash?: string
     repositoryRoot?: string
     settings: ReturnType<typeof getSettings>
+    codexConfig?: CodexCodingAgentRuntimeRunInput['codexConfig']
+    codexConfigEnv?: CodexCodingAgentRuntimeRunInput['codexConfigEnv']
   }): Promise<void> {
     const runtime = this.runtimeRegistry.require('codex')
     this.activeCodingRuntimes.set(input.sessionId, runtime)
@@ -1828,6 +1853,8 @@ export class AgentOrchestrator {
       modelReasoningEffort: input.settings.agentCodexReasoningEffort,
       networkAccessEnabled: input.settings.agentCodexNetworkAccessEnabled,
       webSearchMode: input.settings.agentCodexWebSearchMode,
+      ...(input.codexConfig ? { codexConfig: input.codexConfig } : {}),
+      ...(input.codexConfigEnv ? { codexConfigEnv: input.codexConfigEnv } : {}),
     }
 
     let terminalEvent: AgentRuntimeEvent | undefined

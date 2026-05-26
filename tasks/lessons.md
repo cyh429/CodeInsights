@@ -177,3 +177,12 @@
 - README 需要像参考项目一样直接展示可点击播放视频时，应使用 GitHub 上传附件生成的 `https://github.com/user-attachments/assets/...` 地址，并在推送后抓取 GitHub 渲染 HTML 验证存在 `gh:secured-asset-reference` 和 `<video>`。
 - 仅调用 `upload/policies/assets` 得到的附件 URL 可能在匿名访问下仍是 404；需要让 GitHub 编辑器完成上传并把附件引用持久化到公开内容后，再用匿名请求校验 mp4 文件头。
 - 用户指出线上仍无视频时，要先承认 raw mp4 方案错误，再补齐真正的 GitHub 渲染验证，不要只停留在本地 Markdown 或 HEAD 请求。
+
+## 2026-05-26 Codex MCP secret 注入
+
+- `@openai/codex-sdk` 的 `config` 会展平成 Codex CLI `--config key=value` 参数；MCP env、HTTP header、token 等 secret 不能放进 `CodexOptions.config`，否则会通过进程 argv 泄露。
+- Codex workspace MCP 注入应让 config 只保存结构和环境变量名：stdio 使用 `env_vars`，HTTP 使用 `env_http_headers` / `bearer_token_env_var`；真实 secret 只放进 Codex 子进程 env 或隔离的 0600 临时 config。
+- 将 MCP env 合并进 Codex 子进程 env 时要防止污染 Codex 自身运行环境；`CODEX_API_KEY`、`CODEX_HOME`、`PATH`、代理变量、Git askpass/config 等保留名称不能从 workspace MCP env 直接透传。
+- 即使 helper 已做保留名校验，runtime 合并 extra env 时也必须二次防护：禁止覆盖任何 Git guard/base env，禁止 `GIT_*` / proxy / Codex auth/home 等保留前缀，否则外部调用可绕过 helper。
+- 使用 SDK `config` 传 HTTP header 映射时，header name 也会变成 dotted config path 的 key；不能安全表示的 header key 先跳过或改用隔离 TOML，不能生成会被 CLI 解析成嵌套 map 的 override。
+- smoke 不能手写一份看起来等价的 Codex `--config` 参数；必须从真实 helper 输出派生验证输入，否则 helper 映射坏了 smoke 仍可能误报通过。

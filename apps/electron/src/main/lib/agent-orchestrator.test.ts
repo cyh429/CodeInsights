@@ -202,6 +202,66 @@ describe('AgentOrchestrator Codex runtime routing', () => {
     ])
   })
 
+  test('Codex runtime 会接收工作区 MCP 的原生 config 注入', async () => {
+    process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession } = await import('./agent-session-manager')
+    const { createAgentWorkspace, saveWorkspaceMcpConfig } = await import('./agent-workspace-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'codex' })
+    const workspace = createAgentWorkspace('Codex MCP Workspace')
+    saveWorkspaceMcpConfig(workspace.slug, {
+      servers: {
+        docs: {
+          type: 'stdio',
+          command: 'node',
+          args: ['server.mjs'],
+          env: { DOCS_TOKEN: 'secret' },
+          timeout: 15,
+          enabled: true,
+        },
+      },
+    })
+    const session = createAgentSession('Codex MCP 会话')
+    let capturedConfig: unknown
+    let capturedConfigEnv: unknown
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeCodexRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'codex-thread-mcp' },
+      { type: 'run_completed' },
+    ], undefined, (input) => {
+      capturedConfig = (input as { codexConfig?: unknown }).codexConfig
+      capturedConfigEnv = (input as { codexConfigEnv?: unknown }).codexConfigEnv
+    }))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+
+    await orchestrator.sendMessage({
+      ...createSendInput(session.id),
+      workspaceId: workspace.id,
+    }, {
+      onError: () => {},
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(capturedConfig).toMatchObject({
+      mcp_servers: {
+        docs: {
+          command: 'node',
+          args: ['server.mjs'],
+          env_vars: ['PATH', 'DOCS_TOKEN'],
+          enabled: true,
+          required: false,
+          startup_timeout_sec: 15,
+        },
+      },
+    })
+    expect(capturedConfigEnv).toEqual({ DOCS_TOKEN: 'secret' })
+    expect(JSON.stringify(capturedConfig)).not.toContain('secret')
+  })
+
   test('已绑定 Codex session resume 不回退当前设置模型', async () => {
     process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')

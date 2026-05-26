@@ -237,6 +237,71 @@ describe('CodexAgentRuntime', () => {
     })
   })
 
+  test('将 Codex config override 传给 SDK client 用于 MCP 注入', async () => {
+    const { runtime, calls } = createMockRuntime(() => streamEvents(successEvents()))
+
+    await collect(runtime.run({
+      sessionId: 'session-codex-config',
+      prompt: '使用 MCP',
+      model: 'gpt-5.1-codex',
+      workingDirectory: '/repo',
+      permissionMode: 'auto',
+      codexConfig: {
+        mcp_servers: {
+          docs: {
+            command: 'node',
+            args: ['server.mjs'],
+            env_vars: ['DOCS_TOKEN'],
+            enabled: true,
+            required: false,
+          },
+        },
+      },
+      codexConfigEnv: {
+        DOCS_TOKEN: 'secret',
+      },
+    }))
+
+    expect(calls.clientOptions[0]?.config).toEqual({
+      mcp_servers: {
+        docs: {
+          command: 'node',
+          args: ['server.mjs'],
+          env_vars: ['DOCS_TOKEN'],
+          enabled: true,
+          required: false,
+        },
+      },
+    })
+    expect(calls.clientOptions[0]?.env).toMatchObject({
+      DOCS_TOKEN: 'secret',
+    })
+    expect(JSON.stringify(calls.clientOptions[0]?.config)).not.toContain('secret')
+  })
+
+  test('拒绝 Codex MCP env 覆盖运行环境和 Git guard', async () => {
+    const { runtime, calls } = createMockRuntime(() => streamEvents(successEvents()))
+
+    const events = runtimeEvents(await collect(runtime.run({
+      sessionId: 'session-codex-config-env-guard',
+      prompt: '尝试覆盖 guard env',
+      model: 'gpt-5.1-codex',
+      workingDirectory: '/repo',
+      permissionMode: 'auto',
+      codexConfigEnv: {
+        CODEX_HOME: '/tmp/unsafe-codex-home',
+      },
+    })))
+
+    expect(calls.clientOptions).toEqual([])
+    expect(events.at(-1)).toMatchObject({
+      type: 'run_failed',
+      error: {
+        message: '禁止 MCP env 覆盖 Codex 运行环境: CODEX_HOME',
+      },
+    })
+  })
+
   test('mock resumeThread 成功并暴露 resume external session id', async () => {
     const { runtime, calls } = createMockRuntime(() => streamEvents([
       { type: 'turn.started' },

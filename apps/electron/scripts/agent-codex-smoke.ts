@@ -10,11 +10,13 @@ import type {
   AgentRuntimeEvent,
   AgentStreamEnvelope,
   CodeInsightsPermissionMode,
+  WorkspaceMcpConfig,
 } from '@codeinsights/shared'
 import { CodexAgentRuntime } from '../src/main/lib/agent-runtimes/codex-runtime'
 import { resolveCodexCliPath } from '../src/main/lib/codex-runtime/codex-binary'
 import type { CodexAuthState } from '../src/main/lib/codex-runtime/codex-auth'
 import type { CodexRuntimeOptions } from '../src/main/lib/codex-runtime/codex-channel'
+import { buildCodexMcpConfigFromWorkspace } from '../src/main/lib/codex-runtime/codex-mcp-config'
 
 interface SmokeOptions {
   strict: boolean
@@ -32,6 +34,7 @@ interface SmokeContext {
   readonly codeinsightsConfigDir: string
   readonly nativeCodexHome: string
   readonly apiKeyCodexHome: string
+  readonly mcpCodexHome: string
   readonly workspaceDir: string
   readonly model?: string
   readonly modelReasoningEffort?: 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
@@ -115,14 +118,7 @@ async function runSmoke(options: SmokeOptions, context: SmokeContext): Promise<n
   if (shouldRun(options, 'stop')) await runStopSmoke(context, results, options)
   if (shouldRun(options, 'resume')) await runResumeSmoke(context, results, options)
   if (shouldRun(options, 'web-search')) await runWebSearchSmoke(context, results, options)
-
-  if (shouldRun(options, 'mcp')) {
-    results.push({
-      name: 'mcp.current-support',
-      status: 'skipped',
-      detail: 'Phase 7 未注入 CodeInsights workspace MCP 到 Codex 原生配置；本轮记录为未配置。',
-    })
-  }
+  if (shouldRun(options, 'mcp')) await runMcpConfigSmoke(context, results)
 
   const failed = results.filter((result) => result.status === 'failed')
   const skipped = results.filter((result) => result.status === 'skipped')
@@ -206,11 +202,13 @@ async function createSmokeContext(options: SmokeOptions): Promise<SmokeContext> 
     const codeinsightsConfigDir = join(rootDir, 'codeinsights-config')
     const nativeCodexHome = join(rootDir, 'codex-native-home')
     const apiKeyCodexHome = join(rootDir, 'codex-api-key-home')
+    const mcpCodexHome = join(rootDir, 'codex-mcp-home')
     const workspaceDir = join(rootDir, 'workspace')
 
     await mkdir(codeinsightsConfigDir, { recursive: true })
     await mkdir(nativeCodexHome, { recursive: true })
     await mkdir(apiKeyCodexHome, { recursive: true })
+    await mkdir(mcpCodexHome, { recursive: true })
     await mkdir(workspaceDir, { recursive: true })
 
     const nativeSource = resolveNativeCodexSource()
@@ -223,6 +221,7 @@ async function createSmokeContext(options: SmokeOptions): Promise<SmokeContext> 
       codeinsightsConfigDir,
       nativeCodexHome,
       apiKeyCodexHome,
+      mcpCodexHome,
       workspaceDir,
       model: options.model,
       modelReasoningEffort: options.modelReasoningEffort,
@@ -239,6 +238,7 @@ async function cleanupSmokeContext(context: SmokeContext, options: SmokeOptions)
     rm(join(context.nativeCodexHome, 'config.toml'), { force: true }),
     rm(join(context.apiKeyCodexHome, 'auth.json'), { force: true }),
     rm(join(context.apiKeyCodexHome, 'config.toml'), { force: true }),
+    rm(join(context.mcpCodexHome, 'config.toml'), { force: true }),
   ])
   if (options.cleanup) {
     await rm(context.rootDir, { recursive: true, force: true })
@@ -597,6 +597,151 @@ async function runWebSearchSmoke(
     terminal: run.terminal?.type,
     threadId: run.threadId,
   })
+}
+
+async function runMcpConfigSmoke(
+  context: SmokeContext,
+  results: SmokeResult[],
+): Promise<void> {
+  const serverName = 'codeinsights_smoke'
+  const httpServerName = 'codeinsights_http_smoke'
+  const workspaceConfig: WorkspaceMcpConfig = {
+    servers: {
+      [serverName]: {
+        type: 'stdio',
+        command: process.execPath,
+        args: ['-e', 'process.exit(0)'],
+        env: { SMOKE_TOKEN: 'smoke-token' },
+        enabled: true,
+      },
+      [httpServerName]: {
+        type: 'http',
+        url: 'https://mcp.example.test/mcp',
+        headers: { 'X-Api-Key': 'smoke-http-token' },
+        enabled: true,
+      },
+    },
+  }
+  const codexConfig = buildCodexMcpConfigFromWorkspace(workspaceConfig)
+  if (!codexConfig.config || codexConfig.serverCount !== 2) {
+    results.push({
+      name: 'mcp.config-injection',
+      status: 'failed',
+      detail: `MCP 配置转换失败: ${JSON.stringify(codexConfig.skipped)}`,
+    })
+    return
+  }
+  const generatedServers = codexConfig.config.mcp_servers as Record<string, {
+    args?: string[]
+    command?: string
+    enabled?: boolean
+    env_vars?: string[]
+    required?: boolean
+    startup_timeout_sec?: number
+    url?: string
+    env_http_headers?: Record<string, string>
+  }>
+  const generatedServer = generatedServers[serverName]
+  const generatedHttpServer = generatedServers[httpServerName]
+  if (!generatedServer || !generatedHttpServer) {
+    results.push({
+      name: 'mcp.config-injection',
+      status: 'failed',
+      detail: 'MCP 配置转换缺少 smoke server。',
+    })
+    return
+  }
+
+  try {
+    const output = execFileSync(
+      resolveCodexCliPath(),
+      [
+        'mcp',
+        'list',
+        '--json',
+        ...buildCodexConfigOverrideArgs(codexConfig.config as Record<string, unknown>),
+      ],
+      {
+        encoding: 'utf-8',
+        env: {
+          PATH: process.env.PATH ?? '',
+          HOME: homedir(),
+          USERPROFILE: homedir(),
+          CODEX_HOME: context.mcpCodexHome,
+          ...codexConfig.env,
+        },
+      },
+    )
+    const servers = JSON.parse(output) as Array<{
+      name?: string
+      enabled?: boolean
+      startup_timeout_sec?: number
+      transport?: {
+        type?: string
+        command?: string
+        args?: string[]
+        env_vars?: string[]
+        url?: string
+        env_http_headers?: Record<string, string>
+      }
+    }>
+    const server = servers.find((item) => item.name === serverName)
+    const httpServer = servers.find((item) => item.name === httpServerName)
+    const passed = server?.enabled === true
+      && server.transport?.type === 'stdio'
+      && server.transport.command === generatedServer.command
+      && server.transport.args?.join('\u0000') === generatedServer.args?.join('\u0000')
+      && server.transport.env_vars?.join('\u0000') === generatedServer.env_vars?.join('\u0000')
+      && server.startup_timeout_sec === generatedServer.startup_timeout_sec
+      && httpServer?.enabled === true
+      && httpServer.transport?.type === 'streamable_http'
+      && httpServer.transport.url === generatedHttpServer.url
+      && JSON.stringify(httpServer.transport.env_http_headers) === JSON.stringify(generatedHttpServer.env_http_headers)
+
+    results.push({
+      name: 'mcp.config-injection',
+      status: passed ? 'passed' : 'failed',
+      detail: passed
+        ? 'CodeInsights workspace MCP 已映射为 Codex 原生 mcp_servers 配置，Codex CLI mcp list 可识别 stdio/http 配置。'
+        : 'Codex CLI mcp list 未识别生成的 MCP 配置。',
+    })
+  } catch (error) {
+    results.push({
+      name: 'mcp.config-injection',
+      status: 'failed',
+      detail: error instanceof Error ? error.message : 'MCP 配置 smoke 执行失败',
+    })
+  }
+}
+
+function buildCodexConfigOverrideArgs(config: Record<string, unknown>): string[] {
+  return flattenCodexConfigOverrides(config)
+    .flatMap((override) => ['--config', override])
+}
+
+function flattenCodexConfigOverrides(value: Record<string, unknown>, prefix = ''): string[] {
+  return Object.entries(value).flatMap(([key, child]) => {
+    const path = prefix ? `${prefix}.${key}` : key
+    if (isPlainRecord(child)) {
+      return flattenCodexConfigOverrides(child, path)
+    }
+    return [`${path}=${toTomlLiteral(child)}`]
+  })
+}
+
+function toTomlLiteral(value: unknown): string {
+  if (typeof value === 'string') return JSON.stringify(value)
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => toTomlLiteral(item)).join(',')}]`
+  }
+  throw new Error(`无法序列化 Codex config override: ${String(value)}`)
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object'
+    && value !== null
+    && !Array.isArray(value)
 }
 
 async function runRuntimeScenario(input: {

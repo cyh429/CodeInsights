@@ -8,6 +8,7 @@ import type {
 } from '@codeinsights/shared'
 import type {
   Input as CodexInput,
+  CodexOptions,
   ModelReasoningEffort,
   SandboxMode,
   WebSearchMode,
@@ -52,6 +53,8 @@ export interface CodexCodingAgentRuntimeRunInput extends CodingAgentRuntimeRunIn
   networkAccessEnabled?: boolean
   webSearchMode?: WebSearchMode
   allowDangerFullAccess?: boolean
+  codexConfig?: CodexOptions['config']
+  codexConfigEnv?: Record<string, string>
 }
 
 export interface CodingAgentRuntimeRunResult {

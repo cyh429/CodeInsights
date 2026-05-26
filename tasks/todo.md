@@ -3525,3 +3525,32 @@ Phase 8 禁止事项：
 - 已更新 `docs/codex-support/next-session-prompt.md`：下次启动提示词改为 Phase 7 入口，要求先读清单第 8 节 Phase 6 和第 9 节 Phase 7，并明确不混入 Phase 8。
 - 验证通过：Codex support Markdown code fence 检查；旧 Phase 6 待启动状态短语扫描；`git diff --check -- docs/codex-support tasks/todo.md`。
 - 本轮只修改文档和任务记录，未修改根 `README.md` 或 `AGENTS.md`，未进入 Phase 7 真实 Codex SDK / CLI 集成。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 MCP 注入收尾计划
+
+- [x] 复习 `AGENTS.md`、`tasks/lessons.md` 和 Codex Runtime 开发清单，重点确认阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
+- [x] 运行 `git status --short` 与 `git log -3 --oneline`，确认当前仅有 `apps/electron/out/` 未跟踪，不默认 stage / commit。
+- [x] 读取开发清单最新状态快照、第 9 节 Phase 7、第 10 节 Phase 8 和第 13 节当前未解决问题，确认本轮优先级。
+- [x] 检查 `CODEX_SMOKE_API_KEY` 是否显式提供；当前环境缺失，因此不补跑 channel API key smoke，也不默认读取 ambient `OPENAI_API_KEY`。
+- [x] 梳理现有 Agent workspace MCP 配置、Codex runtime native config 生成和 smoke 脚本结构，选择最小改动路径。
+- [x] 实现 CodeInsights workspace MCP 配置到 Codex 原生 `mcp_servers` config 的注入能力，保留 native auth 同源 `config.toml` 的 model/provider/base_url 语义，不写用户真实 `~/.codex/config.toml`。
+- [x] 补充单测 / fixture，覆盖 MCP server 注入、Codex SDK config 传递、Orchestrator workspace MCP 接线和 native config 复制。
+- [x] 运行针对性测试、typecheck / diff 检查，并补跑 `--only mcp` smoke。
+- [x] 更新开发清单 Phase 7 / 当前未解决问题和本节 Review；阶段完成后只提交本阶段相关文件。
+
+## 2026-05-26 Agent Codex Runtime Phase 7 MCP 注入收尾 Review
+
+- 已新增 `apps/electron/src/main/lib/codex-runtime/codex-mcp-config.ts`，将 CodeInsights workspace `mcp.json` 中 enabled stdio/http MCP 映射到 Codex SDK `config.mcp_servers`；stdio 支持 `command`、`args`、`env_vars`、`startup_timeout_sec`，http 支持 `url` 和 `env_http_headers`。
+- 安全复审后已修正：MCP env/header 的真实 secret 不再进入 `CodexOptions.config`，避免被 `@openai/codex-sdk` 展平成 CLI `--config key=value` argv；真实值通过 `codexConfigEnv` 合并进 Codex 子进程环境，config 只保留 env/header 名称引用。
+- 复审 Block 后继续加固：workspace MCP env 现在拒绝 `GIT_*`、Git config、proxy、Codex auth/home、基础 shell env 等保留名称；runtime 合并 `codexConfigEnv` 时禁止覆盖任何 Git guard/base env；HTTP header name 暂限制为 Codex SDK dotted config 可安全表达的 bare key，无法安全表达时跳过该 server。
+- Agent Codex runtime 现在会通过 `CodexOptions.config` 传入工作区 MCP 原生配置，并通过 `codexConfigEnv` 传入 MCP secret；不修改用户真实 `~/.codex/config.toml`，因此 native auth 中的 `model_provider` / `model_providers.*.base_url` 中转配置仍由原 Codex config 负责。
+- Orchestrator Codex 分支会读取当前 workspace MCP，注入到 Codex runtime；无效 server name、缺少 command/url、legacy `sse`、保留 env 名称、无效 header 名称和 env 名称冲突会跳过，只记录服务器名和原因，不输出 env/header secret。
+- `apps/electron/scripts/agent-codex-smoke.ts` 的 `--only mcp` 不再 skipped，会生成本地 stdio/http MCP 形态并从 helper 输出派生 CLI override，用真实 Codex CLI `mcp list --json` 验证原生配置可识别。
+- `CODEX_SMOKE_API_KEY` 当前仍未提供，channel API key smoke 未补跑，也未默认读取 ambient `OPENAI_API_KEY`。
+- 已递增 `@codeinsights/electron` 版本到 `0.0.113`，同步更新 `bun.lock` workspace 版本。
+- 验证通过：`bun test apps/electron/src/main/lib/codex-runtime apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts apps/electron/scripts/agent-codex-smoke.test.ts`，54 pass / 0 fail。
+- 验证通过：`bun run --filter='@codeinsights/electron' typecheck`。
+- 验证通过：`bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only mcp`，`mcp.config-injection` passed，Codex CLI 可识别 helper 生成的 stdio/http 配置。
+- 验证通过：`git diff --check -- apps/electron/package.json apps/electron/scripts/agent-codex-smoke.ts apps/electron/src/main/lib/agent-orchestrator.ts apps/electron/src/main/lib/agent-orchestrator.test.ts apps/electron/src/main/lib/agent-runtimes apps/electron/src/main/lib/codex-runtime bun.lock tasks/todo.md`。
+- 代码复审通过：`code-reviewer` 确认上一轮 `codexConfigEnv` 覆盖 Git guard / 运行环境的 Block 已关闭，本轮无 Critical / High / Medium findings。
+- 阶段边界：未修改根 `README.md` / `AGENTS.md`，未默认 stage `apps/electron/out/`，未进入 Phase 8 文档发布维护。
