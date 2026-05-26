@@ -28,10 +28,11 @@
   - `58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`
   - `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`
   - `7d864d16 docs(agent): 同步 Codex Runtime Phase 7 后续状态`
-  - 本轮 smoke 补跑状态同步提交完成后以 `git log -1 --oneline` 为准
+  - `a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`
+  - 本轮最新状态固化提交完成后以 `git log -1 --oneline` 为准
 - 未完成 / 阻塞：Phase 7 native / workspace-write / read-only / resume / web-search / history reload 成功路径仍需有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`，本轮隔离 native smoke / CLI 探针均创建 thread 后超时，OpenAI / ChatGPT / GitHub 连通性探针也超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过；Phase 8 文档发布维护尚未开始。
 - 下一步：先恢复 Codex 所需网络连通性，再从 [开发进度清单](./2026-05-25-agent-codex-runtime-development-checklist.md) 第 9 节 Phase 7 残余 smoke 补跑开始；成功路径补跑通过后，再进入第 10 节 Phase 8“文档、发布与长期维护”。
-- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新实现提交为 `1b94f9ad` 或其后的文档同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
+- 下次启动：直接使用 [Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)，并先确认最新提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交；`apps/electron/out/` 是本地打包产物，不应默认纳入提交。
 
 ## 设计定位
 

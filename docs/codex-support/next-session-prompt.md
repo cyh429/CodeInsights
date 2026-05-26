@@ -17,6 +17,8 @@
 - Phase 5 Orchestrator Runtime Routing 已完成并提交：40441fe8。
 - Phase 6 Renderer 设置、历史与 UX 已完成并提交：58164e35。
 - Phase 7 真实 Codex SDK / CLI 接入、打包验证、安全加固和 smoke 记录已完成并提交：1b94f9ad。
+- Phase 7 smoke 补跑状态已同步并提交：a02cbbf5。
+- 最新开发状态文档已固化；提交号以 `git log -1 --oneline` 为准，预期提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。
 - Phase 7 仍有外部网络/凭证阻塞项：native / workspace-write / read-only / resume / web-search / history reload 成功路径需要有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 补跑；历史记录中过本机 native auth 返回 `401 invalid_api_key`；2026-05-26 补跑时隔离 native smoke 创建 thread 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针持续 reconnect / stream disconnected 后 90 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
 - Phase 8 文档、发布与长期维护尚未开始。
 - 当前开发状态以 docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md 为准。
@@ -25,7 +27,7 @@
 
 请先执行：
 1. 读取 AGENTS.md / 项目指令，并复习 tasks/lessons.md 中阶段完成即提交、Codex auth 隔离、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
 3. 读取开发清单的“最新开发状态快照”、第 9 节 Phase 7 执行记录、第 10 节 Phase 8 和第 13 节当前未解决问题。
 4. 在 tasks/todo.md 写入本轮计划，然后直接开始执行。
 5. 启动前确认本轮边界：先补跑 Phase 7 凭证阻塞的真实成功路径 smoke；补跑通过后再进入 Phase 8。不要把未验证成功路径写成已通过，也不要修改根 README.md / AGENTS.md，除非用户明确允许。

@@ -45,6 +45,8 @@
 - [x] Phase 5 Orchestrator Runtime Routing 已完成、通过验证并提交：`40441fe8 feat(agent): 完成 Codex Runtime Phase 5 编排路由`。
 - [x] Phase 6 Renderer 设置、历史与 UX 已完成、通过验证并提交：`58164e35 feat(agent): 完成 Codex Runtime Phase 6 渲染端接入`。
 - [x] Phase 7 真实 Codex SDK / CLI 接入、打包验证和 smoke 记录已执行并提交：`1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`。
+- [x] Phase 7 smoke 补跑状态已同步并提交：`a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`。
+- [x] 最新开发状态文档已固化；提交号以 `git log -1 --oneline` 为准，预期提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。
 - [!] Phase 7 成功路径 smoke 仍受外部网络/凭证阻塞：历史记录中过本机 native auth 返回 `401 invalid_api_key`；本轮隔离 native smoke 创建 thread 后 120 秒超时并终态 `run_stopped`，隔离 CLI 探针创建 thread 后持续 reconnect / stream disconnected 并 90 秒超时；`api.openai.com`、`chatgpt.com`、`github.com/openai/plugins.git` 连通性探针均 20 秒超时；channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 跳过。
 - [ ] Phase 8 文档发布和长期维护尚未开始。
 
@@ -52,7 +54,7 @@
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现提交为 `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`；若其后存在文档状态同步提交，以 `git log -1 --oneline` 为准。
+- 最新已记录实现提交为 `1b94f9ad test(agent): 完成 Codex Runtime Phase 7 真实集成验证`；最新状态同步提交以 `git log -1 --oneline` 为准，预期提交标题为 `docs(agent): 固化 Codex Runtime 最新开发状态` 或其后的状态同步提交。
 - 下次启动时若仍看到 `apps/electron/out/` 未跟踪，这是本地打包产物，不应默认 stage / commit。
 - 下一步应先恢复 Codex 所需网络连通性，并使用有效 Codex native auth 或 `CODEX_SMOKE_API_KEY` 重跑 Phase 7 成功路径 smoke；成功路径补跑通过后，再进入 Phase 8。
 

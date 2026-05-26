@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-26 Agent Codex Runtime 最新状态文档同步计划
+
+范围确认：本轮只把最新提交 `a02cbbf5` 和当前完成/未完成状态写回 Codex support 文档与下次启动提示词；不修改根 `README.md` / `AGENTS.md`，不处理 `apps/electron/out/`。
+
+- [x] 确认当前工作树状态：仅 `apps/electron/out/` 未跟踪，最新提交为 `a02cbbf5 docs(agent): 同步 Codex Runtime Phase 7 smoke 补跑状态`。
+- [x] 更新 `docs/codex-support/README.md`：将 `a02cbbf5` 固定为最新状态同步提交，并明确下次启动先确认该提交。
+- [x] 更新 `docs/codex-support/2026-05-25-agent-codex-runtime-development-checklist.md`：在最新开发状态快照中标注 Phase 7 smoke 补跑状态已提交，保留 Phase 7 成功路径 `[!]` 阻塞和 Phase 8 未开始。
+- [x] 更新 `docs/codex-support/next-session-prompt.md`：把 `a02cbbf5` 写入当前状态和启动检查步骤。
+- [x] 运行文档 code fence、相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 验证。
+- [x] 提交本轮文档状态同步，并在最终回复中给用户可直接复制的下次启动提示词。
+
+## 2026-05-26 Agent Codex Runtime 最新状态文档同步 Review
+
+- 已明确当前完成项：Phase 0-7 真实实现、打包验证、安全加固、binary / stop / packaged startup smoke 已完成；Phase 7 smoke 补跑状态已提交 `a02cbbf5`。
+- 已将最新状态同步提交固化为标题 `docs(agent): 固化 Codex Runtime 最新开发状态`，下次启动提示词要求以 `git log -1 --oneline` 确认实际最新 HEAD。
+- 已明确当前未完成项：Phase 7 native / readonly / workspace-write / resume / web-search / history reload 成功路径仍受外部网络/凭证阻塞；Phase 8 文档发布与长期维护尚未开始。
+- 已保持边界：根 `README.md` / `AGENTS.md` 未修改，`apps/electron/out/` 未提交。
+- 验证通过：Markdown code fence 检查；Markdown 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md`。
+
 ## 2026-05-26 Agent Codex Runtime Phase 7 成功路径补跑与 Phase 8 启动计划
 
 范围确认：本轮先补跑 Phase 7 凭证阻塞的真实 Codex 成功路径 smoke；只有 native / API key 成功路径关闭后，才进入 Phase 8 文档、发布和长期维护。若凭证仍不可用，保持 `[!]` 阻塞并记录真实错误，不伪造通过。不修改根 `README.md` / `AGENTS.md`，不默认提交 `apps/electron/out/` 打包产物。
