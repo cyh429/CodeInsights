@@ -19,7 +19,7 @@
 - Phase 1 共享类型、settings 与 IPC 契约已完成并通过验证：f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结。
 - Phase 1 后最新状态、完成/未完成清单和本提示词已同步并提交：a793172c docs(agent): 同步 opencode Phase 1 后续开发状态。
 - Phase 1 最新启动基线已固化：5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线。
-- Phase 2 opencode runtime core 已完成并通过验证；完成提交待本轮 Phase 2 提交后回填真实提交号。
+- Phase 2 opencode runtime core 已完成并通过验证：25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施。
 - Phase 3-8 均未开始。
 
 已完成内容：
@@ -43,7 +43,7 @@
 
 请先执行：
 1. 读取项目指令和 tasks/lessons.md，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新基线为 Phase 2 提交及其后的状态同步提交。不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新基线为 `25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`，或其后的 Phase 2 状态同步提交。不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
 3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md，重点看 Phase 0 结论、Phase 1 验证记录、Phase 2 验证记录和 Phase 3。
 4. 在 tasks/todo.md 写入本轮 Phase 3 计划，然后直接开始执行 Phase 3。
 

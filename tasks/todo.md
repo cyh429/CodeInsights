@@ -12,12 +12,13 @@
 - [x] 确保所有 redacted summary / config / diagnostics 不包含 API key、Bearer token、Basic Auth password、MCP token 或 resolved config/provider 原文。
 - [x] 运行 Phase 2 验证：`bun test apps/electron/src/main/lib/opencode-runtime`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/package.json electron-builder.yml tasks/todo.md docs/opencode-support`。
 - [x] 更新 opencode 开发清单、support README、next-session prompt，并在本节追加 Review。
-- [ ] 按阶段纪律只提交 Phase 2 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+- [x] 按阶段纪律只提交 Phase 2 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
 
 ## 2026-05-27 Agent opencode Runtime Phase 2 Core Review
 
 - 启动基线已确认：本轮开始时工作树干净，最新提交为 `5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`。
 - 已新增 `apps/electron/src/main/lib/opencode-runtime/` core 基础设施：binary path/source/version 解析、env allowlist 与 scoped secret env、native/channel/smoke auth fingerprint、secretless config/inline policy/permission policy、MCP local/remote placeholder 映射、Basic Auth client wrapper、fakeable server manager。
+- Phase 2 已单独提交：`25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`。
 - 已实现安全边界：长期 config 与 redacted summary 不写入 API key、Bearer token、Basic Auth password、MCP secret；MCP secret 只通过 `{env:VAR}` placeholder 间接引用；server password 只存在内存和子进程 env；resolved `/config` / `/provider` 原文未读取或持久化。
 - 已补齐 server manager fake lifecycle：并发 `ensure()` 复用同一启动 promise，health failure/timeout 清理进程，`stopAll()` 执行 cleanup，并提供 `release()` idle close 钩子。
 - 已按受影响包 patch 版本规则将 `@codeinsights/electron` 从 `0.0.113` 提升到 `0.0.114`。

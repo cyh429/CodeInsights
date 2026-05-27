@@ -58,7 +58,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新基线为本轮 Phase 2 提交及其后的状态同步提交。
+- 预期最新基线为 `25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`，或其后的 Phase 2 状态同步提交。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -335,7 +335,7 @@ git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/pa
 - [x] 不启动真实模型即可通过 core 单测。
 - [x] 所有 redacted summary 不含 API key、Basic Auth password、MCP token。
 - [x] server manager fake 测试覆盖启动、失败、停止、清理。
-- [ ] Phase 2 单独提交完成。
+- [x] Phase 2 单独提交完成。
 
 回滚点：
 
@@ -353,7 +353,7 @@ git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/pa
   - `git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/package.json electron-builder.yml tasks/todo.md docs/opencode-support`
   - opencode support Markdown code fence 与相对链接检查
 - 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai`，未修改根 `README.md` / `AGENTS.md`，未进入 renderer UI、event adapter 完整映射、orchestrator routing 或真实模型验收，未修改 `electron-builder.yml`。
-- 完成提交：本轮 Phase 2 提交后回填真实提交号。
+- 完成提交：`25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`。
 
 ## 5. Phase 3：opencode Event Adapter
 
