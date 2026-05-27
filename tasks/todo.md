@@ -25,6 +25,12 @@
 - 保持边界：未安装 opencode 依赖，未实现 opencode runtime core/server/event adapter/UI，未修改根 `README.md` / `AGENTS.md`，未读取或输出任何 secret。
 - 验证通过：`bun test packages/shared`；`bun test apps/electron/src/main/lib/settings-service.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- packages/shared apps/electron/src/main apps/electron/src/preload apps/electron/src/renderer tasks/todo.md docs/opencode-support`。
 
+## 2026-05-27 Agent opencode Runtime Phase 1 后状态同步 Review
+
+- Phase 1 已单独提交：`f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`。
+- 已将真实提交号、Phase 1 完成状态和 Phase 2 下次启动入口同步到 opencode 开发清单、support README、next-session prompt 和本任务记录。
+- 本次状态同步只修改 `docs/opencode-support/**` 与 `tasks/todo.md`，不修改业务代码、不修改根 `README.md` / `AGENTS.md`。
+
 ## 2026-05-27 Agent opencode Runtime 最新状态与下次启动提示词同步计划
 
 范围确认：本轮只同步 opencode support 文档的最新开发状态、完成/未完成清单和下次启动提示词；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。用户再次强调该习惯需长期保持，因此同步 `tasks/lessons.md`。

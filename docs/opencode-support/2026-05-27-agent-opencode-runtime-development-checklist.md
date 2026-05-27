@@ -43,6 +43,7 @@
 - [x] Support README 与 next-session prompt 已补齐并同步：`668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
 - [x] Phase 0 依赖 spike 与基线冻结已完成。
 - [x] Phase 1 共享类型与 settings 契约已完成：shared/runtime events/settings/IPC/runtime selection 均可表达 `opencode`，且未进入 runtime core/server 实现。
+- [x] Phase 1 已单独提交：`f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`。
 - [ ] Phase 2 opencode runtime core 未开始。
 - [ ] Phase 3 event adapter 未开始。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
@@ -54,7 +55,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期基线至少包含 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态` 以及 Phase 1 契约提交；若只有后续阶段改动，继续按阶段推进。
+- 预期基线至少包含 `f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结` 以及其后的状态同步提交；若只有后续阶段改动，继续按阶段推进。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -255,6 +256,7 @@ git diff --check -- packages/shared apps/electron/src/main apps/electron/src/pre
 ### 3.1 Phase 1 验证记录
 
 - 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
+- 完成提交：`f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`。
 - 契约范围：shared runtime kind / event source / event metadata / session snapshot、settings normalization、runtime selection、diagnostic IPC、preload / renderer settings 类型已完成。
 - Runtime binding 修正：`agent-session-manager` 已改为保留非 Claude Code runtime 的 `runtimeSession`，避免未来 opencode session snapshot 被 normalization 丢弃。
 - Feature flag 行为：registry 默认只启用 `claude-code` / `codex`；settings 中的 `opencode` 在未传入 enabled runtime kinds 时回退为 Claude Code；已绑定 opencode session 仍按 session binding 返回。

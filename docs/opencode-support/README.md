@@ -30,7 +30,8 @@
   - `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`
   - `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`
   - `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`
-  - Phase 1 契约提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
+  - `f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`
+  - Phase 1 后状态同步提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
