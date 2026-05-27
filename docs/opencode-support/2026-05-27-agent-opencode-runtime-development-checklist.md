@@ -61,7 +61,7 @@
 - [x] Phase 4 后状态同步已更新 support README、开发清单、next-session prompt 和 `tasks/todo.md`。
 - [x] Phase 5 真实 opencode server 集成已完成：新增真实 `opencode serve` spawn、SDK client wrapper、Basic Auth fetch wrapper、secretless smoke summary 和无凭证 smoke 闭环。
 - [x] Phase 5 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.117`。
-- [x] Phase 5 已单独提交：`PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
+- [x] Phase 5 已单独提交：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 - [ ] Phase 6 renderer / UX 接入未开始。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
@@ -69,7 +69,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新开发基线为 `PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
+- 预期最新开发基线为 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -77,7 +77,7 @@
 
 下一步入口：
 
-1. 确认 Phase 5 实现提交 `PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成` 已提交。
+1. 确认 Phase 5 实现提交 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成` 已提交。
 2. 进入 Phase 6，开始 renderer 设置、权限交互和历史回放。
 3. 不要直接跳到发布打包验收；packaged binary、MCP 和 release readiness 留到 Phase 7。
 
@@ -556,7 +556,7 @@ git diff --check -- apps/electron scripts docs/opencode-support tasks/todo.md
 - [x] 真实模型 readonly / channel / native smoke 已 gated；本轮未设置真实模型或凭证，均按 skipped reason 记录，不阻塞无凭证 Phase 5 验收。
 - [x] smoke summary 不输出 API key、Basic Auth password、MCP token。
 - [x] server 退出后临时文件清理完成；验证后无残留 opencode 进程。
-- [x] Phase 5 单独提交完成：`PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
+- [x] Phase 5 单独提交完成：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 
 ### 7.1 Phase 5 验证记录
 

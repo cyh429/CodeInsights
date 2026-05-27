@@ -12,7 +12,7 @@
 
 更新时间：2026-05-27，Phase 5 完成
 
-当前开发基线：`PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。Phase 5 真实 `opencode serve` 集成已完成，下一步从 Phase 6 renderer 设置、权限交互和历史回放开始。
+当前开发基线：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。Phase 5 真实 `opencode serve` 集成已完成，下一步从 Phase 6 renderer 设置、权限交互和历史回放开始。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -54,7 +54,7 @@
   - `d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`
   - `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`
   - `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`
-  - `PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`
+  - `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -88,7 +88,7 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 5 完成提交，历史包含 `PHASE5_COMMIT` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 5 后状态同步提交，历史包含 Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
 3. 读取开发清单的“最新开发状态快照”和 Phase 6。
 4. 在 `tasks/todo.md` 写入 Phase 6 计划，然后开始 renderer 设置、权限交互和历史回放接入。
 
