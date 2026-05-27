@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 3 Event Adapter 完成后
+更新时间：2026-05-27，Phase 3 后最新状态同步完成时
 
 当前结论：
 
@@ -53,6 +53,8 @@
 - [x] Phase 3 event adapter 已完成：纯状态机 adapter、opencode fixtures、recovered metadata 和错误分类 mapping 均已通过单测。
 - [x] Phase 3 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.46`，提升 `@codeinsights/electron` patch 版本到 `0.0.115`。
 - [x] Phase 3 已单独提交：`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
+- [x] Phase 3 后状态同步已单独提交：`d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`。
+- [x] Phase 3 最新启动基线已固化：本清单所在的 `docs(agent): 固化 opencode Phase 3 最新启动基线` 提交是下次启动的最新文档入口。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
 - [ ] Phase 5 真实 opencode server 集成未开始。
 - [ ] Phase 6 renderer / UX 接入未开始。
@@ -62,7 +64,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期至少包含最新 Phase 3 实现基线 `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
+- 预期最新基线为本清单所在的 `docs(agent): 固化 opencode Phase 3 最新启动基线` 提交；其父级状态同步提交为 `d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。

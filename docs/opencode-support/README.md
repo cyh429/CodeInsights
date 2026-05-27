@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 3 Event Adapter 完成后
+更新时间：2026-05-27，Phase 3 后最新状态同步完成时
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -27,6 +27,8 @@
   - Phase 2 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d6768e0e` 后状态。
   - Phase 2 最新启动基线固化：已将本轮启动基线固定到 `daa0795a`。
   - Phase 3：已完成 opencode event adapter 与 fixtures。新增纯状态机 adapter，将 `server.connected`、session lifecycle、text delta/snapshot、tool、patch、agent/subtask、todo、permission、abort/stop、recovered 补读和错误分类映射为 CodeInsights runtime event；未进入 renderer UI、真实 server 或 orchestrator routing。
+  - Phase 3 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d2b718ad` 后状态。
+  - Phase 3 最新启动基线固化：本文件所在的 `docs(agent): 固化 opencode Phase 3 最新启动基线` 提交是下次启动的最新文档入口。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -42,6 +44,8 @@
   - `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`
   - `daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态`
   - `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`
+  - `d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`
+  - `docs(agent): 固化 opencode Phase 3 最新启动基线`（本文件所在提交）
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
