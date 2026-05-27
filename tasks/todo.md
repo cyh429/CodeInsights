@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 3 最新基线补写计划
+
+范围确认：本轮只补写 opencode support 文档、下次启动提示词、任务记录和 lessons，消除不够精确的恢复基线表述；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前工作树干净，最新开发基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
+- [x] 更新 opencode support README：明确当前开发基线为 `bdef679f`，Phase 0-3 已完成，Phase 4-8 未完成，下一步仍从 Phase 4 开始。
+- [x] 更新 opencode 开发清单：把最新状态快照和仓库状态要求改为真实开发基线 `bdef679f`。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词改为检查历史中包含 `bdef679f`、`d2b718ad` 和 `7c31b72d`。
+- [x] 加固 `tasks/lessons.md`：以后默认区分仓库文档里的最新开发基线和最终回复里的实际 HEAD 提示词，不再等待用户提醒。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md` 和占位检查。
+- [x] 在本节追加 Review，并按状态同步纪律单独提交本轮文档更新。
+
+## 2026-05-27 Agent opencode Runtime Phase 3 最新基线补写 Review
+
+- 本轮开始时工作树干净，最新提交为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
+- 已更新 `docs/opencode-support/README.md`：当前开发基线明确为 `bdef679f`，已完成范围保持 Phase 0-3，未完成范围保持 Phase 4-8。
+- 已更新 opencode 开发清单：最新开发状态快照和仓库状态要求改为真实开发基线 `bdef679f`。
+- 已更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求确认历史中包含 `bdef679f`、`d2b718ad` 和 `7c31b72d`，并从 Phase 4 继续。
+- 已更新 `tasks/lessons.md`：后续状态同步默认区分文档内真实开发基线和最终回复里的实际 HEAD，不需要用户再次提醒。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；opencode support 当前占位基线检查。
+
 ## 2026-05-27 Agent opencode Runtime Phase 3 最新状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-3 已完成、Phase 4-8 未完成，并将下次继续开发入口固定到 Phase 4；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
