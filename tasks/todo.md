@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime 最新状态与下次启动提示词同步计划
+
+范围确认：本轮只同步 opencode support 文档的最新开发状态、完成/未完成清单和下次启动提示词；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。用户再次强调该习惯需长期保持，因此同步 `tasks/lessons.md`。
+
+- [x] 确认当前工作树干净、最新提交和 opencode support 文档结构。
+- [x] 更新 opencode 开发清单的最新状态快照、完成/未完成总览和下次启动入口。
+- [x] 新增 `docs/opencode-support/README.md`，作为下次启动时的状态索引。
+- [x] 新增 `docs/opencode-support/next-session-prompt.md`，提供可直接复制给下次 Codex 的继续开发提示词。
+- [x] 将“每个阶段完成后同步状态文档和下次启动提示词”的习惯写入 `tasks/lessons.md`。
+- [x] 运行 Markdown code fence、相对链接目标、`git diff --check` 和行尾空白验证。
+- [x] 在本节追加 Review，并按阶段纪律单独提交本轮状态同步成果。
+
+## 2026-05-27 Agent opencode Runtime 最新状态与下次启动提示词同步 Review
+
+- 本轮开始时工作树干净，最新提交为 `19b5a71d docs(workflow): 强化阶段提交纪律`；opencode support 目录已有主方案和开发清单，但缺少 README 状态索引与 next-session prompt。
+- 已更新 `docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md`：最新状态改为状态入口同步阶段，明确已完成主方案、方案深化、开发清单、阶段提交纪律、support README 和 next-session prompt；Phase 0-8 仍未开始。
+- 已新增 `docs/opencode-support/README.md`：汇总当前主文档、已完成项、未完成项、暂缓/待决策项和下次启动入口。
+- 已新增 `docs/opencode-support/next-session-prompt.md`：提供可直接复制给下次 Codex 的继续开发提示词，入口固定为 Phase 0 依赖 spike 与基线冻结。
+- 已强化 `tasks/lessons.md`：每个阶段性任务完成后自动同步 support README、development checklist 和 next-session prompt；如果目录缺入口，先补齐入口。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖，未读取或输出凭证。
+- 验证通过：Markdown code fence 检查；docs 相对链接目标存在检查；`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；相关 Markdown 文件行尾空白检查。
+
 ## 2026-05-27 阶段提交纪律强化计划
 
 范围确认：当前工作树已干净，最新提交为 `4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。本轮只把用户强调的“每完成一阶段就提交、重启 Codex 会话后自动延续、提交信息使用详细中文”写入 `tasks/lessons.md` 并单独提交；不修改业务代码、不修改根 `README.md` / `AGENTS.md`。

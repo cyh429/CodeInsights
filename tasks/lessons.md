@@ -11,6 +11,7 @@
 - 阶段完成或用户要求“下次继续开发”时，必须同步三类信息：最新提交基线、已完成/未完成清单、下次启动提示词；不要只更新其中一处。
 - 下次启动提示词里的预期最新提交必须指向真实 HEAD 或明确“其后的状态同步提交”，避免恢复会话时误以为旧提交仍是最新状态。
 - 用户要求“记住这个习惯”时，要写入 `tasks/lessons.md`，并在后续收尾时主动检查 support README、development checklist 和 next-session prompt 是否一致。
+- 每个阶段性任务完成后，除了提交代码/文档本身，还要自动同步对应 support README、development checklist 和 next-session prompt；如果某个目录还没有这些入口，先补齐入口再交付。
 
 ## 2026-05-26 Codex native auth 中转配置
 

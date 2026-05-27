@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：清单已建立，业务实现未开始
+状态：状态入口已同步，业务实现未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，清单创建并验证时
+更新时间：2026-05-27，状态入口与下次启动提示词同步时
 
 当前结论：
 
@@ -35,7 +35,9 @@
 - [x] opencode 接入主方案已深化并提交：`06c62406 docs(agent): 深化 opencode Runtime 接入方案`。
 - [x] 主路径决策已明确：managed `opencode serve` + `@opencode-ai/sdk` client；`opencode run --format json` 仅作 smoke / fallback。
 - [x] npm 包调研已确认：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`；`opencode` 和 `@opencode-ai/cli` 包名不可用。
-- [x] 开发进度清单已创建并通过文档验证，随本阶段提交落盘。
+- [x] 开发进度清单已创建并提交：`4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。
+- [x] 阶段提交纪律已强化并提交：`19b5a71d docs(workflow): 强化阶段提交纪律`。
+- [x] Support README 与 next-session prompt 已补齐，随本轮状态同步提交落盘；下次启动以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为准。
 - [ ] Phase 0 依赖 spike 与基线冻结未开始。
 - [ ] Phase 1 共享类型与 settings 契约未开始。
 - [ ] Phase 2 opencode runtime core 未开始。
@@ -49,9 +51,11 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 若只有本清单之后的新阶段改动，继续按阶段推进；若有无关用户改动，不要回滚。
+- 预期基线至少包含 `19b5a71d docs(workflow): 强化阶段提交纪律`，以及本轮 opencode 状态同步提交；若只有后续阶段改动，继续按阶段推进。
+- 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
+- 每个阶段收尾时同步本清单、`docs/opencode-support/README.md` 和 `docs/opencode-support/next-session-prompt.md`，确保下次启动能直接接上。
 
 下一步入口：
 
@@ -66,8 +70,8 @@
 | 需求理解 | [x] | 已明确 CodeInsights 是多 Coding Agent runtime 代理层 |
 | 主方案 | [x] | 已覆盖架构、配置、权限、MCP、event adapter、run 算法、UI、smoke、风险 |
 | 开发清单 | [x] | 本文件已创建并通过文档验证 |
-| Support README | [ ] | 后续 Phase 8 补齐 |
-| Next-session prompt | [ ] | 后续 Phase 8 或阶段中断时补齐 |
+| Support README | [x] | 已补齐 opencode support 状态索引 |
+| Next-session prompt | [x] | 已补齐下次启动可复制提示词 |
 | Phase 0 | [ ] | 依赖 spike 与基线冻结 |
 | Phase 1 | [ ] | shared/settings/IPC 契约 |
 | Phase 2 | [ ] | opencode binary/env/config/server/client core |
