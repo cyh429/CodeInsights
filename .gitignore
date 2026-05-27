@@ -15,6 +15,7 @@ server/chroma.log
 # Distribution / packaging
 .Python
 build/
+apps/electron/out/
 develop-eggs/
 dist/
 downloads/
