@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 5 后最新状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-5 已完成、Phase 6-8 未完成，并将下次继续开发入口固定到 Phase 6；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前工作树干净，最新提交为 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`，历史包含 `b3e99265` 和 `647d3046`。
+- [x] 更新 opencode support README：写入最新状态同步提交 `3b8a1286`、Phase 0-5 已完成、Phase 6-8 未完成和下一步 Phase 6 入口。
+- [x] 更新 opencode 开发清单：把最新状态快照、仓库状态要求和下一步入口对齐到 Phase 5 后状态。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 6 延续提示词，并明确检查 `3b8a1286` / `b3e99265`。
+- [x] 将“更新文档最新开发状态并给下次启动提示词是默认收尾动作”的习惯再次写入 `tasks/lessons.md`。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md` 和状态占位检查。
+- [x] 在本节追加 Review，并按状态同步纪律单独提交本轮文档更新。
+
+## 2026-05-27 Agent opencode Runtime Phase 5 后最新状态同步 Review
+
+- 本轮开始时工作树干净，最新提交为 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`。
+- 已更新 `docs/opencode-support/README.md`：补充最新状态同步提交 `3b8a1286`，已完成范围明确为 Phase 0-5，未完成范围明确为 Phase 6-8，下一步入口保持 Phase 6 renderer 设置、权限交互和历史回放。
+- 已更新 opencode 开发清单：最新状态快照和仓库状态要求明确 Phase 5 开发基线 `b3e99265` 与状态同步提交 `3b8a1286`。
+- 已更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求确认 `3b8a1286`、`b3e99265`、`647d3046`、`bdef679f`、`d2b718ad`、`7c31b72d`，并从 Phase 6 继续。
+- 已更新 `tasks/lessons.md`：后续阶段完成或用户要求最新状态/下次提示词时，默认同步 support README、development checklist、next-session prompt、`tasks/todo.md` Review 和 lessons。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；opencode support 状态占位检查。
+
 ## 2026-05-27 Agent opencode Runtime Phase 5 真实 Server 集成计划
 
 范围确认：本轮进入 Phase 5，只接入真实 `opencode serve`、SDK client wrapper、Basic Auth fetch wrapper 和无凭证可运行的 smoke summary；不进入 renderer UI、发布打包验收或根 `README.md` / `AGENTS.md` 修改。长期 config、diagnostics、event log 和 smoke summary 必须 secretless，不记录 resolved `/config`、`/provider`、`/config/providers` 原文。

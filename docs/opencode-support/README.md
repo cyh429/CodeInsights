@@ -14,6 +14,8 @@
 
 当前开发基线：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。Phase 5 真实 `opencode serve` 集成已完成，下一步从 Phase 6 renderer 设置、权限交互和历史回放开始。
 
+最新状态同步提交：`3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`。下次启动时以该提交为最新状态入口，历史中应包含 Phase 5 开发基线 `b3e99265`。
+
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
   - 主方案：已完成 opencode runtime 接入方案，并明确主路径是 managed `opencode serve` + `@opencode-ai/sdk` client。
@@ -36,6 +38,7 @@
   - Phase 5：已完成真实 `opencode serve` 集成。新增 `@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11` 和 platform optionalDependencies；默认 `OpencodeAgentRuntime` 现在使用真实 server manager / SDK client；smoke 覆盖 binary、Basic Auth server health、SSE subscribe、session create、prompt async no-reply、abort、resume、config summary 和 permission config / response endpoint probe。
   - Phase 5 重要结论：`writeOpencodeRuntimeConfig()` 仍生成私有 `config-dir` 资产目录，但 Phase 5 默认不注入 `OPENCODE_CONFIG_DIR`。在 `opencode-ai@1.15.11` 下，空 assets 目录组合会让 session mutating API 卡住；后续 Phase 7 需要 MCP/assets 时再通过 `CODEINSIGHTS_AGENT_OPENCODE_ENABLE_CONFIG_DIR=1` / `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 显式验证后启用。
   - Phase 5 验证结果：无凭证环境下 binary / server / config / permission / abort / resume smoke 通过；readonly、channel auth、native auth smoke 因未设置真实模型或凭证按 skipped reason 跳过；`bun run --filter='@codeinsights/electron' typecheck`、相关单测、`build:main` 均通过。
+  - Phase 5 后状态同步：已将最新开发状态、完成/未完成清单和下次启动入口同步到 `3b8a1286` 后状态。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -55,6 +58,7 @@
   - `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`
   - `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`
   - `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`
+  - `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -88,7 +92,7 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 5 后状态同步提交，历史包含 Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交包含 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`，历史包含 Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
 3. 读取开发清单的“最新开发状态快照”和 Phase 6。
 4. 在 `tasks/todo.md` 写入 Phase 6 计划，然后开始 renderer 设置、权限交互和历史回放接入。
 
