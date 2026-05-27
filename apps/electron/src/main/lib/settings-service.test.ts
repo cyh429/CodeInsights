@@ -44,6 +44,7 @@ describe('settings-service', () => {
 
     expect(settings.agentRuntimeKind).toBe('claude-code')
     expect(settings.agentCodexChannelId).toBeUndefined()
+    expect(settings.agentOpencodeChannelId).toBeUndefined()
     expect(settings.pipelineCodexChannelId).toBeUndefined()
   })
 
@@ -120,6 +121,60 @@ describe('settings-service', () => {
     expect(settings.agentRuntimeKind).toBe('claude-code')
     expect(settings.agentCodexReasoningEffort).toBeUndefined()
     expect(settings.agentCodexWebSearchMode).toBeUndefined()
+  })
+
+  test('会持久化 Agent opencode 独立 secretless 设置并保留 native auth 语义', () => {
+    useTempConfig()
+
+    updateSettings({
+      agentRuntimeKind: 'opencode',
+      agentOpencodeChannelId: null,
+      agentOpencodeModelId: 'codeinsights-openai-compatible/gpt-5.1-codex',
+      agentOpencodeAgentName: 'build',
+      agentOpencodeUseNativeAuth: true,
+      agentOpencodeAutoupdate: false,
+      agentOpencodeSnapshotEnabled: true,
+    })
+
+    const settings = getSettings()
+    expect(settings.agentRuntimeKind).toBe('opencode')
+    expect(settings.agentOpencodeChannelId).toBeNull()
+    expect(settings.agentOpencodeModelId).toBe('codeinsights-openai-compatible/gpt-5.1-codex')
+    expect(settings.agentOpencodeAgentName).toBe('build')
+    expect(settings.agentOpencodeUseNativeAuth).toBe(true)
+    expect(settings.agentOpencodeAutoupdate).toBe(false)
+    expect(settings.agentOpencodeSnapshotEnabled).toBe(true)
+  })
+
+  test('会归一化损坏的 Agent opencode 设置并区分 null 与 undefined', () => {
+    useTempConfig()
+    writeFileSync(
+      join(tempConfigDir, 'settings.json'),
+      JSON.stringify({
+        themeMode: 'light',
+        agentRuntimeKind: 'opencode',
+        agentOpencodeChannelId: '',
+        agentOpencodeModelId: '  ',
+        agentOpencodeAgentName: 123,
+        agentOpencodeUseNativeAuth: 'true',
+        agentOpencodeAutoupdate: 'false',
+        agentOpencodeSnapshotEnabled: null,
+      }),
+      'utf-8',
+    )
+
+    const settings = getSettings()
+
+    expect(settings.agentRuntimeKind).toBe('opencode')
+    expect(settings.agentOpencodeChannelId).toBeUndefined()
+    expect(settings.agentOpencodeModelId).toBeUndefined()
+    expect(settings.agentOpencodeAgentName).toBeUndefined()
+    expect(settings.agentOpencodeUseNativeAuth).toBeUndefined()
+    expect(settings.agentOpencodeAutoupdate).toBeUndefined()
+    expect(settings.agentOpencodeSnapshotEnabled).toBeUndefined()
+
+    updateSettings({ agentOpencodeChannelId: null })
+    expect(getSettings().agentOpencodeChannelId).toBeNull()
   })
 
   test('更新设置时也会归一化损坏的 Agent Codex 枚举', () => {

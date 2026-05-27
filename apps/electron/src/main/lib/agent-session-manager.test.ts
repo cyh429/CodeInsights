@@ -195,6 +195,52 @@ describe('agent-session-manager runtime metadata', () => {
     expect(stored?.sdkSessionId).toBeUndefined()
   })
 
+  test('opencode 会话保留 runtimeSession snapshot 且清理 Claude legacy 字段', async () => {
+    writeSessionIndex([
+      {
+        id: 'opencode-session',
+        title: 'opencode 会话',
+        runtimeKind: 'opencode',
+        sdkSessionId: 'legacy-sdk-should-drop',
+        forkSourceSdkSessionId: 'legacy-fork-should-drop',
+        resumeAtMessageUuid: 'legacy-message-should-drop',
+        runtimeSession: {
+          kind: 'opencode',
+          externalSessionId: 'ses_opencode_1',
+          channelId: null,
+          model: 'provider/model',
+          agent: 'build',
+          authSource: 'native',
+          workingDirectory: '/tmp/workspace',
+          runtimeConfigHash: 'runtime-hash',
+          authSourceHash: 'auth-hash',
+          permissionPolicyHash: 'permission-hash',
+          createdAt: 100,
+          updatedAt: 200,
+        },
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { getAgentSessionMeta, updateAgentSessionMeta } = await loadSessionManager()
+
+    const meta = getAgentSessionMeta('opencode-session')
+    expect(meta?.runtimeKind).toBe('opencode')
+    expect(meta?.runtimeSession?.externalSessionId).toBe('ses_opencode_1')
+    expect(meta?.runtimeSession?.runtimeConfigHash).toBe('runtime-hash')
+    expect(meta?.sdkSessionId).toBeUndefined()
+    expect(meta?.forkSourceSdkSessionId).toBeUndefined()
+    expect(meta?.resumeAtMessageUuid).toBeUndefined()
+
+    const updated = updateAgentSessionMeta('opencode-session', { title: '已更新 opencode 会话' })
+    expect(updated.runtimeSession?.kind).toBe('opencode')
+    expect(updated.runtimeSession?.authSourceHash).toBe('auth-hash')
+    const stored = readSessionIndex().sessions[0]
+    expect(stored?.runtimeSession?.kind).toBe('opencode')
+    expect(stored?.runtimeSession?.permissionPolicyHash).toBe('permission-hash')
+    expect(stored?.sdkSessionId).toBeUndefined()
+  })
+
   test('旧 Claude 会话切到 Codex 时清理 Claude legacy 字段', async () => {
     writeSessionIndex([
       {

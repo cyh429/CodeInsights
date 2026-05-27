@@ -30,6 +30,8 @@ export type AgentEventSource =
   | 'claude_sdk'
   | 'codex_sdk'
   | 'codex_cli'
+  | 'opencode_server'
+  | 'opencode_cli'
   | 'codeinsights'
   | 'permission_service'
   | 'ask_user_service'
@@ -60,8 +62,16 @@ export interface AgentRuntimeUsagePayload {
   contextWindow?: number
 }
 
+export interface AgentRuntimeEventMetadata {
+  runtimeKind?: CodingAgentRuntimeKind
+  externalSessionId?: string
+  externalMessageId?: string
+  externalPartId?: string
+  occurredAt?: string
+}
+
 export type AgentRuntimeEvent =
-  | { type: 'run_started'; model: string; cwd: string; permissionMode: CodeInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode; runtimeKind?: CodingAgentRuntimeKind }
+  | { type: 'run_started'; model: string; cwd: string; permissionMode: CodeInsightsPermissionMode; runtimeHash: string; runnerMode?: AgentRuntimeRunnerMode; runtimeKind?: CodingAgentRuntimeKind; agent?: string }
   | { type: 'sdk_session'; sdkSessionId: string; resumeFrom?: string }
   | { type: 'assistant_delta'; messageId: string; delta: string; parentToolUseId?: string }
   | { type: 'assistant_message'; messageId: string; contentBlocks: unknown[]; status: 'complete' | 'error'; parentToolUseId?: string }
@@ -97,6 +107,7 @@ export interface AgentStreamEnvelope {
   createdAt: string
   source: AgentEventSource
   event: AgentRuntimeEvent
+  metadata?: AgentRuntimeEventMetadata
 }
 
 export interface AgentStreamEnvelopeInput {
@@ -106,6 +117,7 @@ export interface AgentStreamEnvelopeInput {
   source: AgentEventSource
   event: AgentRuntimeEvent
   createdAt?: string
+  metadata?: AgentRuntimeEventMetadata
 }
 
 export interface AgentRuntimeValidationResult {
@@ -122,6 +134,7 @@ export function createAgentStreamEnvelope(input: AgentStreamEnvelopeInput): Agen
     createdAt: input.createdAt ?? new Date().toISOString(),
     source: input.source,
     event: input.event,
+    ...(input.metadata ? { metadata: input.metadata } : {}),
   }
 }
 
@@ -137,6 +150,7 @@ export function validateAgentStreamEnvelope(envelope: AgentStreamEnvelope): Agen
   if (!Number.isInteger(envelope.sequence) || envelope.sequence < 0) errors.push('sequence 必须是非负整数')
   if (Number.isNaN(Date.parse(envelope.createdAt))) errors.push('createdAt 必须是有效 ISO 时间')
   if (!isKnownEventSource(envelope.source)) errors.push('source 不在允许范围内')
+  if (envelope.metadata !== undefined) errors.push(...validateAgentRuntimeEventMetadata(envelope.metadata))
   errors.push(...validateAgentRuntimeEvent(envelope.event))
   return { ok: errors.length === 0, errors }
 }
@@ -165,8 +179,7 @@ export function validateAgentRuntimeEvent(event: AgentRuntimeEvent): string[] {
       }
       if (
         event.runtimeKind !== undefined
-        && event.runtimeKind !== 'claude-code'
-        && event.runtimeKind !== 'codex'
+        && !isKnownRuntimeKind(event.runtimeKind)
       ) {
         errors.push('run_started.runtimeKind 非法')
       }
@@ -270,6 +283,30 @@ export function validateAgentRuntimeEvent(event: AgentRuntimeEvent): string[] {
       break
   }
 
+  return errors
+}
+
+function validateAgentRuntimeEventMetadata(metadata: AgentRuntimeEventMetadata): string[] {
+  const errors: string[] = []
+  if (!isRecord(metadata)) return ['metadata 必须是对象']
+  const runtimeKind = metadata.runtimeKind
+  if (
+    runtimeKind !== undefined
+    && (typeof runtimeKind !== 'string' || !isKnownRuntimeKind(runtimeKind))
+  ) {
+    errors.push('metadata.runtimeKind 非法')
+  }
+  for (const field of ['externalSessionId', 'externalMessageId', 'externalPartId'] as const) {
+    const value = metadata[field]
+    if (value !== undefined && typeof value !== 'string') errors.push(`metadata.${field} 必须是字符串`)
+  }
+  const occurredAt = metadata.occurredAt
+  if (
+    occurredAt !== undefined
+    && (typeof occurredAt !== 'string' || Number.isNaN(Date.parse(occurredAt)))
+  ) {
+    errors.push('metadata.occurredAt 必须是有效 ISO 时间')
+  }
   return errors
 }
 
@@ -570,7 +607,11 @@ function adaptTaskUsage(usage?: { totalTokens: number }): AgentRuntimeUsagePaylo
 }
 
 function isKnownEventSource(source: string): source is AgentEventSource | LegacyAgentEventSource {
-  return ['claude_sdk', 'codex_sdk', 'codex_cli', 'codeinsights', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
+  return ['claude_sdk', 'codex_sdk', 'codex_cli', 'opencode_server', 'opencode_cli', 'codeinsights', 'rv_insights', 'permission_service', 'ask_user_service', 'runtime_service', 'event_log'].includes(source)
+}
+
+function isKnownRuntimeKind(kind: string): kind is CodingAgentRuntimeKind {
+  return kind === 'claude-code' || kind === 'codex' || kind === 'opencode'
 }
 
 function isSDKAssistantMessage(message: SDKMessage): message is SDKAssistantMessage {

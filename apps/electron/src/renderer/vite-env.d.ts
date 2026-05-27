@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 declare const __CODEINSIGHTS_AGENT_CODEX_RUNTIME_ENABLED__: boolean
+declare const __CODEINSIGHTS_AGENT_OPENCODE_RUNTIME_ENABLED__: boolean
 
 // CSS 模块类型声明
 declare module '*.css' {

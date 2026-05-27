@@ -38,6 +38,9 @@ import type {
   AgentSendInput,
   AgentStreamEvent,
   AgentStreamCompletePayload,
+  AgentRuntimeCapabilitiesDiagnostic,
+  AgentOpencodeServerStatus,
+  AgentOpencodeModelRefreshResult,
   AgentWorkspace,
   AgentGenerateTitleInput,
   AgentSaveFilesInput,
@@ -622,6 +625,15 @@ export interface ElectronAPI {
 
   /** 获取所有待处理的交互请求快照（渲染进程重载后恢复状态） */
   getPendingRequests: () => Promise<PendingRequestsSnapshot>
+
+  /** 获取 Coding Runtime capabilities 诊断 */
+  getAgentRuntimeCapabilities: () => Promise<AgentRuntimeCapabilitiesDiagnostic[]>
+
+  /** 获取 opencode server 状态 */
+  getAgentOpencodeServerStatus: () => Promise<AgentOpencodeServerStatus>
+
+  /** 刷新 opencode provider/model 摘要 */
+  refreshAgentOpencodeModels: () => Promise<AgentOpencodeModelRefreshResult>
 
   // ===== Agent Teams 数据 =====
 
@@ -1517,6 +1529,18 @@ const electronAPI: ElectronAPI = {
   // 待处理请求恢复
   getPendingRequests: () => {
     return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_PENDING_REQUESTS)
+  },
+
+  getAgentRuntimeCapabilities: () => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_RUNTIME_CAPABILITIES)
+  },
+
+  getAgentOpencodeServerStatus: () => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.GET_OPENCODE_SERVER_STATUS)
+  },
+
+  refreshAgentOpencodeModels: () => {
+    return ipcRenderer.invoke(AGENT_IPC_CHANNELS.REFRESH_OPENCODE_MODELS)
   },
 
   // Agent Teams 数据

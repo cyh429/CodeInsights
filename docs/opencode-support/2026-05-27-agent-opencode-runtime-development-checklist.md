@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 0 已完成并提交，业务实现未开始
+状态：Phase 1 已完成，业务 runtime core 未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 0 提交后状态同步时
+更新时间：2026-05-27，Phase 1 契约冻结完成时
 
 当前结论：
 
@@ -40,9 +40,9 @@
 - [x] Phase 0 已单独提交：`63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`。
 - [x] 开发进度清单已创建并提交：`4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。
 - [x] 阶段提交纪律已强化并提交：`19b5a71d docs(workflow): 强化阶段提交纪律`。
-- [x] Support README 与 next-session prompt 已补齐，随本轮状态同步提交落盘；下次启动以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为准。
+- [x] Support README 与 next-session prompt 已补齐并同步：`668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
 - [x] Phase 0 依赖 spike 与基线冻结已完成。
-- [ ] Phase 1 共享类型与 settings 契约未开始。
+- [x] Phase 1 共享类型与 settings 契约已完成：shared/runtime events/settings/IPC/runtime selection 均可表达 `opencode`，且未进入 runtime core/server 实现。
 - [ ] Phase 2 opencode runtime core 未开始。
 - [ ] Phase 3 event adapter 未开始。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
@@ -54,7 +54,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期基线至少包含 `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`，以及本轮 Phase 0 后状态同步提交；若只有后续阶段改动，继续按阶段推进。
+- 预期基线至少包含 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态` 以及 Phase 1 契约提交；若只有后续阶段改动，继续按阶段推进。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -62,9 +62,9 @@
 
 下一步入口：
 
-1. 确认 Phase 0 已提交并且本轮状态同步已提交。
-2. 进入 Phase 1，完成 shared/settings/IPC 契约。
-3. 不要直接跳到 UI 或真实 server 集成，先冻结类型契约和 runtime core 边界。
+1. 确认 Phase 1 已提交并且本轮状态同步已提交。
+2. 进入 Phase 2，开始 opencode runtime core：binary/env/auth/config/server/client 基础设施。
+3. 不要直接跳到 renderer UI 或真实模型验收；Phase 2 先完成不依赖真实模型的 core 单测。
 
 ## 0.2 当前完成/未完成总览
 
@@ -76,7 +76,7 @@
 | Support README | [x] | 已补齐 opencode support 状态索引 |
 | Next-session prompt | [x] | 已补齐下次启动可复制提示词 |
 | Phase 0 | [x] | 依赖 spike 与基线冻结已完成 |
-| Phase 1 | [ ] | shared/settings/IPC 契约 |
+| Phase 1 | [x] | shared/settings/IPC 契约已完成，未实现 runtime core |
 | Phase 2 | [ ] | opencode binary/env/config/server/client core |
 | Phase 3 | [ ] | event adapter 与 fixtures |
 | Phase 4 | [ ] | runtime mock、registry、orchestrator routing |
@@ -223,17 +223,17 @@ git diff --check
 
 任务：
 
-- [ ] `CodingAgentRuntimeKind` 增加 `'opencode'`。
-- [ ] `AgentEventSource` 增加 `'opencode_server'` 和 `'opencode_cli'`。
-- [ ] 增加或扩展 runtime event metadata：`runtimeKind`、`runId`、`externalSessionId`、`externalMessageId`、`externalPartId`、`sequence`、`occurredAt`。
-- [ ] 扩展 `AgentRuntimeSessionRef` 或 runtime manifest 类型，支持 `agent`、`runtimeConfigHash`、`authSourceHash`。
-- [ ] 扩展 `AppSettings`：`agentOpencodeChannelId`、`agentOpencodeModelId`、`agentOpencodeAgentName`、`agentOpencodeUseNativeAuth`、`agentOpencodeAutoupdate`、`agentOpencodeSnapshotEnabled`。
-- [ ] settings normalization 区分 `null` 和 `undefined` 的 auth source 语义。
-- [ ] feature flag 未启用时，settings 中的 opencode 字段不触发 runtime 切换。
-- [ ] 增加 runtime capabilities 中立字段，不把 Codex 专用 helper 复制成 opencode 专用分支。
-- [ ] 设计诊断 IPC：runtime capabilities、opencode server status、opencode model refresh。
-- [ ] 补充 runtime selection 测试：新 session、旧 session、feature flag on/off。
-- [ ] 补充 settings migration / normalization 测试。
+- [x] `CodingAgentRuntimeKind` 增加 `'opencode'`。
+- [x] `AgentEventSource` 增加 `'opencode_server'` 和 `'opencode_cli'`。
+- [x] 增加或扩展 runtime event metadata：`runtimeKind`、`runId`、`externalSessionId`、`externalMessageId`、`externalPartId`、`sequence`、`occurredAt`。
+- [x] 扩展 `AgentRuntimeSessionRef` 或 runtime manifest 类型，支持 `agent`、`runtimeConfigHash`、`authSourceHash`。
+- [x] 扩展 `AppSettings`：`agentOpencodeChannelId`、`agentOpencodeModelId`、`agentOpencodeAgentName`、`agentOpencodeUseNativeAuth`、`agentOpencodeAutoupdate`、`agentOpencodeSnapshotEnabled`。
+- [x] settings normalization 区分 `null` 和 `undefined` 的 auth source 语义。
+- [x] feature flag 未启用时，settings 中的 opencode 字段不触发 runtime 切换。
+- [x] 增加 runtime capabilities 中立字段，不把 Codex 专用 helper 复制成 opencode 专用分支。
+- [x] 设计诊断 IPC：runtime capabilities、opencode server status、opencode model refresh。
+- [x] 补充 runtime selection 测试：新 session、旧 session、feature flag on/off。
+- [x] 补充 settings migration / normalization 测试。
 
 验证：
 
@@ -247,10 +247,26 @@ git diff --check -- packages/shared apps/electron/src/main apps/electron/src/pre
 
 退出标准：
 
-- [ ] feature flag 关闭时，现有 Claude Code / Codex tests 不变。
-- [ ] shared 类型可表达 opencode runtime。
-- [ ] settings 可保存和读取 opencode 字段，且不保存 transient server secret。
-- [ ] Phase 1 单独提交完成。
+- [x] feature flag 关闭时，现有 Claude Code / Codex tests 不变。
+- [x] shared 类型可表达 opencode runtime。
+- [x] settings 可保存和读取 opencode 字段，且不保存 transient server secret。
+- [x] Phase 1 单独提交完成。
+
+### 3.1 Phase 1 验证记录
+
+- 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
+- 契约范围：shared runtime kind / event source / event metadata / session snapshot、settings normalization、runtime selection、diagnostic IPC、preload / renderer settings 类型已完成。
+- Runtime binding 修正：`agent-session-manager` 已改为保留非 Claude Code runtime 的 `runtimeSession`，避免未来 opencode session snapshot 被 normalization 丢弃。
+- Feature flag 行为：registry 默认只启用 `claude-code` / `codex`；settings 中的 `opencode` 在未传入 enabled runtime kinds 时回退为 Claude Code；已绑定 opencode session 仍按 session binding 返回。
+- 保持边界：未安装 opencode 依赖，未实现 opencode runtime core/server/event adapter/UI，未修改根 `README.md` / `AGENTS.md`。
+- 验证通过：
+  - `bun test packages/shared`
+  - `bun test apps/electron/src/main/lib/settings-service.test.ts`
+  - `bun test apps/electron/src/main/lib/agent-runtimes`
+  - `bun test apps/electron/src/main/lib/agent-session-manager.test.ts`
+  - `bun test apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`
+  - `bun run --filter='@codeinsights/electron' typecheck`
+  - `git diff --check -- packages/shared apps/electron/src/main apps/electron/src/preload apps/electron/src/renderer tasks/todo.md docs/opencode-support`
 
 回滚点：
 

@@ -337,6 +337,7 @@ export type ErrorCode =
   | 'api_key_decrypt_failed'
   | 'claude_binary_not_found'
   | 'codex_runtime_disabled'
+  | 'opencode_runtime_unavailable'
   | 'session_busy'
   | 'unknown_error'
 
@@ -530,22 +531,79 @@ export type AgentStreamPayload =
 // ===== Agent 会话管理 =====
 
 /** Coding Agent Runtime 类型 */
-export type CodingAgentRuntimeKind = 'claude-code' | 'codex'
+export type CodingAgentRuntimeKind = 'claude-code' | 'codex' | 'opencode'
+
+/** Coding Agent Runtime 认证来源 */
+export type AgentRuntimeAuthSource = 'native' | 'channel'
 
 /** Runtime 原生会话引用 */
 export interface AgentRuntimeSessionRef {
   /** Runtime 类型 */
   kind: CodingAgentRuntimeKind
-  /** Runtime 侧原生会话 ID，例如 Claude SDK session id 或 Codex thread id */
+  /** Runtime 侧原生会话 ID，例如 Claude SDK session id、Codex thread id 或 opencode session id */
   externalSessionId: string
   /** Runtime 绑定的渠道 ID；null 表示显式使用本机认证 */
   channelId?: string | null
   /** Runtime 首次绑定时使用的模型 ID */
   model?: string
+  /** Runtime 首次绑定时使用的 agent 名称 */
+  agent?: string
+  /** Runtime 首次绑定时使用的认证来源 */
+  authSource?: AgentRuntimeAuthSource
+  /** Runtime 首次绑定时使用的工作目录快照 */
+  workingDirectory?: string
+  /** 不含 secret 的 runtime config hash */
+  runtimeConfigHash?: string
+  /** 不含 secret 原文的认证来源 hash */
+  authSourceHash?: string
+  /** 不含 secret 的权限策略 hash */
+  permissionPolicyHash?: string
   /** 创建时间戳 */
   createdAt: number
   /** 更新时间戳 */
   updatedAt: number
+}
+
+/** Runtime capabilities 诊断快照 */
+export interface AgentRuntimeCapabilitiesDiagnostic {
+  /** Runtime 类型 */
+  runtimeKind: CodingAgentRuntimeKind
+  /** 对应 feature flag 是否启用 */
+  featureEnabled: boolean
+  /** Runtime 是否已在当前进程注册 */
+  registered: boolean
+  /** 是否可用于新会话 */
+  available: boolean
+  /** 能力标识，保持 runtime 中立 */
+  capabilities: string[]
+  /** 人类可读状态说明 */
+  message?: string
+}
+
+/** opencode server 状态诊断 */
+export interface AgentOpencodeServerStatus {
+  runtimeKind: 'opencode'
+  featureEnabled: boolean
+  state: 'disabled' | 'not_configured' | 'not_started' | 'starting' | 'healthy' | 'degraded' | 'stopping' | 'stopped' | 'failed'
+  version?: string
+  endpoint?: string
+  message?: string
+  updatedAt: string
+}
+
+/** opencode 模型摘要 */
+export interface AgentOpencodeModelSummary {
+  providerId: string
+  modelId: string
+  label?: string
+}
+
+/** opencode 模型刷新结果 */
+export interface AgentOpencodeModelRefreshResult {
+  ok: boolean
+  models: AgentOpencodeModelSummary[]
+  error?: string
+  updatedAt: string
 }
 
 /**
@@ -1262,6 +1320,12 @@ export const AGENT_IPC_CHANNELS = {
   // 工作区能力（MCP + Skill）
   /** 获取工作区能力摘要 */
   GET_CAPABILITIES: 'agent:get-capabilities',
+  /** 获取 Coding Runtime capabilities 诊断 */
+  GET_RUNTIME_CAPABILITIES: 'agent:runtime:get-capabilities',
+  /** 获取 opencode server 状态 */
+  GET_OPENCODE_SERVER_STATUS: 'agent:opencode:get-server-status',
+  /** 刷新 opencode provider/model 摘要 */
+  REFRESH_OPENCODE_MODELS: 'agent:opencode:refresh-models',
   /** 获取工作区 MCP 配置 */
   GET_MCP_CONFIG: 'agent:get-mcp-config',
   /** 保存工作区 MCP 配置 */

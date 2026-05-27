@@ -1,5 +1,30 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 1 契约计划
+
+范围确认：本轮进入 Phase 1，只扩展 shared 类型、settings normalization、必要 IPC / preload / renderer settings 类型和 runtime selection 契约测试；不进入 opencode runtime core/server/event adapter/UI 实现，不安装 opencode 依赖，不修改根 `README.md` / `AGENTS.md`，长期落盘配置保持 secretless。
+
+- [x] 复习项目指令、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认阶段提交、重启恢复、secretless config、Git guard 与 runtime binding 纪律。
+- [x] 确认工作树与最近提交，记录 Phase 1 启动基线为 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
+- [x] 扩展 shared Agent runtime 契约：`CodingAgentRuntimeKind`、runtime event source、runtime event metadata、`AgentRuntimeSessionRef` opencode snapshot 字段。
+- [x] 扩展 settings 契约与 normalization：新增 opencode settings 字段，区分 `null` 与 `undefined` 的 auth source 语义，feature flag 未开启时不触发 runtime 切换。
+- [x] 扩展 runtime capability / selection 的中立契约，不把 opencode 建成普通模型 Provider，也不复制 Codex 专用 helper。
+- [x] 补充 shared、settings-service、agent-runtimes 相关 BDD 单测，覆盖 feature flag on/off、新 session、旧 session runtime binding 和 settings migration。
+- [x] 运行 Phase 1 验证命令，修复发现的问题。
+- [x] 更新 opencode 开发清单、support README、next-session prompt，并在本节追加 Review。
+- [x] 按阶段纪律只提交 Phase 1 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+
+## 2026-05-27 Agent opencode Runtime Phase 1 契约 Review
+
+- 启动基线已确认：工作树干净，最新提交为 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`。
+- 已扩展 shared 契约：`CodingAgentRuntimeKind` 支持 `opencode`；runtime event source 支持 `opencode_server` / `opencode_cli`；`AgentStreamEnvelope` 增加 runtime metadata；`AgentRuntimeSessionRef` 增加 agent、auth source、workingDirectory、runtimeConfigHash、authSourceHash、permissionPolicyHash 等 secretless snapshot 字段；诊断 IPC 类型已冻结。
+- 已扩展 settings / preload / renderer settings 契约：新增 `agentOpencodeChannelId`、`agentOpencodeModelId`、`agentOpencodeAgentName`、`agentOpencodeUseNativeAuth`、`agentOpencodeAutoupdate`、`agentOpencodeSnapshotEnabled`，并保留 `null` 表示显式 native auth、`undefined` 表示未配置。
+- 已扩展 runtime selection：未启用 opencode runtime kind 时，settings 中的 `opencode` 不触发运行时切换；已绑定 opencode session 继续按 session binding 返回，不被 feature flag 或后续 settings 改绑。
+- 已修复 session normalization 风险：`agent-session-manager` 不再丢弃非 Claude / Codex 的 `runtimeSession`，opencode snapshot 可被读取和写回。
+- 已新增 Phase 1 诊断 IPC stub：runtime capabilities、opencode server status、opencode model refresh 均只返回 secretless 摘要，不启动 server、不读取 resolved provider/config 响应。
+- 保持边界：未安装 opencode 依赖，未实现 opencode runtime core/server/event adapter/UI，未修改根 `README.md` / `AGENTS.md`，未读取或输出任何 secret。
+- 验证通过：`bun test packages/shared`；`bun test apps/electron/src/main/lib/settings-service.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- packages/shared apps/electron/src/main apps/electron/src/preload apps/electron/src/renderer tasks/todo.md docs/opencode-support`。
+
 ## 2026-05-27 Agent opencode Runtime 最新状态与下次启动提示词同步计划
 
 范围确认：本轮只同步 opencode support 文档的最新开发状态、完成/未完成清单和下次启动提示词；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。用户再次强调该习惯需长期保持，因此同步 `tasks/lessons.md`。

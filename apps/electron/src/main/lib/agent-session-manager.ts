@@ -34,7 +34,7 @@ import {
 if (!process.env.CLAUDE_CONFIG_DIR) {
   process.env.CLAUDE_CONFIG_DIR = getSdkConfigDir()
 }
-import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope } from '@codeinsights/shared'
+import type { AgentSessionMeta, AgentMessage, SDKMessage, ForkSessionInput, AgentMessageSearchResult, AgentStreamEnvelope, CodingAgentRuntimeKind } from '@codeinsights/shared'
 import { getConversationMessages } from './conversation-manager'
 import { clearNanoBananaAgentHistory } from './chat-tools/nano-banana-mcp'
 import { copyTreeWithoutSymlinks } from './agent-session-copy'
@@ -84,11 +84,11 @@ function writeIndex(index: AgentSessionsIndex): void {
 export function normalizeAgentSessionMeta(meta: AgentSessionMeta): AgentSessionMeta {
   const runtimeKind = meta.runtimeKind ?? meta.runtimeSession?.kind ?? 'claude-code'
 
-  if (runtimeKind === 'codex') {
+  if (runtimeKind !== 'claude-code') {
     return {
       ...meta,
       runtimeKind,
-      runtimeSession: meta.runtimeSession?.kind === 'codex' ? meta.runtimeSession : undefined,
+      runtimeSession: meta.runtimeSession?.kind === runtimeKind ? meta.runtimeSession : undefined,
       sdkSessionId: undefined,
       forkSourceSdkSessionId: undefined,
       resumeAtMessageUuid: undefined,
@@ -125,7 +125,7 @@ function normalizeAgentSessionMetaForWrite(meta: AgentSessionMeta): AgentSession
 }
 
 function createRuntimeSessionRef(
-  kind: 'claude-code' | 'codex',
+  kind: CodingAgentRuntimeKind,
   externalSessionId: string,
   createdAt: number,
   updatedAt: number,

@@ -4,6 +4,9 @@ import type {
   AgentAttachDirectoryInput,
   AgentGenerateTitleInput,
   AgentMessage,
+  AgentOpencodeModelRefreshResult,
+  AgentOpencodeServerStatus,
+  AgentRuntimeCapabilitiesDiagnostic,
   AgentSaveFilesInput,
   AgentSavedFile,
   AgentSaveWorkspaceFilesInput,
@@ -329,6 +332,69 @@ export function registerAgentIpcHandlers(): void {
     AGENT_IPC_CHANNELS.GET_CAPABILITIES,
     async (_, workspaceSlug: string): Promise<WorkspaceCapabilities> => {
       return getWorkspaceCapabilities(workspaceSlug)
+    }
+  )
+
+  // 获取 Coding Runtime capabilities 诊断
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_RUNTIME_CAPABILITIES,
+    async (): Promise<AgentRuntimeCapabilitiesDiagnostic[]> => {
+      const codexEnabled = process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
+      const opencodeEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+      return [
+        {
+          runtimeKind: 'claude-code',
+          featureEnabled: true,
+          registered: true,
+          available: true,
+          capabilities: ['streamEvents', 'resumeThread', 'abort', 'queueMessage', 'setPermissionMode', 'perToolPermission'],
+        },
+        {
+          runtimeKind: 'codex',
+          featureEnabled: codexEnabled,
+          registered: codexEnabled,
+          available: codexEnabled,
+          capabilities: ['streamEvents', 'resumeThread', 'abort'],
+        },
+        {
+          runtimeKind: 'opencode',
+          featureEnabled: opencodeEnabled,
+          registered: false,
+          available: false,
+          capabilities: ['streamEvents', 'resumeThread', 'abort', 'serverStatus', 'modelRefresh'],
+          message: 'opencode runtime core 将在后续 Phase 接入，本阶段仅冻结 IPC 契约',
+        },
+      ]
+    }
+  )
+
+  // 获取 opencode server 状态。Phase 1 只冻结契约，不启动 server。
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.GET_OPENCODE_SERVER_STATUS,
+    async (): Promise<AgentOpencodeServerStatus> => {
+      const featureEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+      return {
+        runtimeKind: 'opencode',
+        featureEnabled,
+        state: featureEnabled ? 'not_configured' : 'disabled',
+        message: featureEnabled
+          ? 'opencode runtime core 尚未接入，server 未启动'
+          : 'opencode runtime feature flag 未启用',
+        updatedAt: new Date().toISOString(),
+      }
+    }
+  )
+
+  // 刷新 opencode 模型。Phase 1 不读取 opencode server/provider 响应，避免记录 resolved secret。
+  ipcMain.handle(
+    AGENT_IPC_CHANNELS.REFRESH_OPENCODE_MODELS,
+    async (): Promise<AgentOpencodeModelRefreshResult> => {
+      return {
+        ok: false,
+        models: [],
+        error: 'opencode runtime core 尚未接入，暂不能刷新模型',
+        updatedAt: new Date().toISOString(),
+      }
     }
   )
 

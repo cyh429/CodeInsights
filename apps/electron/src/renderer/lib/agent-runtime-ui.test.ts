@@ -4,6 +4,8 @@ import {
   cleanupAgentCodexChannelId,
   getCodexCompatibleChannels,
   isAgentCodexRuntimeFeatureEnabled,
+  isAgentOpencodeRuntimeFeatureEnabled,
+  resolveEnabledAgentRuntimeKind,
   resolveAgentSessionRuntimeKind,
   shouldUseRuntimeTranscript,
 } from './agent-runtime-ui'
@@ -26,6 +28,10 @@ describe('agent-runtime-ui', () => {
   test('Codex runtime feature flag is closed by default', () => {
     expect(isAgentCodexRuntimeFeatureEnabled()).toBe(false)
     expect(isAgentCodexRuntimeFeatureEnabled(true)).toBe(true)
+    expect(isAgentOpencodeRuntimeFeatureEnabled()).toBe(false)
+    expect(isAgentOpencodeRuntimeFeatureEnabled(true)).toBe(true)
+    expect(resolveEnabledAgentRuntimeKind('opencode', { codex: false, opencode: false })).toBe('claude-code')
+    expect(resolveEnabledAgentRuntimeKind('opencode', { codex: false, opencode: true })).toBe('opencode')
   })
 
   test('Codex channel dropdown only keeps enabled OpenAI or Custom channels', () => {
@@ -65,6 +71,19 @@ describe('agent-runtime-ui', () => {
 
     expect(resolveAgentSessionRuntimeKind(codexSession, 'claude-code')).toBe('codex')
     expect(shouldUseRuntimeTranscript(codexSession, 'claude-code')).toBe(true)
+    expect(resolveAgentSessionRuntimeKind({
+      id: 's-opencode',
+      title: 'opencode',
+      runtimeKind: 'opencode',
+      runtimeSession: {
+        kind: 'opencode',
+        externalSessionId: 'ses_1',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      createdAt: 1,
+      updatedAt: 1,
+    }, 'claude-code')).toBe('opencode')
     expect(resolveAgentSessionRuntimeKind(undefined, 'claude-code')).toBe('claude-code')
     expect(resolveAgentSessionRuntimeKind({
       id: 's2',

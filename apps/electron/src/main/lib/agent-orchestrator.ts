@@ -923,6 +923,21 @@ export class AgentOrchestrator {
         return
       }
 
+      if (runtimeSelection.kind === 'opencode') {
+        reportPreflightError({
+          code: 'opencode_runtime_unavailable',
+          title: 'opencode Runtime 尚未接入',
+          message: '当前版本只冻结了 opencode runtime 的共享类型、settings 和 IPC 契约，真实 server/runtime core 会在后续阶段接入。',
+          details: [
+            `会话 runtime: ${runtimeSelection.source}`,
+            `原生会话: ${runtimeSelection.externalSessionId ?? '未绑定'}`,
+          ],
+          actions: [],
+          canRetry: false,
+        })
+        return
+      }
+
       const cliPath = resolveSDKCliPath()
       if (!existsSync(cliPath)) {
         const subpkg = `@anthropic-ai/claude-agent-sdk-${process.platform}-${process.arch}`

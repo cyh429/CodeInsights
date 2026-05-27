@@ -124,6 +124,55 @@ describe('Agent runtime event contract', () => {
     expect(validateAgentStreamEnvelope({ ...codexEnvelope, source: 'codex_cli' })).toEqual({ ok: true, errors: [] })
   })
 
+  test('accepts opencode event sources and runtime metadata', () => {
+    const opencodeEnvelope = createAgentStreamEnvelope({
+      sessionId,
+      runId,
+      sequence: 2,
+      createdAt,
+      source: 'opencode_server',
+      metadata: {
+        runtimeKind: 'opencode',
+        externalSessionId: 'ses_opencode',
+        externalMessageId: 'msg_opencode',
+        externalPartId: 'part_opencode',
+        occurredAt: createdAt,
+      },
+      event: {
+        type: 'run_started',
+        model: 'codeinsights-openai-compatible/gpt-5.1-codex',
+        cwd: '/tmp/workspace',
+        permissionMode: 'auto',
+        runtimeHash: 'hash-opencode',
+        runtimeKind: 'opencode',
+        agent: 'build',
+      },
+    })
+
+    expect(validateAgentStreamEnvelope(opencodeEnvelope)).toEqual({ ok: true, errors: [] })
+    expect(validateAgentStreamEnvelope({ ...opencodeEnvelope, source: 'opencode_cli' })).toEqual({ ok: true, errors: [] })
+  })
+
+  test('rejects invalid runtime metadata', () => {
+    const invalid = createAgentStreamEnvelope({
+      sessionId,
+      runId,
+      sequence: 3,
+      createdAt,
+      source: 'opencode_server',
+      metadata: {
+        runtimeKind: 'unknown-runtime',
+        occurredAt: 'not-a-date',
+      } as unknown as AgentStreamEnvelope['metadata'],
+      event: { type: 'assistant_delta', messageId: 'msg-1', delta: 'x' },
+    })
+
+    const result = validateAgentStreamEnvelope(invalid)
+    expect(result.ok).toBe(false)
+    expect(result.errors).toContain('metadata.runtimeKind 非法')
+    expect(result.errors).toContain('metadata.occurredAt 必须是有效 ISO 时间')
+  })
+
   test('rejects invalid run_started runtime kind', () => {
     const invalid = envelope(1, {
       type: 'run_started',

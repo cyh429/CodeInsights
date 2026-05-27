@@ -51,6 +51,9 @@ export type AgentCodexReasoningEffort = 'minimal' | 'low' | 'medium' | 'high' | 
 /** Codex Web Search 模式 */
 export type AgentCodexWebSearchMode = 'disabled' | 'cached' | 'live'
 
+/** opencode 认证来源 */
+export type AgentOpencodeAuthSource = 'native' | 'channel'
+
 /** 应用设置 */
 export interface AppSettings {
   /** 主题模式 */
@@ -103,6 +106,18 @@ export interface AppSettings {
   agentCodexNetworkAccessEnabled?: boolean
   /** Agent Codex Web Search 模式 */
   agentCodexWebSearchMode?: AgentCodexWebSearchMode
+  /** Agent opencode 渠道 ID；null 表示显式使用本机 opencode auth */
+  agentOpencodeChannelId?: string | null
+  /** Agent opencode 默认模型 ID，格式由 opencode runtime 解释 */
+  agentOpencodeModelId?: string
+  /** Agent opencode agent 名称 */
+  agentOpencodeAgentName?: string
+  /** Agent opencode 是否显式使用本机认证；true 时不读取 channel secret */
+  agentOpencodeUseNativeAuth?: boolean
+  /** Agent opencode 是否允许 runtime 自身更新 */
+  agentOpencodeAutoupdate?: boolean
+  /** Agent opencode 是否启用 workspace snapshot */
+  agentOpencodeSnapshotEnabled?: boolean
   /** Pipeline Codex 节点使用的 OpenAI / Custom 渠道 ID；null 表示显式使用本机 Codex auth / CODEX_API_KEY */
   pipelineCodexChannelId?: string | null
   /** 教程推荐横幅是否已关闭 */

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import type { AgentSessionMeta } from '@codeinsights/shared'
+import type { AgentSessionMeta, CodingAgentRuntimeKind } from '@codeinsights/shared'
 import {
   CodingAgentRuntimeRegistry,
   resolveAgentRuntimeSelection,
@@ -14,10 +14,12 @@ describe('CodingAgentRuntimeRegistry', () => {
     const registry = new CodingAgentRuntimeRegistry()
     registry.register(createRuntime('claude-code'))
     registry.register(createRuntime('codex'))
+    registry.register(createRuntime('opencode'))
 
     expect(registry.require('claude-code').kind).toBe('claude-code')
     expect(registry.require('codex').kind).toBe('codex')
-    expect(registry.listCapabilities().map((item) => item.runtimeKind).sort()).toEqual(['claude-code', 'codex'])
+    expect(registry.require('opencode').kind).toBe('opencode')
+    expect(registry.listCapabilities().map((item) => item.runtimeKind).sort()).toEqual(['claude-code', 'codex', 'opencode'])
   })
 
   test('dispose 会释放所有 runtime 并清空注册表', () => {
@@ -44,11 +46,66 @@ describe('resolveAgentRuntimeSelection', () => {
   test('legacy sdkSessionId 强制选择 Claude Code', () => {
     expect(resolveAgentRuntimeSelection({
       sessionMeta: createSession({ sdkSessionId: 'sdk-session-1' }),
-      settings: { agentRuntimeKind: 'codex', agentCodexChannelId: 'codex-channel' },
+      settings: { agentRuntimeKind: 'opencode', agentOpencodeChannelId: 'opencode-channel' },
+      enabledRuntimeKinds: ['claude-code', 'codex', 'opencode'],
     })).toEqual({
       kind: 'claude-code',
       source: 'legacy-sdk-session',
       externalSessionId: 'sdk-session-1',
+    })
+  })
+
+  test('feature flag 未启用时 settings 中的 opencode 不触发 runtime 切换', () => {
+    expect(resolveAgentRuntimeSelection({
+      sessionMeta: createSession({ runtimeKind: 'claude-code' }),
+      settings: {
+        agentRuntimeKind: 'opencode',
+        agentOpencodeChannelId: null,
+        agentOpencodeModelId: 'codeinsights-openai-compatible/gpt-5.1-codex',
+        agentOpencodeAgentName: 'build',
+      },
+    })).toEqual({
+      kind: 'claude-code',
+      source: 'default',
+    })
+  })
+
+  test('feature flag 启用时 settings 选择 opencode 并保留 native auth 语义', () => {
+    expect(resolveAgentRuntimeSelection({
+      sessionMeta: createSession({ runtimeKind: 'claude-code' }),
+      settings: {
+        agentRuntimeKind: 'opencode',
+        agentOpencodeChannelId: null,
+        agentOpencodeModelId: 'codeinsights-openai-compatible/gpt-5.1-codex',
+        agentOpencodeAgentName: 'build',
+      },
+      enabledRuntimeKinds: ['claude-code', 'codex', 'opencode'],
+    })).toEqual({
+      kind: 'opencode',
+      source: 'settings',
+      channelId: null,
+      model: 'codeinsights-openai-compatible/gpt-5.1-codex',
+      agent: 'build',
+      authSource: 'native',
+    })
+  })
+
+  test('settings 选择 opencode channel auth 时保留 channelId', () => {
+    expect(resolveAgentRuntimeSelection({
+      settings: {
+        agentRuntimeKind: 'opencode',
+        agentOpencodeChannelId: 'opencode-channel',
+        agentOpencodeModelId: 'provider/model',
+        agentOpencodeUseNativeAuth: false,
+      },
+      enabledRuntimeKinds: ['claude-code', 'codex', 'opencode'],
+    })).toEqual({
+      kind: 'opencode',
+      source: 'settings',
+      channelId: 'opencode-channel',
+      model: 'provider/model',
+      agent: undefined,
+      authSource: 'channel',
     })
   })
 
@@ -109,10 +166,42 @@ describe('resolveAgentRuntimeSelection', () => {
       model: 'gpt-5.1-codex-bound',
     })
   })
+
+  test('已绑定 opencode session 不被 feature flag 或 settings 改绑', () => {
+    expect(resolveAgentRuntimeSelection({
+      sessionMeta: createSession({
+        runtimeKind: 'opencode',
+        runtimeSession: {
+          kind: 'opencode',
+          externalSessionId: 'ses_opencode_bound',
+          channelId: null,
+          model: 'provider/model-bound',
+          agent: 'review',
+          authSource: 'native',
+          runtimeConfigHash: 'runtime-hash',
+          authSourceHash: 'auth-hash',
+          createdAt: 100,
+          updatedAt: 200,
+        },
+      }),
+      settings: { agentRuntimeKind: 'claude-code' },
+      enabledRuntimeKinds: ['claude-code', 'codex'],
+    })).toEqual({
+      kind: 'opencode',
+      source: 'session',
+      externalSessionId: 'ses_opencode_bound',
+      channelId: null,
+      model: 'provider/model-bound',
+      agent: 'review',
+      authSource: 'native',
+      runtimeConfigHash: 'runtime-hash',
+      authSourceHash: 'auth-hash',
+    })
+  })
 })
 
 function createRuntime(
-  kind: 'claude-code' | 'codex',
+  kind: CodingAgentRuntimeKind,
   disposed: string[] = [],
 ): CodingAgentRuntime {
   const capabilities: CodingAgentRuntimeCapabilities = {

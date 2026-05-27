@@ -272,6 +272,18 @@ export const agentCodexReasoningEffortAtom = atom<AgentCodexReasoningEffort | un
 export const agentCodexNetworkAccessEnabledAtom = atom<boolean | undefined>(undefined)
 /** Codex runtime Web Search 模式 */
 export const agentCodexWebSearchModeAtom = atom<AgentCodexWebSearchMode | undefined>(undefined)
+/** opencode runtime 渠道 ID；null 表示显式使用 native auth */
+export const agentOpencodeChannelIdAtom = atom<string | null | undefined>(undefined)
+/** opencode runtime 模型 ID */
+export const agentOpencodeModelIdAtom = atom<string | undefined>(undefined)
+/** opencode runtime agent 名称 */
+export const agentOpencodeAgentNameAtom = atom<string | undefined>(undefined)
+/** opencode runtime 是否显式使用本机认证 */
+export const agentOpencodeUseNativeAuthAtom = atom<boolean | undefined>(undefined)
+/** opencode runtime 是否允许自更新 */
+export const agentOpencodeAutoupdateAtom = atom<boolean | undefined>(undefined)
+/** opencode runtime 是否启用 snapshot */
+export const agentOpencodeSnapshotEnabledAtom = atom<boolean | undefined>(undefined)
 
 /** Per-session 渠道 ID Map — sessionId → channelId */
 export const agentSessionChannelMapAtom = atom<Map<string, string>>(new Map())

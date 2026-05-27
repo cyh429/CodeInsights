@@ -60,7 +60,9 @@ export function buildAgentHeaderMeta(input: AgentHeaderMetaInput): AgentHeaderMe
 }
 
 export function formatRuntimeKind(kind?: CodingAgentRuntimeKind | null): string {
-  return kind === 'codex' ? 'Codex' : 'Claude Code'
+  if (kind === 'codex') return 'Codex'
+  if (kind === 'opencode') return 'opencode'
+  return 'Claude Code'
 }
 
 export function formatPermissionMode(mode?: string | null): string {

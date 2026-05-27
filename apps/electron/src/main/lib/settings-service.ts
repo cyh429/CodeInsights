@@ -10,7 +10,7 @@ import { getSettingsPath } from './config-paths'
 import { DEFAULT_AGENT_RUNTIME_KIND, DEFAULT_THEME_MODE } from '../../types'
 import type { AppSettings } from '../../types'
 
-const AGENT_RUNTIME_KINDS = ['claude-code', 'codex'] as const
+const AGENT_RUNTIME_KINDS = ['claude-code', 'codex', 'opencode'] as const
 const AGENT_CODEX_REASONING_EFFORTS = ['minimal', 'low', 'medium', 'high', 'xhigh'] as const
 const AGENT_CODEX_WEB_SEARCH_MODES = ['disabled', 'cached', 'live'] as const
 
@@ -24,6 +24,12 @@ function normalizeSettings(data: Partial<AppSettings>): AppSettings {
     agentRuntimeKind: normalizeEnum(data.agentRuntimeKind, AGENT_RUNTIME_KINDS, DEFAULT_AGENT_RUNTIME_KIND),
     agentCodexReasoningEffort: normalizeOptionalEnum(data.agentCodexReasoningEffort, AGENT_CODEX_REASONING_EFFORTS),
     agentCodexWebSearchMode: normalizeOptionalEnum(data.agentCodexWebSearchMode, AGENT_CODEX_WEB_SEARCH_MODES),
+    agentOpencodeChannelId: normalizeOptionalNullableString(data.agentOpencodeChannelId),
+    agentOpencodeModelId: normalizeOptionalString(data.agentOpencodeModelId),
+    agentOpencodeAgentName: normalizeOptionalString(data.agentOpencodeAgentName),
+    agentOpencodeUseNativeAuth: normalizeOptionalBoolean(data.agentOpencodeUseNativeAuth),
+    agentOpencodeAutoupdate: normalizeOptionalBoolean(data.agentOpencodeAutoupdate),
+    agentOpencodeSnapshotEnabled: normalizeOptionalBoolean(data.agentOpencodeSnapshotEnabled),
   }
 }
 
@@ -44,6 +50,21 @@ function normalizeOptionalEnum<const T extends readonly string[]>(
 
 function isAllowedValue<const T extends readonly string[]>(value: unknown, allowedValues: T): value is T[number] {
   return typeof value === 'string' && (allowedValues as readonly string[]).includes(value)
+}
+
+function normalizeOptionalString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
+}
+
+function normalizeOptionalNullableString(value: unknown): string | null | undefined {
+  if (value === null) return null
+  return normalizeOptionalString(value)
+}
+
+function normalizeOptionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
 }
 
 /**

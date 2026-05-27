@@ -1,4 +1,5 @@
 import type {
+  AgentRuntimeAuthSource,
   AgentSessionMeta,
   CodingAgentRuntimeKind,
 } from '@codeinsights/shared'
@@ -17,6 +18,10 @@ export interface AgentRuntimeSettingsLike {
   agentRuntimeKind?: CodingAgentRuntimeKind
   agentCodexChannelId?: string | null
   agentCodexModelId?: string
+  agentOpencodeChannelId?: string | null
+  agentOpencodeModelId?: string
+  agentOpencodeAgentName?: string
+  agentOpencodeUseNativeAuth?: boolean
 }
 
 export interface AgentRuntimeSelection {
@@ -25,13 +30,20 @@ export interface AgentRuntimeSelection {
   externalSessionId?: string
   channelId?: string | null
   model?: string
+  agent?: string
+  authSource?: AgentRuntimeAuthSource
+  runtimeConfigHash?: string
+  authSourceHash?: string
 }
 
 export interface ResolveAgentRuntimeSelectionInput {
   sessionMeta?: AgentSessionMeta
   settings?: AgentRuntimeSettingsLike
   defaultKind?: CodingAgentRuntimeKind
+  enabledRuntimeKinds?: readonly CodingAgentRuntimeKind[]
 }
+
+const DEFAULT_ENABLED_RUNTIME_KINDS: readonly CodingAgentRuntimeKind[] = ['claude-code', 'codex']
 
 export class CodingAgentRuntimeRegistry {
   private readonly runtimes = new Map<CodingAgentRuntimeKind, CodingAgentRuntime>()
@@ -68,6 +80,7 @@ export function resolveAgentRuntimeSelection(
   input: ResolveAgentRuntimeSelectionInput,
 ): AgentRuntimeSelection {
   const defaultKind = input.defaultKind ?? 'claude-code'
+  const enabledRuntimeKinds = input.enabledRuntimeKinds ?? DEFAULT_ENABLED_RUNTIME_KINDS
   const sessionMeta = input.sessionMeta
   const runtimeSession = sessionMeta?.runtimeSession
 
@@ -78,12 +91,16 @@ export function resolveAgentRuntimeSelection(
       externalSessionId: runtimeSession.externalSessionId,
       ...('channelId' in runtimeSession ? { channelId: runtimeSession.channelId } : {}),
       ...(runtimeSession.model ? { model: runtimeSession.model } : {}),
+      ...(runtimeSession.agent ? { agent: runtimeSession.agent } : {}),
+      ...(runtimeSession.authSource ? { authSource: runtimeSession.authSource } : {}),
+      ...(runtimeSession.runtimeConfigHash ? { runtimeConfigHash: runtimeSession.runtimeConfigHash } : {}),
+      ...(runtimeSession.authSourceHash ? { authSourceHash: runtimeSession.authSourceHash } : {}),
     }
   }
 
-  if (sessionMeta?.runtimeKind === 'codex') {
+  if (sessionMeta?.runtimeKind === 'codex' || sessionMeta?.runtimeKind === 'opencode') {
     return {
-      kind: 'codex',
+      kind: sessionMeta.runtimeKind,
       source: 'session',
     }
   }
@@ -97,7 +114,7 @@ export function resolveAgentRuntimeSelection(
   }
 
   if (input.settings?.agentRuntimeKind) {
-    return buildSettingsSelection(input.settings)
+    return buildSettingsSelection(input.settings, defaultKind, enabledRuntimeKinds)
   }
 
   return {
@@ -106,7 +123,18 @@ export function resolveAgentRuntimeSelection(
   }
 }
 
-function buildSettingsSelection(settings: AgentRuntimeSettingsLike): AgentRuntimeSelection {
+function buildSettingsSelection(
+  settings: AgentRuntimeSettingsLike,
+  defaultKind: CodingAgentRuntimeKind,
+  enabledRuntimeKinds: readonly CodingAgentRuntimeKind[],
+): AgentRuntimeSelection {
+  if (!enabledRuntimeKinds.includes(settings.agentRuntimeKind ?? defaultKind)) {
+    return {
+      kind: enabledRuntimeKinds.includes(defaultKind) ? defaultKind : 'claude-code',
+      source: 'default',
+    }
+  }
+
   if (settings.agentRuntimeKind === 'codex') {
     return {
       kind: 'codex',
@@ -116,8 +144,27 @@ function buildSettingsSelection(settings: AgentRuntimeSettingsLike): AgentRuntim
     }
   }
 
+  if (settings.agentRuntimeKind === 'opencode') {
+    const authSource = resolveOpencodeAuthSource(settings)
+    return {
+      kind: 'opencode',
+      source: 'settings',
+      channelId: authSource === 'native' ? null : settings.agentOpencodeChannelId,
+      model: settings.agentOpencodeModelId,
+      agent: settings.agentOpencodeAgentName,
+      ...(authSource ? { authSource } : {}),
+    }
+  }
+
   return {
     kind: 'claude-code',
     source: 'settings',
   }
+}
+
+function resolveOpencodeAuthSource(settings: AgentRuntimeSettingsLike): AgentRuntimeAuthSource | undefined {
+  if (settings.agentOpencodeUseNativeAuth === true) return 'native'
+  if (settings.agentOpencodeChannelId === null) return 'native'
+  if (typeof settings.agentOpencodeChannelId === 'string') return 'channel'
+  return undefined
 }

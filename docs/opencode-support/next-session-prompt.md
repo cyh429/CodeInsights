@@ -15,8 +15,9 @@
 - 阶段提交纪律已强化并提交：19b5a71d docs(workflow): 强化阶段提交纪律。
 - opencode support README 与 next-session prompt 已补齐并同步：bbe8a80c docs(agent): 同步 opencode Runtime 最新状态。
 - Phase 0 依赖 spike 与基线冻结已完成并提交：63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike。
-- Phase 0 后最新状态、完成/未完成清单和本提示词已在后续状态同步提交中补齐；最新提交号以 `git log -1 --oneline` 为准，预期至少包含 63aab807 之后的状态同步提交。
-- 当前还没有进入业务实现；Phase 1-8 均未开始。
+- Phase 0 后最新状态、完成/未完成清单和本提示词已在状态同步提交中补齐：668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态。
+- Phase 1 共享类型、settings 与 IPC 契约已完成并通过验证；最新提交号以 `git log -1 --oneline` 为准，预期至少包含 668b8268 之后的 Phase 1 契约提交。
+- 当前还没有进入 opencode runtime core/server 实现；Phase 2-8 均未开始。
 
 已完成内容：
 - 需求理解：CodeInsights 的长期目标是成为多 Coding Agent runtime 代理层，不重新实现 Claude Code / Codex / opencode 的 Agent 能力。
@@ -26,9 +27,9 @@
 - 包名调研：2026-05-27 已确认 `@opencode-ai/sdk@1.15.11` 与 `opencode-ai@1.15.11`；`opencode` 和 `@opencode-ai/cli` 包名不可用。
 - 开发清单：已覆盖状态约定、产品与安全门禁、Phase 0-8、验证命令、Smoke 矩阵、风险跟踪、阶段记录模板和维护项。
 - Phase 0 spike：已确认 server/API/SDK/config/provider/MCP/permission/binary 真实形态。重点结论：`--port 0` 不随机分配端口；SDK v1 默认 fields 风格；`event.subscribe()` 返回 `{ stream }`；permission v1 body 为 `{ response }` 且没有 `remember`；v2 permission 有 `permission.list()` / `permission.reply()`；provider/MCP `{env:VAR}` 可用但 resolved API 响应会暴露替换后的 secret，不能原样日志化。
+- Phase 1 契约：shared 支持 `CodingAgentRuntimeKind = 'opencode'`、`opencode_server` / `opencode_cli` event source、runtime metadata 和 opencode session snapshot；settings 支持 secretless opencode 字段并区分 `null` native auth 与 `undefined` 未配置；registry 未启用 opencode 时不会由 settings 触发切换，已绑定 opencode session 不被改绑；诊断 IPC 契约已冻结。
 
 未完成内容：
-- Phase 1：共享类型、settings 与 IPC 契约。
 - Phase 2：opencode binary/env/config/server/client runtime core。
 - Phase 3：opencode event adapter 与 fixtures。
 - Phase 4：runtime mock、registry 和 orchestrator routing。
@@ -39,21 +40,19 @@
 
 请先执行：
 1. 读取项目指令和 tasks/lessons.md，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期至少看到 `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike` 以及其后的状态同步提交。不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
-3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md，重点看 Phase 0 结论和 Phase 1。
-4. 在 tasks/todo.md 写入本轮 Phase 1 计划，然后直接开始执行 Phase 1。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期至少看到 `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态` 以及其后的 Phase 1 契约提交。不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
+3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md，重点看 Phase 0 结论、Phase 1 验证记录和 Phase 2。
+4. 在 tasks/todo.md 写入本轮 Phase 2 计划，然后直接开始执行 Phase 2。
 
-Phase 1 目标：
-- 扩展 shared 类型、settings normalization 和必要 IPC 契约，让 Agent 模式可以表达 `opencode` runtime。
-- feature flag 未开启时，Claude Code / Codex 行为保持不变。
-- 不进入 opencode runtime core/server 实现；Phase 1 只冻结契约和测试。
+Phase 2 目标：
+- 实现不依赖真实模型的 opencode runtime core 基础设施：binary/env/auth/config/MCP/server manager/client wrapper。
+- 继续保持长期落盘配置 secretless，不记录 API key、Bearer token、Basic Auth password、MCP secret 或 resolved config/provider 原文。
+- 不进入 renderer UI、真实模型验收或 event adapter 完整映射；Phase 2 先完成 core 单测。
 
-Phase 1 建议验证入口：
-- `bun test packages/shared`
-- `bun test apps/electron/src/main/lib/settings-service.test.ts`
-- `bun test apps/electron/src/main/lib/agent-runtimes`
+Phase 2 建议验证入口：
+- `bun test apps/electron/src/main/lib/opencode-runtime`
 - `bun run --filter='@codeinsights/electron' typecheck`
-- `git diff --check -- packages/shared apps/electron/src/main apps/electron/src/preload apps/electron/src/renderer tasks/todo.md docs/opencode-support`
+- `git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/package.json electron-builder.yml tasks/todo.md docs/opencode-support`
 
 关键工程边界：
 - 不把 opencode 当作普通模型 Provider；它是完整 Coding Agent Runtime。
@@ -65,7 +64,7 @@ Phase 1 建议验证入口：
 - 只 stage 当前阶段相关文件，不 stage 打包产物、临时 smoke 目录、.DS_Store 或无关用户改动。
 
 下一步优先级：
-1. 从 Phase 1 开始，不要跳到 runtime core、UI 或真实 server 集成。
-2. 先完成 shared/settings/IPC 契约与 feature flag 行为。
-3. Phase 1 提交后，再进入 Phase 2 的 opencode runtime core。
+1. 从 Phase 2 开始，不要跳到 renderer UI、真实模型 smoke 或发布文档。
+2. 先完成 opencode binary/env/auth/config/server/client core，并用 fake executor / fake client 单测覆盖。
+3. Phase 2 提交后，再进入 Phase 3 的 opencode event adapter 与 fixtures。
 ```

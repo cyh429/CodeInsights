@@ -1,5 +1,6 @@
 import type {
   AgentQueueMessageInput,
+  AgentRuntimeAuthSource,
   AgentRuntimeEvent,
   AgentRuntimeRunnerMode,
   AgentStreamEnvelope,
@@ -21,15 +22,21 @@ export type CodingAgentRuntimeCapability =
   | 'queueMessage'
   | 'setPermissionMode'
   | 'perToolPermission'
+  | 'serverStatus'
+  | 'modelRefresh'
 
 export interface CodingAgentRuntimeCapabilities {
   runtimeKind: CodingAgentRuntimeKind
+  displayName?: string
   supportsStreamEvents: boolean
   supportsResumeThread: boolean
   supportsAbort: boolean
   supportsQueueMessage: boolean
   supportsSetPermissionMode: boolean
   supportsPerToolPermission: boolean
+  supportsServerStatus?: boolean
+  supportsModelRefresh?: boolean
+  authSources?: AgentRuntimeAuthSource[]
 }
 
 export interface CodingAgentRuntimeRunInput {
