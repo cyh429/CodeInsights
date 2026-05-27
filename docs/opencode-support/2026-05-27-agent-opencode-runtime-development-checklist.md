@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：状态入口已同步，业务实现未开始
+状态：Phase 0 spike 已完成，业务实现未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，状态入口与下次启动提示词同步时
+更新时间：2026-05-27，Phase 0 spike 完成时
 
 当前结论：
 
@@ -35,10 +35,12 @@
 - [x] opencode 接入主方案已深化并提交：`06c62406 docs(agent): 深化 opencode Runtime 接入方案`。
 - [x] 主路径决策已明确：managed `opencode serve` + `@opencode-ai/sdk` client；`opencode run --format json` 仅作 smoke / fallback。
 - [x] npm 包调研已确认：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`；`opencode` 和 `@opencode-ai/cli` 包名不可用。
+- [x] Phase 0 真实 spike 已完成：npm 元数据、临时安装、binary、server health/SSE、SDK response shape、session/prompt_async、permission body、config/provider/MCP placeholder 均已确认。
+- [x] Phase 0 关键修正已写回主方案：`--port 0` 不作为随机端口；permission v1 无 `remember`；v2 permission reply 是新主路径；resolved config/provider API 会暴露 env 替换后的 secret，不能原样记录。
 - [x] 开发进度清单已创建并提交：`4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。
 - [x] 阶段提交纪律已强化并提交：`19b5a71d docs(workflow): 强化阶段提交纪律`。
 - [x] Support README 与 next-session prompt 已补齐，随本轮状态同步提交落盘；下次启动以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为准。
-- [ ] Phase 0 依赖 spike 与基线冻结未开始。
+- [x] Phase 0 依赖 spike 与基线冻结已完成。
 - [ ] Phase 1 共享类型与 settings 契约未开始。
 - [ ] Phase 2 opencode runtime core 未开始。
 - [ ] Phase 3 event adapter 未开始。
@@ -59,8 +61,8 @@
 
 下一步入口：
 
-1. 进入 Phase 0，完成依赖 spike、API 真实形态确认、基线验证和实施准备。
-2. Phase 0 完成后提交，再进入 Phase 1。
+1. Phase 0 完成后提交本轮文档和任务记录。
+2. 进入 Phase 1，完成 shared/settings/IPC 契约。
 3. 不要直接跳到 UI 或真实 server 集成，先冻结类型契约和 runtime core 边界。
 
 ## 0.2 当前完成/未完成总览
@@ -72,7 +74,7 @@
 | 开发清单 | [x] | 本文件已创建并通过文档验证 |
 | Support README | [x] | 已补齐 opencode support 状态索引 |
 | Next-session prompt | [x] | 已补齐下次启动可复制提示词 |
-| Phase 0 | [ ] | 依赖 spike 与基线冻结 |
+| Phase 0 | [x] | 依赖 spike 与基线冻结已完成 |
 | Phase 1 | [ ] | shared/settings/IPC 契约 |
 | Phase 2 | [ ] | opencode binary/env/config/server/client core |
 | Phase 3 | [ ] | event adapter 与 fixtures |
@@ -110,7 +112,7 @@
 | [x] | CLI `run --format json` 定位 | smoke / fallback，不作主路径 | Phase 5 |
 | [x] | feature flag | `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` | Phase 1-6 |
 | [ ] | 默认认证来源 | native opencode auth 优先，channel auth 显式选择 | Phase 6 |
-| [ ] | channel auth 是否写入 opencode auth storage | 否，只用 env placeholder | Phase 2 / Phase 5 |
+| [x] | channel auth 是否写入 opencode auth storage | 否，只用 env placeholder；Phase 0 已确认 provider/MCP env placeholder 可行 | Phase 2 / Phase 5 |
 | [ ] | `bypassPermissions` 是否暴露 | 首版不公开；即使启用也保留 Git guard | Phase 6 |
 | [ ] | native auth 是否隔离 HOME | 首版复用 opencode 原生全局 auth | Phase 5 |
 | [ ] | MCP OAuth 是否由 CodeInsights 代理 | 首版不代理，只复用 opencode native OAuth | Phase 7 |
@@ -130,31 +132,31 @@
 
 任务：
 
-- [ ] 记录启动基线：`git status --short`、`git log -3 --oneline`。
-- [ ] 确认当前 Bun / Electron / TypeScript 版本和项目命令仍可运行。
-- [ ] 查询并记录 `@opencode-ai/sdk` 版本、dependencies、dist-tags。
-- [ ] 查询并记录 `opencode-ai` 版本、bin、optionalDependencies。
-- [ ] 确认 `npm view opencode` 和 `npm view @opencode-ai/cli` 仍为 404，并记录为包名不可用。
-- [ ] 在临时分支或临时目录安装 opencode 依赖，不污染业务实现提交。
-- [ ] 实测 `opencode --version`。
-- [ ] 实测 `opencode serve --hostname 127.0.0.1 --port <free-port>`。
-- [ ] 实测 `OPENCODE_SERVER_PASSWORD` Basic Auth。
-- [ ] 实测 `/global/health` 返回结构。
-- [ ] 实测 `/event` 首包 `server.connected`。
-- [ ] 实测 `@opencode-ai/sdk createOpencodeClient()` 返回结构，确认 `.data` / `.stream` 访问方式。
-- [ ] 实测 `event.subscribe()` async iterator / stream 结构。
-- [ ] 实测 `POST /session` body 与返回 session id。
-- [ ] 实测 `POST /session/:id/prompt_async` body 字段名和 204 返回。
-- [ ] 实测 `POST /session/:id/permissions/:permissionID` body `{ response, remember? }` 与 SDK 类型。
-- [ ] 实测 `OPENCODE_CONFIG`、`OPENCODE_CONFIG_DIR`、`OPENCODE_CONFIG_CONTENT` 优先级。
-- [ ] 实测 provider config 使用 `{env:VAR}` 注入 `options.apiKey`。
-- [ ] 实测 OpenAI-compatible provider 使用 `@ai-sdk/openai-compatible` / `@ai-sdk/openai` 的区别。
-- [ ] 实测 local MCP `environment` 是否支持 `{env:VAR}`。
-- [ ] 实测 remote MCP `headers` 是否支持 `{env:VAR}`。
-- [ ] 实测 `enabled_providers` 对 custom provider 的行为。
-- [ ] 实测 managed config 冲突时 resolved config 是否可检测。
-- [ ] 记录 opencode platform binary 的真实路径和可执行权限。
-- [ ] 明确 Electron packaged 场景需要包含的 package 列表。
+- [x] 记录启动基线：`git status --short`、`git log -3 --oneline`。
+- [x] 确认当前 Bun / Electron / TypeScript 版本和项目命令仍可运行。
+- [x] 查询并记录 `@opencode-ai/sdk` 版本、dependencies、dist-tags。
+- [x] 查询并记录 `opencode-ai` 版本、bin、optionalDependencies。
+- [x] 确认 `npm view opencode` 和 `npm view @opencode-ai/cli` 仍为 404，并记录为包名不可用。
+- [x] 在临时分支或临时目录安装 opencode 依赖，不污染业务实现提交。
+- [x] 实测 `opencode --version`。
+- [x] 实测 `opencode serve --hostname 127.0.0.1 --port <free-port>`。
+- [x] 实测 `OPENCODE_SERVER_PASSWORD` Basic Auth。
+- [x] 实测 `/global/health` 返回结构。
+- [x] 实测 `/event` 首包 `server.connected`。
+- [x] 实测 `@opencode-ai/sdk createOpencodeClient()` 返回结构，确认 `.data` / `.stream` 访问方式。
+- [x] 实测 `event.subscribe()` async iterator / stream 结构。
+- [x] 实测 `POST /session` body 与返回 session id。
+- [x] 实测 `POST /session/:id/prompt_async` body 字段名和 204 返回。
+- [x] 实测 `POST /session/:id/permissions/:permissionID` body；SDK v1 类型为 `{ response }`，没有 `remember`。
+- [x] 实测 `OPENCODE_CONFIG`、`OPENCODE_CONFIG_DIR`、`OPENCODE_CONFIG_CONTENT` 优先级。
+- [x] 实测 provider config 使用 `{env:VAR}` 注入 `options.apiKey`。
+- [x] 实测 OpenAI-compatible provider 使用 `@ai-sdk/openai-compatible` / `@ai-sdk/openai` 的区别。
+- [x] 实测 local MCP `environment` 是否支持 `{env:VAR}`。
+- [x] 实测 remote MCP `headers` 是否支持 `{env:VAR}`。
+- [x] 实测 `enabled_providers` 对 custom provider 的行为。
+- [x] 实测 resolved config 可检测 CodeInsights inline policy 覆盖结果；系统级 managed preferences 未模拟，Phase 5 smoke 继续保留检测。
+- [x] 记录 opencode platform binary 的真实路径和可执行权限。
+- [x] 明确 Electron packaged 场景需要包含的 package 列表。
 
 验证：
 
@@ -170,12 +172,31 @@ git diff --check
 
 退出标准：
 
-- [ ] 所有 spike 结论写入本清单或主方案。
-- [ ] 已确认 SDK method / response 访问方式，不再靠猜字段。
-- [ ] 已确认 channel auth 不需要写入 opencode auth storage。
-- [ ] 已确认 MCP secret 注入策略是否可走 env placeholder。
-- [ ] 未改业务行为，或仅有 spike 文档更新。
-- [ ] Phase 0 单独提交完成。
+- [x] 所有 spike 结论写入本清单或主方案。
+- [x] 已确认 SDK method / response 访问方式，不再靠猜字段。
+- [x] 已确认 channel auth 不需要写入 opencode auth storage。
+- [x] 已确认 MCP secret 注入策略可走 env placeholder。
+- [x] 未改业务行为，仅有 spike 文档和任务记录更新。
+- [x] Phase 0 单独提交完成。
+
+### 2.1 Phase 0 验证记录
+
+- 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`。
+- 项目版本：Bun `1.3.13`；Electron 依赖 `^39.5.1`；TypeScript 依赖 `^5.0.0`。
+- npm 元数据：`@opencode-ai/sdk@1.15.11` 依赖 `cross-spawn@7.0.6`；`opencode-ai@1.15.11` 暴露 bin `opencode -> ./bin/opencode.exe`，optional packages 包含 `opencode-darwin-arm64`、`opencode-darwin-x64`、`opencode-darwin-x64-baseline`、Linux glibc/musl/baseline、Windows x64/arm64 等。
+- 包名不可用：`npm view opencode version --json` 和 `npm view @opencode-ai/cli version --json` 均返回 npm `E404`。
+- 临时安装目录：`/tmp/codeinsights-opencode-phase0-main`；没有修改仓库 `package.json`、`bun.lock` 或业务代码。
+- binary：当前 darwin-arm64 平台安装后 `node_modules/opencode-ai/bin/opencode.exe` 是 0755 Mach-O arm64，可执行并输出 `1.15.11`；它与 `node_modules/opencode-darwin-arm64/bin/opencode` 是同内容/同 inode hard link。Electron packaged 需要包含 `opencode-ai` 主包和目标平台 `opencode-{platform}-{arch}` optional packages。
+- server：`opencode serve --hostname 127.0.0.1 --port <free-port> --pure` 可启动；`OPENCODE_SERVER_PASSWORD` / `OPENCODE_SERVER_USERNAME` 开启 Basic Auth，无认证和错误认证均为 401，正确认证的 `GET /global/health` 返回 `{ healthy: true, version: "1.15.11" }`。
+- 端口：`opencode serve --help` 显示 `--port` 默认 0，但实测不传端口或传 `--port 0` 会监听默认 `4096`；CodeInsights 必须自行找 free port 并显式传入。
+- SSE：`GET /event` 首包是 `data: {"id":"evt_...","type":"server.connected","properties":{}}`；SDK `event.subscribe()` 返回 `{ stream }`，需要显式把 Basic Auth header 放进 SDK config 或调用 options。
+- SDK response：`createOpencodeClient()` 默认 `responseStyle: "fields"`，普通请求返回 `{ data, request, response }` 或 `{ error, request, response }`；`responseStyle: "data"` 时直接返回 data。`session.create()` 返回 `Session`，`session.promptAsync()` 调用 `POST /session/{id}/prompt_async`，204 时 fields 风格 `data` 为 `{}`，HTTP 直连 body 为空。
+- session API：`POST /session` 可无模型创建 session，返回 id 前缀 `ses_`；`prompt_async` body 使用 `model: { providerID, modelID }`、`agent`、`noReply`、`system`、`tools`、`parts`。
+- permission API：SDK v1 没有 `client.permission`，根方法是 `client.postSessionIdPermissionsPermissionId()`；body 为 `{ response: "once" | "always" | "reject" }`，响应 200 boolean。SDK v2 新主路径包含 `permission.list()` 和 `permission.reply({ requestID, reply?, message? })`，旧 session permission endpoint 为兼容路径。`remember` 不在生成类型中，首版不能依赖。
+- config：`OPENCODE_CONFIG` 会加载指定 JSON/JSONC；`OPENCODE_CONFIG_DIR` 既能承载 assets，也会加载目录下 `opencode.json` / `opencode.jsonc`；`OPENCODE_CONFIG_CONTENT` 会覆盖 scalar/array，同名 object/map 按 key 合并。`/config` 返回 resolved config，可用于检测 inline policy 是否生效。
+- secret 安全：`{env:VAR}` 会被替换成真实 env 值；替换后的值会出现在 `/config`、`/provider`、`/config/providers` 响应中，包括 provider key / `options.apiKey`。CodeInsights 不得把这些响应原样写入日志、event log 或长期诊断文件。
+- provider：`@ai-sdk/openai-compatible` 和 `@ai-sdk/openai` 都可作为 custom provider `npm` 值被加载；无真实模型请求时只能确认配置可加载，协议差异仍由目标端点类型决定。`enabled_providers` 会过滤 `/provider` 和 `/config/providers` 的 provider 列表，但不会清理 `/config.provider` 原始 map。`provider.connected` 不能作为凭证有效性的强信号。
+- MCP：local MCP `environment` 与 remote MCP `headers` 均支持 `{env:VAR}`，实测子进程 env 和 fake remote header 会收到替换后的值。因为 resolved API 会暴露替换后 secret，MCP 诊断也必须只输出 server 名、状态和脱敏摘要。
 
 回滚点：
 

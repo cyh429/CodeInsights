@@ -3982,3 +3982,38 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
   - `#9`：`feat: 支持全局流式语音输入（参考豆包）` - https://github.com/zcxGGmu/CodeInsights/issues/9
 - 已通过 GitHub Issues API 只读查询确认 `#5` 到 `#9` 均存在且为 open issue。
 - 本轮未修改产品代码，未修改根 `README.md` / `AGENTS.md`，未将 token 写入仓库文件。
+
+## 2026-05-27 Agent opencode Runtime Phase 0 计划
+
+范围确认：本轮只执行 Phase 0 依赖 spike 与基线冻结，用真实命令确认 opencode npm 包、CLI、server、SDK、config、permission、MCP placeholder、provider config 与 binary 路径；不进入 shared/settings/IPC 或业务实现，不修改根 `README.md` / `AGENTS.md`。
+
+- [x] 读取项目指令、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认阶段完成即提交、状态同步、secretless config、Git guard、runtime binding 与下次启动提示词纪律。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前工作树干净，最新提交为 `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`。
+- [x] 查询 npm 元数据：`@opencode-ai/sdk`、`opencode-ai`、`opencode`、`@opencode-ai/cli`。
+- [x] 在临时目录安装 `@opencode-ai/sdk` 与 `opencode-ai`，不污染仓库依赖和业务实现提交。
+- [x] 实测 CLI：binary 路径、可执行权限、`opencode --version`、`opencode serve --hostname 127.0.0.1 --port <free-port>`。
+- [x] 实测 server/API：Basic Auth、`/global/health`、`/event` 首包、`/session`、`/prompt_async`、permission response body。
+- [x] 实测 SDK：`createOpencodeClient()` 返回结构、`.data` / `.stream` 访问方式、`event.subscribe()` async iterator / stream 形态。
+- [x] 实测配置优先级和安全边界：`OPENCODE_CONFIG`、`OPENCODE_CONFIG_DIR`、`OPENCODE_CONFIG_CONTENT`、provider `{env:VAR}`、OpenAI-compatible provider、MCP local environment / remote headers placeholder、`enabled_providers`、resolved config 冲突检测。
+- [x] 根据真实结果更新 opencode 主方案、开发清单、support README 和 next-session prompt；如 SDK / Server API 与方案差异明显，停止进入 Phase 1。
+- [x] 运行 Phase 0 验证：`bun run typecheck`、`bun test --isolate`、`git diff --check`。
+- [x] 在本节追加 Phase 0 Review，确认只提交 Phase 0 文档 / 任务记录，并单独提交。
+
+## 2026-05-27 Agent opencode Runtime Phase 0 Review
+
+- 已完成 npm 元数据验证：`@opencode-ai/sdk@1.15.11` 依赖 `cross-spawn@7.0.6`；`opencode-ai@1.15.11` 暴露 `opencode -> ./bin/opencode.exe`，并声明无 scope 的多平台 optional packages；`opencode` 与 `@opencode-ai/cli` 仍为 npm `E404`。
+- 已在 `/tmp/codeinsights-opencode-phase0-main` 临时目录安装 `@opencode-ai/sdk` 与 `opencode-ai`，未修改仓库依赖文件。
+- 已确认 darwin-arm64 binary：`opencode-ai/bin/opencode.exe` 是 0755 Mach-O arm64，可执行输出 `1.15.11`，并与 `opencode-darwin-arm64/bin/opencode` 同内容/同 inode hard link。
+- 已确认 server 行为：`opencode serve --hostname 127.0.0.1 --port <free-port> --pure` 可启动；Basic Auth 走 `OPENCODE_SERVER_USERNAME` / `OPENCODE_SERVER_PASSWORD`；`/global/health` 返回 `{ healthy: true, version: "1.15.11" }`；`/event` 首包为 `server.connected`。
+- 已修正重要假设：`--port 0` 实测不会随机分配端口，而是使用默认 `4096`；CodeInsights 后续必须自行分配空闲端口再显式传给 server。
+- 已确认 SDK 形态：v1 默认 fields 风格返回 `{ data, request, response }` 或 `{ error, request, response }`；`responseStyle: "data"` 直接返回 data；`event.subscribe()` 返回 `{ stream }`；Basic Auth header 必须通过 SDK config 或调用 options 传入。
+- 已确认 session/prompt API：`POST /session` 可无模型创建 session，id 前缀 `ses_`；`POST /session/{id}/prompt_async` body 使用 `parts`，no-reply smoke 返回 204。
+- 已确认 permission 差异：SDK v1 根方法 `postSessionIdPermissionsPermissionId()` body 是 `{ response: "once" | "always" | "reject" }`，没有 `remember`；SDK v2 新增 `permission.list()` / `permission.reply()`，Phase 1-2 需优先评估 v2 主路径。
+- 已确认 config/provider/MCP：`OPENCODE_CONFIG`、`OPENCODE_CONFIG_DIR`、`OPENCODE_CONFIG_CONTENT` 会合并；`{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`。
+- 已记录安全边界：resolved `/config`、`/provider`、`/config/providers` 会包含 env 替换后的 secret，后续 diagnostics/event log 不能原样持久化这些响应；`enabled_providers` 过滤 provider endpoints 但不清理 `/config.provider` 原始 map；`provider.connected` 不能证明凭证有效。
+- 已同步 `docs/opencode-support/README.md`、开发清单、主方案和 next-session prompt；下次启动应从 Phase 1 shared/settings/IPC 契约开始。
+- 验证通过：`npm view @opencode-ai/sdk version dependencies dist-tags --json`、`npm view opencode-ai version optionalDependencies bin dist-tags --json`、`npm view opencode version --json`、`npm view @opencode-ai/cli version --json`。
+- 验证通过：`bun run typecheck`。
+- 验证通过：`bun test --isolate`，613 pass / 0 fail。
+- 验证通过：`git diff --check`。
+- 阶段边界：本轮未修改业务实现、根 `README.md` 或 `AGENTS.md`，未提交临时目录、打包产物或真实凭证。

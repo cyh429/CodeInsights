@@ -13,8 +13,9 @@
 - opencode 接入主方案已深化并提交：06c62406 docs(agent): 深化 opencode Runtime 接入方案。
 - opencode Runtime 开发进度清单已建立并提交：4544b64a docs(agent): 建立 opencode Runtime 开发进度清单。
 - 阶段提交纪律已强化并提交：19b5a71d docs(workflow): 强化阶段提交纪律。
-- opencode support README 与 next-session prompt 已在后续状态同步提交中补齐；最新提交号以 `git log -1 --oneline` 为准，预期至少包含 19b5a71d 之后的状态同步提交。
-- 当前还没有进入业务实现；Phase 0-8 均未开始。
+- opencode support README 与 next-session prompt 已补齐并同步：bbe8a80c docs(agent): 同步 opencode Runtime 最新状态。
+- Phase 0 依赖 spike 与基线冻结已完成并随本提示词所在提交落盘；最新提交号以 `git log -1 --oneline` 为准。
+- 当前还没有进入业务实现；Phase 1-8 均未开始。
 
 已完成内容：
 - 需求理解：CodeInsights 的长期目标是成为多 Coding Agent runtime 代理层，不重新实现 Claude Code / Codex / opencode 的 Agent 能力。
@@ -23,9 +24,9 @@
 - feature flag：首版使用 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`，未开启时 Claude Code / Codex 行为不变。
 - 包名调研：2026-05-27 已确认 `@opencode-ai/sdk@1.15.11` 与 `opencode-ai@1.15.11`；`opencode` 和 `@opencode-ai/cli` 包名不可用。
 - 开发清单：已覆盖状态约定、产品与安全门禁、Phase 0-8、验证命令、Smoke 矩阵、风险跟踪、阶段记录模板和维护项。
+- Phase 0 spike：已确认 server/API/SDK/config/provider/MCP/permission/binary 真实形态。重点结论：`--port 0` 不随机分配端口；SDK v1 默认 fields 风格；`event.subscribe()` 返回 `{ stream }`；permission v1 body 为 `{ response }` 且没有 `remember`；v2 permission 有 `permission.list()` / `permission.reply()`；provider/MCP `{env:VAR}` 可用但 resolved API 响应会暴露替换后的 secret，不能原样日志化。
 
 未完成内容：
-- Phase 0：依赖 spike 与基线冻结。
 - Phase 1：共享类型、settings 与 IPC 契约。
 - Phase 2：opencode binary/env/config/server/client runtime core。
 - Phase 3：opencode event adapter 与 fixtures。
@@ -38,22 +39,20 @@
 请先执行：
 1. 读取项目指令和 tasks/lessons.md，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
 2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
-3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md。
-4. 在 tasks/todo.md 写入本轮 Phase 0 计划，然后直接开始执行 Phase 0。
+3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md，重点看 Phase 0 结论和 Phase 1。
+4. 在 tasks/todo.md 写入本轮 Phase 1 计划，然后直接开始执行 Phase 1。
 
-Phase 0 目标：
-- 用真实命令确认 opencode npm 包结构、Server API、SDK 返回形态、配置优先级、permission body、MCP env/header placeholder、provider config 和 binary 路径。
-- 不污染业务实现提交；如果需要临时安装依赖，优先使用临时目录或明确记录改动边界。
-- 如果 SDK / Server API 与方案差异明显，停止进入 Phase 1，先更新主方案和开发清单。
+Phase 1 目标：
+- 扩展 shared 类型、settings normalization 和必要 IPC 契约，让 Agent 模式可以表达 `opencode` runtime。
+- feature flag 未开启时，Claude Code / Codex 行为保持不变。
+- 不进入 opencode runtime core/server 实现；Phase 1 只冻结契约和测试。
 
-Phase 0 必做验证入口：
-- `npm view @opencode-ai/sdk version dependencies dist-tags --json`
-- `npm view opencode-ai version optionalDependencies bin dist-tags --json`
-- `npm view opencode version --json`
-- `npm view @opencode-ai/cli version --json`
-- `bun run typecheck`
-- `bun test --isolate`
-- `git diff --check`
+Phase 1 建议验证入口：
+- `bun test packages/shared`
+- `bun test apps/electron/src/main/lib/settings-service.test.ts`
+- `bun test apps/electron/src/main/lib/agent-runtimes`
+- `bun run --filter='@codeinsights/electron' typecheck`
+- `git diff --check -- packages/shared apps/electron/src/main apps/electron/src/preload apps/electron/src/renderer tasks/todo.md docs/opencode-support`
 
 关键工程边界：
 - 不把 opencode 当作普通模型 Provider；它是完整 Coding Agent Runtime。
@@ -65,7 +64,7 @@ Phase 0 必做验证入口：
 - 只 stage 当前阶段相关文件，不 stage 打包产物、临时 smoke 目录、.DS_Store 或无关用户改动。
 
 下一步优先级：
-1. 从 Phase 0 开始，不要跳到 UI 或真实 server 集成。
-2. 先冻结依赖/API/config/permission/MCP 的真实形态。
-3. Phase 0 提交后，再进入 Phase 1 的 shared/settings/IPC 契约。
+1. 从 Phase 1 开始，不要跳到 runtime core、UI 或真实 server 集成。
+2. 先完成 shared/settings/IPC 契约与 feature flag 行为。
+3. Phase 1 提交后，再进入 Phase 2 的 opencode runtime core。
 ```

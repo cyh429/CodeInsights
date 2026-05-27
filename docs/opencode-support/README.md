@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，状态入口与下次启动提示词同步时
+更新时间：2026-05-27，Phase 0 spike 完成时
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -19,20 +19,25 @@
   - 开发进度清单：已建立 Phase 0-8 的跟踪清单、产品/安全门禁、提交纪律、Smoke 矩阵和风险跟踪。
   - 工作流纪律：已把“阶段完成即提交、重启会话自动检查未提交阶段成果、提交信息使用详细中文”写入 `tasks/lessons.md`。
   - 状态入口：本文件与 `next-session-prompt.md` 已补齐，后续每个阶段收尾都要同步。
+  - Phase 0：已用真实命令确认 opencode npm 包结构、server/API、SDK 返回形态、config/provider/MCP placeholder、permission body 和 binary 路径。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
   - `4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`
   - `19b5a71d docs(workflow): 强化阶段提交纪律`
-  - 本轮状态同步提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
+  - `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`
+  - Phase 0 提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
   - 首版使用 feature flag：`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`。
   - `opencode run --format json` 只作为 smoke / fallback，不作为长期主路径。
   - 长期落盘配置必须 secretless，API key / token / Basic Auth password 不写入仓库或长期配置文件。
+  - `opencode serve --port 0` 实测不会随机分配端口，而是绑定默认 `4096`；CodeInsights 必须自行分配空闲端口后显式传入。
+  - SDK v1 `client.session.promptAsync()` 默认返回 `{ data, request, response }` fields 风格，204 时 `data` 是 `{}`；`event.subscribe()` 返回 `{ stream }`，Basic Auth header 必须通过 SDK config/调用 options 传入。
+  - permission v1 响应 body 是 `{ response: "once" | "always" | "reject" }`，SDK 类型没有 `remember`；v2 新主路径是 `GET /permission` 与 `POST /permission/{requestID}/reply`。
+  - `{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`，但 resolved `/config`、`/provider`、`/config/providers` 会暴露替换后的 secret，日志和持久化必须脱敏或避免读取原样响应。
 - 未完成：
-  - Phase 0：依赖 spike 与基线冻结。
   - Phase 1：shared/settings/IPC 契约。
   - Phase 2：opencode runtime core。
   - Phase 3：opencode event adapter。
@@ -57,8 +62,8 @@
 
 1. 读取项目指令和 `tasks/lessons.md`。
 2. 运行 `git status --short` 和 `git log -3 --oneline`，确认最新基线。
-3. 读取开发清单的“最新开发状态快照”和 Phase 0。
-4. 在 `tasks/todo.md` 写入 Phase 0 计划，然后开始依赖 spike。
+3. 读取开发清单的“最新开发状态快照”和 Phase 1。
+4. 在 `tasks/todo.md` 写入 Phase 1 计划，然后开始 shared/settings/IPC 契约实现。
 
 ## 设计定位
 
