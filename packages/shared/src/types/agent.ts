@@ -337,6 +337,8 @@ export type ErrorCode =
   | 'api_key_decrypt_failed'
   | 'claude_binary_not_found'
   | 'codex_runtime_disabled'
+  | 'opencode_runtime_disabled'
+  | 'opencode_runtime_manifest_missing'
   | 'opencode_runtime_unavailable'
   | 'session_busy'
   | 'unknown_error'

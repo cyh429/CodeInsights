@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentProviderAdapter, AgentSessionMeta, AgentStreamEnvelope, CodeInsightsPermissionMode, SDKMessage } from '@codeinsights/shared'
+import type { AgentProviderAdapter, AgentRuntimeAuthSource, AgentSessionMeta, AgentStreamEnvelope, CodeInsightsPermissionMode, SDKMessage } from '@codeinsights/shared'
 import { createAgentStreamEnvelope } from '@codeinsights/shared'
 import {
   CodingAgentRuntimeRegistry,
@@ -36,12 +36,14 @@ mock.module('electron', () => ({
 
 const originalConfigDir = process.env.CODEINSIGHTS_CONFIG_DIR
 const originalCodexRuntimeFlag = process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
+const originalOpencodeRuntimeFlag = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME
 let tempConfigDir = ''
 
 beforeEach(() => {
   tempConfigDir = mkdtempSync(join(tmpdir(), 'codeinsights-agent-orchestrator-'))
   process.env.CODEINSIGHTS_CONFIG_DIR = tempConfigDir
   delete process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
+  delete process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME
 })
 
 afterEach(() => {
@@ -54,6 +56,11 @@ afterEach(() => {
     delete process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME
   } else {
     process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = originalCodexRuntimeFlag
+  }
+  if (originalOpencodeRuntimeFlag === undefined) {
+    delete process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME
+  } else {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = originalOpencodeRuntimeFlag
   }
   if (tempConfigDir) {
     rmSync(tempConfigDir, { recursive: true, force: true })
@@ -333,6 +340,312 @@ describe('AgentOrchestrator Codex runtime routing', () => {
   })
 })
 
+describe('AgentOrchestrator opencode runtime routing', () => {
+  test('opencode feature flag 关闭时主进程阻止继续执行既有 opencode 会话', async () => {
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const {
+      createAgentSession,
+      getAgentSessionRuntimeEvents,
+      getAgentSessionSDKMessages,
+      updateAgentSessionMeta,
+    } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'claude-code' })
+    const session = createAgentSession('opencode 已关闭会话')
+    updateAgentSessionMeta(session.id, {
+      runtimeKind: 'opencode',
+      runtimeSession: {
+        kind: 'opencode',
+        externalSessionId: 'ses_opencode_disabled',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus())
+    const errors: string[] = []
+    const completions: unknown[] = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: (error) => errors.push(error),
+      onComplete: (_messages, opts) => completions.push(opts ?? {}),
+      onTitleUpdated: () => {},
+    })
+
+    expect(errors[0]).toContain('opencode Runtime 已关闭')
+    expect(completions).toHaveLength(1)
+    expect(getAgentSessionRuntimeEvents(session.id)).toEqual([])
+    const sdkMessages = getAgentSessionSDKMessages(session.id)
+    expect(sdkMessages).toHaveLength(1)
+    expect((sdkMessages[0] as unknown as { _errorCode?: string })._errorCode).toBe('opencode_runtime_disabled')
+  })
+
+  test('settings 选择 opencode 时持久化 runtimeSession 并写 runtime event log', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionMeta, getAgentSessionRuntimeEvents, getAgentSessionSDKMessages } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({
+      agentRuntimeKind: 'opencode',
+      agentOpencodeChannelId: null,
+      agentOpencodeModelId: 'provider/opencode-model',
+      agentOpencodeAgentName: 'build',
+    })
+    const session = createAgentSession('opencode 测试会话')
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'ses_opencode_1' },
+      { type: 'assistant_message' },
+      { type: 'run_completed' },
+    ]))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+    const completions: Array<{ stoppedByUser?: boolean; resultSubtype?: string }> = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: () => {},
+      onComplete: (_messages, opts) => completions.push(opts ?? {}),
+      onTitleUpdated: () => {},
+    })
+
+    const meta = getAgentSessionMeta(session.id)
+    expect(meta?.runtimeKind).toBe('opencode')
+    expect(meta?.runtimeSession).toMatchObject({
+      kind: 'opencode',
+      externalSessionId: 'ses_opencode_1',
+      channelId: null,
+      model: 'provider/opencode-model',
+      agent: 'build',
+      authSource: 'native',
+    })
+    expect(meta?.sdkSessionId).toBeUndefined()
+    expect(completions[0]?.resultSubtype).toBe('success')
+    expect(getAgentSessionRuntimeEvents(session.id).map((event) => event.event.type)).toEqual([
+      'run_started',
+      'sdk_session',
+      'assistant_message',
+      'run_completed',
+    ])
+    expect(getAgentSessionSDKMessages(session.id).map((message) => message.type)).toEqual([
+      'user',
+      'assistant',
+      'result',
+    ])
+  })
+
+  test('已绑定 opencode session resume 不回退当前 settings 模型、agent 或 authSource', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionMeta, updateAgentSessionMeta } = await import('./agent-session-manager')
+    const { createAgentWorkspace } = await import('./agent-workspace-manager')
+    const { materializeAgentRuntimeForNewSession } = await import('./agent-runtime-materializer')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({
+      agentRuntimeKind: 'opencode',
+      agentOpencodeChannelId: null,
+      agentOpencodeModelId: 'new-settings-model',
+      agentOpencodeAgentName: 'new-agent',
+    })
+    const workspace = createAgentWorkspace('opencode resume workspace')
+    const session = createAgentSession('opencode 已绑定会话')
+    const manifest = materializeAgentRuntimeForNewSession({ workspace, sessionId: session.id })
+    updateAgentSessionMeta(session.id, {
+      workspaceId: workspace.id,
+      runtimeKind: 'opencode',
+      runtimeSession: {
+        kind: 'opencode',
+        externalSessionId: 'ses_opencode_existing',
+        channelId: 'bound-channel',
+        model: 'provider/bound-model',
+        agent: 'review',
+        authSource: 'channel',
+        workingDirectory: manifest.sessionCwd,
+        runtimeConfigHash: 'runtime-hash',
+        authSourceHash: 'auth-hash',
+        permissionPolicyHash: 'permission-hash',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const runInputs: Array<CodingAgentRuntimeRunInput & { agent?: string; authSource?: string; runtimeConfigHash?: string; authSourceHash?: string; permissionPolicyHash?: string }> = []
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started', model: 'provider/bound-model' },
+      { type: 'sdk_session', id: 'ses_opencode_existing' },
+      { type: 'run_completed' },
+    ], undefined, (input) => runInputs.push(input)))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: () => {},
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(runInputs[0]).toMatchObject({
+      externalSessionId: 'ses_opencode_existing',
+      channelId: 'bound-channel',
+      model: 'provider/bound-model',
+      agent: 'review',
+      authSource: 'channel',
+      workingDirectory: manifest.sessionCwd,
+      runtimeConfigHash: 'runtime-hash',
+      authSourceHash: 'auth-hash',
+      permissionPolicyHash: 'permission-hash',
+    })
+    expect(getAgentSessionMeta(session.id)?.runtimeSession).toMatchObject({
+      externalSessionId: 'ses_opencode_existing',
+      model: 'provider/bound-model',
+      agent: 'review',
+      authSource: 'channel',
+      workingDirectory: manifest.sessionCwd,
+    })
+  })
+
+  test('已绑定 opencode session 缺少 workspace manifest 时阻断 resume', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionRuntimeEvents, updateAgentSessionMeta } = await import('./agent-session-manager')
+    const { createAgentWorkspace } = await import('./agent-workspace-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'opencode' })
+    const workspace = createAgentWorkspace('opencode missing manifest workspace')
+    const session = createAgentSession('opencode 缺少 manifest 会话')
+    updateAgentSessionMeta(session.id, {
+      workspaceId: workspace.id,
+      runtimeKind: 'opencode',
+      runtimeSession: {
+        kind: 'opencode',
+        externalSessionId: 'ses_opencode_missing_manifest',
+        model: 'provider/model',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([{ type: 'run_completed' }], undefined, () => {
+      throw new Error('opencode runtime should not run without manifest')
+    }))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+    const errors: string[] = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: (error) => errors.push(error),
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(errors[0]).toContain('opencode Runtime 绑定缺少 manifest')
+    expect(getAgentSessionRuntimeEvents(session.id)).toEqual([])
+  })
+
+  test('已绑定 opencode session 的 workspace 不可解析时也阻断 resume', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionRuntimeEvents, updateAgentSessionMeta } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'opencode' })
+    const session = createAgentSession('opencode workspace 丢失会话')
+    updateAgentSessionMeta(session.id, {
+      workspaceId: 'deleted-opencode-workspace',
+      runtimeKind: 'opencode',
+      runtimeSession: {
+        kind: 'opencode',
+        externalSessionId: 'ses_opencode_deleted_workspace',
+        model: 'provider/model',
+        workingDirectory: '/tmp/opencode-bound-cwd',
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    })
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([{ type: 'run_completed' }], undefined, () => {
+      throw new Error('opencode runtime should not run when workspace cannot be resolved')
+    }))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+    const errors: string[] = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: (error) => errors.push(error),
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(errors[0]).toContain('opencode Runtime 绑定缺少 manifest')
+    expect(getAgentSessionRuntimeEvents(session.id)).toEqual([])
+  })
+
+  test('stop 后 opencode runtime 的 late run_completed 不会落入 event log', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession, getAgentSessionRuntimeEvents } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'opencode' })
+    const session = createAgentSession('opencode 停止会话')
+    const registry = new CodingAgentRuntimeRegistry()
+    let orchestrator: InstanceType<typeof AgentOrchestrator>
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'ses_opencode_stop' },
+      { type: 'late_run_completed_after_stop' },
+    ], () => orchestrator.stop(session.id)))
+    orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+    const completions: Array<{ stoppedByUser?: boolean }> = []
+
+    await orchestrator.sendMessage(createSendInput(session.id), {
+      onError: () => {},
+      onComplete: (_messages, opts) => completions.push(opts ?? {}),
+      onTitleUpdated: () => {},
+    })
+
+    const terminalEvents = getAgentSessionRuntimeEvents(session.id)
+      .map((event) => event.event.type)
+      .filter((type) => type === 'run_completed' || type === 'run_stopped')
+    expect(terminalEvents).toEqual(['run_stopped'])
+    expect(completions[0]?.stoppedByUser).toBe(true)
+  })
+
+  test('opencode running session 不支持 queueMessage 或 setPermissionMode', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession } = await import('./agent-session-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({ agentRuntimeKind: 'opencode' })
+    const session = createAgentSession('opencode unsupported 会话')
+    let resumeRun: (() => void) | undefined
+    let resolveSdkSession: (() => void) | undefined
+    const sdkSessionSeen = new Promise<void>((resolve) => {
+      resolveSdkSession = resolve
+    })
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'ses_opencode_unsupported' },
+      { type: 'wait_until_released' },
+      { type: 'run_completed' },
+    ], () => resolveSdkSession?.(), undefined, (resume) => {
+      resumeRun = resume
+    }))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+    const sendPromise = orchestrator.sendMessage(createSendInput(session.id), {
+      onError: () => {},
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+    await sdkSessionSeen
+    await expect(orchestrator.queueMessage(session.id, '追加消息')).rejects.toThrow('opencode Runtime 暂不支持 queueMessage')
+    await expect(orchestrator.updateSessionPermissionMode(session.id, 'plan')).rejects.toThrow('opencode Runtime 暂不支持 setPermissionMode')
+    resumeRun?.()
+    await sendPromise
+  })
+})
+
 function session(overrides: Partial<AgentSessionMeta>): AgentSessionMeta {
   return {
     id: 'session-runtime-routing',
@@ -439,6 +752,102 @@ function codexCapabilities(): CodingAgentRuntimeCapabilities {
   }
 }
 
+type FakeOpencodeStep =
+  | { type: 'run_started'; model?: string }
+  | { type: 'sdk_session'; id: string }
+  | { type: 'assistant_message' }
+  | { type: 'run_completed' }
+  | { type: 'late_run_completed_after_stop' }
+  | { type: 'wait_until_released' }
+
+interface FakeOpencodeRunInput extends CodingAgentRuntimeRunInput {
+  agent?: string
+  authSource?: AgentRuntimeAuthSource
+  runtimeConfigHash?: string
+  authSourceHash?: string
+  permissionPolicyHash?: string
+}
+
+function createFakeOpencodeRuntime(
+  steps: FakeOpencodeStep[],
+  afterSdkSession?: () => void,
+  onRun?: (input: FakeOpencodeRunInput) => void,
+  onWait?: (resume: () => void) => void,
+): CodingAgentRuntime {
+  return {
+    kind: 'opencode',
+    getCapabilities: () => opencodeCapabilities(),
+    run: async function* (input: CodingAgentRuntimeRunInput): AsyncIterable<AgentStreamEnvelope> {
+      const opencodeInput = input as FakeOpencodeRunInput
+      onRun?.(opencodeInput)
+      let sequence = 0
+      const nextEnvelope = (event: AgentStreamEnvelope['event']): AgentStreamEnvelope => createAgentStreamEnvelope({
+        sessionId: input.sessionId,
+        runId: 'run-opencode-test',
+        sequence: sequence++,
+        source: event.type === 'sdk_session' || event.type === 'assistant_message' ? 'opencode_server' : 'runtime_service',
+        createdAt: '2026-05-27T00:00:00.000Z',
+        event,
+        metadata: event.type === 'sdk_session' || event.type === 'assistant_message'
+          ? { runtimeKind: 'opencode' }
+          : undefined,
+      })
+
+      for (const step of steps) {
+        if (step.type === 'run_started') {
+          yield nextEnvelope({
+            type: 'run_started',
+            model: step.model ?? input.model ?? 'opencode-mock-model',
+            cwd: input.workingDirectory,
+            permissionMode: input.permissionMode,
+            runtimeHash: input.runtimeHash ?? 'opencode-test',
+            runnerMode: 'runner-v2',
+            runtimeKind: 'opencode',
+          })
+        } else if (step.type === 'sdk_session') {
+          yield nextEnvelope({ type: 'sdk_session', sdkSessionId: step.id, resumeFrom: input.externalSessionId })
+          afterSdkSession?.()
+        } else if (step.type === 'assistant_message') {
+          yield nextEnvelope({
+            type: 'assistant_message',
+            messageId: 'opencode-message-1',
+            contentBlocks: [{ type: 'text', text: 'opencode mock response' }],
+            status: 'complete',
+          })
+        } else if (step.type === 'wait_until_released') {
+          await new Promise<void>((resolve) => {
+            onWait?.(resolve)
+          })
+        } else {
+          yield nextEnvelope({
+            type: 'run_completed',
+            resultSubtype: 'success',
+            terminalReason: 'completed',
+            usage: {},
+            sdkSessionId: 'ses_opencode_1',
+          })
+        }
+      }
+    },
+    abort: () => {},
+    queueMessage: async () => unsupportedOpencode('queueMessage'),
+    setPermissionMode: async (_sessionId: string, _mode: CodeInsightsPermissionMode) => unsupportedOpencode('setPermissionMode'),
+    dispose: () => {},
+  }
+}
+
+function opencodeCapabilities(): CodingAgentRuntimeCapabilities {
+  return {
+    runtimeKind: 'opencode',
+    supportsStreamEvents: true,
+    supportsResumeThread: true,
+    supportsAbort: true,
+    supportsQueueMessage: false,
+    supportsSetPermissionMode: false,
+    supportsPerToolPermission: true,
+  }
+}
+
 function unsupported(capability: 'queueMessage' | 'setPermissionMode'): UnsupportedRuntimeCapabilityResult {
   return {
     ok: false,
@@ -446,5 +855,15 @@ function unsupported(capability: 'queueMessage' | 'setPermissionMode'): Unsuppor
     runtimeKind: 'codex',
     capability,
     message: 'unsupported',
+  }
+}
+
+function unsupportedOpencode(capability: 'queueMessage' | 'setPermissionMode'): UnsupportedRuntimeCapabilityResult {
+  return {
+    ok: false,
+    code: 'runtime_capability_unsupported',
+    runtimeKind: 'opencode',
+    capability,
+    message: `opencode Runtime 暂不支持 ${capability}。`,
   }
 }

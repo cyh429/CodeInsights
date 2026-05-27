@@ -33,7 +33,7 @@ const {
   finishAgentRuntimeEventLogRun,
   startAgentRuntimeEventLogRun,
 } = await import('./agent-runtime-event-log')
-const { createAgentStreamEnvelope } = await import('@codeinsights/shared')
+const { createAgentStreamEnvelope, replayAgentStreamEnvelopes } = await import('@codeinsights/shared')
 
 let currentConfigDir: string | undefined
 
@@ -140,6 +140,102 @@ describe('Agent runtime event log', () => {
       type: 'run_started',
       runtimeKind: 'codex',
     })
+  })
+
+  test('可直接写入 opencode envelope 并通过 replay 生成 transcript', () => {
+    const sessionId = 'session-event-log-opencode-envelope'
+    const baseEnvelope = {
+      sessionId,
+      runId: 'run-opencode',
+      createdAt: '2026-05-27T00:00:00.000Z',
+    }
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      ...baseEnvelope,
+      sequence: 0,
+      source: 'runtime_service',
+      event: {
+        type: 'run_started',
+        model: 'provider/model',
+        cwd: '/tmp/workspace',
+        permissionMode: 'auto',
+        runtimeHash: 'opencode-agent-runtime-mock',
+        runnerMode: 'runner-v2',
+        runtimeKind: 'opencode',
+      },
+    }))
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      ...baseEnvelope,
+      sequence: 1,
+      source: 'opencode_server',
+      event: {
+        type: 'sdk_session',
+        sdkSessionId: 'ses_opencode_1',
+      },
+      metadata: {
+        runtimeKind: 'opencode',
+        externalSessionId: 'ses_opencode_1',
+      },
+    }))
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      ...baseEnvelope,
+      sequence: 2,
+      source: 'opencode_server',
+      event: {
+        type: 'assistant_delta',
+        messageId: 'msg_opencode_1',
+        delta: '你好',
+      },
+      metadata: {
+        runtimeKind: 'opencode',
+        externalSessionId: 'ses_opencode_1',
+        externalMessageId: 'msg_opencode_1',
+      },
+    }))
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      ...baseEnvelope,
+      sequence: 3,
+      source: 'opencode_server',
+      event: {
+        type: 'assistant_message',
+        messageId: 'msg_opencode_1',
+        contentBlocks: [{ type: 'text', text: '你好，opencode' }],
+        status: 'complete',
+      },
+      metadata: {
+        runtimeKind: 'opencode',
+        externalSessionId: 'ses_opencode_1',
+        externalMessageId: 'msg_opencode_1',
+      },
+    }))
+    appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      ...baseEnvelope,
+      sequence: 4,
+      source: 'opencode_server',
+      event: {
+        type: 'run_completed',
+        resultSubtype: 'success',
+        terminalReason: 'completed',
+        usage: {},
+        sdkSessionId: 'ses_opencode_1',
+      },
+      metadata: {
+        runtimeKind: 'opencode',
+        externalSessionId: 'ses_opencode_1',
+      },
+    }))
+
+    const events = getAgentSessionRuntimeEvents(sessionId)
+    const replay = replayAgentStreamEnvelopes(events)
+    expect(events.map((event) => event.event.type)).toEqual([
+      'run_started',
+      'sdk_session',
+      'assistant_delta',
+      'assistant_message',
+      'run_completed',
+    ])
+    expect(events[1]?.metadata?.runtimeKind).toBe('opencode')
+    expect(replay.textByMessageId.msg_opencode_1).toBe('你好，opencode')
+    expect(replay.terminal?.type).toBe('run_completed')
   })
 
   test('同一 run 内重复 sdk_session 只写入一次', () => {

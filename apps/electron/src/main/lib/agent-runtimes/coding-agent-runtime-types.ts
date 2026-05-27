@@ -64,6 +64,14 @@ export interface CodexCodingAgentRuntimeRunInput extends CodingAgentRuntimeRunIn
   codexConfigEnv?: Record<string, string>
 }
 
+export interface OpencodeCodingAgentRuntimeRunInput extends CodingAgentRuntimeRunInput {
+  agent?: string
+  authSource?: AgentRuntimeAuthSource
+  runtimeConfigHash?: string
+  authSourceHash?: string
+  permissionPolicyHash?: string
+}
+
 export interface CodingAgentRuntimeRunResult {
   runId: string
   terminalEvent?: AgentRuntimeEvent

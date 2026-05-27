@@ -178,8 +178,10 @@ describe('resolveAgentRuntimeSelection', () => {
           model: 'provider/model-bound',
           agent: 'review',
           authSource: 'native',
+          workingDirectory: '/tmp/opencode-bound-cwd',
           runtimeConfigHash: 'runtime-hash',
           authSourceHash: 'auth-hash',
+          permissionPolicyHash: 'permission-hash',
           createdAt: 100,
           updatedAt: 200,
         },
@@ -194,8 +196,10 @@ describe('resolveAgentRuntimeSelection', () => {
       model: 'provider/model-bound',
       agent: 'review',
       authSource: 'native',
+      workingDirectory: '/tmp/opencode-bound-cwd',
       runtimeConfigHash: 'runtime-hash',
       authSourceHash: 'auth-hash',
+      permissionPolicyHash: 'permission-hash',
     })
   })
 })

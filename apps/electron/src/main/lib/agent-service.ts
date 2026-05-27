@@ -33,6 +33,7 @@ import { getAgentSessionWorkspacePath, getWorkspaceFilesDir } from './config-pat
 import { ElectronAgentChannel } from './agent-channel'
 import { ClaudeCodeRuntime } from './agent-runtimes/claude-code-runtime'
 import { CodexAgentRuntime } from './agent-runtimes/codex-runtime'
+import { OpencodeAgentRuntime } from './agent-runtimes/opencode-runtime'
 import { CodingAgentRuntimeRegistry } from './agent-runtimes/coding-agent-runtime-registry'
 
 // ===== 实例创建 =====
@@ -42,6 +43,9 @@ const adapter = new ClaudeAgentAdapter()
 const runtimeRegistry = new CodingAgentRuntimeRegistry()
 runtimeRegistry.register(new ClaudeCodeRuntime(adapter))
 runtimeRegistry.register(new CodexAgentRuntime())
+if (process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1') {
+  runtimeRegistry.register(new OpencodeAgentRuntime())
+}
 const orchestrator = new AgentOrchestrator(adapter, eventBus, { runtimeRegistry })
 
 /** 导出 EventBus 供飞书 Bridge 等外部服务订阅事件 */

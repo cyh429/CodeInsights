@@ -241,6 +241,54 @@ describe('agent-session-manager runtime metadata', () => {
     expect(stored?.sdkSessionId).toBeUndefined()
   })
 
+  test('只有 runtimeSession 的 opencode 会话会推断为 opencode 并保留绑定快照', async () => {
+    writeSessionIndex([
+      {
+        id: 'opencode-session-ref-only',
+        title: 'opencode runtimeSession only',
+        runtimeSession: {
+          kind: 'opencode',
+          externalSessionId: 'ses_opencode_ref_only',
+          channelId: 'opencode-channel',
+          model: 'provider/model',
+          agent: 'build',
+          authSource: 'channel',
+          workingDirectory: '/tmp/opencode-workspace',
+          runtimeConfigHash: 'runtime-hash',
+          authSourceHash: 'auth-hash',
+          permissionPolicyHash: 'permission-hash',
+          createdAt: 100,
+          updatedAt: 200,
+        },
+        sdkSessionId: 'legacy-sdk-should-drop',
+        createdAt: 100,
+        updatedAt: 200,
+      },
+    ])
+    const { getAgentSessionMeta, updateAgentSessionMeta } = await loadSessionManager()
+
+    const meta = getAgentSessionMeta('opencode-session-ref-only')
+    expect(meta?.runtimeKind).toBe('opencode')
+    expect(meta?.runtimeSession).toMatchObject({
+      kind: 'opencode',
+      externalSessionId: 'ses_opencode_ref_only',
+      channelId: 'opencode-channel',
+      model: 'provider/model',
+      agent: 'build',
+      authSource: 'channel',
+      workingDirectory: '/tmp/opencode-workspace',
+      runtimeConfigHash: 'runtime-hash',
+      authSourceHash: 'auth-hash',
+      permissionPolicyHash: 'permission-hash',
+    })
+    expect(meta?.sdkSessionId).toBeUndefined()
+
+    const updated = updateAgentSessionMeta('opencode-session-ref-only', { manualWorking: true })
+    expect(updated.runtimeKind).toBe('opencode')
+    expect(updated.runtimeSession?.externalSessionId).toBe('ses_opencode_ref_only')
+    expect(readSessionIndex().sessions[0]?.sdkSessionId).toBeUndefined()
+  })
+
   test('旧 Claude 会话切到 Codex 时清理 Claude legacy 字段', async () => {
     writeSessionIndex([
       {

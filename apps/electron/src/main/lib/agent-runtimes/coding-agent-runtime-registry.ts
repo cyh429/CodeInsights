@@ -32,8 +32,10 @@ export interface AgentRuntimeSelection {
   model?: string
   agent?: string
   authSource?: AgentRuntimeAuthSource
+  workingDirectory?: string
   runtimeConfigHash?: string
   authSourceHash?: string
+  permissionPolicyHash?: string
 }
 
 export interface ResolveAgentRuntimeSelectionInput {
@@ -93,8 +95,10 @@ export function resolveAgentRuntimeSelection(
       ...(runtimeSession.model ? { model: runtimeSession.model } : {}),
       ...(runtimeSession.agent ? { agent: runtimeSession.agent } : {}),
       ...(runtimeSession.authSource ? { authSource: runtimeSession.authSource } : {}),
+      ...(runtimeSession.workingDirectory ? { workingDirectory: runtimeSession.workingDirectory } : {}),
       ...(runtimeSession.runtimeConfigHash ? { runtimeConfigHash: runtimeSession.runtimeConfigHash } : {}),
       ...(runtimeSession.authSourceHash ? { authSourceHash: runtimeSession.authSourceHash } : {}),
+      ...(runtimeSession.permissionPolicyHash ? { permissionPolicyHash: runtimeSession.permissionPolicyHash } : {}),
     }
   }
 

@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 3 已完成，runtime mock / orchestrator routing 未开始
+状态：Phase 4 已完成，真实 opencode server 集成未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 3 最新启动基线补写完成时
+更新时间：2026-05-27，Phase 4 mock runtime / orchestrator routing 完成时
 
 当前结论：
 
@@ -55,7 +55,8 @@
 - [x] Phase 3 已单独提交：`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
 - [x] Phase 3 后状态同步已单独提交：`d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`。
 - [x] Phase 3 最新启动基线已固化：真实开发基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
-- [ ] Phase 4 runtime mock / orchestrator routing 未开始。
+- [x] Phase 4 runtime mock / orchestrator routing 已完成：新增 `OpencodeAgentRuntime` mock/fake，不启动真实 opencode server；已接入 feature flag、registry、orchestrator routing、session binding、event log 和 history replay；已绑定 opencode session 缺 manifest 或 workspace 丢失时阻断 resume。
+- [x] Phase 4 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.47`，提升 `@codeinsights/electron` patch 版本到 `0.0.116`。
 - [ ] Phase 5 真实 opencode server 集成未开始。
 - [ ] Phase 6 renderer / UX 接入未开始。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
@@ -64,7 +65,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新开发基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`；其父级状态同步提交为 `d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`。
+- 预期最新开发基线为本轮 Phase 4 提交；Phase 3 最新启动基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -73,8 +74,8 @@
 下一步入口：
 
 1. 确认 Phase 3 实现提交与 Phase 3 后状态同步均已提交。
-2. 进入 Phase 4，开始 runtime mock、registry 和 orchestrator routing。
-3. 不要直接跳到 renderer UI 或真实模型验收；Phase 4 先完成 mock runtime、session binding、event log 与 history replay。
+2. 进入 Phase 5，开始真实 `opencode serve` 集成。
+3. 不要直接跳到 renderer UI 或发布验收；Phase 5 先完成真实 server health、event subscribe、session create、prompt async、permission response、abort 和 resume smoke。
 
 ## 0.2 当前完成/未完成总览
 
@@ -89,7 +90,7 @@
 | Phase 1 | [x] | shared/settings/IPC 契约已完成，未实现 runtime core |
 | Phase 2 | [x] | opencode binary/env/config/server/client core |
 | Phase 3 | [x] | event adapter 与 fixtures |
-| Phase 4 | [ ] | runtime mock、registry、orchestrator routing |
+| Phase 4 | [x] | runtime mock、registry、orchestrator routing |
 | Phase 5 | [ ] | 真实 `opencode serve` 集成 |
 | Phase 6 | [ ] | renderer 设置、权限交互、历史回放 |
 | Phase 7 | [ ] | MCP、packaged binary、release readiness |
@@ -450,20 +451,22 @@ git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared ta
 
 任务：
 
-- [ ] 实现 `OpencodeAgentRuntime implements CodingAgentRuntime`。
-- [ ] 注入 fake opencode client / fake server manager，支持 mock tests。
-- [ ] registry feature flag 下注册 opencode runtime。
-- [ ] runtime selection 支持 opencode settings。
-- [ ] 新 session 首次运行写入 opencode manifest / session ref。
-- [ ] 已绑定 opencode session resume 时不受当前 settings 污染。
-- [ ] session manifest 缺失但 metadata 有 opencode ref 时阻断或给出兼容路径。
-- [ ] stop 调用 opencode runtime abort，并使用 run token 防止迟到 finally。
-- [ ] unsupported queue / permission mode switch 不污染 local state。
-- [ ] event log 写入 opencode runtime events。
-- [ ] history replay 能从 mock opencode events 生成 transcript。
-- [ ] 补充 orchestrator routing tests。
-- [ ] 补充 session binding tests。
-- [ ] 补充 stop race tests。
+- [x] 实现 `OpencodeAgentRuntime implements CodingAgentRuntime`。
+- [x] 注入 fake opencode client / fake server manager，支持 mock tests。
+- [x] registry feature flag 下注册 opencode runtime。
+- [x] runtime selection 支持 opencode settings。
+- [x] 新 session 首次运行写入 opencode manifest / session ref。
+- [x] 已绑定 opencode session resume 时不受当前 settings 污染。
+- [x] session manifest 缺失但 metadata 有 opencode ref 时阻断并写入可解释错误。
+- [x] workspace 丢失或不可解析时，已绑定 opencode session 不回退到 `homedir()`。
+- [x] stop 调用 opencode runtime abort，并使用 run token 防止迟到 finally。
+- [x] unsupported queue / permission mode switch 不污染 local state。
+- [x] Phase 4 diagnostics 只暴露 mock 已实现能力，不提前声明 permission/server/model refresh 可用。
+- [x] event log 写入 opencode runtime events。
+- [x] history replay 能从 mock opencode events 生成 transcript。
+- [x] 补充 orchestrator routing tests。
+- [x] 补充 session binding tests。
+- [x] 补充 stop race tests。
 
 验证：
 
@@ -478,15 +481,31 @@ git diff --check -- apps/electron/src/main/lib packages/shared tasks/todo.md doc
 
 退出标准：
 
-- [ ] feature flag 开启时 mock opencode run 可完成。
-- [ ] feature flag 关闭时 opencode 不参与 runtime selection。
-- [ ] session 首次绑定和 resume 行为有测试。
-- [ ] stop 终态稳定为 `run_stopped`。
-- [ ] Phase 4 单独提交完成。
+- [x] feature flag 开启时 mock opencode run 可完成。
+- [x] feature flag 关闭时 opencode 不参与 settings runtime selection；已绑定 opencode session 会被主进程阻断继续发送。
+- [x] session 首次绑定和 resume 行为有测试。
+- [x] stop 终态稳定为 `run_stopped`。
+- [x] Phase 4 单独提交完成。
 
 回滚点：
 
 - 如果 orchestrator 改动影响 Claude legacy path，立刻拆小改动或补 adapter 层，不继续扩散。
+
+### 6.1 Phase 4 验证记录
+
+- 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `ea94ac52 docs(agent): 补写 opencode Phase 3 最新基线`，历史包含 `bdef679f`、`d2b718ad`、`7c31b72d`。
+- 改动范围：新增 `apps/electron/src/main/lib/agent-runtimes/opencode-runtime.ts` 与测试；接入 `agent-service` registry、`agent-orchestrator` routing/session binding、event log replay 与 session manager 绑定测试；更新 IPC capability 诊断；扩展 shared error code；同步 `tasks/todo.md`、support README 和 next-session prompt。
+- 完成内容：`OpencodeAgentRuntime` 使用 fake client/server manager，不启动真实 opencode server；复用 Phase 3 `OpencodeEventAdapter` 产出 runtime envelopes；feature flag 开启时可通过 settings 选择 opencode，新 session 写入 `runtimeSession`，已绑定 session 使用 snapshot resume；缺 workspace manifest 或 workspace 不可解析的已绑定 opencode session 被阻断，不会回退到 `homedir()`；stop race 只保留 `run_stopped`；unsupported queue/setPermissionMode 返回结构化错误；Phase 4 diagnostics 只声明 stream/resume/abort。
+- 验证通过：
+  - `bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts`
+  - `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`
+  - `bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`
+  - `bun test apps/electron/src/main/lib/agent-session-manager.test.ts`
+  - `bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`
+  - `bun run --filter='@codeinsights/electron' typecheck`
+  - `git diff --check -- apps/electron/src/main/lib packages/shared tasks/todo.md docs/opencode-support`
+  - 组合补充：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-session-manager.test.ts apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`
+- 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai`，未启动真实 `opencode serve`，未进入 renderer UI、真实模型验收或发布打包，未修改根 `README.md` / `AGENTS.md`。
 
 ## 7. Phase 5：真实 opencode Server 集成
 
@@ -742,9 +761,9 @@ Smoke summary 规则：
 | local MCP secret 不能 env placeholder | Phase 0 / 7 | [ ] | 跳过或 0600 临时 config |
 | opencode 默认 permission 偏宽 | Phase 2 / 5 | [ ] | 强制生成 permission policy |
 | Git 操作污染用户仓库 | Phase 5 / 8 | [ ] | Git guard + refs/index 后验 |
-| settings 改变污染旧会话 | Phase 1 / 4 | [ ] | runtime manifest 固化绑定 |
+| settings 改变污染旧会话 | Phase 1 / 4 | [x] | Phase 4 已覆盖 opencode runtimeSession snapshot resume，不回退当前 settings |
 | SSE 丢事件或重复事件 | Phase 3 / 5 | [~] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 仍需真实 SSE smoke |
-| stop 后迟到 success | Phase 3 / 4 | [~] | Phase 3 已完成 terminal single-write + stopped flag；Phase 4 仍需 orchestrator stop race |
+| stop 后迟到 success | Phase 3 / 4 | [x] | Phase 3 adapter 与 Phase 4 orchestrator stop race 均已覆盖 |
 | packaged binary 缺失 | Phase 7 | [ ] | electron-builder files + packaged smoke |
 | server 进程泄漏 | Phase 2 / 5 | [ ] | app quit cleanup + idle timeout |
 | managed config 覆盖安全策略 | Phase 0 / 5 | [ ] | smoke 检测 resolved config 并阻断 |

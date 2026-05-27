@@ -1,5 +1,34 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 4 Mock 路由计划
+
+范围确认：本轮只实现 opencode mock/fake runtime 与主进程路由闭环，不启动真实 `opencode serve`，不安装 `@opencode-ai/sdk` / `opencode-ai`，不进入 renderer UI、真实模型验收或真实 server 集成，不修改根 `README.md` / `AGENTS.md`。实现必须复用 Phase 3 `OpencodeEventAdapter`，保持长期配置和诊断 secretless。
+
+- [x] 复习项目指令、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认阶段提交、状态同步、runtime binding、stop race 与 secretless 纪律。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认当前 HEAD 为 `ea94ac52 docs(agent): 补写 opencode Phase 3 最新基线`，历史包含 `bdef679f`、`d2b718ad`、`7c31b72d`，工作树干净。
+- [x] 梳理现有 Codex runtime / registry / orchestrator / event log / session manager 契约，确认 Phase 4 最小接入点。
+- [x] 先补 BDD 单测：`OpencodeAgentRuntime` mock client/server、feature flag on/off、新 session 绑定、已有 opencode session resume、missing manifest、stop race、unsupported queue/setPermissionMode、event log/history replay。
+- [x] 实现 `OpencodeAgentRuntime implements CodingAgentRuntime`，通过 fake opencode client/server manager 消费 mock raw events 并复用 `OpencodeEventAdapter` 输出 runtime envelopes。
+- [x] 接入 registry 与 orchestrator：feature flag 下启用 opencode，新 session 写入 runtimeSession snapshot，已绑定 session 使用 snapshot resume，不被当前 settings 污染。
+- [x] 补齐 missing manifest 阻断或兼容路径，确保错误可解释且不静默回退到其他 runtime。
+- [x] 确保 stop 调用 runtime abort，迟到 success 不写入 event log；unsupported queue/setPermissionMode 不污染本地权限状态。
+- [x] 运行 Phase 4 验证：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib packages/shared tasks/todo.md docs/opencode-support`。
+- [x] 更新 opencode development checklist、support README、next-session prompt，并在本节追加 Review。
+- [x] 按阶段纪律只提交 Phase 4 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+
+## 2026-05-27 Agent opencode Runtime Phase 4 Mock 路由 Review
+
+- 启动基线已确认：本轮开始时工作树干净，最新提交为 `ea94ac52 docs(agent): 补写 opencode Phase 3 最新基线`，历史包含 `bdef679f`、`d2b718ad`、`7c31b72d`。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/opencode-runtime.ts` 与 `opencode-runtime.test.ts`：`OpencodeAgentRuntime` 使用 fake opencode client / fake server manager，不启动真实 server；复用 Phase 3 `OpencodeEventAdapter` 输出 runtime envelopes；支持 mock start/resume/abort/stream failure，queueMessage 与 setPermissionMode 返回 unsupported。
+- 已接入主进程路由：`agent-service` 在 feature flag 下注册 opencode runtime；`agent-orchestrator` 传入 opencode enabled runtime kinds，新增 opencode disabled preflight、`runWithOpencodeRuntime`、runtime-neutral SDKMessage 反写和 `runtimeSession` snapshot 持久化。
+- 已补齐 session binding 保护：新 session 首次绑定 opencode external session id；已绑定 opencode session resume 使用 snapshot 中的 model / agent / authSource，不受当前 settings 污染；workspace manifest 缺失时阻断并写可解释错误。
+- 已根据代码审查补强 opencode resume 安全：`runtimeSession.workingDirectory` 会随 runtime selection 传递；已绑定 opencode session 只有存在物化 manifest 才允许 resume，workspace 丢失或 manifest 缺失时不会退回 `homedir()`。
+- 已收紧 Phase 4 mock diagnostics：只声明 stream events / resume / abort 已可用，per-tool permission、server status、model refresh 留到后续真实 server 阶段。
+- 已补齐 event log / history replay：opencode runtime envelopes 可写入 JSONL，并可通过 shared replay 还原 assistant transcript 与 terminal。
+- 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.46` 提升到 `0.1.47`，将 `@codeinsights/electron` 从 `0.0.115` 提升到 `0.0.116`。
+- 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai`，未启动真实 `opencode serve`，未进入 renderer UI、真实模型验收或发布打包，未修改根 `README.md` / `AGENTS.md`。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts`；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`；`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`；`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib packages/shared tasks/todo.md docs/opencode-support`；补充组合测试覆盖 `coding-agent-runtime-registry.test.ts`。
+
 ## 2026-05-27 Agent opencode Runtime Phase 3 最新基线补写计划
 
 范围确认：本轮只补写 opencode support 文档、下次启动提示词、任务记录和 lessons，消除不够精确的恢复基线表述；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。

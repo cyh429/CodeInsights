@@ -359,16 +359,18 @@ export function registerAgentIpcHandlers(): void {
         {
           runtimeKind: 'opencode',
           featureEnabled: opencodeEnabled,
-          registered: false,
-          available: false,
-          capabilities: ['streamEvents', 'resumeThread', 'abort', 'serverStatus', 'modelRefresh'],
-          message: 'opencode runtime core 将在后续 Phase 接入，本阶段仅冻结 IPC 契约',
+          registered: opencodeEnabled,
+          available: opencodeEnabled,
+          capabilities: ['streamEvents', 'resumeThread', 'abort'],
+          message: opencodeEnabled
+            ? 'opencode mock runtime 已接入；权限、server status 和 model refresh 将在后续 Phase 启用'
+            : 'opencode runtime feature flag 未启用',
         },
       ]
     }
   )
 
-  // 获取 opencode server 状态。Phase 1 只冻结契约，不启动 server。
+  // 获取 opencode server 状态。Phase 4 只有 mock runtime，不启动真实 server。
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_OPENCODE_SERVER_STATUS,
     async (): Promise<AgentOpencodeServerStatus> => {
@@ -376,16 +378,16 @@ export function registerAgentIpcHandlers(): void {
       return {
         runtimeKind: 'opencode',
         featureEnabled,
-        state: featureEnabled ? 'not_configured' : 'disabled',
+        state: featureEnabled ? 'not_started' : 'disabled',
         message: featureEnabled
-          ? 'opencode runtime core 尚未接入，server 未启动'
+          ? 'opencode mock runtime 已接入；Phase 4 不启动真实 opencode server'
           : 'opencode runtime feature flag 未启用',
         updatedAt: new Date().toISOString(),
       }
     }
   )
 
-  // 刷新 opencode 模型。Phase 1 不读取 opencode server/provider 响应，避免记录 resolved secret。
+  // 刷新 opencode 模型。Phase 4 不读取 opencode server/provider 响应，避免记录 resolved secret。
   ipcMain.handle(
     AGENT_IPC_CHANNELS.REFRESH_OPENCODE_MODELS,
     async (): Promise<AgentOpencodeModelRefreshResult> => {

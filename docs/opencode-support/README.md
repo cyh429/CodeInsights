@@ -10,9 +10,9 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 3 最新启动基线补写完成时
+更新时间：2026-05-27，Phase 4 mock runtime / orchestrator routing 完成时
 
-当前开发基线：`bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。下一步仍从 Phase 4 开始，当前文档同步不改变实现范围。
+当前开发基线：Phase 4 mock runtime / orchestrator routing 已完成。下一步从 Phase 5 真实 `opencode serve` 集成开始；当前实现仍不启动真实 opencode server。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -31,6 +31,7 @@
   - Phase 3：已完成 opencode event adapter 与 fixtures。新增纯状态机 adapter，将 `server.connected`、session lifecycle、text delta/snapshot、tool、patch、agent/subtask、todo、permission、abort/stop、recovered 补读和错误分类映射为 CodeInsights runtime event；未进入 renderer UI、真实 server 或 orchestrator routing。
   - Phase 3 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d2b718ad` 后状态。
   - Phase 3 最新启动基线固化：已固定到真实开发基线 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
+  - Phase 4：已完成 opencode mock runtime / orchestrator routing。新增 `OpencodeAgentRuntime` mock/fake，通过 fake client/server manager 复用 Phase 3 `OpencodeEventAdapter` 输出 runtime events；已接入 feature flag、registry、orchestrator routing、session binding、event log、history replay、missing manifest / workspace 丢失阻断、stop race 和 unsupported queue/setPermissionMode。Phase 4 diagnostics 只声明 stream/resume/abort，真实 permission/server/model refresh 留到 Phase 5+。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -59,14 +60,13 @@
   - permission v1 响应 body 是 `{ response: "once" | "always" | "reject" }`，SDK 类型没有 `remember`；v2 新主路径是 `GET /permission` 与 `POST /permission/{requestID}/reply`。
   - `{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`，但 resolved `/config`、`/provider`、`/config/providers` 会暴露替换后的 secret，日志和持久化必须脱敏或避免读取原样响应。
 - 未完成：
-  - Phase 4：runtime mock、registry 和 orchestrator routing。
   - Phase 5：真实 `opencode serve` 集成。
   - Phase 6：renderer 设置、权限交互和历史回放。
   - Phase 7：MCP、packaged binary 和 release readiness。
   - Phase 8：真实使用验收、故障排查、发布说明和公开文档同步准备。
 - 下一步：
-  - 从 Phase 4 开始，在不启动真实 opencode server 的情况下接入 runtime mock、registry、orchestrator routing、session binding、event log 与 history replay。
-  - Phase 4 不进入 renderer UI、真实模型验收或真实 `opencode serve` 集成。
+  - 从 Phase 5 开始，接入真实 `opencode serve`，完成 server health、event subscribe、session create、prompt async、permission response、abort 和 resume smoke。
+  - Phase 5 不进入 renderer UI 或发布验收；真实模型 smoke 需要凭证时按 gated / skipped 记录。
   - 继续保持 config / diagnostics secretless，避免记录 resolved provider/config 中的 secret。
 - 暂缓 / 需要决策：
   - 默认认证来源：推荐 native opencode auth 优先，channel auth 显式选择。
@@ -83,9 +83,9 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认历史包含开发基线 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
-3. 读取开发清单的“最新开发状态快照”和 Phase 4。
-4. 在 `tasks/todo.md` 写入 Phase 4 计划，然后开始 runtime mock、registry 和 orchestrator routing。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认历史包含开发基线 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线` 和 Phase 4 完成提交。
+3. 读取开发清单的“最新开发状态快照”和 Phase 5。
+4. 在 `tasks/todo.md` 写入 Phase 5 计划，然后开始真实 `opencode serve` 集成。
 
 ## 设计定位
 

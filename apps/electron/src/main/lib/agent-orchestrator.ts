@@ -89,6 +89,7 @@ import {
 import type {
   CodexCodingAgentRuntimeRunInput,
   CodingAgentRuntime,
+  OpencodeCodingAgentRuntimeRunInput,
 } from './agent-runtimes/coding-agent-runtime-types'
 import { buildCodexMcpConfigFromWorkspace } from './codex-runtime/codex-mcp-config'
 
@@ -119,11 +120,23 @@ function isCodexRuntimeFeatureEnabled(): boolean {
   return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
 }
 
+function isOpencodeRuntimeFeatureEnabled(): boolean {
+  return process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+}
+
 function normalizeCodexModelForPersistence(model?: string): string | undefined {
   const trimmed = model?.trim()
   if (!trimmed) return undefined
   const normalized = trimmed.toLowerCase()
   if (normalized === 'codex' || normalized === 'codex default') return undefined
+  return trimmed
+}
+
+function normalizeOpencodeModelForPersistence(model?: string): string | undefined {
+  const trimmed = model?.trim()
+  if (!trimmed) return undefined
+  const normalized = trimmed.toLowerCase()
+  if (normalized === 'opencode' || normalized === 'opencode default') return undefined
   return trimmed
 }
 
@@ -625,11 +638,15 @@ export class AgentOrchestrator {
     }
 
     const sessionMeta = getAgentSessionMeta(sessionId)
+    const effectiveWorkspaceId = workspaceId ?? sessionMeta?.workspaceId
     const appSettings = getSettings()
     const runtimeSelection = resolveAgentRuntimeSelection({
       sessionMeta,
       settings: appSettings,
       defaultKind: 'claude-code',
+      enabledRuntimeKinds: isOpencodeRuntimeFeatureEnabled()
+        ? ['claude-code', 'codex', 'opencode']
+        : ['claude-code', 'codex'],
     })
     console.log(`[Agent 编排] Runtime 选择: ${runtimeSelection.kind} (${runtimeSelection.source})`)
 
@@ -644,7 +661,29 @@ export class AgentOrchestrator {
       return
     }
 
-    // 2. Claude Code 路径继续使用用户选择的渠道；Codex 路径使用独立 Codex 设置。
+    if (runtimeSelection.kind === 'opencode' && !isOpencodeRuntimeFeatureEnabled()) {
+      reportPreflightError({
+        code: 'opencode_runtime_disabled',
+        title: 'opencode Runtime 已关闭',
+        message: 'opencode Runtime 功能开关已关闭，此会话仅可查看历史，不能继续发送。',
+        actions: [],
+        canRetry: false,
+      })
+      return
+    }
+
+    const reportOpencodeMissingManifest = (details: string[]): void => {
+      reportPreflightError({
+        code: 'opencode_runtime_manifest_missing',
+        title: 'opencode Runtime 绑定缺少 manifest',
+        message: '该会话已经绑定 opencode 原生 session，但 CodeInsights runtime manifest 缺失。为避免用错误工作目录或配置恢复会话，本次发送已阻断。',
+        details,
+        actions: [],
+        canRetry: false,
+      })
+    }
+
+    // 2. Claude Code 路径继续使用用户选择的渠道；Coding Runtime 路径使用各自独立设置。
     const channel = runtimeSelection.kind === 'claude-code' ? getChannelById(channelId) : undefined
     if (runtimeSelection.kind === 'claude-code' && !channel) {
       reportPreflightError({
@@ -705,6 +744,7 @@ export class AgentOrchestrator {
 
     // 4. 读取已有的 SDK session ID（用于 resume）
     let existingSdkSessionId = sessionMeta?.sdkSessionId
+    const existingRuntimeExternalSessionId = runtimeSelection.externalSessionId
 
     // 4.1 检测回退后的 resume 截断点（快照回退功能）
     let rewindResumeAt: string | undefined
@@ -744,8 +784,8 @@ export class AgentOrchestrator {
       agentCwd = homedir()
       workspaceSlug = undefined
       workspace = undefined
-      if (workspaceId) {
-        const ws = getAgentWorkspace(workspaceId)
+      if (effectiveWorkspaceId) {
+        const ws = getAgentWorkspace(effectiveWorkspaceId)
         if (ws) {
           const existingRuntimeManifest = readMaterializedAgentRuntime(ws.slug, sessionId)
           if (existingRuntimeManifest) {
@@ -753,6 +793,13 @@ export class AgentOrchestrator {
             agentCwd = existingRuntimeManifest.sessionCwd ?? getMaterializedAgentRuntimeCwd(ws.slug, sessionId)
             usesMaterializedRuntime = true
             console.log(`[Agent 编排] 使用已物化 session cwd: ${agentCwd} (${ws.name}/${sessionId})`)
+          } else if (runtimeSelection.kind === 'opencode' && runtimeSelection.source === 'session' && existingRuntimeExternalSessionId) {
+            reportOpencodeMissingManifest([
+              `Workspace: ${ws.name}`,
+              `原生会话: ${existingRuntimeExternalSessionId}`,
+              `工作目录快照: ${runtimeSelection.workingDirectory ?? '缺失'}`,
+            ])
+            return
           } else if (!existingSdkSessionId) {
             try {
               ensurePluginManifest(ws.slug, ws.name)
@@ -795,6 +842,24 @@ export class AgentOrchestrator {
             console.log(`[Agent 编排] 无 sdkSessionId，将作为新会话启动（回填历史上下文）`)
           }
         }
+      }
+
+      if (
+        runtimeSelection.kind === 'opencode'
+        && runtimeSelection.source === 'session'
+        && existingRuntimeExternalSessionId
+        && !materializedRuntimeManifest
+      ) {
+        reportOpencodeMissingManifest([
+          workspace
+            ? `Workspace: ${workspace.name}`
+            : effectiveWorkspaceId
+              ? `Workspace ID: ${effectiveWorkspaceId}（未找到）`
+              : 'Workspace: 未绑定',
+          `原生会话: ${existingRuntimeExternalSessionId}`,
+          `工作目录快照: ${runtimeSelection.workingDirectory ?? '缺失'}`,
+        ])
+        return
       }
 
       // 9.4.1 Fork session JSONL 迁移已在 forkAgentSession 中完成，
@@ -871,15 +936,16 @@ export class AgentOrchestrator {
 
       const contextualMessage = `${dynamicCtx}\n\n${enrichedMessage}`
 
+      const hasRuntimeResume = Boolean(existingSdkSessionId || existingRuntimeExternalSessionId)
       const isCompactCommand = userMessage.trim() === '/compact'
       const finalPrompt = isCompactCommand
         ? '/compact'
-        : existingSdkSessionId
+        : hasRuntimeResume
           ? contextualMessage
           : buildContextPrompt(sessionId, contextualMessage, { agentCwd })
 
-      if (existingSdkSessionId) {
-        console.log(`[Agent 编排] 使用 resume 模式，SDK session ID: ${existingSdkSessionId}`)
+      if (hasRuntimeResume) {
+        console.log(`[Agent 编排] 使用 resume 模式，runtime session ID: ${existingSdkSessionId ?? existingRuntimeExternalSessionId}`)
       } else if (finalPrompt !== contextualMessage) {
         console.log(`[Agent 编排] 无 resume，已回填历史上下文（最近 ${MAX_CONTEXT_MESSAGES} 条消息）`)
       }
@@ -924,16 +990,26 @@ export class AgentOrchestrator {
       }
 
       if (runtimeSelection.kind === 'opencode') {
-        reportPreflightError({
-          code: 'opencode_runtime_unavailable',
-          title: 'opencode Runtime 尚未接入',
-          message: '当前版本只冻结了 opencode runtime 的共享类型、settings 和 IPC 契约，真实 server/runtime core 会在后续阶段接入。',
-          details: [
-            `会话 runtime: ${runtimeSelection.source}`,
-            `原生会话: ${runtimeSelection.externalSessionId ?? '未绑定'}`,
-          ],
-          actions: [],
-          canRetry: false,
+        const opencodeModelForRun = runtimeSelection.source === 'session'
+          ? runtimeSelection.model
+          : runtimeSelection.model ?? appSettings.agentOpencodeModelId
+        await this.runWithOpencodeRuntime({
+          sessionId,
+          prompt: finalPrompt,
+          model: opencodeModelForRun,
+          agent: runtimeSelection.source === 'session'
+            ? runtimeSelection.agent
+            : runtimeSelection.agent ?? appSettings.agentOpencodeAgentName,
+          cwd: agentCwd ?? homedir(),
+          permissionMode: initialPermissionMode,
+          runtimeSelection,
+          callbacks,
+          streamStartedAt,
+          runGeneration,
+          abortController: runAbortController,
+          additionalDirectories: this.buildRuntimeAdditionalDirectories(additionalDirectories, workspaceSlug),
+          runtimeHash: materializedRuntimeManifest?.runtimeHash,
+          repositoryRoot: agentCwd ?? homedir(),
         })
         return
       }
@@ -1893,7 +1969,7 @@ export class AgentOrchestrator {
       if (envelopeToPersist.event.type === 'run_started') {
         effectiveModel = normalizeCodexModelForPersistence(envelopeToPersist.event.model) ?? effectiveModel
       }
-      this.persistCodexEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, effectiveModel ?? 'Codex default')
+      this.persistRuntimeEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, effectiveModel ?? 'Codex default')
 
       if (envelopeToPersist.event.type === 'sdk_session') {
         this.persistRuntimeSessionRef({
@@ -1964,6 +2040,143 @@ export class AgentOrchestrator {
     })
   }
 
+  private async runWithOpencodeRuntime(input: {
+    sessionId: string
+    prompt: string
+    model?: string
+    agent?: string
+    cwd: string
+    permissionMode: CodeInsightsPermissionMode
+    runtimeSelection: AgentRuntimeSelection
+    callbacks: SessionCallbacks
+    streamStartedAt: number
+    runGeneration: number
+    abortController: AbortController
+    additionalDirectories?: string[]
+    runtimeHash?: string
+    repositoryRoot?: string
+  }): Promise<void> {
+    const runtime = this.runtimeRegistry.require('opencode')
+    this.activeCodingRuntimes.set(input.sessionId, runtime)
+    const runtimeConfigHash = input.runtimeSelection.runtimeConfigHash ?? input.runtimeHash
+    const runInput: OpencodeCodingAgentRuntimeRunInput = {
+      sessionId: input.sessionId,
+      prompt: input.prompt,
+      model: input.model,
+      agent: input.agent,
+      workingDirectory: input.cwd,
+      additionalDirectories: input.additionalDirectories,
+      permissionMode: input.permissionMode,
+      externalSessionId: input.runtimeSelection.externalSessionId,
+      channelId: input.runtimeSelection.channelId,
+      authSource: input.runtimeSelection.authSource,
+      runtimeHash: runtimeConfigHash,
+      runtimeConfigHash,
+      authSourceHash: input.runtimeSelection.authSourceHash,
+      permissionPolicyHash: input.runtimeSelection.permissionPolicyHash,
+      runnerMode: 'runner-v2',
+      repositoryRoot: input.repositoryRoot,
+      abortSignal: input.abortController.signal,
+    }
+
+    let terminalEvent: AgentRuntimeEvent | undefined
+    let resultSubtype: string | undefined
+    let completionError: string | undefined
+    let lastEnvelope: AgentStreamEnvelope | undefined
+    let effectiveModel = normalizeOpencodeModelForPersistence(input.model)
+
+    for await (const envelope of runtime.run(runInput)) {
+      lastEnvelope = envelope
+      let envelopeToPersist = envelope
+      if (
+        isAgentRuntimeTerminalEvent(envelope.event)
+        && !this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)
+      ) {
+        const wasStoppedByUser = this.stoppedBySessions.delete(input.sessionId)
+        envelopeToPersist = this.createStoppedEnvelopeFromRuntimeEnvelope(envelope, wasStoppedByUser)
+      }
+
+      appendAgentRuntimeEnvelope(envelopeToPersist)
+      if (envelopeToPersist.event.type === 'run_started') {
+        effectiveModel = normalizeOpencodeModelForPersistence(envelopeToPersist.event.model) ?? effectiveModel
+      }
+      this.persistRuntimeEnvelopeAsSdkMessage(input.sessionId, envelopeToPersist, effectiveModel ?? 'opencode default')
+
+      if (envelopeToPersist.event.type === 'sdk_session') {
+        this.persistRuntimeSessionRef({
+          sessionId: input.sessionId,
+          kind: 'opencode',
+          externalSessionId: envelopeToPersist.event.sdkSessionId,
+          channelId: input.runtimeSelection.channelId,
+          model: effectiveModel,
+          agent: input.agent,
+          authSource: input.runtimeSelection.authSource,
+          workingDirectory: input.cwd,
+          runtimeConfigHash,
+          authSourceHash: input.runtimeSelection.authSourceHash,
+          permissionPolicyHash: input.runtimeSelection.permissionPolicyHash,
+        })
+      }
+
+      if (isAgentRuntimeTerminalEvent(envelopeToPersist.event)) {
+        terminalEvent = envelopeToPersist.event
+        if (envelopeToPersist.event.type === 'run_completed') {
+          resultSubtype = envelopeToPersist.event.resultSubtype
+        }
+        if (envelopeToPersist.event.type === 'run_failed') {
+          completionError = envelopeToPersist.event.error.message
+        }
+        break
+      }
+    }
+
+    if (!terminalEvent && !this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
+      const stoppedByUser = this.stoppedBySessions.delete(input.sessionId)
+      terminalEvent = { type: 'run_stopped', reason: 'user_abort', stoppedBy: stoppedByUser ? 'user' : 'system' }
+      appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+        sessionId: input.sessionId,
+        runId: lastEnvelope?.runId ?? `opencode-runtime:${input.sessionId}`,
+        sequence: (lastEnvelope?.sequence ?? -1) + 1,
+        source: 'runtime_service',
+        event: terminalEvent,
+      }))
+    }
+
+    if (!this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
+      const wasStoppedByUser = terminalEvent?.type === 'run_stopped'
+        ? terminalEvent.stoppedBy === 'user'
+        : this.stoppedBySessions.delete(input.sessionId)
+      try { updateAgentSessionMeta(input.sessionId, { stoppedByUser: wasStoppedByUser }) } catch { /* 会话可能已删除 */ }
+      sendCompletionSignal({
+        callbacks: input.callbacks,
+        messages: () => getAgentSessionMessages(input.sessionId),
+        startedAt: input.streamStartedAt,
+        options: { stoppedByUser: wasStoppedByUser },
+      })
+      return
+    }
+
+    if (terminalEvent?.type === 'run_stopped') {
+      const stoppedByUser = terminalEvent.stoppedBy === 'user'
+      try { updateAgentSessionMeta(input.sessionId, { stoppedByUser }) } catch { /* 会话可能已删除 */ }
+      sendCompletionSignal({
+        callbacks: input.callbacks,
+        messages: () => getAgentSessionMessages(input.sessionId),
+        startedAt: input.streamStartedAt,
+        options: { stoppedByUser },
+      })
+      return
+    }
+
+    sendCompletionSignal({
+      callbacks: input.callbacks,
+      error: completionError,
+      messages: () => getAgentSessionMessages(input.sessionId),
+      startedAt: input.streamStartedAt,
+      options: { resultSubtype },
+    })
+  }
+
   private isRunGenerationActive(
     sessionId: string,
     runGeneration: number,
@@ -1992,10 +2205,16 @@ export class AgentOrchestrator {
 
   private persistRuntimeSessionRef(input: {
     sessionId: string
-    kind: 'codex'
+    kind: 'codex' | 'opencode'
     externalSessionId: string
     channelId?: string | null
     model?: string
+    agent?: string
+    authSource?: import('@codeinsights/shared').AgentRuntimeAuthSource
+    workingDirectory?: string
+    runtimeConfigHash?: string
+    authSourceHash?: string
+    permissionPolicyHash?: string
   }): void {
     const current = getAgentSessionMeta(input.sessionId)
     const now = Date.now()
@@ -2006,6 +2225,12 @@ export class AgentOrchestrator {
         externalSessionId: input.externalSessionId,
         channelId: input.channelId,
         model: input.model,
+        agent: input.agent,
+        authSource: input.authSource,
+        workingDirectory: input.workingDirectory,
+        runtimeConfigHash: input.runtimeConfigHash,
+        authSourceHash: input.authSourceHash,
+        permissionPolicyHash: input.permissionPolicyHash,
         createdAt: current?.runtimeSession?.externalSessionId === input.externalSessionId
           ? current.runtimeSession.createdAt
           : now,
@@ -2014,7 +2239,7 @@ export class AgentOrchestrator {
     })
   }
 
-  private persistCodexEnvelopeAsSdkMessage(sessionId: string, envelope: AgentStreamEnvelope, model: string): void {
+  private persistRuntimeEnvelopeAsSdkMessage(sessionId: string, envelope: AgentStreamEnvelope, model: string): void {
     if (envelope.event.type === 'assistant_message') {
       const message: SDKMessage = {
         type: 'assistant',
