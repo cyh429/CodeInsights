@@ -12,6 +12,8 @@
 - 下次启动提示词里的预期最新提交必须指向真实 HEAD 或明确“其后的状态同步提交”，避免恢复会话时误以为旧提交仍是最新状态。
 - 用户要求“记住这个习惯”时，要写入 `tasks/lessons.md`，并在后续收尾时主动检查 support README、development checklist 和 next-session prompt 是否一致。
 - 每个阶段性任务完成后，除了提交代码/文档本身，还要自动同步对应 support README、development checklist 和 next-session prompt；如果某个目录还没有这些入口，先补齐入口再交付。
+- 用户要求“给下次启动提示词”时，不能只在最终回复里给文本；必须同时更新仓库内的 `next-session-prompt.md`、support README、development checklist 和 `tasks/todo.md` Review，并在验证后单独提交状态同步改动。
+- 对按 Phase 推进的 Agent runtime 接入任务，阶段提交完成后要立即把真实提交号写回最新状态和下次启动提示词；不要留下“以当前提示词所在提交为准”这类恢复时不够具体的表述。
 
 ## 2026-05-26 Codex native auth 中转配置
 

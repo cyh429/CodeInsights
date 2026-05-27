@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 0 spike 已完成，业务实现未开始
+状态：Phase 0 已完成并提交，业务实现未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 0 spike 完成时
+更新时间：2026-05-27，Phase 0 提交后状态同步时
 
 当前结论：
 
@@ -37,6 +37,7 @@
 - [x] npm 包调研已确认：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`；`opencode` 和 `@opencode-ai/cli` 包名不可用。
 - [x] Phase 0 真实 spike 已完成：npm 元数据、临时安装、binary、server health/SSE、SDK response shape、session/prompt_async、permission body、config/provider/MCP placeholder 均已确认。
 - [x] Phase 0 关键修正已写回主方案：`--port 0` 不作为随机端口；permission v1 无 `remember`；v2 permission reply 是新主路径；resolved config/provider API 会暴露 env 替换后的 secret，不能原样记录。
+- [x] Phase 0 已单独提交：`63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`。
 - [x] 开发进度清单已创建并提交：`4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。
 - [x] 阶段提交纪律已强化并提交：`19b5a71d docs(workflow): 强化阶段提交纪律`。
 - [x] Support README 与 next-session prompt 已补齐，随本轮状态同步提交落盘；下次启动以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为准。
@@ -53,7 +54,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期基线至少包含 `19b5a71d docs(workflow): 强化阶段提交纪律`，以及本轮 opencode 状态同步提交；若只有后续阶段改动，继续按阶段推进。
+- 预期基线至少包含 `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`，以及本轮 Phase 0 后状态同步提交；若只有后续阶段改动，继续按阶段推进。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -61,7 +62,7 @@
 
 下一步入口：
 
-1. Phase 0 完成后提交本轮文档和任务记录。
+1. 确认 Phase 0 已提交并且本轮状态同步已提交。
 2. 进入 Phase 1，完成 shared/settings/IPC 契约。
 3. 不要直接跳到 UI 或真实 server 集成，先冻结类型契约和 runtime core 边界。
 
@@ -177,11 +178,12 @@ git diff --check
 - [x] 已确认 channel auth 不需要写入 opencode auth storage。
 - [x] 已确认 MCP secret 注入策略可走 env placeholder。
 - [x] 未改业务行为，仅有 spike 文档和任务记录更新。
-- [x] Phase 0 单独提交完成。
+- [x] Phase 0 单独提交完成：`63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`。
 
 ### 2.1 Phase 0 验证记录
 
 - 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`。
+- 完成提交：`63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`。
 - 项目版本：Bun `1.3.13`；Electron 依赖 `^39.5.1`；TypeScript 依赖 `^5.0.0`。
 - npm 元数据：`@opencode-ai/sdk@1.15.11` 依赖 `cross-spawn@7.0.6`；`opencode-ai@1.15.11` 暴露 bin `opencode -> ./bin/opencode.exe`，optional packages 包含 `opencode-darwin-arm64`、`opencode-darwin-x64`、`opencode-darwin-x64-baseline`、Linux glibc/musl/baseline、Windows x64/arm64 等。
 - 包名不可用：`npm view opencode version --json` 和 `npm view @opencode-ai/cli version --json` 均返回 npm `E404`。

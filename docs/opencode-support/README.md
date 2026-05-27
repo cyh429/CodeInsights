@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 0 spike 完成时
+更新时间：2026-05-27，Phase 0 提交后状态同步时
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -20,13 +20,15 @@
   - 工作流纪律：已把“阶段完成即提交、重启会话自动检查未提交阶段成果、提交信息使用详细中文”写入 `tasks/lessons.md`。
   - 状态入口：本文件与 `next-session-prompt.md` 已补齐，后续每个阶段收尾都要同步。
   - Phase 0：已用真实命令确认 opencode npm 包结构、server/API、SDK 返回形态、config/provider/MCP placeholder、permission body 和 binary 路径。
+  - Phase 0 状态同步：已把真实提交基线、完成/未完成清单和下次启动提示词同步到 support 文档。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
   - `4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`
   - `19b5a71d docs(workflow): 强化阶段提交纪律`
   - `bbe8a80c docs(agent): 同步 opencode Runtime 最新状态`
-  - Phase 0 提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
+  - `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`
+  - 本轮 Phase 0 后状态同步提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -46,6 +48,10 @@
   - Phase 6：renderer 设置、权限交互和历史回放。
   - Phase 7：MCP、packaged binary 和 release readiness。
   - Phase 8：真实使用验收、故障排查、发布说明和公开文档同步准备。
+- 下一步：
+  - 从 Phase 1 开始，先扩展 shared 类型、settings normalization 和必要 IPC 契约。
+  - Phase 1 不进入 opencode runtime core、真实 server 或 renderer UI 实现。
+  - feature flag 未开启时，Claude Code / Codex 行为必须保持不变。
 - 暂缓 / 需要决策：
   - 默认认证来源：推荐 native opencode auth 优先，channel auth 显式选择。
   - channel auth 是否写入 opencode auth storage：推荐不写入，只用 env placeholder。

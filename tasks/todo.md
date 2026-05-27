@@ -4017,3 +4017,23 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 验证通过：`bun test --isolate`，613 pass / 0 fail。
 - 验证通过：`git diff --check`。
 - 阶段边界：本轮未修改业务实现、根 `README.md` 或 `AGENTS.md`，未提交临时目录、打包产物或真实凭证。
+
+## 2026-05-27 Agent opencode Runtime Phase 0 后状态同步计划
+
+范围确认：本轮只同步 Phase 0 完成后的最新开发状态、下次启动提示词和长期协作习惯；不进入 Phase 1 业务实现，不修改根 `README.md` / `AGENTS.md`。
+
+- [x] 确认当前工作树干净，最新提交为 `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`。
+- [x] 更新 `tasks/lessons.md`，明确以后阶段完成或用户要求下次继续时，要主动同步 support README、development checklist、next-session prompt 和 `tasks/todo.md` Review。
+- [x] 更新 `docs/opencode-support/README.md`，标注 Phase 0 已完成并提交、Phase 1-8 未完成、下次入口为 Phase 1。
+- [x] 更新 `docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md`，把最新开发状态快照、仓库状态要求和下一步入口同步到 `63aab807` 后。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`，生成可直接复制给下次 Codex 的 Phase 1 启动提示词。
+- [x] 在本节追加 Review，运行 `git diff --check` 并单独提交状态同步改动。
+
+## 2026-05-27 Agent opencode Runtime Phase 0 后状态同步 Review
+
+- 已把用户要求“下次启动提示词和状态文档要主动同步，不需要每次提醒”的习惯写入 `tasks/lessons.md`。
+- 已更新 `docs/opencode-support/README.md`：最新状态明确 Phase 0 已完成并提交 `63aab807`，Phase 1-8 未完成，下一步从 Phase 1 shared/settings/IPC 契约开始。
+- 已更新开发清单：最新状态快照、仓库状态要求、Phase 0 退出标准和验证记录均指向真实 Phase 0 提交 `63aab807`，并保留本轮状态同步提交作为下次启动基线。
+- 已更新 `docs/opencode-support/next-session-prompt.md`：下次 Codex 启动提示词要求先核对 `63aab807` 及其后的状态同步提交，再写入 Phase 1 计划并开始契约实现。
+- 本轮仅修改状态文档、lessons 和任务记录，未进入 Phase 1 业务实现，未修改根 `README.md` / `AGENTS.md`。
+- 验证：`git diff --check`。

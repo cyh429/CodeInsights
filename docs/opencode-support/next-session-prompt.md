@@ -14,7 +14,8 @@
 - opencode Runtime 开发进度清单已建立并提交：4544b64a docs(agent): 建立 opencode Runtime 开发进度清单。
 - 阶段提交纪律已强化并提交：19b5a71d docs(workflow): 强化阶段提交纪律。
 - opencode support README 与 next-session prompt 已补齐并同步：bbe8a80c docs(agent): 同步 opencode Runtime 最新状态。
-- Phase 0 依赖 spike 与基线冻结已完成并随本提示词所在提交落盘；最新提交号以 `git log -1 --oneline` 为准。
+- Phase 0 依赖 spike 与基线冻结已完成并提交：63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike。
+- Phase 0 后最新状态、完成/未完成清单和本提示词已在后续状态同步提交中补齐；最新提交号以 `git log -1 --oneline` 为准，预期至少包含 63aab807 之后的状态同步提交。
 - 当前还没有进入业务实现；Phase 1-8 均未开始。
 
 已完成内容：
@@ -38,7 +39,7 @@
 
 请先执行：
 1. 读取项目指令和 tasks/lessons.md，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期至少看到 `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike` 以及其后的状态同步提交。不要回滚用户改动。若看到 `apps/electron/out/` 或其他打包产物，不要默认 stage / commit。
 3. 读取 docs/opencode-support/README.md、docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md 和 docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md，重点看 Phase 0 结论和 Phase 1。
 4. 在 tasks/todo.md 写入本轮 Phase 1 计划，然后直接开始执行 Phase 1。
 
