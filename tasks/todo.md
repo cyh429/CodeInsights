@@ -1,5 +1,21 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 阶段提交纪律强化计划
+
+范围确认：当前工作树已干净，最新提交为 `4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`。本轮只把用户强调的“每完成一阶段就提交、重启 Codex 会话后自动延续、提交信息使用详细中文”写入 `tasks/lessons.md` 并单独提交；不修改业务代码、不修改根 `README.md` / `AGENTS.md`。
+
+- [x] 检查当前工作树和最近提交，确认上一阶段 opencode 开发清单已提交。
+- [x] 将阶段完成即提交、重启恢复自动延续、详细中文 commit message 的纪律写入 `tasks/lessons.md`。
+- [x] 运行文档 code fence、`git diff --check` 和行尾空白验证。
+- [x] 单独提交本轮纪律更新。
+
+## 2026-05-27 阶段提交纪律强化 Review
+
+- 当前工作树在本轮开始时为干净状态，最新提交是 `4544b64a docs(agent): 建立 opencode Runtime 开发进度清单`，没有未提交的业务代码变更。
+- 已在 `tasks/lessons.md` 新增长期规则：阶段完成并验证后立即单独提交；重启 Codex 会话或上下文恢复后主动检查是否有已完成未提交成果；提交信息必须使用详细中文说明完成内容、验证结果和未包含事项。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`。
+- 验证通过：Markdown code fence 检查；`git diff --check -- tasks/todo.md tasks/lessons.md`；任务文件行尾空白检查。
+
 ## 2026-05-27 Agent opencode Runtime 开发进度清单计划
 
 范围确认：本轮根据已完成的 opencode runtime 接入方案，新增 `docs/opencode-support/` 下的开发进度跟踪清单，用于后续逐阶段迭代开发；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。
