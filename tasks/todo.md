@@ -1,5 +1,36 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 5 真实 Server 集成计划
+
+范围确认：本轮进入 Phase 5，只接入真实 `opencode serve`、SDK client wrapper、Basic Auth fetch wrapper 和无凭证可运行的 smoke summary；不进入 renderer UI、发布打包验收或根 `README.md` / `AGENTS.md` 修改。长期 config、diagnostics、event log 和 smoke summary 必须 secretless，不记录 resolved `/config`、`/provider`、`/config/providers` 原文。
+
+- [x] 复习项目指令、`tasks/lessons.md`、opencode support README、开发清单、主方案和 next-session prompt，确认阶段提交、状态同步、runtime binding、Git guard 与 secretless 纪律。
+- [x] 运行 `git status --short` 和 `git log -12 --oneline`，确认工作树干净，最新提交为 `fa335f45 docs(agent): 同步 opencode Phase 4 后续开发状态`，历史包含 `647d3046`、`bdef679f`、`d2b718ad`、`7c31b72d`。
+- [x] 安装前查询 npm 元数据：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`；`opencode-ai` bin 为 `bin/opencode.exe`，optional platform packages 与 Phase 0 记录一致。
+- [x] 读取现有 `apps/electron/src/main/lib/opencode-runtime/**`、`agent-runtimes/opencode-runtime.ts`、相关测试与 `apps/electron/package.json`，确定真实 server 接入点和最小改动范围。
+- [x] 添加 `@opencode-ai/sdk`、`opencode-ai` 与必要 platform optionalDependencies，按受影响包规则提升 `@codeinsights/electron` patch 版本。
+- [x] 把 `OpencodeServerManager` 从 fakeable 基础设施推进到真实 spawn：自行分配空闲端口，固定 `127.0.0.1`，启用随机 Basic Auth，传入 secretless config/env，health timeout 后清理进程。
+- [x] 把 `opencode-sdk-client` 接到真实 `createOpencodeClient()`：统一 `.data` / `.stream` 返回、Basic Auth fetch wrapper、错误分类和请求日志脱敏。
+- [x] 增加或扩展 smoke CLI：binary、server health、Basic Auth、event subscribe、session create、config、permission config、permission response endpoint probe、abort、resume；真实模型、channel auth 和 native auth smoke 缺凭证时记录 skipped reason。
+- [x] 保证 smoke summary JSON 只输出 `passed` / `failed` / `skipped`、版本、脱敏路径和 skipped reason，不输出 API key、Basic Auth password、MCP token、auth 文件内容或 resolved config/provider 原文。
+- [x] 补齐 BDD 单测覆盖真实 wrapper 边界：Basic Auth header、SDK fetch header、server authMode、config-dir env gating、secret redaction、server cleanup。
+- [x] 运行 Phase 5 验证：`smoke:agent-opencode -- --only binary/server/config/permission/abort/resume/readonly/channel/native`、`bun run --filter='@codeinsights/electron' typecheck`、相关单测、`build:main`、`git diff --check -- apps/electron bun.lock tasks/todo.md docs/opencode-support`。
+- [x] 更新 opencode development checklist、support README、next-session prompt，并在本节追加 Review。
+- [x] 按阶段纪律只提交 Phase 5 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+
+## 2026-05-27 Agent opencode Runtime Phase 5 真实 Server 集成 Review
+
+- 启动基线已确认：本轮开始时最新提交为 `fa335f45 docs(agent): 同步 opencode Phase 4 后续开发状态`，历史包含 `647d3046`、`bdef679f`、`d2b718ad`、`7c31b72d`。
+- 已复核 npm 元数据并安装 `@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11` 和全部必要 `opencode-*` platform optionalDependencies；`@codeinsights/electron` patch 版本提升到 `0.0.117`。
+- 已把 `OpencodeServerManager` 推进到真实 spawn：自行分配端口，固定 `127.0.0.1`，默认随机 Basic Auth，health retry，stdout/stderr 脱敏 drain，stop/cleanup 支持 SIGTERM 后 SIGKILL。
+- 已把 `opencode-sdk-client` 接入真实 `createOpencodeClient()`：支持 health、SSE subscribe、session create、prompt async、abort、messages、permission response、config summary；Basic Auth fetch wrapper 覆盖 SDK 调用与 direct JSON 请求。
+- 已把默认 `OpencodeAgentRuntime` 从 mock client/server 切到真实 server manager 与真实 SDK client；测试仍通过依赖注入保持 fake 路径。
+- 已新增 `apps/electron/scripts/agent-opencode-smoke.ts`：binary、server、config、permission、abort、resume 无凭证可运行；readonly、channel、native 真实模型/凭证 smoke 缺环境变量时记录 skipped reason。
+- 已记录 Phase 5 真实差异：`writeOpencodeRuntimeConfig()` 继续生成私有 `config-dir`，但默认不注入 `OPENCODE_CONFIG_DIR`；`opencode-ai@1.15.11` 下空 assets 目录会卡住 session mutating API，后续 Phase 7 通过显式开关再验收。
+- 保持安全边界：smoke summary 和 config summary 不输出 API key、Basic Auth password、MCP token、auth 文件内容，也不记录 resolved `/config`、`/provider`、`/config/providers` 原文。
+- 保持阶段边界：未进入 renderer UI、MCP、packaged binary、发布验收或根 `README.md` / `AGENTS.md` 修改。
+- 验证通过：`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only binary,server,config,permission,abort,resume,readonly,channel,native`；`bun test apps/electron/src/main/lib/opencode-runtime apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:main`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/opencode-support`。
+
 ## 2026-05-27 Agent opencode Runtime Phase 4 后状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-4 已完成、Phase 5-8 未完成，并将下次继续开发入口固定到 Phase 5；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。

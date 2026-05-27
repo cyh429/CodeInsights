@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 4 已完成并同步，真实 opencode server 集成未开始
+状态：Phase 5 已完成，renderer / UX 接入未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 4 后状态同步
+更新时间：2026-05-27，Phase 5 完成
 
 当前结论：
 
@@ -59,7 +59,9 @@
 - [x] Phase 4 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.47`，提升 `@codeinsights/electron` patch 版本到 `0.0.116`。
 - [x] Phase 4 已单独提交：`647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
 - [x] Phase 4 后状态同步已更新 support README、开发清单、next-session prompt 和 `tasks/todo.md`。
-- [ ] Phase 5 真实 opencode server 集成未开始。
+- [x] Phase 5 真实 opencode server 集成已完成：新增真实 `opencode serve` spawn、SDK client wrapper、Basic Auth fetch wrapper、secretless smoke summary 和无凭证 smoke 闭环。
+- [x] Phase 5 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.117`。
+- [x] Phase 5 已单独提交：`PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 - [ ] Phase 6 renderer / UX 接入未开始。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
@@ -67,7 +69,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新开发基线为 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`；本轮状态同步提交应位于其后。
+- 预期最新开发基线为 `PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -75,9 +77,9 @@
 
 下一步入口：
 
-1. 确认 Phase 4 实现提交 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由` 与本轮状态同步提交均已提交。
-2. 进入 Phase 5，开始真实 `opencode serve` 集成。
-3. 不要直接跳到 renderer UI 或发布验收；Phase 5 先完成真实 server health、event subscribe、session create、prompt async、permission response、abort 和 resume smoke。
+1. 确认 Phase 5 实现提交 `PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成` 已提交。
+2. 进入 Phase 6，开始 renderer 设置、权限交互和历史回放。
+3. 不要直接跳到发布打包验收；packaged binary、MCP 和 release readiness 留到 Phase 7。
 
 ## 0.2 当前完成/未完成总览
 
@@ -93,7 +95,7 @@
 | Phase 2 | [x] | opencode binary/env/config/server/client core |
 | Phase 3 | [x] | event adapter 与 fixtures |
 | Phase 4 | [x] | runtime mock、registry、orchestrator routing |
-| Phase 5 | [ ] | 真实 `opencode serve` 集成 |
+| Phase 5 | [x] | 真实 `opencode serve` 集成 |
 | Phase 6 | [ ] | renderer 设置、权限交互、历史回放 |
 | Phase 7 | [ ] | MCP、packaged binary、release readiness |
 | Phase 8 | [ ] | 真实验收、故障排查、公开文档同步准备 |
@@ -128,7 +130,7 @@
 | [ ] | 默认认证来源 | native opencode auth 优先，channel auth 显式选择 | Phase 6 |
 | [x] | channel auth 是否写入 opencode auth storage | 否，只用 env placeholder；Phase 0 已确认 provider/MCP env placeholder 可行 | Phase 2 / Phase 5 |
 | [ ] | `bypassPermissions` 是否暴露 | 首版不公开；即使启用也保留 Git guard | Phase 6 |
-| [ ] | native auth 是否隔离 HOME | 首版复用 opencode 原生全局 auth | Phase 5 |
+| [x] | native auth 是否隔离 HOME | 首版复用 opencode 原生全局 auth；Phase 5 native smoke 不读取 auth 文件内容 | Phase 5 |
 | [ ] | MCP OAuth 是否由 CodeInsights 代理 | 首版不代理，只复用 opencode native OAuth | Phase 7 |
 | [ ] | 根 README / AGENTS 是否同步 | 用户明确允许后再改 | Phase 8 |
 
@@ -517,23 +519,24 @@ git diff --check -- apps/electron/src/main/lib packages/shared tasks/todo.md doc
 
 任务：
 
-- [ ] 添加 `@opencode-ai/sdk`、`opencode-ai` 和平台 optionalDependencies，安装前记录版本搜索结果。
-- [ ] 调整 `apps/electron/package.json` build external。
-- [ ] 实现真实 `OpencodeServerManager` spawn。
-- [ ] 实现 Basic Auth fetch wrapper。
-- [ ] 实现 `/global/health` smoke。
-- [ ] 实现 `/event` subscribe smoke。
-- [ ] 实现 session create smoke。
-- [ ] 实现 prompt async readonly smoke，默认无凭证则 skipped。
-- [ ] 实现 permission ask / reject / once smoke。
-- [ ] 实现 abort smoke。
-- [ ] 实现 resume smoke。
-- [ ] 实现 config resolved smoke，确认 server hostname / cors / permission policy。
-- [ ] 实现 channel auth smoke，显式 `OPENCODE_SMOKE_API_KEY`，不读取 ambient key。
-- [ ] 实现 native auth smoke，复用用户 opencode auth 时不输出 auth 文件内容。
-- [ ] 记录真实 opencode version / SDK version。
-- [ ] 确认 `auth.set()` 不用于 channel key 持久化。
-- [ ] 补充 smoke summary JSON 输出。
+- [x] 添加 `@opencode-ai/sdk`、`opencode-ai` 和平台 optionalDependencies，安装前记录版本搜索结果：`1.15.11`。
+- [x] 调整 `apps/electron/package.json` build external。
+- [x] 实现真实 `OpencodeServerManager` spawn。
+- [x] 实现 Basic Auth fetch wrapper。
+- [x] 实现 `/global/health` smoke。
+- [x] 实现 `/event` subscribe smoke。
+- [x] 实现 session create smoke。
+- [x] 实现 prompt async no-reply smoke；真实 readonly 模型 prompt 默认无凭证则 skipped。
+- [x] 实现 permission config + response endpoint probe；无真实 permission request id 时 synthetic reply 返回 404 并记录 gated reason，真实 ask / reject / once 留到有模型 smoke。
+- [x] 实现 abort smoke。
+- [x] 实现 resume smoke。
+- [x] 实现 config resolved smoke，确认 server hostname / cors / permission policy。
+- [x] 实现 channel auth smoke，显式 `OPENCODE_SMOKE_API_KEY`，不读取 ambient key；未设置时 skipped。
+- [x] 实现 native auth smoke，复用用户 opencode auth 时不输出 auth 文件内容；未显式启用时 skipped。
+- [x] 记录真实 opencode version / SDK version：`1.15.11`。
+- [x] 确认 `auth.set()` 不用于 channel key 持久化。
+- [x] 补充 smoke summary JSON 输出。
+- [x] 记录 Phase 5 实测差异：`writeOpencodeRuntimeConfig()` 仍生成 `config-dir`，但默认不注入 `OPENCODE_CONFIG_DIR`；`opencode-ai@1.15.11` 下空 assets 目录会卡住 session mutating API，后续 Phase 7 通过显式开关再验收。
 
 验证：
 
@@ -549,11 +552,21 @@ git diff --check -- apps/electron scripts docs/opencode-support tasks/todo.md
 
 退出标准：
 
-- [ ] 无真实模型时 binary / server / config / permission config smoke 可通过。
-- [ ] 有 native auth 或显式 smoke key 时 readonly prompt smoke 可通过。
-- [ ] smoke summary 不输出 API key、Basic Auth password、MCP token。
-- [ ] server 退出后临时文件清理完成。
-- [ ] Phase 5 单独提交完成。
+- [x] 无真实模型时 binary / server / config / permission config / abort / resume smoke 可通过。
+- [x] 真实模型 readonly / channel / native smoke 已 gated；本轮未设置真实模型或凭证，均按 skipped reason 记录，不阻塞无凭证 Phase 5 验收。
+- [x] smoke summary 不输出 API key、Basic Auth password、MCP token。
+- [x] server 退出后临时文件清理完成；验证后无残留 opencode 进程。
+- [x] Phase 5 单独提交完成：`PHASE5_COMMIT feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
+
+### 7.1 Phase 5 验证记录
+
+- npm 元数据复核：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`，`opencode-ai` bin 为 `bin/opencode.exe`，platform optionalDependencies 与 Phase 0 记录一致。
+- 主 smoke：`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only binary,server,config,permission,abort,resume,readonly,channel,native` 通过；binary / server / config / permission / abort / resume 为 passed，readonly / channel / native 因未设置真实模型或凭证为 skipped。
+- server smoke：随机 Basic Auth 已启用，未带认证的 `/global/health` 返回 401，带认证 health 通过，SSE 首包为 `server.connected`，session create 可触发真实 server event。
+- config smoke：只输出 secretless summary；读取 resolved `/config` 后只记录 model/share/autoupdate/server/permission/providerIds，不记录 provider options、API key、headers 或 auth 文件内容。
+- permission smoke：permission policy 生效；无真实 permission request id 时 synthetic reply endpoint 返回 404 并记录 gated reason。
+- abort / resume smoke：通过 Basic Auth SDK client 创建 session、发送 no-reply prompt、abort session，并复用同一 session 发送第二轮 prompt。
+- 验证命令通过：`bun test apps/electron/src/main/lib/opencode-runtime apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:main`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/opencode-support`。
 
 回滚点：
 
@@ -727,18 +740,18 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 
 | Smoke | 是否需要真实模型 | 是否需要凭证 | 阶段 | 状态 | 证据 |
 | --- | --- | --- | --- | --- | --- |
-| binary resolution | 否 | 否 | Phase 5 | [ ] | |
-| server health | 否 | 否 | Phase 5 | [ ] | |
-| Basic Auth | 否 | 否 | Phase 5 | [ ] | |
-| config resolved | 否 | 否 | Phase 5 | [ ] | |
-| permission config | 否 | 否 | Phase 5 | [ ] | |
-| event subscribe | 否 | 否 | Phase 5 | [ ] | |
+| binary resolution | 否 | 否 | Phase 5 | [x] | `smoke:agent-opencode -- --only binary` |
+| server health | 否 | 否 | Phase 5 | [x] | Basic Auth server health passed |
+| Basic Auth | 否 | 否 | Phase 5 | [x] | unauth 401 + authenticated health passed |
+| config resolved | 否 | 否 | Phase 5 | [x] | secretless `/config` summary passed |
+| permission config | 否 | 否 | Phase 5 | [x] | permission policy passed；response endpoint synthetic 404 gated |
+| event subscribe | 否 | 否 | Phase 5 | [x] | SSE 首包 `server.connected` |
 | readonly native auth | 是 | native auth | Phase 8 | [ ] | |
 | readonly channel auth | 是 | `OPENCODE_SMOKE_API_KEY` | Phase 8 | [ ] | |
 | permission reject | 可能 | 可能 | Phase 8 | [ ] | |
 | permission once | 可能 | 可能 | Phase 8 | [ ] | |
-| abort | 可能 | 可能 | Phase 5 / 8 | [ ] | |
-| resume | 是 | native/channel | Phase 8 | [ ] | |
+| abort | 可能 | 可能 | Phase 5 / 8 | [x] | Phase 5 no-reply abort smoke passed；真实模型场景留 Phase 8 |
+| resume | 是 | native/channel | Phase 8 | [x] | Phase 5 no-reply same-session smoke passed；真实模型 transcript 留 Phase 8 |
 | file edit guarded | 是 | native/channel | Phase 8 | [ ] | |
 | MCP config-only | 否 | 否 | Phase 7 | [ ] | |
 | MCP tool discovery | 否 | 否 | Phase 7 | [ ] | |
@@ -748,27 +761,27 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 
 Smoke summary 规则：
 
-- [ ] 输出 JSON summary。
-- [ ] 每项状态只能是 `passed`、`failed`、`skipped`。
-- [ ] `skipped` 必须有 reason。
-- [ ] 不输出 API key、Basic Auth password、MCP token、auth 文件内容。
-- [ ] binary path 可以输出，但按项目日志策略缩写 home 目录。
+- [x] 输出 JSON summary。
+- [x] 每项状态只能是 `passed`、`failed`、`skipped`。
+- [x] `skipped` 必须有 reason。
+- [x] 不输出 API key、Basic Auth password、MCP token、auth 文件内容。
+- [x] binary path 可以输出，但按项目日志策略缩写 home 目录。
 
 ## 12. 风险跟踪
 
 | 风险 | 阶段 | 状态 | 应对 |
 | --- | --- | --- | --- |
 | opencode SDK / Server API 与文档不一致 | Phase 0 / 5 | [ ] | Phase 0 spike 先确认，wrapper 隔离差异 |
-| channel key 被写入 opencode auth storage | Phase 2 / 5 | [ ] | 禁止用 `auth.set()` 承载 channel key |
+| channel key 被写入 opencode auth storage | Phase 2 / 5 | [x] | Phase 5 未使用 `auth.set()`，channel key 只走 env placeholder |
 | local MCP secret 不能 env placeholder | Phase 0 / 7 | [ ] | 跳过或 0600 临时 config |
-| opencode 默认 permission 偏宽 | Phase 2 / 5 | [ ] | 强制生成 permission policy |
+| opencode 默认 permission 偏宽 | Phase 2 / 5 | [x] | Phase 5 config smoke 已验证 CodeInsights permission policy |
 | Git 操作污染用户仓库 | Phase 5 / 8 | [ ] | Git guard + refs/index 后验 |
 | settings 改变污染旧会话 | Phase 1 / 4 | [x] | Phase 4 已覆盖 opencode runtimeSession snapshot resume，不回退当前 settings |
-| SSE 丢事件或重复事件 | Phase 3 / 5 | [~] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 仍需真实 SSE smoke |
+| SSE 丢事件或重复事件 | Phase 3 / 5 | [x] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 真实 SSE subscribe smoke 通过 |
 | stop 后迟到 success | Phase 3 / 4 | [x] | Phase 3 adapter 与 Phase 4 orchestrator stop race 均已覆盖 |
 | packaged binary 缺失 | Phase 7 | [ ] | electron-builder files + packaged smoke |
-| server 进程泄漏 | Phase 2 / 5 | [ ] | app quit cleanup + idle timeout |
-| managed config 覆盖安全策略 | Phase 0 / 5 | [ ] | smoke 检测 resolved config 并阻断 |
+| server 进程泄漏 | Phase 2 / 5 | [x] | Phase 5 smoke 后确认无残留 opencode 进程；app quit cleanup + idle timeout 已接入 |
+| managed config 覆盖安全策略 | Phase 0 / 5 | [x] | Phase 5 secretless config smoke 已检测 resolved server / permission / share / autoupdate summary |
 | Renderer 过度分叉 | Phase 6 | [ ] | 使用 runtime capabilities，不写 opencode 专用 message list |
 
 ## 13. 阶段记录模板

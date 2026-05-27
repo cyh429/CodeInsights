@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
 import {
+  applyOpencodeRuntimeConfigEnv,
   buildOpencodeConfig,
   buildOpencodeInlinePolicy,
   buildOpencodePermissionPolicy,
@@ -71,6 +72,40 @@ describe('opencode-config', () => {
       expect((await stat(join(written.configDir, name))).mode & 0o777).toBe(0o700)
     }
     expect(written.runtimeConfigHash).toStartWith('sha256:')
+  })
+
+  test('运行环境默认不注入 OPENCODE_CONFIG_DIR，避免 Phase 5 空 assets 目录卡住 server mutating API', async () => {
+    const rootDir = await mkdtemp(join(tmpdir(), 'codeinsights-opencode-config-'))
+    const built = buildOpencodeConfig({
+      modelId: 'anthropic/claude-sonnet',
+      agentName: 'build',
+      auth: { source: 'native' },
+      permissionMode: 'auto',
+      mcp: { mcp: {} },
+      opencodeVersion: '1.15.11',
+    })
+    const written = await writeOpencodeRuntimeConfig({ rootDir, built })
+
+    const defaultEnv = applyOpencodeRuntimeConfigEnv({
+      env: { PATH: '/usr/bin' },
+      configPath: written.configPath,
+      configDir: written.configDir,
+      inlinePolicyContent: written.inlinePolicyContent,
+    })
+    const configDirEnv = applyOpencodeRuntimeConfigEnv({
+      env: { PATH: '/usr/bin' },
+      configPath: written.configPath,
+      configDir: written.configDir,
+      inlinePolicyContent: written.inlinePolicyContent,
+      includeConfigDir: true,
+    })
+
+    expect(defaultEnv).toEqual({
+      PATH: '/usr/bin',
+      OPENCODE_CONFIG: written.configPath,
+      OPENCODE_CONFIG_CONTENT: written.inlinePolicyContent,
+    })
+    expect(configDirEnv.OPENCODE_CONFIG_DIR).toBe(written.configDir)
   })
 
   test('写入前拒绝 symlink 父路径', async () => {

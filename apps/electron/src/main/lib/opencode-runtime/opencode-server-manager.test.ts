@@ -49,7 +49,7 @@ describe('opencode-server-manager', () => {
     expect(starts).toBe(1)
     expect(first.state).toBe('healthy')
     expect(first.endpoint).toBe('http://127.0.0.1:4101')
-    expect(first.auth.password).toBe('server-password')
+    expect(first.auth?.password).toBe('server-password')
     expect(first.spawn.env.OPENCODE_SERVER_PASSWORD).toBe('server-password')
   })
 
@@ -77,6 +77,29 @@ describe('opencode-server-manager', () => {
       state: 'failed',
       lastError: 'boom [REDACTED]',
     })
+  })
+
+  test('authMode none 时不生成 Basic Auth secret', async () => {
+    const process = new FakeProcess()
+    const manager = new OpencodeServerManager({
+      processFactory: { start: () => process },
+      healthCheck: async () => ({ healthy: true, version: '1.15.11' }),
+      portAllocator: async () => 4105,
+      randomPassword: () => 'server-password',
+      authMode: 'none',
+    })
+    const key = createOpencodeServerKey({
+      workspaceId: 'workspace',
+      workingDirectory: '/repo',
+      authSourceHash: 'sha256:auth',
+      runtimeConfigHash: 'sha256:config',
+    })
+
+    const entry = await manager.ensure({ key, binaryPath: '/bin/opencode', cwd: '/repo', env: {} })
+
+    expect(entry.auth).toBeUndefined()
+    expect(entry.spawn.env.OPENCODE_SERVER_USERNAME).toBeUndefined()
+    expect(entry.spawn.env.OPENCODE_SERVER_PASSWORD).toBeUndefined()
   })
 
   test('stopAll 停止所有 server 并执行 cleanup', async () => {

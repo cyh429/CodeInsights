@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   buildOpencodeBasicAuthHeader,
+  createBasicAuthFetch,
   createOpencodeClientWrapper,
   redactOpencodeClientLog,
 } from './opencode-sdk-client'
@@ -47,5 +48,33 @@ describe('opencode-sdk-client', () => {
     expect(JSON.stringify(redacted)).not.toContain('sk-secret')
     expect(redacted.headers.Authorization).toBe('[REDACTED]')
     expect(redacted.body).toEqual({ apiKey: '[REDACTED]', prompt: 'hello' })
+  })
+
+  test('SDK fetch wrapper 注入 Basic Auth 且保留调用方 header', async () => {
+    const requests: Array<{ authorization?: string; trace?: string }> = []
+    const fetchWithAuth = createBasicAuthFetch({
+      auth: { username: 'opencode', password: 'server-password' },
+      fetchImpl: async (request) => {
+        const headers = request instanceof Request
+          ? request.headers
+          : new Headers()
+        requests.push({
+          authorization: headers.get('Authorization') ?? undefined,
+          trace: headers.get('X-CodeInsights-Trace') ?? undefined,
+        })
+        return new Response('{}', { status: 200 })
+      },
+    })
+
+    await fetchWithAuth(new Request('http://127.0.0.1:4101/session', {
+      method: 'POST',
+      headers: { 'X-CodeInsights-Trace': 'smoke' },
+      body: '{}',
+    }))
+
+    expect(requests).toEqual([{
+      authorization: buildOpencodeBasicAuthHeader('opencode', 'server-password'),
+      trace: 'smoke',
+    }])
   })
 })

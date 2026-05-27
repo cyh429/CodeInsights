@@ -1,6 +1,6 @@
 {
   "name": "@codeinsights/electron",
-  "version": "0.0.116",
+  "version": "0.0.117",
   "description": "CodeInsights next gen ai software with general agents - Electron App",
   "main": "dist/main.cjs",
   "author": {
@@ -15,10 +15,10 @@
     "dev:vite": "vite dev",
     "dev:kill": "bun run scripts/dev-kill.ts",
     "dev:electron": "bun run dev:kill && bun run build:main && bun run build:preload && bun run build:preview-preload && bun run build:resources && bun run scripts/sleep.ts 2 && concurrently -k -n main,preload,preview,app -c yellow,magenta,cyan,cyan \"bun run watch:main\" \"bun run watch:preload\" \"bun run watch:preview-preload\" \"bunx electronmon .\"",
-    "build:main": "esbuild src/main/index.ts --bundle --platform=node --format=cjs --outfile=dist/main.cjs --external:electron --external:@anthropic-ai/claude-agent-sdk --external:@openai/codex-sdk --external:@openai/codex",
+    "build:main": "esbuild src/main/index.ts --bundle --platform=node --format=cjs --outfile=dist/main.cjs --external:electron --external:@anthropic-ai/claude-agent-sdk --external:@openai/codex-sdk --external:@openai/codex --external:@opencode-ai/sdk --external:opencode-ai",
     "build:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --outfile=dist/preload.cjs --external:electron",
     "build:preview-preload": "esbuild src/preload/file-preview-preload.ts --bundle --platform=node --format=cjs --outfile=dist/file-preview-preload.cjs --external:electron",
-    "watch:main": "esbuild src/main/index.ts --bundle --platform=node --format=cjs --outfile=dist/main.cjs --external:electron --external:@anthropic-ai/claude-agent-sdk --external:@openai/codex-sdk --external:@openai/codex --watch=forever",
+    "watch:main": "esbuild src/main/index.ts --bundle --platform=node --format=cjs --outfile=dist/main.cjs --external:electron --external:@anthropic-ai/claude-agent-sdk --external:@openai/codex-sdk --external:@openai/codex --external:@opencode-ai/sdk --external:opencode-ai --watch=forever",
     "watch:preload": "esbuild src/preload/index.ts --bundle --platform=node --format=cjs --outfile=dist/preload.cjs --external:electron --watch=forever",
     "watch:preview-preload": "esbuild src/preload/file-preview-preload.ts --bundle --platform=node --format=cjs --outfile=dist/file-preview-preload.cjs --external:electron --watch=forever",
     "build:renderer": "vite build",
@@ -36,12 +36,15 @@
     "dist:fast": "bun run scripts/dist.ts --current-arch --dmg",
     "dist:debug": "bun run scripts/dist.ts --current-arch --verbose",
     "smoke:agent-codex": "bun run scripts/agent-codex-smoke.ts",
+    "smoke:agent-opencode": "bun run scripts/agent-opencode-smoke.ts",
     "smoke:agent-history-reload-ui": "bun run scripts/agent-history-reload-ui-smoke.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.2.123",
     "@openai/codex": "0.130.0",
-    "@openai/codex-sdk": "0.130.0"
+    "@openai/codex-sdk": "0.130.0",
+    "@opencode-ai/sdk": "1.15.11",
+    "opencode-ai": "1.15.11"
   },
   "optionalDependencies": {
     "@anthropic-ai/claude-agent-sdk-darwin-arm64": "0.2.123",
@@ -53,7 +56,19 @@
     "@openai/codex-linux-arm64": "npm:@openai/codex@0.130.0-linux-arm64",
     "@openai/codex-linux-x64": "npm:@openai/codex@0.130.0-linux-x64",
     "@openai/codex-win32-arm64": "npm:@openai/codex@0.130.0-win32-arm64",
-    "@openai/codex-win32-x64": "npm:@openai/codex@0.130.0-win32-x64"
+    "@openai/codex-win32-x64": "npm:@openai/codex@0.130.0-win32-x64",
+    "opencode-darwin-arm64": "1.15.11",
+    "opencode-darwin-x64": "1.15.11",
+    "opencode-darwin-x64-baseline": "1.15.11",
+    "opencode-linux-arm64": "1.15.11",
+    "opencode-linux-arm64-musl": "1.15.11",
+    "opencode-linux-x64": "1.15.11",
+    "opencode-linux-x64-baseline": "1.15.11",
+    "opencode-linux-x64-baseline-musl": "1.15.11",
+    "opencode-linux-x64-musl": "1.15.11",
+    "opencode-windows-arm64": "1.15.11",
+    "opencode-windows-x64": "1.15.11",
+    "opencode-windows-x64-baseline": "1.15.11"
   },
   "devDependencies": {
     "@emoji-mart/data": "^1.2.1",

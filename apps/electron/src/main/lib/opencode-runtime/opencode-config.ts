@@ -42,6 +42,14 @@ export interface WriteOpencodeRuntimeConfigResult extends BuildOpencodeConfigRes
   configDir: string
 }
 
+export interface ApplyOpencodeRuntimeConfigEnvInput {
+  env: Record<string, string>
+  configPath: string
+  configDir: string
+  inlinePolicyContent: string
+  includeConfigDir?: boolean
+}
+
 export interface OpencodeConfig {
   $schema: string
   model: string
@@ -271,6 +279,16 @@ export async function writeOpencodeRuntimeConfig(
     configPath,
     configDir,
   }
+}
+
+export function applyOpencodeRuntimeConfigEnv(input: ApplyOpencodeRuntimeConfigEnvInput): Record<string, string> {
+  const env = { ...input.env }
+  env.OPENCODE_CONFIG = input.configPath
+  env.OPENCODE_CONFIG_CONTENT = input.inlinePolicyContent
+  if (input.includeConfigDir) {
+    env.OPENCODE_CONFIG_DIR = input.configDir
+  }
+  return env
 }
 
 function buildProviderConfig(input: BuildOpencodeConfigInput): OpencodeProviderConfig | null {

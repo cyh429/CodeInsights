@@ -14,6 +14,24 @@ import {
   OpencodeEventAdapter,
   type OpencodeRawEvent,
 } from './opencode-event-adapter'
+import {
+  applyOpencodeRuntimeConfigEnv,
+  buildOpencodeBaseEnv,
+  buildOpencodeConfig,
+  buildOpencodeMcpConfigFromWorkspace,
+  createOpencodeAuthState,
+  createOpencodeClientWrapper,
+  createOpencodeServerKey,
+  detectOpencodeBinaryVersion,
+  mergeOpencodeScopedSecretEnv,
+  OpencodeServerManager,
+  parseOpencodeModel,
+  resolveOpencodeCliPath,
+  writeOpencodeRuntimeConfig,
+  type OpencodeClientWrapper,
+  type OpencodeProviderAuthConfig,
+  type OpencodeServerEntry,
+} from '../opencode-runtime'
 import type {
   CodingAgentRuntime,
   CodingAgentRuntimeCapabilities,
@@ -32,6 +50,12 @@ export interface OpencodeRuntimeServerLease {
   key: string
   endpoint: string
   version?: string
+  auth?: {
+    username: string
+    password: string
+  }
+  model?: string
+  agent?: string
 }
 
 export interface OpencodeRuntimeServerManagerLike {
@@ -49,6 +73,7 @@ export interface OpencodeRuntimeServerEnsureInput {
   agent?: string
   authSource?: string
   runtimeHash?: string
+  permissionMode?: CodeInsightsPermissionMode
 }
 
 export interface OpencodeRuntimeAbortInput {
@@ -87,8 +112,8 @@ const OPENCODE_AGENT_RUNTIME_CAPABILITIES: CodingAgentRuntimeCapabilities = {
   supportsAbort: true,
   supportsQueueMessage: false,
   supportsSetPermissionMode: false,
-  supportsPerToolPermission: false,
-  supportsServerStatus: false,
+  supportsPerToolPermission: true,
+  supportsServerStatus: true,
   supportsModelRefresh: false,
   authSources: ['native', 'channel'],
 }
@@ -100,8 +125,8 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
   private readonly client: OpencodeRuntimeClientLike
 
   constructor(private readonly deps: OpencodeAgentRuntimeDeps = {}) {
-    this.serverManager = deps.serverManager ?? new MockOpencodeServerManager()
-    this.client = deps.client ?? new MockOpencodeRuntimeClient(deps.now)
+    this.serverManager = deps.serverManager ?? new DefaultOpencodeRuntimeServerManager()
+    this.client = deps.client ?? new DefaultOpencodeRuntimeClient()
   }
 
   getCapabilities(): CodingAgentRuntimeCapabilities {
@@ -195,6 +220,7 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
         agent: input.agent,
         authSource: input.authSource,
         runtimeHash: input.runtimeHash,
+        permissionMode: input.permissionMode,
       })
 
       if (abortController.signal.aborted) {
@@ -319,6 +345,125 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
   }
 }
 
+class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManagerLike {
+  private readonly manager = new OpencodeServerManager({ idleTimeoutMs: 5 * 60 * 1000 })
+
+  async ensure(input: OpencodeRuntimeServerEnsureInput): Promise<OpencodeRuntimeServerLease> {
+    const binary = resolveOpencodeCliPath({
+      allowSystemPathFallback: process.env.CODEINSIGHTS_AGENT_OPENCODE_ALLOW_SYSTEM_PATH === '1',
+    })
+    const binaryVersion = await detectOpencodeBinaryVersion(binary)
+    const authState = await resolveOpencodeRuntimeAuth(input)
+    const mcp = buildOpencodeMcpConfigFromWorkspace({ servers: {} })
+    const providerAuth = await toOpencodeProviderAuthConfig(authState, input)
+    const builtConfig = buildOpencodeConfig({
+      modelId: normalizeOpencodeConfigModel(input.model, authState.source),
+      agentName: input.agent ?? 'build',
+      auth: providerAuth,
+      permissionMode: input.permissionMode ?? 'auto',
+      mcp: mcp.config,
+      opencodeVersion: binaryVersion.version,
+    })
+    const writtenConfig = await writeOpencodeRuntimeConfig({
+      rootDir: input.workingDirectory,
+      built: builtConfig,
+    })
+    const baseEnv = buildOpencodeBaseEnv()
+    const env = applyOpencodeRuntimeConfigEnv({
+      env: mergeOpencodeScopedSecretEnv(baseEnv, {
+        ...authState.env,
+        ...mcp.env,
+      }),
+      configPath: writtenConfig.configPath,
+      configDir: writtenConfig.configDir,
+      inlinePolicyContent: writtenConfig.inlinePolicyContent,
+      includeConfigDir: process.env.CODEINSIGHTS_AGENT_OPENCODE_ENABLE_CONFIG_DIR === '1',
+    })
+
+    const key = createOpencodeServerKey({
+      workspaceId: input.sessionId,
+      workingDirectory: input.workingDirectory,
+      authSourceHash: authState.authSourceHash,
+      runtimeConfigHash: writtenConfig.runtimeConfigHash,
+    })
+    const entry = await this.manager.ensure({
+      key,
+      binaryPath: binaryVersion.path,
+      cwd: input.workingDirectory,
+      env,
+    })
+    return toRuntimeServerLease(entry, {
+      model: writtenConfig.config.model,
+      agent: input.agent,
+    })
+  }
+
+  release(lease: OpencodeRuntimeServerLease): void {
+    this.manager.release(lease.key)
+  }
+
+  dispose(): void {
+    this.manager.dispose()
+  }
+}
+
+class DefaultOpencodeRuntimeClient implements OpencodeRuntimeClientLike {
+  async *stream(input: OpencodeRuntimeClientStreamInput): AsyncIterable<OpencodeRawEvent> {
+    const client = createOpencodeClientWrapper({
+      baseUrl: input.server.endpoint,
+      auth: input.server.auth,
+      timeoutMs: 30_000,
+    })
+    const eventController = new AbortController()
+    let externalSessionId = input.externalSessionId
+    const onAbort = (): void => {
+      eventController.abort()
+      if (externalSessionId) {
+        void abortOpencodeSession(client, externalSessionId, input.workingDirectory)
+      }
+    }
+    input.signal.addEventListener('abort', onAbort, { once: true })
+
+    try {
+      const eventStream = await client.subscribeEvents({
+        directory: input.workingDirectory,
+        signal: eventController.signal,
+        maxRetryAttempts: 0,
+      })
+
+      if (!externalSessionId) {
+        const session = await client.createSession({ directory: input.workingDirectory })
+        externalSessionId = session.id
+        yield createSessionCreatedEvent(session, input.workingDirectory)
+      }
+
+      if (input.signal.aborted) {
+        await abortOpencodeSession(client, externalSessionId, input.workingDirectory)
+        return
+      }
+
+      await client.promptAsync({
+        sessionId: externalSessionId,
+        prompt: input.prompt,
+        model: input.server.model ?? input.model,
+        agent: input.server.agent ?? input.agent,
+        directory: input.workingDirectory,
+      })
+
+      for await (const event of eventStream) {
+        if (input.signal.aborted) {
+          await abortOpencodeSession(client, externalSessionId, input.workingDirectory)
+          return
+        }
+        yield event as unknown as OpencodeRawEvent
+      }
+    } finally {
+      input.signal.removeEventListener('abort', onAbort)
+      eventController.abort()
+    }
+  }
+}
+
 class MockOpencodeServerManager implements OpencodeRuntimeServerManagerLike {
   async ensure(input: OpencodeRuntimeServerEnsureInput): Promise<OpencodeRuntimeServerLease> {
     return {
@@ -327,6 +472,107 @@ class MockOpencodeServerManager implements OpencodeRuntimeServerManagerLike {
       version: 'mock',
     }
   }
+}
+
+async function resolveOpencodeRuntimeAuth(input: OpencodeRuntimeServerEnsureInput): Promise<ReturnType<typeof createOpencodeAuthState>> {
+  if (input.authSource === 'channel' || input.channelId) {
+    if (!input.channelId) {
+      throw new Error('opencode channel auth 缺少渠道 ID')
+    }
+    const { decryptApiKey, getChannelById } = await import('../channel-manager')
+    const channel = getChannelById(input.channelId)
+    if (!channel) {
+      throw new Error(`未找到 opencode 渠道: ${input.channelId}`)
+    }
+    if (!channel.enabled) {
+      throw new Error(`opencode 渠道已禁用: ${channel.name}`)
+    }
+    const modelId = normalizeOpencodeChannelModel(input.model)
+    return createOpencodeAuthState({
+      source: 'channel',
+      channelId: input.channelId,
+      providerId: channel.provider,
+      baseUrl: channel.baseUrl || undefined,
+      modelId,
+      apiKey: decryptApiKey(input.channelId),
+    })
+  }
+
+  return createOpencodeAuthState({ source: 'native', modelId: input.model })
+}
+
+async function toOpencodeProviderAuthConfig(
+  authState: ReturnType<typeof createOpencodeAuthState>,
+  input: OpencodeRuntimeServerEnsureInput,
+): Promise<OpencodeProviderAuthConfig> {
+  if (authState.source !== 'channel') return { source: 'native' }
+  if (!input.channelId || !authState.apiKeyEnvName) {
+    throw new Error('opencode channel auth 状态不完整')
+  }
+  const { getChannelById } = await import('../channel-manager')
+  const channel = getChannelById(input.channelId)
+  if (!channel) {
+    throw new Error(`未找到 opencode 渠道: ${input.channelId}`)
+  }
+  return {
+    source: 'channel',
+    providerId: channel.provider,
+    baseUrl: channel.baseUrl || undefined,
+    apiKeyEnvName: authState.apiKeyEnvName,
+  }
+}
+
+function normalizeOpencodeConfigModel(model: string | undefined, authSource: 'native' | 'channel' | 'smoke'): string {
+  if (authSource === 'channel') return normalizeOpencodeChannelModel(model)
+  return normalizeOptionalModel(model) ?? 'anthropic/claude-sonnet-4-5'
+}
+
+function normalizeOpencodeChannelModel(model: string | undefined): string {
+  const trimmed = normalizeOptionalModel(model)
+  if (!trimmed) return 'gpt-5.1-codex'
+  const parsed = parseOpencodeModel(trimmed)
+  return parsed.modelID
+}
+
+function toRuntimeServerLease(
+  entry: OpencodeServerEntry,
+  options: { model: string; agent?: string },
+): OpencodeRuntimeServerLease {
+  return {
+    key: entry.key,
+    endpoint: entry.endpoint,
+    version: entry.version,
+    auth: entry.auth,
+    model: options.model,
+    agent: options.agent,
+  }
+}
+
+function createSessionCreatedEvent(
+  session: { id: string; directory?: string; title?: string; version?: string },
+  workingDirectory: string,
+): OpencodeRawEvent {
+  return {
+    id: `evt-${session.id}-created`,
+    type: 'session.created',
+    properties: {
+      info: {
+        id: session.id,
+        directory: session.directory ?? workingDirectory,
+        title: session.title ?? 'CodeInsights opencode session',
+        version: session.version,
+        time: { created: Date.now(), updated: Date.now() },
+      },
+    },
+  }
+}
+
+async function abortOpencodeSession(
+  client: OpencodeClientWrapper,
+  sessionId: string,
+  directory: string,
+): Promise<void> {
+  await client.abortSession({ sessionId, directory }).catch(() => false)
 }
 
 class MockOpencodeRuntimeClient implements OpencodeRuntimeClientLike {

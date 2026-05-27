@@ -229,6 +229,7 @@ opencode 支持 JSON / JSONC 配置，主要来源按优先级合并：
 - 配置是合并，不是替换。
 - CodeInsights 应生成可审计的 secretless config file，并用 `OPENCODE_CONFIG` 指向它。
 - CodeInsights 生成的 agents / commands / modes / plugins 等运行资产应放入私有目录，并用 `OPENCODE_CONFIG_DIR` 指向它，避免污染用户项目 `.opencode/`。Phase 0 已确认 `OPENCODE_CONFIG_DIR` 也会加载目录下的 `opencode.json` / `opencode.jsonc`，因此该目录本身也必须按 `0700` 管理，且不能混入含 secret 的 config 文件。
+- Phase 5 实测补充：`opencode-ai@1.15.11` 在 `OPENCODE_CONFIG_DIR` 指向仅包含空 `agents` / `commands` / `plugins` / `skills` / `tools` 目录时，`POST /session` 等 mutating API 可能卡住。当前实现仍生成私有 config-dir，但默认不注入 `OPENCODE_CONFIG_DIR`；需要 assets / MCP 阶段再通过 `CODEINSIGHTS_AGENT_OPENCODE_ENABLE_CONFIG_DIR=1` 或 `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 显式验收后启用。
 - CodeInsights 的强制安全策略应通过 `OPENCODE_CONFIG_CONTENT` 注入到最高普通优先级，防止项目 config 放宽 permission、server、share 等边界；系统级 managed settings 仍可能覆盖它，smoke 需要检测并报告。
 - `OPENCODE_CONFIG_CONTENT` 不得包含 secret。
 - `{env:VAR}` 替换后的真实值会出现在 resolved config/provider API 响应里；`OpencodeServerManager` 和诊断 IPC 只能记录脱敏摘要，不能把 `/config`、`/provider`、`/config/providers` 原样持久化。
@@ -612,8 +613,9 @@ opencode serve --hostname 127.0.0.1 --port <free-port>
 OPENCODE_SERVER_USERNAME=opencode
 OPENCODE_SERVER_PASSWORD=<random-32-byte-url-safe>
 OPENCODE_CONFIG=<generated-secretless-config-path>
-OPENCODE_CONFIG_DIR=<generated-opencode-config-dir>
 OPENCODE_CONFIG_CONTENT=<secretless-high-priority-policy-json>
+# Phase 7 assets/MCP 验收通过后再显式启用：
+# OPENCODE_CONFIG_DIR=<generated-opencode-config-dir>
 ```
 
 安全要求：

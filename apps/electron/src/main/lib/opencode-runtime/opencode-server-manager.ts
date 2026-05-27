@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { createServer } from 'node:net'
-import { redactSecretText, type OpencodeServerAuth } from './opencode-sdk-client'
+import { createOpencodeClientWrapper, redactSecretText, type OpencodeServerAuth } from './opencode-sdk-client'
 
 export type OpencodeServerState =
   | 'idle'
@@ -29,7 +29,7 @@ export interface OpencodeServerProcessFactory {
 
 export interface OpencodeHealthCheckInput {
   endpoint: string
-  auth: OpencodeServerAuth
+  auth?: OpencodeServerAuth
 }
 
 export interface OpencodeHealthCheckResult {
@@ -46,6 +46,7 @@ export interface OpencodeServerManagerOptions {
   randomPassword?: () => string
   healthTimeoutMs?: number
   idleTimeoutMs?: number
+  authMode?: 'basic' | 'none'
 }
 
 export interface OpencodeServerEnsureInput {
@@ -61,7 +62,7 @@ export interface OpencodeServerEntry {
   state: Exclude<OpencodeServerState, 'idle'>
   endpoint: string
   port: number
-  auth: OpencodeServerAuth
+  auth?: OpencodeServerAuth
   process: OpencodeManagedProcess
   spawn: OpencodeServerProcessFactoryStartInput
   version?: string
@@ -103,6 +104,7 @@ export class OpencodeServerManager {
   private readonly randomPassword: () => string
   private readonly healthTimeoutMs: number
   private readonly idleTimeoutMs: number
+  private readonly authMode: 'basic' | 'none'
   private readonly entries = new Map<string, OpencodeServerEntry>()
   private readonly statuses = new Map<string, OpencodeServerStatus>()
   private readonly ensurePromises = new Map<string, Promise<OpencodeServerEntry>>()
@@ -114,6 +116,7 @@ export class OpencodeServerManager {
     this.randomPassword = options.randomPassword ?? randomServerPassword
     this.healthTimeoutMs = options.healthTimeoutMs ?? 5000
     this.idleTimeoutMs = options.idleTimeoutMs ?? 0
+    this.authMode = options.authMode ?? 'basic'
   }
 
   async ensure(input: OpencodeServerEnsureInput): Promise<OpencodeServerEntry> {
@@ -152,7 +155,7 @@ export class OpencodeServerManager {
     this.clearIdleTimer(entry)
     entry.state = 'stopping'
     this.statuses.set(key, toStatus(entry))
-    entry.process.kill('SIGTERM')
+    await terminateProcess(entry.process)
     await entry.cleanup?.()
     entry.state = 'stopped'
     entry.updatedAt = Date.now()
@@ -162,6 +165,10 @@ export class OpencodeServerManager {
 
   async stopAll(): Promise<void> {
     await Promise.all([...this.entries.keys()].map((key) => this.stop(key)))
+  }
+
+  dispose(): void {
+    void this.stopAll()
   }
 
   release(key: string): void {
@@ -176,10 +183,12 @@ export class OpencodeServerManager {
   private async startServer(input: OpencodeServerEnsureInput): Promise<OpencodeServerEntry> {
     const port = await this.portAllocator()
     const endpoint = `http://127.0.0.1:${port}`
-    const auth: OpencodeServerAuth = {
-      username: 'opencode',
-      password: this.randomPassword(),
-    }
+    const auth: OpencodeServerAuth | undefined = this.authMode === 'basic'
+      ? {
+        username: 'opencode',
+        password: this.randomPassword(),
+      }
+      : undefined
     const args = ['serve', '--hostname', '127.0.0.1', '--port', String(port)]
     const spawnInput: OpencodeServerProcessFactoryStartInput = {
       binaryPath: input.binaryPath,
@@ -187,8 +196,12 @@ export class OpencodeServerManager {
       cwd: input.cwd,
       env: {
         ...input.env,
-        OPENCODE_SERVER_USERNAME: auth.username,
-        OPENCODE_SERVER_PASSWORD: auth.password,
+        ...(auth
+          ? {
+            OPENCODE_SERVER_USERNAME: auth.username,
+            OPENCODE_SERVER_PASSWORD: auth.password,
+          }
+          : {}),
       },
     }
 
@@ -208,11 +221,7 @@ export class OpencodeServerManager {
     this.statuses.set(input.key, toStatus(entry))
 
     try {
-      const health = await withTimeout(
-        this.healthCheck({ endpoint, auth }),
-        this.healthTimeoutMs,
-        'opencode server health check timeout',
-      )
+      const health = await withTimeout(this.waitForHealthy({ endpoint, auth }), this.healthTimeoutMs, 'opencode server health check timeout')
       if (!health.healthy) {
         throw new Error('health check returned unhealthy')
       }
@@ -227,7 +236,7 @@ export class OpencodeServerManager {
       entry.lastError = message
       entry.updatedAt = Date.now()
       this.statuses.set(input.key, toStatus(entry))
-      entry.process.kill('SIGTERM')
+      await terminateProcess(entry.process)
       await input.cleanup?.()
       this.entries.delete(input.key)
       throw new Error(`opencode server 启动失败: ${message}`)
@@ -239,21 +248,60 @@ export class OpencodeServerManager {
     clearTimeout(entry.idleTimer)
     entry.idleTimer = undefined
   }
+
+  private async waitForHealthy(input: OpencodeHealthCheckInput): Promise<OpencodeHealthCheckResult> {
+    let lastError: unknown
+    while (true) {
+      try {
+        const health = await this.healthCheck(input)
+        if (health.healthy) return health
+        lastError = new Error('health check returned unhealthy')
+      } catch (error) {
+        lastError = error
+        if (!isRetryableHealthError(error)) {
+          throw error
+        }
+      }
+      await sleep(100)
+      if (lastError && !isRetryableHealthError(lastError)) throw lastError
+    }
+  }
 }
 
 const defaultProcessFactory: OpencodeServerProcessFactory = {
   start(input) {
-    return spawn(input.binaryPath, input.args, {
+    const child = spawn(input.binaryPath, input.args, {
       cwd: input.cwd,
       env: input.env,
       stdio: 'pipe',
       windowsHide: true,
     }) as ChildProcessWithoutNullStreams
+    drainChildOutput(child.stdout, 'stdout')
+    drainChildOutput(child.stderr, 'stderr')
+    return child
   },
 }
 
-async function defaultHealthCheck(): Promise<OpencodeHealthCheckResult> {
-  throw new Error('opencode healthCheck 尚未配置')
+async function defaultHealthCheck(input: OpencodeHealthCheckInput): Promise<OpencodeHealthCheckResult> {
+  return await createOpencodeClientWrapper({
+    baseUrl: input.endpoint,
+    auth: input.auth,
+    timeoutMs: 1000,
+  }).getHealth()
+}
+
+function drainChildOutput(stream: NodeJS.ReadableStream, label: 'stdout' | 'stderr'): void {
+  let buffered = ''
+  stream.setEncoding?.('utf-8')
+  stream.on('data', (chunk: string | Buffer) => {
+    buffered += redactSecretText(String(chunk))
+    if (buffered.length > 4096) {
+      buffered = buffered.slice(-4096)
+    }
+  })
+  stream.on('error', (error) => {
+    console.warn(`[opencode Server] ${label} 读取失败: ${redactSecretText(error instanceof Error ? error.message : String(error))}`)
+  })
 }
 
 function toStatus(entry: OpencodeServerEntry): OpencodeServerStatus {
@@ -302,4 +350,34 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
       },
     )
   })
+}
+
+function isRetryableHealthError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /ECONNREFUSED|ECONNRESET|Unable to connect|fetch failed|Failed to fetch|connect|aborted|AbortError/i.test(message)
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function terminateProcess(process: OpencodeManagedProcess): Promise<void> {
+  process.kill('SIGTERM')
+  if (!isEventedProcess(process)) return
+  const exited = await new Promise<boolean>((resolve) => {
+    const timer = setTimeout(() => resolve(false), 1500)
+    process.once('exit', () => {
+      clearTimeout(timer)
+      resolve(true)
+    })
+  })
+  if (!exited) {
+    process.kill('SIGKILL')
+  }
+}
+
+function isEventedProcess(process: OpencodeManagedProcess): process is OpencodeManagedProcess & {
+  once(event: 'exit', listener: () => void): void
+} {
+  return typeof (process as { once?: unknown }).once === 'function'
 }
