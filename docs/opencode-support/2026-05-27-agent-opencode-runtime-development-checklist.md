@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 1 已完成，业务 runtime core 未开始
+状态：Phase 2 已完成，event adapter 未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 1 后状态同步完成时
+更新时间：2026-05-27，Phase 2 runtime core 完成时
 
 当前结论：
 
@@ -45,7 +45,9 @@
 - [x] Phase 1 共享类型与 settings 契约已完成：shared/runtime events/settings/IPC/runtime selection 均可表达 `opencode`，且未进入 runtime core/server 实现。
 - [x] Phase 1 已单独提交：`f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`。
 - [x] Phase 1 后状态同步已单独提交：`a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
-- [ ] Phase 2 opencode runtime core 未开始。
+- [x] Phase 1 最新启动基线已固化：`5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`。
+- [x] Phase 2 opencode runtime core 已完成：binary/env/auth/config/MCP/server manager/client wrapper 均有不依赖真实模型的单测覆盖。
+- [x] Phase 2 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.114`。
 - [ ] Phase 3 event adapter 未开始。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
 - [ ] Phase 5 真实 opencode server 集成未开始。
@@ -56,7 +58,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新基线为 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`，或其后的 Phase 2 开发提交。
+- 预期最新基线为本轮 Phase 2 提交及其后的状态同步提交。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -64,9 +66,9 @@
 
 下一步入口：
 
-1. 确认 Phase 1 与 Phase 1 后状态同步均已提交，预期至少看到 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
-2. 进入 Phase 2，开始 opencode runtime core：binary/env/auth/config/server/client 基础设施。
-3. 不要直接跳到 renderer UI 或真实模型验收；Phase 2 先完成不依赖真实模型的 core 单测。
+1. 确认 Phase 2 与 Phase 2 后状态同步均已提交。
+2. 进入 Phase 3，开始 opencode event adapter 与 fixtures。
+3. 不要直接跳到 renderer UI 或真实模型验收；Phase 3 先完成 event adapter 纯状态机与 fixture 单测。
 
 ## 0.2 当前完成/未完成总览
 
@@ -79,7 +81,7 @@
 | Next-session prompt | [x] | 已补齐下次启动可复制提示词 |
 | Phase 0 | [x] | 依赖 spike 与基线冻结已完成 |
 | Phase 1 | [x] | shared/settings/IPC 契约已完成，未实现 runtime core |
-| Phase 2 | [ ] | opencode binary/env/config/server/client core |
+| Phase 2 | [x] | opencode binary/env/config/server/client core |
 | Phase 3 | [ ] | event adapter 与 fixtures |
 | Phase 4 | [ ] | runtime mock、registry、orchestrator routing |
 | Phase 5 | [ ] | 真实 `opencode serve` 集成 |
@@ -297,28 +299,28 @@ apps/electron/src/main/lib/opencode-runtime/
 
 任务：
 
-- [ ] 实现 `resolveOpencodeCliPath()`，支持 custom path、packaged path、dev node_modules path。
-- [ ] 实现 binary version 检测和 source 标记：`bundled` / `workspace` / `custom` / `system-path`。
-- [ ] 实现 env allowlist，保留必要 `PATH` / `HOME` / `SHELL`，过滤危险变量。
-- [ ] 实现 channel secret env scoped name 生成，不输出 secret。
-- [ ] 实现 native auth / channel auth / smoke auth source fingerprint。
-- [ ] 实现 `authSourceHash`，只存 secret hash 前缀。
-- [ ] 实现 secretless config builder。
-- [ ] 实现 `OPENCODE_CONFIG_CONTENT` inline policy builder。
-- [ ] 实现 `OPENCODE_CONFIG_DIR` 私有 agents / commands / plugins / skills / tools 目录生成。
-- [ ] 实现 atomic write，目录 `0700`，文件 `0600`。
-- [ ] 实现 symlink / realpath 安全检查。
-- [ ] 实现 provider config builder：native auth、channel auth、custom OpenAI-compatible provider。
-- [ ] 实现 `enabled_providers` 生成策略。
-- [ ] 实现 permission policy builder。
-- [ ] 实现 MCP config builder，支持 local / remote / OAuth placeholder。
-- [ ] 实现 MCP name sanitize 和冲突检测。
-- [ ] 实现 `OpencodeServerManager` 状态机：idle / starting / healthy / degraded / stopping / stopped / failed。
-- [ ] 实现 server key、并发 ensure promise、health timeout、Basic Auth、idle close、app quit cleanup。
-- [ ] 实现 `createOpencodeClient` wrapper，注入 Basic Auth fetch、timeout、错误分类、redacted request logs。
-- [ ] 单测覆盖 config 不含 secret。
-- [ ] 单测覆盖 env 不能覆盖 Git guard / proxy / OPENCODE / CODEINSIGHTS 保留变量。
-- [ ] 单测覆盖 server lifecycle fake executor。
+- [x] 实现 `resolveOpencodeCliPath()`，支持 custom path、packaged path、dev node_modules path。
+- [x] 实现 binary version 检测和 source 标记：`bundled` / `workspace` / `custom` / `system-path`。
+- [x] 实现 env allowlist，保留必要 `PATH` / `HOME` / `SHELL`，过滤危险变量。
+- [x] 实现 channel secret env scoped name 生成，不输出 secret。
+- [x] 实现 native auth / channel auth / smoke auth source fingerprint。
+- [x] 实现 `authSourceHash`，只存 secret hash 前缀。
+- [x] 实现 secretless config builder。
+- [x] 实现 `OPENCODE_CONFIG_CONTENT` inline policy builder。
+- [x] 实现 `OPENCODE_CONFIG_DIR` 私有 agents / commands / plugins / skills / tools 目录生成。
+- [x] 实现 atomic write，目录 `0700`，文件 `0600`。
+- [x] 实现 symlink / realpath 安全检查。
+- [x] 实现 provider config builder：native auth、channel auth、custom OpenAI-compatible provider。
+- [x] 实现 `enabled_providers` 生成策略。
+- [x] 实现 permission policy builder。
+- [x] 实现 MCP config builder，支持 local / remote / OAuth placeholder。
+- [x] 实现 MCP name sanitize 和冲突检测。
+- [x] 实现 `OpencodeServerManager` 状态机：idle / starting / healthy / degraded / stopping / stopped / failed。
+- [x] 实现 server key、并发 ensure promise、health timeout、Basic Auth、idle close、app quit cleanup。
+- [x] 实现 `createOpencodeClient` wrapper，注入 Basic Auth fetch、timeout、错误分类、redacted request logs。
+- [x] 单测覆盖 config 不含 secret。
+- [x] 单测覆盖 env 不能覆盖 Git guard / proxy / OPENCODE / CODEINSIGHTS 保留变量。
+- [x] 单测覆盖 server lifecycle fake executor。
 
 验证：
 
@@ -330,14 +332,28 @@ git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/pa
 
 退出标准：
 
-- [ ] 不启动真实模型即可通过 core 单测。
-- [ ] 所有 redacted summary 不含 API key、Basic Auth password、MCP token。
-- [ ] server manager fake 测试覆盖启动、失败、停止、清理。
+- [x] 不启动真实模型即可通过 core 单测。
+- [x] 所有 redacted summary 不含 API key、Basic Auth password、MCP token。
+- [x] server manager fake 测试覆盖启动、失败、停止、清理。
 - [ ] Phase 2 单独提交完成。
 
 回滚点：
 
 - 如果 package binary 解析不稳定，保留 custom path 开关和 clear error，不进入 Phase 5。
+
+### 4.1 Phase 2 验证记录
+
+- 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`。
+- 改动范围：新增 `apps/electron/src/main/lib/opencode-runtime/**` core 模块与测试；`apps/electron/package.json` patch 版本提升到 `0.0.114`；同步本清单、support README、next-session prompt 和 `tasks/todo.md`。
+- 完成内容：binary/env/auth/config/MCP/server manager/client wrapper 基础设施；全部使用本地接口和 fake executor，不依赖真实模型、真实 opencode server 或未安装 SDK。
+- 安全结果：长期 config、inline policy、redacted summary 均不包含 API key、Bearer token、Basic Auth password、MCP secret；MCP 与 channel secret 只经 scoped env name 间接注入。
+- 验证通过：
+  - `bun test apps/electron/src/main/lib/opencode-runtime`
+  - `bun run --filter='@codeinsights/electron' typecheck`
+  - `git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/package.json electron-builder.yml tasks/todo.md docs/opencode-support`
+  - opencode support Markdown code fence 与相对链接检查
+- 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai`，未修改根 `README.md` / `AGENTS.md`，未进入 renderer UI、event adapter 完整映射、orchestrator routing 或真实模型验收，未修改 `electron-builder.yml`。
+- 完成提交：本轮 Phase 2 提交后回填真实提交号。
 
 ## 5. Phase 3：opencode Event Adapter
 
