@@ -1,5 +1,23 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime 方案深化计划
+
+范围确认：本轮继续完善 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`，目标是把原方案从总体设计推进到更可执行的工程规格；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装新依赖，不读取或输出凭证。
+
+- [x] 复核当前 HEAD、工作树、`tasks/lessons.md` 和既有 opencode 方案，确认只做文档增量优化。
+- [x] 重新核对 opencode 官方 Server / SDK / Config / Permissions / MCP / Providers / CLI 文档和 npm 包信息，补齐可能变化或未写细的契约。
+- [x] 深化方案文档：补充设计原则、运行时绑定不变量、server 生命周期、配置/secret 策略、Provider/MCP/Permission 映射、事件去重、错误处理、测试矩阵和 Phase 完成定义。
+- [x] 运行 Markdown code fence、相对链接、`git diff --check`、旧域名和行尾空白验证。
+- [x] 在本节追加 Review，并按阶段纪律提交文档优化成果。
+
+## 2026-05-27 Agent opencode Runtime 方案深化 Review
+
+- 已确认本轮基线为 `094d911d docs(agent): 完成 opencode Runtime 接入方案`，工作范围只包含 opencode support 方案文档与 `tasks/todo.md`。
+- 已重新核对 opencode 官方 Server / SDK / Config / Permissions / MCP / Providers / CLI 文档：补齐 server permission body `{ response, remember? }`、SDK client 自定义 fetch / event stream、Config `{env:VAR}` 变量替换、OpenAI-compatible provider `options.apiKey` env placeholder、MCP local/remote/OAuth 细节和 permission defaults。
+- 已深化主方案：新增工程原则、runtime 绑定不变量、未来多 runtime 中立表、runtime 内部边界、manifest、settings normalization、诊断 IPC、server lifecycle 状态机、server key 重启策略、原子写入/hash、私有 config dir、auth source hash、provider allowlist、permission policy JSON、MCP 安全规则、event adapter 状态模型、去重/补读/错误分类、run/resume/stop/concurrency 算法、binary 解析顺序、打包与升级策略、UI 细节、Phase 完成定义、真实验收阶段、smoke summary、最终验收清单和后续演进方向。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖，未读取或输出凭证。
+- 验证通过：Markdown code fence 检查；文档相对链接检查；`git diff --check -- docs/opencode-support tasks/todo.md`；opencode 旧域名与行尾空白检查。
+
 ## 2026-05-27 Agent opencode Runtime 开发方案文档计划
 
 范围确认：本轮只进行调研和方案文档编写，在 `docs/opencode-support/` 下新增 opencode runtime 接入开发方案；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装新依赖，不读取或输出任何凭证。
@@ -20,7 +38,7 @@
 - 已生成开发方案：结论明确采用 managed `opencode serve` + `@opencode-ai/sdk` client 作为主路径，`opencode run --format json` 仅作为 smoke/fallback；文档覆盖目标、非目标、当前项目差距、opencode 调研、架构、类型设置、server 管理、配置、auth/provider、permission、MCP、event adapter、run 算法、打包、UI、分阶段实施、smoke、风险与参考来源。
 - 已补充复核：官方文档 canonical 域名为 `opencode.ai/docs/*`；`opencode-ai@1.15.11` 的 npm `bin` 为 `opencode -> bin/opencode.exe`，optionalDependencies 包含 darwin/linux/windows 与 baseline/musl 变体，后续实现仍需安装后实测 binary / `.asar.unpacked` 路径。
 - 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖，未读取或输出凭证。
-- 验证通过：Markdown code fence 检查；文档相对链接检查；`git diff --check -- docs/opencode-support tasks/todo.md`；新增文档与任务文件 trailing whitespace 检查；`dev.opencode` 旧域名残留检查。
+- 验证通过：Markdown code fence 检查；文档相对链接检查；`git diff --check -- docs/opencode-support tasks/todo.md`；新增文档与任务文件 trailing whitespace 检查；opencode 旧域名残留检查。
 
 ## 2026-05-27 Agent Codex Runtime 最新状态与下次启动提示词同步计划
 
