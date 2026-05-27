@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime 开发方案文档计划
+
+范围确认：本轮只进行调研和方案文档编写，在 `docs/opencode-support/` 下新增 opencode runtime 接入开发方案；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装新依赖，不读取或输出任何凭证。
+
+- [x] 确认仓库状态、最新提交和本轮文档边界，避免纳入无关改动。
+- [x] 复习 `tasks/lessons.md` 与现有 `docs/codex-support`、`docs/agent-refactor` 资料，抽取可复用的 runtime registry / event contract / smoke 验证模式。
+- [x] 阅读当前 Agent runtime 关键代码：runtime 类型、registry、Claude Code runtime、Codex runtime、orchestrator 路由、runtime event log、renderer 设置与 transcript 回放。
+- [x] 调研 opencode 官方资料：CLI / TUI / headless、config、MCP、permission、server/API、认证和分发包形态，并记录可验证来源。
+- [x] 编写 `docs/opencode-support` 下的详细开发方案，覆盖目标、非目标、架构、接口契约、配置存储、权限安全、事件映射、UI、测试、分阶段实施和风险。
+- [x] 运行 Markdown code fence、文档相对链接和 `git diff --check` 验证。
+- [x] 在本节追加 Review，记录实际调研结论、生成文件和验证结果。
+
+## 2026-05-27 Agent opencode Runtime 开发方案文档 Review
+
+- 已确认本轮开始时仓库最新提交为 `4cf6282b docs(tasks): 记录 GitHub feature issues 创建`，范围只包含 `tasks/todo.md` 与新增 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`。
+- 已复习现有 Codex support 和 Agent refactor 文档，并读取 runtime 类型、registry、Codex runtime、Codex event adapter、permission policy、MCP config、runtime event log、Agent Orchestrator routing 和 renderer runtime settings。
+- 已调研 opencode 官方 CLI / Server / SDK / Config / Permissions / MCP / Agents / Tools / Providers 文档，并通过 npm registry 确认 2026-05-27 最新稳定包为 `@opencode-ai/sdk@1.15.11` 与 `opencode-ai@1.15.11`；`opencode`、`@opencode-ai/cli` 包名不可用。
+- 已生成开发方案：结论明确采用 managed `opencode serve` + `@opencode-ai/sdk` client 作为主路径，`opencode run --format json` 仅作为 smoke/fallback；文档覆盖目标、非目标、当前项目差距、opencode 调研、架构、类型设置、server 管理、配置、auth/provider、permission、MCP、event adapter、run 算法、打包、UI、分阶段实施、smoke、风险与参考来源。
+- 已补充复核：官方文档 canonical 域名为 `opencode.ai/docs/*`；`opencode-ai@1.15.11` 的 npm `bin` 为 `opencode -> bin/opencode.exe`，optionalDependencies 包含 darwin/linux/windows 与 baseline/musl 变体，后续实现仍需安装后实测 binary / `.asar.unpacked` 路径。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖，未读取或输出凭证。
+- 验证通过：Markdown code fence 检查；文档相对链接检查；`git diff --check -- docs/opencode-support tasks/todo.md`；新增文档与任务文件 trailing whitespace 检查；`dev.opencode` 旧域名残留检查。
+
 ## 2026-05-27 Agent Codex Runtime 最新状态与下次启动提示词同步计划
 
 范围确认：本轮只同步 Codex support 文档、下次启动提示词、任务记录和 lessons，明确已完成/未完成事项与最新提交基线；不修改根 `README.md` / `AGENTS.md`，不补跑 `CODEX_SMOKE_API_KEY`，不读取 ambient `OPENAI_API_KEY`，不 stage / commit `apps/electron/out/`。
