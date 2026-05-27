@@ -8,6 +8,7 @@ import {
   OpencodeAgentRuntime,
   type OpencodeRuntimeClientLike,
   type OpencodeRuntimeClientStreamInput,
+  type OpencodeRuntimePermissionResponseInput,
   type OpencodeRuntimeServerLease,
   type OpencodeRuntimeServerManagerLike,
 } from './opencode-runtime'
@@ -20,6 +21,7 @@ interface MockRuntime {
   calls: {
     ensure: Array<{ sessionId: string; workingDirectory: string; model?: string; agent?: string; channelId?: string | null }>
     stream: OpencodeRuntimeClientStreamInput[]
+    permissionResponses: OpencodeRuntimePermissionResponseInput[]
     abort: Array<{ sessionId: string; externalSessionId?: string }>
     release: OpencodeRuntimeServerLease[]
   }
@@ -39,10 +41,12 @@ function runtimeEvents(envelopes: AgentStreamEnvelope[]): AgentRuntimeEvent[] {
 
 function createMockRuntime(
   streamFactory: (input: OpencodeRuntimeClientStreamInput) => AsyncIterable<OpencodeRawEvent>,
+  respondPermission?: (input: OpencodeRuntimePermissionResponseInput) => boolean | Promise<boolean>,
 ): MockRuntime {
   const calls: MockRuntime['calls'] = {
     ensure: [],
     stream: [],
+    permissionResponses: [],
     abort: [],
     release: [],
   }
@@ -69,6 +73,10 @@ function createMockRuntime(
       calls.stream.push(input)
       return streamFactory(input)
     },
+    async respondPermission(input) {
+      calls.permissionResponses.push(input)
+      return await (respondPermission?.(input) ?? true)
+    },
   }
   return {
     runtime: new OpencodeAgentRuntime({
@@ -79,6 +87,45 @@ function createMockRuntime(
     }),
     calls,
   }
+}
+
+function permissionAskEvents(input: {
+  externalSessionId: string
+  requestId?: string
+  cwd?: string
+}): OpencodeRawEvent[] {
+  const requestId = input.requestId ?? 'perm_bash_1'
+  const cwd = input.cwd ?? '/repo'
+  return [
+    {
+      id: `evt-${input.externalSessionId}-created`,
+      type: 'session.created',
+      properties: {
+        info: {
+          id: input.externalSessionId,
+          directory: cwd,
+          title: 'opencode permission',
+          version: '1.15.11',
+          time: { created: 1790400000000 },
+        },
+      },
+    },
+    {
+      id: `evt-${input.externalSessionId}-permission`,
+      type: 'permission.updated',
+      properties: {
+        id: requestId,
+        type: 'bash',
+        pattern: 'bun test*',
+        sessionID: input.externalSessionId,
+        messageID: `msg_${input.externalSessionId}`,
+        callID: `call_${input.externalSessionId}`,
+        title: '运行 bun test',
+        metadata: { command: 'bun test', cwd },
+        time: { created: 1790400001000 },
+      },
+    },
+  ]
 }
 
 async function* streamEvents(events: OpencodeRawEvent[]): AsyncIterable<OpencodeRawEvent> {
@@ -327,5 +374,136 @@ describe('OpencodeAgentRuntime', () => {
       capability: 'setPermissionMode',
       message: 'opencode Runtime 暂不支持 setPermissionMode。',
     })
+  })
+
+  test('permission response maps allow, session allow and deny to opencode replies', async () => {
+    const cases: Array<{
+      behavior: 'allow' | 'deny'
+      alwaysAllow: boolean
+      response: 'once' | 'always' | 'reject'
+    }> = [
+      { behavior: 'allow', alwaysAllow: false, response: 'once' },
+      { behavior: 'allow', alwaysAllow: true, response: 'always' },
+      { behavior: 'deny', alwaysAllow: false, response: 'reject' },
+    ]
+
+    for (const testCase of cases) {
+      let releasePermissionReply: (() => void) | undefined
+      const permissionReplySent = new Promise<void>((resolve) => {
+        releasePermissionReply = resolve
+      })
+      const { runtime, calls } = createMockRuntime(async function* () {
+        yield* streamEvents(permissionAskEvents({ externalSessionId: 'ses_permission' }))
+        await permissionReplySent
+        yield {
+          id: 'evt-permission-replied',
+          type: 'permission.replied',
+          properties: {
+            sessionID: 'ses_permission',
+            permissionID: 'perm_bash_1',
+            response: testCase.response,
+          },
+        }
+        yield {
+          id: 'evt-permission-idle',
+          type: 'session.idle',
+          properties: { sessionID: 'ses_permission' },
+        }
+      }, () => {
+        releasePermissionReply?.()
+        return true
+      })
+
+      const envelopes: AgentStreamEnvelope[] = []
+      for await (const envelope of runtime.run({
+        sessionId: `session-permission-${testCase.response}`,
+        prompt: '需要权限',
+        model: 'provider/model',
+        workingDirectory: '/repo',
+        permissionMode: 'auto',
+      })) {
+        envelopes.push(envelope)
+        if (envelope.event.type === 'permission_requested') {
+          const ok = await runtime.respondPermission({
+            sessionId: `session-permission-${testCase.response}`,
+            requestId: 'perm_bash_1',
+            behavior: testCase.behavior,
+            alwaysAllow: testCase.alwaysAllow,
+          })
+          expect(ok).toBe(true)
+        }
+      }
+
+      expect(calls.permissionResponses).toHaveLength(1)
+      expect(calls.permissionResponses[0]).toMatchObject({
+        sessionId: `session-permission-${testCase.response}`,
+        requestId: 'perm_bash_1',
+        externalSessionId: 'ses_permission',
+        directory: '/repo',
+        response: testCase.response,
+      })
+      expect(runtimeEvents(envelopes).map((event) => event.type)).toContain('permission_resolved')
+    }
+  })
+
+  test('permission responses are isolated by CodeInsights session when request ids collide', async () => {
+    const { runtime, calls } = createMockRuntime(async function* (input) {
+      yield* streamEvents(permissionAskEvents({
+        externalSessionId: `ses_${input.sessionId}`,
+        requestId: 'perm_same',
+      }))
+      await new Promise<void>((resolve) => {
+        input.signal.addEventListener('abort', () => resolve(), { once: true })
+      })
+    })
+
+    const iteratorA = runtime.run({
+      sessionId: 'session-a',
+      prompt: 'A',
+      model: 'provider/model',
+      workingDirectory: '/repo',
+      permissionMode: 'auto',
+    })[Symbol.asyncIterator]()
+    const iteratorB = runtime.run({
+      sessionId: 'session-b',
+      prompt: 'B',
+      model: 'provider/model',
+      workingDirectory: '/repo',
+      permissionMode: 'auto',
+    })[Symbol.asyncIterator]()
+
+    expect((await iteratorA.next()).value?.event.type).toBe('run_started')
+    expect((await iteratorA.next()).value?.event.type).toBe('sdk_session')
+    expect((await iteratorA.next()).value?.event.type).toBe('permission_requested')
+    expect((await iteratorB.next()).value?.event.type).toBe('run_started')
+    expect((await iteratorB.next()).value?.event.type).toBe('sdk_session')
+    expect((await iteratorB.next()).value?.event.type).toBe('permission_requested')
+
+    await expect(runtime.respondPermission({
+      sessionId: 'session-a',
+      requestId: 'perm_same',
+      behavior: 'allow',
+      alwaysAllow: false,
+    })).resolves.toBe(true)
+    await expect(runtime.respondPermission({
+      sessionId: 'session-b',
+      requestId: 'perm_same',
+      behavior: 'deny',
+      alwaysAllow: false,
+    })).resolves.toBe(true)
+
+    expect(calls.permissionResponses.map((input) => ({
+      sessionId: input.sessionId,
+      externalSessionId: input.externalSessionId,
+      response: input.response,
+    }))).toEqual([
+      { sessionId: 'session-a', externalSessionId: 'ses_session-a', response: 'once' },
+      { sessionId: 'session-b', externalSessionId: 'ses_session-b', response: 'reject' },
+    ])
+
+    runtime.abort('session-a')
+    runtime.abort('session-b')
+    await iteratorA.return?.(undefined)
+    await iteratorB.return?.(undefined)
   })
 })

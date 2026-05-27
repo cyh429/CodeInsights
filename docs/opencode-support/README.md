@@ -10,11 +10,11 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 5 完成
+更新时间：2026-05-27，Phase 6 完成
 
-当前开发基线：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。Phase 5 真实 `opencode serve` 集成已完成，下一步从 Phase 6 renderer 设置、权限交互和历史回放开始。
+当前开发状态：Phase 6 renderer 设置、权限交互和历史回放已完成。上一稳定开发基线为 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`；本轮 Phase 6 阶段提交完成后，以 `git log` 中 `feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入` 的真实提交为最新开发基线。
 
-最新状态同步提交：`3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`。下次启动时以该提交为最新状态入口，历史中应包含 Phase 5 开发基线 `b3e99265`。
+最新状态同步提交：`786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`。本轮 Phase 6 提交前，以该提交为启动入口；Phase 6 提交后，下次启动应以新的 Phase 6 提交为入口，历史中仍需包含 Phase 5 开发基线 `b3e99265`。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -39,6 +39,10 @@
   - Phase 5 重要结论：`writeOpencodeRuntimeConfig()` 仍生成私有 `config-dir` 资产目录，但 Phase 5 默认不注入 `OPENCODE_CONFIG_DIR`。在 `opencode-ai@1.15.11` 下，空 assets 目录组合会让 session mutating API 卡住；后续 Phase 7 需要 MCP/assets 时再通过 `CODEINSIGHTS_AGENT_OPENCODE_ENABLE_CONFIG_DIR=1` / `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 显式验证后启用。
   - Phase 5 验证结果：无凭证环境下 binary / server / config / permission / abort / resume smoke 通过；readonly、channel auth、native auth smoke 因未设置真实模型或凭证按 skipped reason 跳过；`bun run --filter='@codeinsights/electron' typecheck`、相关单测、`build:main` 均通过。
   - Phase 5 后状态同步：已将最新开发状态、完成/未完成清单和下次启动入口同步到 `3b8a1286` 后状态。
+  - Phase 5 最新启动基线固化：已确认 `786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态` 是 Phase 6 启动前最新提交。
+  - Phase 6：已完成 renderer 设置、权限交互和历史回放。设置页支持 opencode runtime 选择、native/channel auth source、model、agent、snapshot/autoupdate、feature flag 关闭态、runtime capabilities、server status、模型刷新禁用说明和 MCP Phase 7 占位。
+  - Phase 6 权限交互：opencode permission events 复用现有 `PermissionBanner`，展示 tool preview、cwd、risk label，支持 reject / once / session allow，缺少 preview 时隐藏 session allow。
+  - Phase 6 历史回放：Codex / opencode 统一使用 `RuntimeTranscript`，live runtime envelope 直接推送并去重，兼容 SDKMessage 标记 `_runtimeEnvelope` 避免重复，回放只依赖 CodeInsights runtime event log，不依赖 opencode server 存活。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -59,6 +63,7 @@
   - `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`
   - `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`
   - `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`
+  - `786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -70,12 +75,11 @@
   - permission v1 响应 body 是 `{ response: "once" | "always" | "reject" }`，SDK 类型没有 `remember`；v2 新主路径是 `GET /permission` 与 `POST /permission/{requestID}/reply`。
   - `{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`，但 resolved `/config`、`/provider`、`/config/providers` 会暴露替换后的 secret，日志和持久化必须脱敏或避免读取原样响应。
 - 未完成：
-  - Phase 6：renderer 设置、权限交互和历史回放。
   - Phase 7：MCP、packaged binary 和 release readiness。
   - Phase 8：真实使用验收、故障排查、发布说明和公开文档同步准备。
 - 下一步：
-  - 从 Phase 6 开始，接入 renderer 设置、runtime 选择、权限交互和历史回放。
-  - Phase 6 不进入发布打包验收；packaged binary、MCP 和 release readiness 留到 Phase 7。
+  - 从 Phase 7 开始，接入 MCP、packaged binary 和 release readiness。
+  - Phase 7 不进入真实模型验收或公开文档同步；真实使用验收、故障排查和 release notes 留到 Phase 8。
   - 继续保持 config / diagnostics secretless，避免记录 resolved provider/config 中的 secret。
 - 暂缓 / 需要决策：
   - 默认认证来源：推荐 native opencode auth 优先，channel auth 显式选择。
@@ -92,9 +96,9 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交包含 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`，历史包含 Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
-3. 读取开发清单的“最新开发状态快照”和 Phase 6。
-4. 在 `tasks/todo.md` 写入 Phase 6 计划，然后开始 renderer 设置、权限交互和历史回放接入。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 6 后状态，历史包含 `786b6485`、Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+3. 读取开发清单的“最新开发状态快照”和 Phase 7。
+4. 在 `tasks/todo.md` 写入 Phase 7 计划，然后开始 MCP、packaged binary 和 release readiness。
 
 ## 设计定位
 

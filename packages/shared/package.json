@@ -1,6 +1,6 @@
 {
   "name": "@codeinsights/shared",
-  "version": "0.1.47",
+  "version": "0.1.48",
   "license": "Apache-2.0",
   "description": "Shared types, configs and utilities for codeinsights",
   "type": "module",

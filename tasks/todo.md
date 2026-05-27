@@ -1,5 +1,36 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 6 Renderer 接入计划
+
+范围确认：本轮进入 Phase 6，只接入 renderer 设置、权限交互、runtime capabilities 展示和历史回放验证；不进入 MCP、packaged release、真实模型验收或根 `README.md` / `AGENTS.md` 修改。UI 不做 opencode 专用 message list，继续复用现有 runtime transcript 和 `PermissionBanner`。
+
+- [x] 复习项目指令、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认 Phase 6 范围、feature flag、权限交互、历史回放和阶段提交纪律。
+- [x] 运行 `git status --short`、`git log -5 --oneline` 和分支检查，确认当前分支为 `agent-mode-opencode`，最新提交为 `786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`，历史包含 `3b8a1286`、`b3e99265`、`647d3046`。
+- [x] 梳理现有 Agent Settings、Jotai atoms、preload 类型和 main IPC，确定 opencode settings / diagnostics / capabilities 的最小接入点。
+- [x] 在 Agent 设置中接入 runtime 三选，feature flag 关闭时展示 opencode 实验功能关闭态；feature flag 开启时支持保存 opencode auth source、channel、model、agent、snapshot/autoupdate 设置。
+- [x] 接入 opencode runtime capabilities / server status / model refresh / MCP summary 的状态展示；对 queue message、运行中 permission 切换等不支持能力禁用或提示“下次发送生效”。
+- [x] 在 Agent Header 显示 runtime/model/agent/permission badge，保持 Claude Code / Codex 现有行为不回退。
+- [x] 复用现有 `PermissionBanner` 接入 opencode permission preview、cwd、risk label、reject / once / session allow；缺少 preview 时隐藏 session allow。
+- [x] 确认 Agent 历史回放只依赖 CodeInsights runtime event log 和 session messages，不因 opencode server 未运行而报错；reload 后 transcript 可显示。
+- [x] 补充 renderer / shared UI 相关测试，覆盖 feature flag on/off、opencode settings 保存加载、capability disable 文案、permission action 映射和 history replay。
+- [x] 运行 Phase 6 验证：`bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`、`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`、`git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/electron/src/main tasks/todo.md docs/opencode-support`。
+- [x] 更新 opencode development checklist、support README、next-session prompt，并在本节追加 Review。
+- [x] 按阶段纪律只提交 Phase 6 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+
+## 2026-05-27 Agent opencode Runtime Phase 6 Renderer 接入 Review
+
+- 启动基线已确认：当前分支为 `agent-mode-opencode`，本轮开始时最新提交为 `786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`，历史包含 `3b8a1286`、`b3e99265`、`647d3046`。
+- 已完成 Agent 设置接入：Runtime 三选支持 `opencode`；feature flag 关闭时只展示实验功能关闭态；feature flag 开启时可保存 native/channel auth source、model、agent、snapshot/autoupdate 配置。
+- 已完成 capabilities / diagnostics 展示：设置页展示 runtime capabilities、opencode server 按需启动状态、模型刷新禁用原因和 MCP Phase 7 占位；Phase 6 不读取 `/provider`、`/config/providers` 或 resolved config 原文，避免泄漏 secret。
+- 已完成 Agent 主界面接入：opencode 复用 runtime transcript，不新增专用 message list；Header 和 composer 显示 runtime/model/agent/permission；运行中追加消息与 `/compact` 按 runtime capability 禁用或提示。
+- 已完成权限交互：opencode `permission_requested` runtime event 转为现有 `PermissionBanner` 请求，展示 tool preview、cwd、risk label；支持拒绝、本次允许、本会话允许，且缺少 preview 时隐藏本会话允许。
+- 已完成 opencode permission response 路由：renderer 响应携带 `sessionId`；主进程优先走 legacy permission service，找不到时路由到活跃 runtime；opencode runtime 将 allow / session allow / deny 映射为 `once` / `always` / `reject`。
+- 已完成历史回放保护：live runtime envelope 直接推送到 renderer 并去重；兼容 SDKMessage 增加 `_runtimeEnvelope` 标记避免重复渲染；`RuntimeTranscript` 对 Codex / opencode 统一使用 CodeInsights runtime event log 回放，不依赖 opencode server 存活。
+- 已根据代码审查修复 Phase 6 收尾问题：runtime replay 去重从单独 `sequence` 改为 `runId + sequence`，避免多轮 opencode run 都从 sequence 0 开始时丢事件；feature flag 关闭时 opencode 不再作为可点击 runtime 选项；opencode server status 读取 runtime manager 最新状态，不再只返回静态 `not_started`。
+- 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.47` 提升到 `0.1.48`，将 `@codeinsights/electron` 从 `0.0.117` 提升到 `0.0.118`。
+- 保持边界：未进入 MCP、packaged release、真实模型验收，未修改根 `README.md` / `AGENTS.md`；packaged Electron history reload smoke 留到 Phase 7 / Phase 8，Phase 6 用 renderer 单测覆盖 history replay。
+- 验证通过：`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`；`bun test apps/electron/src/renderer`；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`；`git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/electron/src/main packages/shared bun.lock apps/electron/package.json packages/shared/package.json tasks/todo.md docs/opencode-support`。
+
 ## 2026-05-27 Agent opencode Runtime Phase 5 后最新状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-5 已完成、Phase 6-8 未完成，并将下次继续开发入口固定到 Phase 6；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。

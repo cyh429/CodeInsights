@@ -78,6 +78,13 @@ export interface CodingAgentRuntimeRunResult {
   externalSessionId?: string
 }
 
+export interface CodingAgentRuntimePermissionResponseInput {
+  sessionId: string
+  requestId: string
+  behavior: 'allow' | 'deny'
+  alwaysAllow: boolean
+}
+
 export type UnsupportedRuntimeCapability =
   | 'queueMessage'
   | 'setPermissionMode'
@@ -97,6 +104,7 @@ export interface CodingAgentRuntime {
   abort(sessionId: string): void
   queueMessage(input: AgentQueueMessageInput): Promise<UnsupportedRuntimeCapabilityResult>
   setPermissionMode(sessionId: string, mode: CodeInsightsPermissionMode): Promise<UnsupportedRuntimeCapabilityResult>
+  respondPermission?(input: CodingAgentRuntimePermissionResponseInput): Promise<boolean>
   dispose(): void
 }
 

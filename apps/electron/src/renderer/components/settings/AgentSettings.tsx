@@ -10,7 +10,7 @@
 
 import * as React from 'react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { Plus, Plug, Pencil, Trash2, Sparkles, FolderOpen, MessageSquare, ShieldCheck, ChevronDown, ChevronRight, Brain, ImagePlus, Settings, RefreshCw, Search, KeyRound, Globe2 } from 'lucide-react'
+import { Plus, Plug, Pencil, Trash2, Sparkles, FolderOpen, MessageSquare, ShieldCheck, ChevronDown, ChevronRight, Brain, ImagePlus, Settings, RefreshCw, Search, KeyRound, Globe2, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -47,17 +47,23 @@ import {
   agentCodexReasoningEffortAtom,
   agentCodexNetworkAccessEnabledAtom,
   agentCodexWebSearchModeAtom,
+  agentOpencodeChannelIdAtom,
+  agentOpencodeModelIdAtom,
+  agentOpencodeAgentNameAtom,
+  agentOpencodeUseNativeAuthAtom,
+  agentOpencodeAutoupdateAtom,
+  agentOpencodeSnapshotEnabledAtom,
 } from '@/atoms/agent-atoms'
 import { settingsTabAtom, settingsOpenAtom } from '@/atoms/settings-tab'
 import { appModeAtom } from '@/atoms/app-mode'
 import { chatToolsAtom } from '@/atoms/chat-tool-atoms'
 import { channelsAtom } from '@/atoms/chat-atoms'
-import type { Channel, CodingAgentRuntimeKind, McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@codeinsights/shared'
+import type { AgentOpencodeModelRefreshResult, AgentOpencodeServerStatus, AgentRuntimeCapabilitiesDiagnostic, Channel, CodingAgentRuntimeKind, McpServerEntry, SkillMeta, OtherWorkspaceSkillsGroup, WorkspaceMcpConfig, ThinkingConfig, AgentEffort } from '@codeinsights/shared'
 import type { AgentCodexReasoningEffort, AgentCodexWebSearchMode } from '@/types/settings'
 import { SettingsSection, SettingsCard, SettingsRow, SettingsSegmentedControl, SettingsInput } from './primitives'
 import { McpServerForm } from './McpServerForm'
 import { getSettingsDeleteDialogCopy } from './settings-ui-model'
-import { CODEX_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, isAgentCodexRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
+import { CODEX_NATIVE_AUTH_SELECT_VALUE, OPENCODE_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, getOpencodeCompatibleChannels, isAgentCodexRuntimeFeatureEnabled, isAgentOpencodeRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
 
 /** 组件视图模式 */
 type ViewMode = 'list' | 'create' | 'edit'
@@ -1074,6 +1080,7 @@ const EFFORT_OPTIONS = [
 const RUNTIME_OPTIONS = [
   { value: 'claude-code', label: 'Claude Code' },
   { value: 'codex', label: 'Codex' },
+  { value: 'opencode', label: 'opencode' },
 ]
 
 const CODEX_REASONING_OPTIONS = [
@@ -1088,6 +1095,12 @@ const CODEX_WEB_SEARCH_OPTIONS = [
   { value: 'disabled', label: '关闭' },
   { value: 'cached', label: '缓存' },
   { value: 'live', label: '实时' },
+]
+
+const OPENCODE_AGENT_OPTIONS = [
+  { value: 'build', label: 'Build' },
+  { value: 'plan', label: 'Plan' },
+  { value: 'custom', label: 'Custom' },
 ]
 
 /** 从 ThinkingConfig 转为 UI 字符串 */
@@ -1114,36 +1127,94 @@ function valueToEffort(value: string): AgentEffort | undefined {
   return value as AgentEffort
 }
 
-function AgentRuntimeSettings(): React.ReactElement | null {
+function AgentRuntimeSettings(): React.ReactElement {
   const codexFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
+  const opencodeFeatureEnabled = isAgentOpencodeRuntimeFeatureEnabled()
   const channels = useAtomValue(channelsAtom)
   const codexChannels = React.useMemo(() => getCodexCompatibleChannels(channels), [channels])
+  const opencodeChannels = React.useMemo(() => getOpencodeCompatibleChannels(channels), [channels])
   const [runtimeKind, setRuntimeKind] = useAtom(agentRuntimeKindAtom)
   const [codexChannelId, setCodexChannelId] = useAtom(agentCodexChannelIdAtom)
   const [codexModelId, setCodexModelId] = useAtom(agentCodexModelIdAtom)
   const [reasoningEffort, setReasoningEffort] = useAtom(agentCodexReasoningEffortAtom)
   const [networkAccessEnabled, setNetworkAccessEnabled] = useAtom(agentCodexNetworkAccessEnabledAtom)
   const [webSearchMode, setWebSearchMode] = useAtom(agentCodexWebSearchModeAtom)
+  const [opencodeChannelId, setOpencodeChannelId] = useAtom(agentOpencodeChannelIdAtom)
+  const [opencodeModelId, setOpencodeModelId] = useAtom(agentOpencodeModelIdAtom)
+  const [opencodeAgentName, setOpencodeAgentName] = useAtom(agentOpencodeAgentNameAtom)
+  const [opencodeUseNativeAuth, setOpencodeUseNativeAuth] = useAtom(agentOpencodeUseNativeAuthAtom)
+  const [opencodeAutoupdate, setOpencodeAutoupdate] = useAtom(agentOpencodeAutoupdateAtom)
+  const [opencodeSnapshotEnabled, setOpencodeSnapshotEnabled] = useAtom(agentOpencodeSnapshotEnabledAtom)
+  const [runtimeDiagnostics, setRuntimeDiagnostics] = React.useState<AgentRuntimeCapabilitiesDiagnostic[]>([])
+  const [opencodeServerStatus, setOpencodeServerStatus] = React.useState<AgentOpencodeServerStatus | null>(null)
+  const [opencodeModelRefresh, setOpencodeModelRefresh] = React.useState<AgentOpencodeModelRefreshResult | null>(null)
+  const [diagnosticsLoading, setDiagnosticsLoading] = React.useState(false)
 
-  if (!codexFeatureEnabled) return null
+  const refreshRuntimeDiagnostics = React.useCallback(async () => {
+    setDiagnosticsLoading(true)
+    try {
+      const [diagnostics, status] = await Promise.all([
+        window.electronAPI.getAgentRuntimeCapabilities(),
+        window.electronAPI.getAgentOpencodeServerStatus(),
+      ])
+      setRuntimeDiagnostics(diagnostics)
+      setOpencodeServerStatus(status)
+    } catch (error) {
+      console.error('[Agent 设置] 加载 Runtime 诊断失败:', error)
+    } finally {
+      setDiagnosticsLoading(false)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    void refreshRuntimeDiagnostics()
+  }, [refreshRuntimeDiagnostics])
 
   const selectedChannel = typeof codexChannelId === 'string'
     ? codexChannels.find((channel) => channel.id === codexChannelId) ?? null
     : null
+  const selectedOpencodeChannel = typeof opencodeChannelId === 'string' && opencodeUseNativeAuth !== true
+    ? opencodeChannels.find((channel) => channel.id === opencodeChannelId) ?? null
+    : null
   const authSourceValue = selectedChannel ? selectedChannel.id : CODEX_NATIVE_AUTH_SELECT_VALUE
+  const opencodeAuthSourceValue = selectedOpencodeChannel ? selectedOpencodeChannel.id : OPENCODE_NATIVE_AUTH_SELECT_VALUE
   const modelValue = codexModelId ?? ''
+  const opencodeModelValue = opencodeModelId ?? ''
+  const opencodeAgentMode = opencodeAgentName === 'plan' || opencodeAgentName === 'build'
+    ? opencodeAgentName
+    : opencodeAgentName ? 'custom' : 'build'
   const effectiveReasoningEffort = reasoningEffort ?? 'medium'
   const effectiveWebSearchMode = webSearchMode ?? 'disabled'
+  const opencodeDiagnostic = runtimeDiagnostics.find((item) => item.runtimeKind === 'opencode')
+  const opencodeSupportsModelRefresh = opencodeDiagnostic?.capabilities.includes('modelRefresh') ?? false
 
   const updateRuntimeKind = (value: string): void => {
     const next = value as CodingAgentRuntimeKind
+    if (next === 'codex' && !codexFeatureEnabled) {
+      toast.info('Codex Runtime 功能开关未启用')
+      return
+    }
+    if (next === 'opencode' && !opencodeFeatureEnabled) {
+      toast.info('opencode Runtime 实验功能未启用', {
+        description: '启动应用前设置 CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 后可选择。',
+      })
+      return
+    }
     setRuntimeKind(next)
     window.electronAPI.updateSettings({
       agentRuntimeKind: next,
       ...(next === 'codex' && codexChannelId === undefined ? { agentCodexChannelId: null } : {}),
+      ...(next === 'opencode' && opencodeChannelId === undefined ? {
+        agentOpencodeChannelId: null,
+        agentOpencodeUseNativeAuth: true,
+      } : {}),
     }).catch(console.error)
     if (next === 'codex' && codexChannelId === undefined) {
       setCodexChannelId(null)
+    }
+    if (next === 'opencode' && opencodeChannelId === undefined) {
+      setOpencodeChannelId(null)
+      setOpencodeUseNativeAuth(true)
     }
   }
 
@@ -1190,6 +1261,71 @@ function AgentRuntimeSettings(): React.ReactElement | null {
     window.electronAPI.updateSettings({ agentCodexWebSearchMode: next }).catch(console.error)
   }
 
+  const updateOpencodeAuthSource = (value: string): void => {
+    if (value === OPENCODE_NATIVE_AUTH_SELECT_VALUE) {
+      setOpencodeChannelId(null)
+      setOpencodeUseNativeAuth(true)
+      window.electronAPI.updateSettings({
+        agentOpencodeChannelId: null,
+        agentOpencodeUseNativeAuth: true,
+      }).catch(console.error)
+      return
+    }
+
+    const channel = opencodeChannels.find((candidate) => candidate.id === value)
+    if (!channel) return
+    const firstEnabledModel = channel.models.find((model) => model.enabled)
+    const nextModelId = opencodeModelId || firstEnabledModel?.id
+    setOpencodeChannelId(channel.id)
+    setOpencodeUseNativeAuth(false)
+    if (nextModelId) setOpencodeModelId(nextModelId)
+    window.electronAPI.updateSettings({
+      agentOpencodeChannelId: channel.id,
+      agentOpencodeUseNativeAuth: false,
+      ...(nextModelId ? { agentOpencodeModelId: nextModelId } : {}),
+    }).catch(console.error)
+  }
+
+  const updateOpencodeModel = (): void => {
+    const trimmed = opencodeModelValue.trim()
+    const next = trimmed || undefined
+    setOpencodeModelId(next)
+    window.electronAPI.updateSettings({ agentOpencodeModelId: next }).catch(console.error)
+  }
+
+  const updateOpencodeAgentMode = (value: string): void => {
+    const next = value === 'plan' ? 'plan' : value === 'custom' ? (opencodeAgentName && opencodeAgentName !== 'build' && opencodeAgentName !== 'plan' ? opencodeAgentName : 'custom') : 'build'
+    setOpencodeAgentName(next)
+    window.electronAPI.updateSettings({ agentOpencodeAgentName: next }).catch(console.error)
+  }
+
+  const updateOpencodeCustomAgent = (): void => {
+    if (opencodeAgentMode !== 'custom') return
+    const trimmed = (opencodeAgentName ?? '').trim()
+    const next = trimmed || 'build'
+    setOpencodeAgentName(next)
+    window.electronAPI.updateSettings({ agentOpencodeAgentName: next }).catch(console.error)
+  }
+
+  const updateOpencodeSnapshot = (checked: boolean): void => {
+    setOpencodeSnapshotEnabled(checked)
+    window.electronAPI.updateSettings({ agentOpencodeSnapshotEnabled: checked }).catch(console.error)
+  }
+
+  const refreshOpencodeModels = async (): Promise<void> => {
+    if (!opencodeSupportsModelRefresh) {
+      setOpencodeModelRefresh({
+        ok: false,
+        models: [],
+        error: '当前 opencode Runtime 暂不支持从设置页刷新模型',
+        updatedAt: new Date().toISOString(),
+      })
+      return
+    }
+    const result = await window.electronAPI.refreshAgentOpencodeModels()
+    setOpencodeModelRefresh(result)
+  }
+
   return (
     <SettingsSection
       title="Agent Runtime"
@@ -1198,11 +1334,27 @@ function AgentRuntimeSettings(): React.ReactElement | null {
       <SettingsCard>
         <SettingsSegmentedControl
           label="Runtime"
-          description="Claude Code 保持现有 Agent 行为；Codex 使用独立 runtime events 历史回放"
+          description="新会话首次发送时绑定 runtime；已绑定会话继续使用创建时的 runtime"
           value={runtimeKind}
           onValueChange={updateRuntimeKind}
-          options={RUNTIME_OPTIONS}
+          options={RUNTIME_OPTIONS.filter((option) => {
+            if (option.value === 'codex') return codexFeatureEnabled || runtimeKind === 'codex'
+            if (option.value === 'opencode') return opencodeFeatureEnabled || runtimeKind === 'opencode'
+            return true
+          })}
         />
+
+        {!opencodeFeatureEnabled && (
+          <SettingsRow
+            label="opencode 实验功能"
+            icon={<Activity size={18} className="text-muted-foreground" />}
+            description="功能开关未启用，opencode 只展示为关闭态"
+          >
+            <span className="rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1 text-xs text-text-secondary">
+              未启用
+            </span>
+          </SettingsRow>
+        )}
 
         {runtimeKind === 'codex' && (
           <>
@@ -1264,6 +1416,125 @@ function AgentRuntimeSettings(): React.ReactElement | null {
             />
           </>
         )}
+
+        {runtimeKind === 'opencode' && opencodeFeatureEnabled && (
+          <>
+            <SettingsRow
+              label="opencode 认证来源"
+              icon={<KeyRound size={18} className="text-emerald-500" />}
+              description="本机认证复用 opencode auth；渠道模式只通过环境变量注入，不写入 opencode auth storage"
+            >
+              <Select value={opencodeAuthSourceValue} onValueChange={updateOpencodeAuthSource}>
+                <SelectTrigger className="w-full sm:w-[280px]">
+                  <SelectValue placeholder="选择 opencode 认证来源" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={OPENCODE_NATIVE_AUTH_SELECT_VALUE}>本机 opencode auth</SelectItem>
+                  {opencodeChannels.map((channel) => (
+                    <SelectItem key={channel.id} value={channel.id}>
+                      {formatOpencodeChannelLabel(channel)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </SettingsRow>
+
+            <SettingsInput
+              label="opencode 模型"
+              description="本机认证使用 provider/model；渠道认证留空时使用渠道第一个可用模型"
+              value={opencodeModelValue}
+              onChange={setOpencodeModelId}
+              onBlur={updateOpencodeModel}
+              placeholder="例如: anthropic/claude-sonnet-4-5"
+            />
+
+            <SettingsSegmentedControl
+              label="opencode Agent"
+              description="默认 build；plan 用于规划；custom 需要填写 opencode agent 名称"
+              value={opencodeAgentMode}
+              onValueChange={updateOpencodeAgentMode}
+              options={OPENCODE_AGENT_OPTIONS}
+            />
+
+            {opencodeAgentMode === 'custom' && (
+              <SettingsInput
+                label="自定义 Agent 名称"
+                value={opencodeAgentName ?? ''}
+                onChange={setOpencodeAgentName}
+                onBlur={updateOpencodeCustomAgent}
+                placeholder="例如: reviewer"
+              />
+            )}
+
+            <SettingsRow
+              label="Snapshot"
+              icon={<ShieldCheck size={18} className="text-blue-500" />}
+              description="启用 workspace snapshot，避免会话恢复被后续设置污染"
+            >
+              <Switch
+                checked={opencodeSnapshotEnabled ?? true}
+                onCheckedChange={updateOpencodeSnapshot}
+                aria-label="切换 opencode Snapshot"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              label="Autoupdate"
+              icon={<RefreshCw size={18} className="text-muted-foreground" />}
+              description="首版强制关闭 opencode 自更新，由 CodeInsights 控制 runtime 版本"
+            >
+              <Switch
+                checked={opencodeAutoupdate ?? false}
+                onCheckedChange={(checked) => {
+                  setOpencodeAutoupdate(checked)
+                  window.electronAPI.updateSettings({ agentOpencodeAutoupdate: checked }).catch(console.error)
+                }}
+                disabled
+                aria-label="opencode 自更新"
+              />
+            </SettingsRow>
+
+            <SettingsRow
+              label="Runtime Capabilities"
+              icon={<Activity size={18} className="text-primary" />}
+              description={formatRuntimeDiagnostic(opencodeDiagnostic)}
+              feedback={opencodeModelRefresh?.error ? (
+                <div className="text-xs text-status-waiting-fg">{opencodeModelRefresh.error}</div>
+              ) : null}
+            >
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button size="sm" variant="outline" onClick={() => void refreshRuntimeDiagnostics()} disabled={diagnosticsLoading}>
+                  <RefreshCw size={14} className={cn(diagnosticsLoading && 'animate-spin')} />
+                  <span>刷新状态</span>
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => void refreshOpencodeModels()} disabled={!opencodeSupportsModelRefresh}>
+                  <Search size={14} />
+                  <span>刷新模型</span>
+                </Button>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Server 状态"
+              icon={<Globe2 size={18} className="text-indigo-500" />}
+              description={formatOpencodeServerStatus(opencodeServerStatus)}
+            >
+              <span className="rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1 text-xs text-text-secondary">
+                {formatOpencodeServerState(opencodeServerStatus?.state)}
+              </span>
+            </SettingsRow>
+
+            <SettingsRow
+              label="MCP 摘要"
+              icon={<Plug size={18} className="text-muted-foreground" />}
+              description="opencode /mcp 摘要保留到 Phase 7，本阶段不读取或展示 MCP secret 相关响应"
+            >
+              <span className="rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1 text-xs text-text-secondary">
+                未接入
+              </span>
+            </SettingsRow>
+          </>
+        )}
       </SettingsCard>
     </SettingsSection>
   )
@@ -1271,6 +1542,38 @@ function AgentRuntimeSettings(): React.ReactElement | null {
 
 function formatCodexChannelLabel(channel: Channel): string {
   return `${channel.name} · ${channel.provider === 'openai' ? 'OpenAI' : 'Custom'}`
+}
+
+function formatOpencodeChannelLabel(channel: Channel): string {
+  return `${channel.name} · ${channel.provider === 'openai' ? 'OpenAI' : 'Custom'}`
+}
+
+function formatRuntimeDiagnostic(diagnostic: AgentRuntimeCapabilitiesDiagnostic | undefined): string {
+  if (!diagnostic) return 'opencode runtime 尚未注册'
+  const unsupported: string[] = []
+  if (!diagnostic.capabilities.includes('queueMessage')) unsupported.push('运行中追加消息')
+  if (!diagnostic.capabilities.includes('setPermissionMode')) unsupported.push('运行中切换权限')
+  const suffix = unsupported.length > 0 ? `；不支持 ${unsupported.join('、')}` : ''
+  return `${diagnostic.available ? '可用' : '不可用'} · ${diagnostic.capabilities.join(', ')}${suffix}`
+}
+
+function formatOpencodeServerStatus(status: AgentOpencodeServerStatus | null): string {
+  if (!status) return '尚未加载 server 状态'
+  const version = status.version ? ` · v${status.version}` : ''
+  const endpoint = status.endpoint ? ` · ${status.endpoint}` : ''
+  return `${status.message ?? formatOpencodeServerState(status.state)}${version}${endpoint}`
+}
+
+function formatOpencodeServerState(state: AgentOpencodeServerStatus['state'] | undefined): string {
+  if (state === 'healthy') return '运行中'
+  if (state === 'starting') return '启动中'
+  if (state === 'failed') return '失败'
+  if (state === 'disabled') return '已关闭'
+  if (state === 'stopping') return '停止中'
+  if (state === 'stopped') return '已停止'
+  if (state === 'degraded') return '降级'
+  if (state === 'not_configured') return '未配置'
+  return '未启动'
 }
 
 /** 内置 Agent 工具状态展示 */

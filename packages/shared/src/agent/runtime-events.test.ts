@@ -285,6 +285,61 @@ describe('Agent runtime event contract', () => {
     expect(state.terminal?.type).toBe('run_completed')
   })
 
+  test('replays multiple runs with overlapping sequence numbers', () => {
+    const firstRunStarted = createAgentStreamEnvelope({
+      sessionId,
+      runId: 'run-first',
+      sequence: 0,
+      createdAt,
+      source: 'opencode_server',
+      event: { type: 'run_started', model: 'provider/model', cwd: '/tmp/workspace', permissionMode: 'auto', runtimeHash: 'hash-first', runtimeKind: 'opencode' },
+    })
+    const firstRunDone = createAgentStreamEnvelope({
+      sessionId,
+      runId: 'run-first',
+      sequence: 1,
+      createdAt,
+      source: 'opencode_server',
+      event: { type: 'run_completed', resultSubtype: 'success', terminalReason: 'completed' },
+    })
+    const secondRunPermission = createAgentStreamEnvelope({
+      sessionId,
+      runId: 'run-second',
+      sequence: 0,
+      createdAt,
+      source: 'opencode_server',
+      event: {
+        type: 'permission_requested',
+        requestId: 'permission-second-run',
+        toolName: 'bash',
+        riskLevel: 'dangerous',
+        inputSummary: 'bun test',
+        scopeOptions: ['once', 'session'],
+        request: {
+          requestId: 'permission-second-run',
+          sessionId,
+          runtimeKind: 'opencode',
+          toolName: 'bash',
+          toolInput: { command: 'bun test' },
+          description: 'bun test',
+          dangerLevel: 'dangerous',
+        },
+      },
+    })
+
+    const state = replayAgentStreamEnvelopes([
+      firstRunStarted,
+      firstRunDone,
+      secondRunPermission,
+      secondRunPermission,
+    ])
+
+    expect(state.appliedSequences).toEqual([0, 1, 0])
+    expect(state.appliedEnvelopeKeys).toHaveLength(3)
+    expect(state.pendingPermissionRequestIds).toEqual(['permission-second-run'])
+    expect(state.pendingPermissionRequests[0]?.requestId).toBe('permission-second-run')
+  })
+
   test('replays unresolved pending interactions with original requests', () => {
     const state = replayAgentStreamEnvelopes(envelopeFixture.slice(0, 10))
     expect(state.pendingPermissionRequestIds).toEqual([])

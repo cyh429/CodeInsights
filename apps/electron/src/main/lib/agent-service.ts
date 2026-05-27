@@ -23,8 +23,12 @@ import type {
   AgentSavedFile,
   AgentStreamEvent,
   AgentStreamPayload,
+  AgentRuntimeCapabilitiesDiagnostic,
+  AgentOpencodeModelRefreshResult,
+  AgentOpencodeServerStatus,
   AgentQueueMessageInput,
   CodeInsightsPermissionMode,
+  CodingAgentRuntimeKind,
 } from '@codeinsights/shared'
 import { ClaudeAgentAdapter, scanAndKillOrphanedClaudeSubprocesses } from './adapters/claude-agent-adapter'
 import { AgentEventBus } from './agent-event-bus'
@@ -35,6 +39,7 @@ import { ClaudeCodeRuntime } from './agent-runtimes/claude-code-runtime'
 import { CodexAgentRuntime } from './agent-runtimes/codex-runtime'
 import { OpencodeAgentRuntime } from './agent-runtimes/opencode-runtime'
 import { CodingAgentRuntimeRegistry } from './agent-runtimes/coding-agent-runtime-registry'
+import type { CodingAgentRuntimeCapabilities } from './agent-runtimes/coding-agent-runtime-types'
 
 // ===== 实例创建 =====
 
@@ -43,8 +48,11 @@ const adapter = new ClaudeAgentAdapter()
 const runtimeRegistry = new CodingAgentRuntimeRegistry()
 runtimeRegistry.register(new ClaudeCodeRuntime(adapter))
 runtimeRegistry.register(new CodexAgentRuntime())
-if (process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1') {
-  runtimeRegistry.register(new OpencodeAgentRuntime())
+const opencodeRuntime = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+  ? new OpencodeAgentRuntime()
+  : null
+if (opencodeRuntime) {
+  runtimeRegistry.register(opencodeRuntime)
 }
 const orchestrator = new AgentOrchestrator(adapter, eventBus, { runtimeRegistry })
 
@@ -265,6 +273,109 @@ export function killOrphanedClaudeSubprocesses(): void {
  */
 export async function updateAgentPermissionMode(sessionId: string, mode: CodeInsightsPermissionMode): Promise<void> {
   await orchestrator.updateSessionPermissionMode(sessionId, mode)
+}
+
+export async function respondAgentRuntimePermission(input: {
+  sessionId: string
+  requestId: string
+  behavior: 'allow' | 'deny'
+  alwaysAllow: boolean
+}): Promise<boolean> {
+  return await orchestrator.respondRuntimePermission(input)
+}
+
+export function listAgentRuntimeCapabilitiesDiagnostics(): AgentRuntimeCapabilitiesDiagnostic[] {
+  const capabilitiesByKind = new Map<CodingAgentRuntimeKind, CodingAgentRuntimeCapabilities>(
+    runtimeRegistry.listCapabilities().map((capabilities) => [capabilities.runtimeKind, capabilities]),
+  )
+  const runtimeKinds: CodingAgentRuntimeKind[] = ['claude-code', 'codex', 'opencode']
+
+  return runtimeKinds.map((runtimeKind) => {
+    const capabilities = capabilitiesByKind.get(runtimeKind)
+    const featureEnabled = isRuntimeFeatureEnabled(runtimeKind)
+    const registered = capabilities != null
+    return {
+      runtimeKind,
+      featureEnabled,
+      registered,
+      available: featureEnabled && registered,
+      capabilities: capabilities ? runtimeCapabilityNames(capabilities) : [],
+      message: buildRuntimeDiagnosticMessage(runtimeKind, featureEnabled, registered),
+    }
+  })
+}
+
+export function getAgentOpencodeServerStatusDiagnostic(): AgentOpencodeServerStatus {
+  const featureEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+  const registered = runtimeRegistry.get('opencode') != null
+  const status = opencodeRuntime?.getServerStatus()
+  if (featureEnabled && registered && status) {
+    return {
+      runtimeKind: 'opencode',
+      featureEnabled,
+      state: status.state === 'idle' ? 'not_started' : status.state,
+      version: status.version,
+      endpoint: status.endpoint,
+      message: status.lastError
+        ? `opencode server 最近错误: ${status.lastError}`
+        : 'opencode server 状态来自当前 runtime manager；诊断不读取 resolved provider/config 原文。',
+      updatedAt: new Date(status.updatedAt).toISOString(),
+    }
+  }
+
+  return {
+    runtimeKind: 'opencode',
+    featureEnabled,
+    state: featureEnabled ? (registered ? 'not_started' : 'not_configured') : 'disabled',
+    message: featureEnabled
+      ? registered
+        ? '真实 opencode serve 已接入，server 会在 opencode 会话运行时按需启动；诊断不读取 resolved provider/config 原文。'
+        : 'opencode runtime feature flag 已启用，但当前进程未注册 runtime。'
+      : 'opencode runtime feature flag 未启用。',
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+export function refreshAgentOpencodeModelsDiagnostic(): AgentOpencodeModelRefreshResult {
+  return {
+    ok: false,
+    models: [],
+    error: 'Phase 6 暂不从 opencode /provider 或 /config/providers 刷新模型，避免读取 resolved secret；请在设置中手动填写 provider/model。',
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+function isRuntimeFeatureEnabled(runtimeKind: CodingAgentRuntimeKind): boolean {
+  if (runtimeKind === 'codex') return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
+  if (runtimeKind === 'opencode') return process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+  return true
+}
+
+function runtimeCapabilityNames(capabilities: CodingAgentRuntimeCapabilities): string[] {
+  const names: string[] = []
+  if (capabilities.supportsStreamEvents) names.push('streamEvents')
+  if (capabilities.supportsResumeThread) names.push('resumeThread')
+  if (capabilities.supportsAbort) names.push('abort')
+  if (capabilities.supportsQueueMessage) names.push('queueMessage')
+  if (capabilities.supportsSetPermissionMode) names.push('setPermissionMode')
+  if (capabilities.supportsPerToolPermission) names.push('perToolPermission')
+  if (capabilities.supportsServerStatus) names.push('serverStatus')
+  if (capabilities.supportsModelRefresh) names.push('modelRefresh')
+  return names
+}
+
+function buildRuntimeDiagnosticMessage(
+  runtimeKind: CodingAgentRuntimeKind,
+  featureEnabled: boolean,
+  registered: boolean,
+): string | undefined {
+  if (runtimeKind === 'claude-code') return 'Claude Code legacy runtime 已注册。'
+  if (!featureEnabled) return `${runtimeKind} runtime feature flag 未启用。`
+  if (!registered) return `${runtimeKind} runtime 未在当前进程注册。`
+  if (runtimeKind === 'opencode') {
+    return 'opencode 真实 server runtime 已接入；支持按需启动 server、事件流、恢复、中止和工具级权限。'
+  }
+  return undefined
 }
 
 // ===== 流式追加消息 =====

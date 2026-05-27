@@ -1,6 +1,7 @@
 import type { AgentSessionMeta, Channel, CodingAgentRuntimeKind } from '@codeinsights/shared'
 
 export const CODEX_NATIVE_AUTH_SELECT_VALUE = '__codex_native_auth__'
+export const OPENCODE_NATIVE_AUTH_SELECT_VALUE = '__opencode_native_auth__'
 
 export interface AgentRuntimeFeatureFlags {
   codex: boolean
@@ -51,12 +52,30 @@ export function getCodexCompatibleChannels(channels: Channel[]): Channel[] {
   return channels.filter(isCodexCompatibleChannel)
 }
 
+export function isOpencodeCompatibleChannel(channel: Channel): boolean {
+  return channel.enabled && (channel.provider === 'openai' || channel.provider === 'custom')
+}
+
+export function getOpencodeCompatibleChannels(channels: Channel[]): Channel[] {
+  return channels.filter(isOpencodeCompatibleChannel)
+}
+
 export function cleanupAgentCodexChannelId(
   channelId: string | null | undefined,
   channels: Channel[],
 ): string | null | undefined {
   if (channelId == null) return channelId
   return channels.some((channel) => channel.id === channelId && isCodexCompatibleChannel(channel))
+    ? channelId
+    : undefined
+}
+
+export function cleanupAgentOpencodeChannelId(
+  channelId: string | null | undefined,
+  channels: Channel[],
+): string | null | undefined {
+  if (channelId == null) return channelId
+  return channels.some((channel) => channel.id === channelId && isOpencodeCompatibleChannel(channel))
     ? channelId
     : undefined
 }
@@ -76,4 +95,10 @@ export function shouldUseRuntimeTranscript(
   defaultRuntimeKind: CodingAgentRuntimeKind,
 ): boolean {
   return resolveAgentSessionRuntimeKind(session, defaultRuntimeKind) !== 'claude-code'
+}
+
+export function formatRuntimeHeaderLabel(kind: CodingAgentRuntimeKind): string {
+  if (kind === 'codex') return 'Codex'
+  if (kind === 'opencode') return 'opencode'
+  return 'Claude Code'
 }

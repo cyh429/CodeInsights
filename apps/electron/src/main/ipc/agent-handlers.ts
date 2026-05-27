@@ -50,8 +50,12 @@ import {
 } from '../lib/agent-session-manager'
 import {
   generateAgentTitle,
+  getAgentOpencodeServerStatusDiagnostic,
   isAgentSessionActive,
+  listAgentRuntimeCapabilitiesDiagnostics,
   queueAgentMessage,
+  refreshAgentOpencodeModelsDiagnostic,
+  respondAgentRuntimePermission,
   rewindAgentSession,
   runAgent,
   saveFilesToAgentSession,
@@ -339,64 +343,23 @@ export function registerAgentIpcHandlers(): void {
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_RUNTIME_CAPABILITIES,
     async (): Promise<AgentRuntimeCapabilitiesDiagnostic[]> => {
-      const codexEnabled = process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
-      const opencodeEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
-      return [
-        {
-          runtimeKind: 'claude-code',
-          featureEnabled: true,
-          registered: true,
-          available: true,
-          capabilities: ['streamEvents', 'resumeThread', 'abort', 'queueMessage', 'setPermissionMode', 'perToolPermission'],
-        },
-        {
-          runtimeKind: 'codex',
-          featureEnabled: codexEnabled,
-          registered: codexEnabled,
-          available: codexEnabled,
-          capabilities: ['streamEvents', 'resumeThread', 'abort'],
-        },
-        {
-          runtimeKind: 'opencode',
-          featureEnabled: opencodeEnabled,
-          registered: opencodeEnabled,
-          available: opencodeEnabled,
-          capabilities: ['streamEvents', 'resumeThread', 'abort'],
-          message: opencodeEnabled
-            ? 'opencode mock runtime 已接入；权限、server status 和 model refresh 将在后续 Phase 启用'
-            : 'opencode runtime feature flag 未启用',
-        },
-      ]
+      return listAgentRuntimeCapabilitiesDiagnostics()
     }
   )
 
-  // 获取 opencode server 状态。Phase 4 只有 mock runtime，不启动真实 server。
+  // 获取 opencode server 状态。真实 server 按会话运行时按需启动。
   ipcMain.handle(
     AGENT_IPC_CHANNELS.GET_OPENCODE_SERVER_STATUS,
     async (): Promise<AgentOpencodeServerStatus> => {
-      const featureEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
-      return {
-        runtimeKind: 'opencode',
-        featureEnabled,
-        state: featureEnabled ? 'not_started' : 'disabled',
-        message: featureEnabled
-          ? 'opencode mock runtime 已接入；Phase 4 不启动真实 opencode server'
-          : 'opencode runtime feature flag 未启用',
-        updatedAt: new Date().toISOString(),
-      }
+      return getAgentOpencodeServerStatusDiagnostic()
     }
   )
 
-  // 刷新 opencode 模型。Phase 4 不读取 opencode server/provider 响应，避免记录 resolved secret。
+  // 刷新 opencode 模型。Phase 6 不读取 resolved provider/config 响应，避免记录 secret。
   ipcMain.handle(
     AGENT_IPC_CHANNELS.REFRESH_OPENCODE_MODELS,
     async (): Promise<AgentOpencodeModelRefreshResult> => {
-      return {
-        ok: false,
-        models: [],
-        error: 'opencode runtime core 尚未接入，暂不能刷新模型',
-        updatedAt: new Date().toISOString(),
-      }
+      return refreshAgentOpencodeModelsDiagnostic()
     }
   )
 
@@ -538,16 +501,26 @@ export function registerAgentIpcHandlers(): void {
     AGENT_IPC_CHANNELS.PERMISSION_RESPOND,
     async (event, response: PermissionResponse): Promise<void> => {
       const { requestId, behavior, alwaysAllow } = response
-      const sessionId = permissionService.respondToPermission(requestId, behavior, alwaysAllow)
+      let sessionId = permissionService.respondToPermission(requestId, behavior, alwaysAllow)
+      if (!sessionId && response.sessionId) {
+        const ok = await respondAgentRuntimePermission({
+          sessionId: response.sessionId,
+          requestId,
+          behavior,
+          alwaysAllow,
+        })
+        sessionId = ok ? response.sessionId : null
+      }
+      if (!sessionId) {
+        throw new Error('权限请求已失效或当前 runtime 无法处理该响应，请刷新会话状态后重试。')
+      }
 
       // 发送 permission_resolved 事件给渲染进程
-      if (sessionId) {
-        appendPermissionResolvedRuntimeEvent(sessionId, requestId, behavior)
-        event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
-          sessionId,
-          payload: { kind: 'codeinsights_event', event: { type: 'permission_resolved', requestId, behavior } },
-        })
-      }
+      appendPermissionResolvedRuntimeEvent(sessionId, requestId, behavior)
+      event.sender.send(AGENT_IPC_CHANNELS.STREAM_EVENT, {
+        sessionId,
+        payload: { kind: 'codeinsights_event', event: { type: 'permission_resolved', requestId, behavior } },
+      })
     }
   )
 

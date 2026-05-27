@@ -2096,7 +2096,9 @@ export class AgentOrchestrator {
         envelopeToPersist = this.createStoppedEnvelopeFromRuntimeEnvelope(envelope, wasStoppedByUser)
       }
 
-      appendAgentRuntimeEnvelope(envelopeToPersist)
+      if (appendAgentRuntimeEnvelope(envelopeToPersist)) {
+        this.eventBus.emit(input.sessionId, { kind: 'runtime_envelope', envelope: envelopeToPersist })
+      }
       if (envelopeToPersist.event.type === 'run_started') {
         effectiveModel = normalizeOpencodeModelForPersistence(envelopeToPersist.event.model) ?? effectiveModel
       }
@@ -2133,13 +2135,16 @@ export class AgentOrchestrator {
     if (!terminalEvent && !this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
       const stoppedByUser = this.stoppedBySessions.delete(input.sessionId)
       terminalEvent = { type: 'run_stopped', reason: 'user_abort', stoppedBy: stoppedByUser ? 'user' : 'system' }
-      appendAgentRuntimeEnvelope(createAgentStreamEnvelope({
+      const stoppedEnvelope = createAgentStreamEnvelope({
         sessionId: input.sessionId,
         runId: lastEnvelope?.runId ?? `opencode-runtime:${input.sessionId}`,
         sequence: (lastEnvelope?.sequence ?? -1) + 1,
         source: 'runtime_service',
         event: terminalEvent,
-      }))
+      })
+      if (appendAgentRuntimeEnvelope(stoppedEnvelope)) {
+        this.eventBus.emit(input.sessionId, { kind: 'runtime_envelope', envelope: stoppedEnvelope })
+      }
     }
 
     if (!this.isRunGenerationActive(input.sessionId, input.runGeneration, input.abortController)) {
@@ -2251,6 +2256,7 @@ export class AgentOrchestrator {
         uuid: envelope.event.messageId,
         _createdAt: Date.now(),
         _channelModelId: model,
+        _runtimeEnvelope: true,
       } as unknown as SDKMessage
       appendSDKMessages(sessionId, [message])
       this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
@@ -2271,6 +2277,7 @@ export class AgentOrchestrator {
         },
         total_cost_usd: usage.costUsd ?? 0,
         terminal_reason: envelope.event.terminalReason ?? 'completed',
+        _runtimeEnvelope: true,
       } as unknown as SDKMessage
       appendSDKMessages(sessionId, [message])
       this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
@@ -2282,6 +2289,7 @@ export class AgentOrchestrator {
         userFacingError: envelope.event.error.message,
         isPromptTooLong: envelope.event.error.code === 'prompt_too_long',
       })
+      ;(message as Record<string, unknown>)._runtimeEnvelope = true
       appendSDKMessages(sessionId, [message])
       this.eventBus.emit(sessionId, { kind: 'sdk_message', message })
     }
@@ -2432,6 +2440,17 @@ export class AgentOrchestrator {
       await this.adapter.setPermissionMode(sessionId, mode)
     }
     console.log(`[Agent 编排] 运行中权限模式已切换: sessionId=${sessionId}, mode=${mode}`)
+  }
+
+  async respondRuntimePermission(input: {
+    sessionId: string
+    requestId: string
+    behavior: 'allow' | 'deny'
+    alwaysAllow: boolean
+  }): Promise<boolean> {
+    const runtime = this.activeCodingRuntimes.get(input.sessionId)
+    if (!runtime?.respondPermission) return false
+    return await runtime.respondPermission(input)
   }
 
   // ===== 快照回退 =====

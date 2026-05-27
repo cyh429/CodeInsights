@@ -144,4 +144,44 @@ describe('runtime-transcript-model', () => {
   test('missing runtime events is explicit in the selector result', () => {
     expect(selectRuntimeTranscript({ runtimeEvents: [], sdkMessages: [] }).hasRuntimeEvents).toBe(false)
   })
+
+  test('opencode server events replay without a live opencode server dependency', () => {
+    const selection = selectRuntimeTranscript({
+      runtimeEvents: [
+        createAgentStreamEnvelope({
+          sessionId: 's-opencode',
+          runId: 'run-opencode',
+          sequence: 0,
+          source: 'runtime_service',
+          createdAt: '2026-05-27T00:00:00.000Z',
+          event: {
+            type: 'run_started',
+            model: 'anthropic/claude-sonnet-4-5',
+            cwd: '/tmp/project',
+            permissionMode: 'auto',
+            runtimeHash: 'hash',
+            runtimeKind: 'opencode',
+          },
+        }),
+        createAgentStreamEnvelope({
+          sessionId: 's-opencode',
+          runId: 'run-opencode',
+          sequence: 1,
+          source: 'opencode_server',
+          createdAt: '2026-05-27T00:00:01.000Z',
+          event: {
+            type: 'assistant_message',
+            messageId: 'msg-opencode',
+            contentBlocks: [{ type: 'text', text: 'opencode 历史内容' }],
+            status: 'complete',
+          },
+        }),
+      ],
+      sdkMessages: [userMessage('读取历史', 'user-opencode', 1)],
+    })
+
+    expect(selection.hasRuntimeEvents).toBe(true)
+    expect(selection.items.map((item) => item.kind)).toEqual(['user', 'assistant'])
+    expect(selection.items[1]).toMatchObject({ kind: 'assistant', text: 'opencode 历史内容' })
+  })
 })

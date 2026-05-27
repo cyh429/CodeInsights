@@ -24,6 +24,7 @@ interface RuntimeTranscriptProps {
   streaming: boolean
   streamState?: AgentStreamState
   sessionModelId?: string
+  runtimeLabel?: string
   sessionPath?: string | null
   attachedDirs?: string[]
   messagesLoaded?: boolean
@@ -36,6 +37,7 @@ export function RuntimeTranscript({
   streaming,
   streamState,
   sessionModelId,
+  runtimeLabel = 'Runtime',
   sessionPath,
   attachedDirs,
   messagesLoaded,
@@ -62,12 +64,13 @@ export function RuntimeTranscript({
             <WelcomeEmptyState />
           ) : (
             <>
-              {shouldShowMissingEvents && <RuntimeEventsMissingNotice />}
+              {shouldShowMissingEvents && <RuntimeEventsMissingNotice runtimeLabel={runtimeLabel} />}
               {selection.items.map((item) => (
                 <RuntimeTranscriptItemView
                   key={`${item.kind}:${item.id}`}
                   item={item}
                   sessionModelId={sessionModelId}
+                  runtimeLabel={runtimeLabel}
                   sessionPath={sessionPath}
                   attachedDirs={attachedDirs}
                 />
@@ -76,6 +79,7 @@ export function RuntimeTranscript({
                 <RuntimeAssistantMessage
                   text={liveContent}
                   sessionModelId={sessionModelId}
+                  runtimeLabel={runtimeLabel}
                   sessionPath={sessionPath}
                   attachedDirs={attachedDirs}
                   streaming
@@ -84,9 +88,9 @@ export function RuntimeTranscript({
               )}
               {streaming && !hasLiveContent && (
                 <Message from="assistant" className="agent-message-card" data-role="assistant">
-                  <RuntimeAssistantHeader sessionModelId={sessionModelId} />
+                  <RuntimeAssistantHeader sessionModelId={sessionModelId} runtimeLabel={runtimeLabel} />
                   <MessageContent>
-                    <AgentRunningIndicator startedAt={streamState?.startedAt} label="Codex Runtime 同步中" />
+                    <AgentRunningIndicator startedAt={streamState?.startedAt} label={`${runtimeLabel} 同步中`} />
                   </MessageContent>
                 </Message>
               )}
@@ -102,11 +106,13 @@ export function RuntimeTranscript({
 function RuntimeTranscriptItemView({
   item,
   sessionModelId,
+  runtimeLabel,
   sessionPath,
   attachedDirs,
 }: {
   item: RuntimeTranscriptItem
   sessionModelId?: string
+  runtimeLabel: string
   sessionPath?: string | null
   attachedDirs?: string[]
 }): React.ReactElement | null {
@@ -119,6 +125,7 @@ function RuntimeTranscriptItemView({
         text={item.text}
         createdAt={item.createdAt}
         sessionModelId={sessionModelId}
+        runtimeLabel={runtimeLabel}
         sessionPath={sessionPath}
         attachedDirs={attachedDirs}
       />
@@ -152,6 +159,7 @@ function RuntimeAssistantMessage({
   text,
   createdAt,
   sessionModelId,
+  runtimeLabel,
   sessionPath,
   attachedDirs,
   streaming,
@@ -160,6 +168,7 @@ function RuntimeAssistantMessage({
   text: string
   createdAt?: number
   sessionModelId?: string
+  runtimeLabel: string
   sessionPath?: string | null
   attachedDirs?: string[]
   streaming?: boolean
@@ -167,10 +176,10 @@ function RuntimeAssistantMessage({
 }): React.ReactElement {
   return (
     <Message from="assistant" className="agent-message-card" data-role="assistant">
-      <RuntimeAssistantHeader sessionModelId={sessionModelId} createdAt={createdAt} />
+      <RuntimeAssistantHeader sessionModelId={sessionModelId} runtimeLabel={runtimeLabel} createdAt={createdAt} />
       <MessageContent className="gap-3">
         <MessageResponse basePath={sessionPath || undefined} basePaths={attachedDirs}>{text}</MessageResponse>
-        {streaming && <AgentRunningIndicator startedAt={startedAt} label="Codex Runtime 同步中" />}
+        {streaming && <AgentRunningIndicator startedAt={startedAt} label={`${runtimeLabel} 同步中`} />}
       </MessageContent>
       {text && (
         <div className="pl-[46px] mt-0.5">
@@ -181,9 +190,17 @@ function RuntimeAssistantMessage({
   )
 }
 
-function RuntimeAssistantHeader({ sessionModelId, createdAt }: { sessionModelId?: string; createdAt?: number }): React.ReactElement {
+function RuntimeAssistantHeader({
+  sessionModelId,
+  runtimeLabel,
+  createdAt,
+}: {
+  sessionModelId?: string
+  runtimeLabel: string
+  createdAt?: number
+}): React.ReactElement {
   const channels = useAtomValue(channelsAtom)
-  const model = sessionModelId ? resolveModelDisplayName(sessionModelId, channels) : 'Codex'
+  const model = sessionModelId ? resolveModelDisplayName(sessionModelId, channels) : runtimeLabel
   return (
     <MessageHeader
       model={model}
@@ -249,12 +266,12 @@ function RuntimeStatusMessage({ item }: { item: RuntimeTranscriptItem & { kind: 
   )
 }
 
-function RuntimeEventsMissingNotice(): React.ReactElement {
+function RuntimeEventsMissingNotice({ runtimeLabel }: { runtimeLabel: string }): React.ReactElement {
   return (
     <div className="agent-tool-rail flex items-start gap-2 rounded-card border-status-waiting-border bg-status-waiting-bg px-3 py-2.5 text-sm text-status-waiting-fg">
       <Wrench className="mt-0.5 size-4 shrink-0" />
       <div className="min-w-0">
-        <div className="font-medium">Codex runtime events 未找到</div>
+        <div className="font-medium">{runtimeLabel} events 未找到</div>
         <div className="mt-0.5 text-xs text-current/70">该会话缺少可回放的 runtime events，历史内容可能不完整。</div>
       </div>
     </div>

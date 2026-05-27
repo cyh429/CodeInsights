@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 5 已完成，renderer / UX 接入未开始
+状态：Phase 6 已完成，MCP / packaged / release readiness 未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 5 完成
+更新时间：2026-05-27，Phase 6 完成
 
 当前结论：
 
@@ -63,15 +63,18 @@
 - [x] Phase 5 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.117`。
 - [x] Phase 5 已单独提交：`b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
 - [x] Phase 5 后状态同步已单独提交：`3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`。
-- [ ] Phase 6 renderer / UX 接入未开始。
+- [x] Phase 6 renderer / UX 接入已完成：Agent 设置接入 runtime 三选、opencode auth source / model / agent / snapshot/autoupdate、feature flag 关闭态、runtime capabilities、server status、模型刷新禁用说明和 MCP Phase 7 占位。
+- [x] Phase 6 权限交互已完成：opencode permission events 复用现有 `PermissionBanner`，展示 tool preview、cwd、risk label，支持 reject / once / session allow，并在缺少 preview 时隐藏 session allow。
+- [x] Phase 6 历史回放已完成：Codex / opencode 统一使用 runtime transcript；live runtime envelope 推送并去重；兼容 SDKMessage 加 `_runtimeEnvelope` 标记避免重复；回放只依赖 CodeInsights runtime event log，不依赖 opencode server 存活。
+- [x] Phase 6 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.48`，提升 `@codeinsights/electron` patch 版本到 `0.0.118`。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
 
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新开发基线为 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成`。
-- 预期最新状态同步提交为 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`；若其后还有文档同步提交，以最新 HEAD 为准，但历史必须包含 `b3e99265`。
+- 预期最新开发状态为 Phase 6 完成；历史必须包含 Phase 5 开发基线 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成` 和 Phase 6 阶段提交。
+- 若后续补充状态同步提交，support 文档记录真实开发基线，最终回复或下次启动提示词再补充实际 HEAD。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -79,9 +82,9 @@
 
 下一步入口：
 
-1. 确认 Phase 5 实现提交 `b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成` 和状态同步提交 `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态` 均已提交。
-2. 进入 Phase 6，开始 renderer 设置、权限交互和历史回放。
-3. 不要直接跳到发布打包验收；packaged binary、MCP 和 release readiness 留到 Phase 7。
+1. 确认 Phase 6 阶段提交已经存在，历史包含 `786b6485`、`3b8a1286`、`b3e99265` 和 `647d3046`。
+2. 进入 Phase 7，开始 MCP、packaged binary 和 release readiness。
+3. 不要直接跳到真实模型验收或公开文档同步；真实使用验收、故障排查和 release notes 留到 Phase 8。
 
 ## 0.2 当前完成/未完成总览
 
@@ -98,7 +101,7 @@
 | Phase 3 | [x] | event adapter 与 fixtures |
 | Phase 4 | [x] | runtime mock、registry、orchestrator routing |
 | Phase 5 | [x] | 真实 `opencode serve` 集成 |
-| Phase 6 | [ ] | renderer 设置、权限交互、历史回放 |
+| Phase 6 | [x] | renderer 设置、权限交互、历史回放 |
 | Phase 7 | [ ] | MCP、packaged binary、release readiness |
 | Phase 8 | [ ] | 真实验收、故障排查、公开文档同步准备 |
 
@@ -129,9 +132,9 @@
 | [x] | 主接入方式 | managed `opencode serve` + SDK client | Phase 2-5 |
 | [x] | CLI `run --format json` 定位 | smoke / fallback，不作主路径 | Phase 5 |
 | [x] | feature flag | `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` | Phase 1-6 |
-| [ ] | 默认认证来源 | native opencode auth 优先，channel auth 显式选择 | Phase 6 |
+| [x] | 默认认证来源 | native opencode auth 优先，channel auth 显式选择 | Phase 6 |
 | [x] | channel auth 是否写入 opencode auth storage | 否，只用 env placeholder；Phase 0 已确认 provider/MCP env placeholder 可行 | Phase 2 / Phase 5 |
-| [ ] | `bypassPermissions` 是否暴露 | 首版不公开；即使启用也保留 Git guard | Phase 6 |
+| [x] | `bypassPermissions` 是否暴露 | 首版不公开；即使启用也保留 Git guard | Phase 6 |
 | [x] | native auth 是否隔离 HOME | 首版复用 opencode 原生全局 auth；Phase 5 native smoke 不读取 auth 文件内容 | Phase 5 |
 | [ ] | MCP OAuth 是否由 CodeInsights 代理 | 首版不代理，只复用 opencode native OAuth | Phase 7 |
 | [ ] | 根 README / AGENTS 是否同步 | 用户明确允许后再改 | Phase 8 |
@@ -586,31 +589,33 @@ git diff --check -- apps/electron scripts docs/opencode-support tasks/todo.md
 - `apps/electron/src/renderer/components/settings/**`
 - `apps/electron/src/renderer/components/agent/**`
 - `apps/electron/src/renderer/hooks/**`
-- `apps/electron/src/preload/**`
-- `apps/electron/src/main/ipc.ts`
+- `packages/shared/src/types/agent.ts`
+- `packages/shared/src/agent/runtime-events.ts`
+- `apps/electron/src/main/ipc/**`
+- `apps/electron/src/main/lib/agent-runtimes/**`
 - 对应 tests
 
 任务：
 
-- [ ] Agent Runtime 设置三选：Claude Code / Codex / opencode。
-- [ ] feature flag 未启用时显示实验功能关闭态。
-- [ ] opencode auth source UI：native auth / CodeInsights channel。
-- [ ] opencode model 输入或 provider/model picker。
-- [ ] opencode agent 选择：build / plan / custom。
-- [ ] Server 状态显示：未启动 / 运行中 / 版本 / 最近错误。
-- [ ] MCP 状态入口显示 `/mcp` 摘要。
-- [ ] Agent Header runtime badge 显示 runtime/model/agent/permission。
-- [ ] PermissionBanner 支持 opencode tool preview、cwd、risk label。
-- [ ] PermissionBanner 支持 reject / once / session allow。
-- [ ] 缺少 preview 时隐藏 session allow。
-- [ ] 运行中 permission 切换显示“下次发送生效”。
-- [ ] queue message 不支持时禁用或提示。
-- [ ] 历史回放不依赖 opencode server 存活。
-- [ ] reload 后 opencode transcript 仍可显示。
-- [ ] binary missing / auth missing / model missing 错误可解释。
-- [ ] Jotai atoms 保持现有状态管理方式，不引入新状态库。
-- [ ] 补充 renderer tests。
-- [ ] 补充 Electron / Playwright fixture smoke。
+- [x] Agent Runtime 设置三选：Claude Code / Codex / opencode。
+- [x] feature flag 未启用时显示实验功能关闭态。
+- [x] opencode auth source UI：native auth / CodeInsights channel。
+- [x] opencode model 输入或 provider/model picker。
+- [x] opencode agent 选择：build / plan / custom。
+- [x] Server 状态显示：未启动 / 运行中 / 版本 / 最近错误。
+- [x] MCP 状态入口显示 `/mcp` 摘要。Phase 6 只展示 Phase 7 占位，不读取 MCP secret 相关响应。
+- [x] Agent Header runtime badge 显示 runtime/model/agent/permission。
+- [x] PermissionBanner 支持 opencode tool preview、cwd、risk label。
+- [x] PermissionBanner 支持 reject / once / session allow。
+- [x] 缺少 preview 时隐藏 session allow。
+- [x] 运行中 permission 切换显示“下次发送生效”。
+- [x] queue message 不支持时禁用或提示。
+- [x] 历史回放不依赖 opencode server 存活。
+- [x] reload 后 opencode transcript 仍可显示。
+- [x] binary missing / auth missing / model missing 错误可解释。
+- [x] Jotai atoms 保持现有状态管理方式，不引入新状态库。
+- [x] 补充 renderer tests。
+- [!] Electron / Playwright packaged fixture smoke 留到 Phase 7 / Phase 8；用户本轮明确不进入 packaged release，Phase 6 通过 renderer history replay 单测覆盖回放契约。
 
 验证：
 
@@ -623,13 +628,26 @@ CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' 
 git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/electron/src/main tasks/todo.md docs/opencode-support
 ```
 
+### 8.1 Phase 6 验证记录
+
+- `bun test apps/electron/src/renderer`：129 tests passed。
+- `bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`：29 tests passed，覆盖多 run 重叠 sequence 回放、opencode permission response 和 runtime UI helper。
+- `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`：16 tests passed。
+- `bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-session-manager.test.ts`：35 tests passed。
+- `bun run --filter='@codeinsights/electron' typecheck`：passed。
+- `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`：passed；仅保留既有 Vite chunk size warning。
+- `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`：passed；仅保留既有 Vite chunk size warning。
+- `git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/electron/src/main packages/shared bun.lock apps/electron/package.json packages/shared/package.json tasks/todo.md docs/opencode-support`：passed。
+- 代码审查发现的 replay sequence、feature flag 关闭态和 server status 静态诊断问题已在 Phase 6 收尾修复，并通过上方验证。
+- Phase 6 未运行 packaged Electron history reload smoke；该 smoke 依赖 packaged app，按本轮边界留到 Phase 7 / Phase 8。
+
 退出标准：
 
-- [ ] UI 可保存和加载 opencode settings。
-- [ ] runtime badge 和 permission interaction 可见。
-- [ ] reload history smoke 通过。
-- [ ] feature flag off 构建通过且不显示 opencode 可用态。
-- [ ] Phase 6 单独提交完成。
+- [x] UI 可保存和加载 opencode settings。
+- [x] runtime badge 和 permission interaction 可见。
+- [x] reload history contract 通过 renderer 单测；packaged app reload smoke 留 Phase 7 / Phase 8。
+- [x] feature flag off 构建通过且不显示 opencode 可用态。
+- [x] Phase 6 单独提交完成。
 
 回滚点：
 
@@ -784,7 +802,7 @@ Smoke summary 规则：
 | packaged binary 缺失 | Phase 7 | [ ] | electron-builder files + packaged smoke |
 | server 进程泄漏 | Phase 2 / 5 | [x] | Phase 5 smoke 后确认无残留 opencode 进程；app quit cleanup + idle timeout 已接入 |
 | managed config 覆盖安全策略 | Phase 0 / 5 | [x] | Phase 5 secretless config smoke 已检测 resolved server / permission / share / autoupdate summary |
-| Renderer 过度分叉 | Phase 6 | [ ] | 使用 runtime capabilities，不写 opencode 专用 message list |
+| Renderer 过度分叉 | Phase 6 | [x] | Phase 6 复用 `RuntimeTranscript` 与 `PermissionBanner`，通过 runtime label / capabilities 区分 Codex 与 opencode |
 
 ## 13. 阶段记录模板
 

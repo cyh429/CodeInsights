@@ -372,6 +372,9 @@ export function adaptAgentEventToRuntimeEvent(event: AgentEvent): AgentRuntimeEv
 }
 
 export function adaptAgentStreamPayloadToRuntimeEvents(payload: AgentStreamPayload): AgentRuntimeEvent[] {
+  if (payload.kind === 'runtime_envelope') {
+    return [payload.envelope.event]
+  }
   if (payload.kind === 'codeinsights_event' || payload.kind === 'rv_insights_event') {
     return adaptCodeInsightsEventToRuntimeEvent(payload.event)
   }
@@ -460,6 +463,7 @@ export function adaptCodeInsightsEventToRuntimeEvent(event: CodeInsightsEvent): 
 
 export interface AgentRuntimeReplayState {
   appliedSequences: number[]
+  appliedEnvelopeKeys: string[]
   textByMessageId: Record<string, string>
   tools: Record<string, { name: string; status: 'running' | 'success' | 'error' | 'denied' | 'stopped'; outputSummary?: string }>
   pendingPermissionRequestIds: string[]
@@ -476,6 +480,7 @@ export interface AgentRuntimeReplayState {
 export function createInitialAgentRuntimeReplayState(): AgentRuntimeReplayState {
   return {
     appliedSequences: [],
+    appliedEnvelopeKeys: [],
     textByMessageId: {},
     tools: {},
     pendingPermissionRequestIds: [],
@@ -489,17 +494,31 @@ export function createInitialAgentRuntimeReplayState(): AgentRuntimeReplayState 
 }
 
 export function replayAgentStreamEnvelopes(envelopes: AgentStreamEnvelope[]): AgentRuntimeReplayState {
+  const runOrder = new Map<string, number>()
+  for (const envelope of envelopes) {
+    if (!runOrder.has(envelope.runId)) {
+      runOrder.set(envelope.runId, runOrder.size)
+    }
+  }
+
   return envelopes
     .slice()
-    .sort((a, b) => a.sequence - b.sequence)
+    .sort((a, b) => {
+      const runDelta = (runOrder.get(a.runId) ?? 0) - (runOrder.get(b.runId) ?? 0)
+      if (runDelta !== 0) return runDelta
+      if (a.sequence !== b.sequence) return a.sequence - b.sequence
+      return Date.parse(a.createdAt) - Date.parse(b.createdAt)
+    })
     .reduce(applyAgentStreamEnvelope, createInitialAgentRuntimeReplayState())
 }
 
 export function applyAgentStreamEnvelope(state: AgentRuntimeReplayState, envelope: AgentStreamEnvelope): AgentRuntimeReplayState {
-  if (state.appliedSequences.includes(envelope.sequence)) return state
+  const envelopeKey = getAgentRuntimeReplayEnvelopeKey(envelope)
+  if (state.appliedEnvelopeKeys.includes(envelopeKey)) return state
   const next: AgentRuntimeReplayState = {
     ...state,
     appliedSequences: [...state.appliedSequences, envelope.sequence],
+    appliedEnvelopeKeys: [...state.appliedEnvelopeKeys, envelopeKey],
     textByMessageId: { ...state.textByMessageId },
     tools: { ...state.tools },
     pendingPermissionRequestIds: [...state.pendingPermissionRequestIds],
@@ -557,6 +576,10 @@ export function applyAgentStreamEnvelope(state: AgentRuntimeReplayState, envelop
     next.terminal = event
   }
   return next
+}
+
+function getAgentRuntimeReplayEnvelopeKey(envelope: AgentStreamEnvelope): string {
+  return `${envelope.runId}\0${envelope.sequence}`
 }
 
 function adaptPermissionRequest(request: PermissionRequest): AgentRuntimeEvent {

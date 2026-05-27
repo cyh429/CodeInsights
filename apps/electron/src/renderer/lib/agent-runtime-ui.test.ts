@@ -2,7 +2,10 @@ import { describe, expect, test } from 'bun:test'
 import type { AgentSessionMeta, Channel } from '@codeinsights/shared'
 import {
   cleanupAgentCodexChannelId,
+  cleanupAgentOpencodeChannelId,
+  formatRuntimeHeaderLabel,
   getCodexCompatibleChannels,
+  getOpencodeCompatibleChannels,
   isAgentCodexRuntimeFeatureEnabled,
   isAgentOpencodeRuntimeFeatureEnabled,
   resolveEnabledAgentRuntimeKind,
@@ -43,6 +46,7 @@ describe('agent-runtime-ui', () => {
     ]
 
     expect(getCodexCompatibleChannels(channels).map((item) => item.id)).toEqual(['openai', 'custom'])
+    expect(getOpencodeCompatibleChannels(channels).map((item) => item.id)).toEqual(['openai', 'custom'])
   })
 
   test('invalid agentCodexChannelId is cleaned while native auth is preserved', () => {
@@ -52,6 +56,9 @@ describe('agent-runtime-ui', () => {
     expect(cleanupAgentCodexChannelId('missing', channels)).toBeUndefined()
     expect(cleanupAgentCodexChannelId(null, channels)).toBeNull()
     expect(cleanupAgentCodexChannelId(undefined, channels)).toBeUndefined()
+    expect(cleanupAgentOpencodeChannelId('codex-channel', channels)).toBe('codex-channel')
+    expect(cleanupAgentOpencodeChannelId('missing', channels)).toBeUndefined()
+    expect(cleanupAgentOpencodeChannelId(null, channels)).toBeNull()
   })
 
   test('session runtime binding wins over current settings', () => {
@@ -92,5 +99,6 @@ describe('agent-runtime-ui', () => {
       createdAt: 1,
       updatedAt: 1,
     }, 'codex')).toBe('codex')
+    expect(formatRuntimeHeaderLabel('opencode')).toBe('opencode')
   })
 })

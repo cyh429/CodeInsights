@@ -41,9 +41,10 @@ describe('agent-ui-model', () => {
     expect(meta[2]).toEqual({ key: 'model', label: '模型', value: '未选择模型', tone: 'waiting' })
   })
 
-  test('runtime labels distinguish Claude Code and Codex sessions', () => {
+  test('runtime labels distinguish Claude Code, Codex and opencode sessions', () => {
     expect(formatRuntimeKind('claude-code')).toBe('Claude Code')
     expect(formatRuntimeKind('codex')).toBe('Codex')
+    expect(formatRuntimeKind('opencode')).toBe('opencode')
 
     expect(buildAgentHeaderMeta({
       runtimeKind: 'codex',
@@ -51,6 +52,21 @@ describe('agent-ui-model', () => {
       modelName: 'gpt-5.1-codex',
       permissionMode: 'auto',
     })[0]).toEqual({ key: 'runtime', label: 'Runtime', value: 'Codex', tone: 'running' })
+
+    expect(buildAgentHeaderMeta({
+      runtimeKind: 'opencode',
+      workspaceName: 'codeinsights',
+      modelName: 'anthropic/claude-sonnet-4-5',
+      agentName: 'plan',
+      permissionMode: 'auto',
+    })[0]).toEqual({ key: 'runtime', label: 'Runtime', value: 'opencode', tone: 'running' })
+    expect(buildAgentHeaderMeta({
+      runtimeKind: 'opencode',
+      workspaceName: 'codeinsights',
+      modelName: 'anthropic/claude-sonnet-4-5',
+      agentName: 'plan',
+      permissionMode: 'auto',
+    })[3]).toEqual({ key: 'agent', label: 'Agent', value: 'plan', tone: 'neutral' })
   })
 
   test('permission and tool tones use shared status semantics', () => {
@@ -171,10 +187,23 @@ describe('agent-ui-model', () => {
       streaming: true,
       hasTextInput: true,
       queueUnsupported: true,
+      queueUnsupportedLabel: 'Codex Runtime',
     })).toEqual({
       disabled: true,
       canSend: false,
       notice: 'Codex Runtime 暂不支持运行中追加消息，请先停止或等待完成',
     })
+  })
+
+  test('composer uses runtime label when opencode cannot queue while streaming', () => {
+    expect(buildAgentComposerState({
+      hasChannel: true,
+      hasAvailableModel: true,
+      interactionLocked: false,
+      streaming: true,
+      hasTextInput: true,
+      queueUnsupported: true,
+      queueUnsupportedLabel: 'opencode Runtime',
+    }).notice).toBe('opencode Runtime 暂不支持运行中追加消息，请先停止或等待完成')
   })
 })

@@ -53,6 +53,10 @@ import {
   agentChannelIdsAtom,
   agentCodexChannelIdAtom,
   agentCodexModelIdAtom,
+  agentOpencodeChannelIdAtom,
+  agentOpencodeModelIdAtom,
+  agentOpencodeAgentNameAtom,
+  agentOpencodeUseNativeAuthAtom,
   agentSessionChannelMapAtom,
   agentSessionModelMapAtom,
   agentRuntimeEventsMapAtom,
@@ -105,7 +109,17 @@ import { sendWithCmdEnterAtom } from '@/atoms/shortcut-atoms'
 import type { AgentSendInput, AgentMessage, AgentPendingFile, ModelOption, SDKMessage } from '@codeinsights/shared'
 import { fileToBase64 } from '@/lib/file-utils'
 import { buildAgentComposerState, buildAgentRunnerModeControl, getActiveAgentBanner, hasPendingAgentInteraction } from './agent-ui-model'
-import { CODEX_NATIVE_AUTH_SELECT_VALUE, isAgentCodexRuntimeFeatureEnabled, isCodexCompatibleChannel, resolveAgentSessionRuntimeKind } from '@/lib/agent-runtime-ui'
+import {
+  CODEX_NATIVE_AUTH_SELECT_VALUE,
+  OPENCODE_NATIVE_AUTH_SELECT_VALUE,
+  formatRuntimeHeaderLabel,
+  isAgentCodexRuntimeFeatureEnabled,
+  isAgentOpencodeRuntimeFeatureEnabled,
+  isCodexCompatibleChannel,
+  isOpencodeCompatibleChannel,
+  resolveAgentSessionRuntimeKind,
+  shouldUseRuntimeTranscript,
+} from '@/lib/agent-runtime-ui'
 
 // ===== 思考模式 Hover Popover =====
 
@@ -211,6 +225,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
   const defaultRuntimeKind = useAtomValue(agentRuntimeKindAtom)
   const agentCodexChannelId = useAtomValue(agentCodexChannelIdAtom)
   const agentCodexModelId = useAtomValue(agentCodexModelIdAtom)
+  const agentOpencodeChannelId = useAtomValue(agentOpencodeChannelIdAtom)
+  const agentOpencodeModelId = useAtomValue(agentOpencodeModelIdAtom)
+  const agentOpencodeAgentName = useAtomValue(agentOpencodeAgentNameAtom)
+  const agentOpencodeUseNativeAuth = useAtomValue(agentOpencodeUseNativeAuthAtom)
   const agentChannelId = sessionChannelId ?? defaultChannelId
   const agentModelId = sessionModelId ?? defaultModelId
   const agentChannelIds = useAtomValue(agentChannelIdsAtom)
@@ -226,11 +244,26 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     () => resolveAgentSessionRuntimeKind(sessionMeta, defaultRuntimeKind),
     [defaultRuntimeKind, sessionMeta],
   )
+  const currentRuntimeLabel = `${formatRuntimeHeaderLabel(currentRuntimeKind)} Runtime`
+  const usesRuntimeTranscript = shouldUseRuntimeTranscript(sessionMeta, defaultRuntimeKind)
   const codexRuntimeFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
+  const opencodeRuntimeFeatureEnabled = isAgentOpencodeRuntimeFeatureEnabled()
   const isCodexRuntime = currentRuntimeKind === 'codex'
-  const codexRuntimeUnavailable = isCodexRuntime && !codexRuntimeFeatureEnabled
+  const isOpencodeRuntime = currentRuntimeKind === 'opencode'
+  const runtimeFeatureUnavailable =
+    (isCodexRuntime && !codexRuntimeFeatureEnabled)
+    || (isOpencodeRuntime && !opencodeRuntimeFeatureEnabled)
+  const runtimeQueueUnsupported = isCodexRuntime || isOpencodeRuntime
+  const runtimeSupportsCompact = currentRuntimeKind === 'claude-code'
   const codexConfiguredModelId = agentCodexModelId?.trim() || undefined
-  const runtimeModelId = isCodexRuntime ? (codexConfiguredModelId ?? 'Codex default') : (agentModelId || undefined)
+  const opencodeConfiguredModelId = agentOpencodeModelId?.trim() || undefined
+  const opencodeDisplayModelId = opencodeConfiguredModelId ?? 'opencode default'
+  const opencodeAgentLabel = agentOpencodeAgentName?.trim() || 'build'
+  const runtimeModelId = isCodexRuntime
+    ? (codexConfiguredModelId ?? 'Codex default')
+    : isOpencodeRuntime
+      ? opencodeDisplayModelId
+      : (agentModelId || undefined)
   // 从会话元数据派生 workspaceId：会话数据已加载时以自身为准，未加载时回退全局 atom
   const currentWorkspaceId = React.useMemo(() => {
     if (!sessionMeta) return globalWorkspaceId // 数据未加载，回退全局
@@ -332,16 +365,35 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     if (!agentCodexChannelId) return null
     return globalChannels.find((channel) => channel.id === agentCodexChannelId) ?? null
   }, [agentCodexChannelId, globalChannels])
+  const selectedOpencodeChannel = React.useMemo(() => {
+    if (!agentOpencodeChannelId) return null
+    return globalChannels.find((channel) => channel.id === agentOpencodeChannelId) ?? null
+  }, [agentOpencodeChannelId, globalChannels])
   const codexRuntimeReady = React.useMemo(() => {
     if (!isCodexRuntime) return false
     if (!codexRuntimeFeatureEnabled) return false
     if (agentCodexChannelId == null) return true
     return selectedCodexChannel ? isCodexCompatibleChannel(selectedCodexChannel) : false
   }, [agentCodexChannelId, codexRuntimeFeatureEnabled, isCodexRuntime, selectedCodexChannel])
+  const opencodeRuntimeReady = React.useMemo(() => {
+    if (!isOpencodeRuntime) return false
+    if (!opencodeRuntimeFeatureEnabled) return false
+    if (sessionMeta?.runtimeSession?.kind === 'opencode') return true
+    if (agentOpencodeUseNativeAuth === true || agentOpencodeChannelId == null) return true
+    return selectedOpencodeChannel ? isOpencodeCompatibleChannel(selectedOpencodeChannel) : false
+  }, [
+    agentOpencodeChannelId,
+    agentOpencodeUseNativeAuth,
+    isOpencodeRuntime,
+    opencodeRuntimeFeatureEnabled,
+    selectedOpencodeChannel,
+    sessionMeta?.runtimeSession?.kind,
+  ])
 
   // 检查 Agent 渠道列表中是否存在可用的模型（渠道 enabled + 模型 enabled）
   const hasAvailableModel = React.useMemo(() => {
     if (isCodexRuntime) return codexRuntimeReady
+    if (isOpencodeRuntime) return opencodeRuntimeReady
     // CodeInsights 官方渠道（商业版）：只要 enabled 且有可用模型，直接视为可用
     const codeInsightsOfficial = globalChannels.find((c) => c.id === 'codeinsights-official')
     if (codeInsightsOfficial?.enabled && codeInsightsOfficial.models.some((m) => m.enabled)) return true
@@ -350,9 +402,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     return globalChannels.some(
       (c) => c.enabled && agentChannelIds.includes(c.id) && c.models.some((m) => m.enabled),
     )
-  }, [isCodexRuntime, codexRuntimeReady, globalChannels, agentChannelIds])
+  }, [isCodexRuntime, isOpencodeRuntime, codexRuntimeReady, opencodeRuntimeReady, globalChannels, agentChannelIds])
   React.useEffect(() => {
-    if (isCodexRuntime) return
+    if (usesRuntimeTranscript) return
     if (!agentChannelId || agentModelId) return
 
     const channel = globalChannels.find((c) => c.id === agentChannelId && c.enabled)
@@ -373,7 +425,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
       agentChannelId,
       agentModelId: firstModel.id,
     }).catch(console.error)
-  }, [isCodexRuntime, agentChannelId, agentModelId, globalChannels, sessionId, setSessionModelMap, setDefaultModelId])
+  }, [usesRuntimeTranscript, agentChannelId, agentModelId, globalChannels, sessionId, setSessionModelMap, setDefaultModelId])
 
   // 获取当前 session 的工作路径（文件浏览器需要）
   React.useEffect(() => {
@@ -439,11 +491,23 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     return dirs
   }, [attachedDirs, wsAttachedDirs, workspaceFilesPath])
 
-  const runtimeChannelReady = isCodexRuntime ? codexRuntimeReady : !!agentChannelId
+  const runtimeChannelReady = isCodexRuntime
+    ? codexRuntimeReady
+    : isOpencodeRuntime
+      ? opencodeRuntimeReady
+      : !!agentChannelId
   const runtimeSendChannelId = isCodexRuntime
     ? (typeof agentCodexChannelId === 'string' ? agentCodexChannelId : CODEX_NATIVE_AUTH_SELECT_VALUE)
-    : agentChannelId
-  const runtimeSendModelId = isCodexRuntime ? codexConfiguredModelId : runtimeModelId
+    : isOpencodeRuntime
+      ? (agentOpencodeUseNativeAuth !== true && typeof agentOpencodeChannelId === 'string'
+        ? agentOpencodeChannelId
+        : OPENCODE_NATIVE_AUTH_SELECT_VALUE)
+      : agentChannelId
+  const runtimeSendModelId = isCodexRuntime
+    ? codexConfiguredModelId
+    : isOpencodeRuntime
+      ? opencodeConfiguredModelId
+      : runtimeModelId
 
   // 监听消息刷新版本号
   const refreshVersion = useAtomValue(sessionMessageRefreshFamily(sessionId))
@@ -863,8 +927,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     const text = inputContent.trim()
     // 如果输入为空但有建议，使用建议内容
     const effectiveText = text || suggestion || ''
-    if (codexRuntimeUnavailable) {
-      toast.info('Codex Runtime 功能开关已关闭', {
+    if (runtimeFeatureUnavailable) {
+      toast.info(`${currentRuntimeLabel} 功能开关已关闭`, {
         description: '此会话当前仅可查看历史，不能继续发送。',
       })
       return
@@ -873,8 +937,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
 
     // 上一条消息仍在处理中，直接追加发送
     if (streaming) {
-      if (isCodexRuntime) {
-        toast.info('Codex Runtime 暂不支持运行中追加消息', {
+      if (runtimeQueueUnsupported) {
+        toast.info(`${currentRuntimeLabel} 暂不支持运行中追加消息`, {
           description: '请先停止或等待当前任务完成后再发送。',
         })
         return
@@ -1111,7 +1175,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         return map
       })
     })
-  }, [inputContent, pendingFiles, attachedDirs, sessionId, runtimeChannelReady, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, runtimeRunnerMode, workspaces, streaming, suggestion, hasAvailableModel, hasBannerOverlay, codexRuntimeUnavailable, isCodexRuntime, store, setStreamingStates, setPendingFiles, setAgentStreamErrors, setPromptSuggestions, setInputContent, setInputHtmlContent])
+  }, [inputContent, pendingFiles, attachedDirs, sessionId, runtimeChannelReady, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, runtimeRunnerMode, workspaces, streaming, suggestion, hasAvailableModel, hasBannerOverlay, runtimeFeatureUnavailable, runtimeQueueUnsupported, currentRuntimeLabel, store, setStreamingStates, setPendingFiles, setAgentStreamErrors, setPromptSuggestions, setInputContent, setInputHtmlContent])
 
   /** 停止生成 */
   const handleStop = React.useCallback((): void => {
@@ -1132,8 +1196,8 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
 
   /** 手动发送 /compact 命令 */
   const handleCompact = React.useCallback((): void => {
-    if (isCodexRuntime) {
-      toast.info('Codex Runtime 暂不支持从 CodeInsights 触发压缩')
+    if (!runtimeSupportsCompact) {
+      toast.info(`${currentRuntimeLabel} 暂不支持从 CodeInsights 触发压缩`)
       return
     }
     if (!runtimeSendChannelId || streaming) return
@@ -1200,7 +1264,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         return map
       })
     })
-  }, [sessionId, isCodexRuntime, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, streaming, setStreamingStates, store])
+  }, [sessionId, runtimeSupportsCompact, currentRuntimeLabel, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, streaming, setStreamingStates, store])
 
   /** 复制错误信息到剪贴板 */
   const handleCopyError = React.useCallback(async (): Promise<void> => {
@@ -1265,7 +1329,9 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
 
     try {
       const meta = await window.electronAPI.createAgentSession(
-        undefined, isCodexRuntime ? undefined : runtimeSendChannelId, currentWorkspaceId || undefined,
+        undefined,
+        usesRuntimeTranscript ? undefined : runtimeSendChannelId,
+        currentWorkspaceId || undefined,
       )
       setAgentSessions((prev) => [meta, ...prev])
 
@@ -1299,7 +1365,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     } catch (error) {
       console.error('[AgentView] 在新会话中重试失败:', error)
     }
-  }, [sessionId, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, isCodexRuntime, openSession, setAgentSessions, setStreamingStates])
+  }, [sessionId, runtimeSendChannelId, runtimeSendModelId, currentWorkspaceId, usesRuntimeTranscript, openSession, setAgentSessions, setStreamingStates])
 
   /** 分叉会话：从指定消息处创建新会话并自动切换 */
   const handleFork = React.useCallback(async (upToMessageUuid: string): Promise<void> => {
@@ -1393,7 +1459,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
     && (hasTextInput || pendingFiles.length > 0 || !!suggestion)
     && runtimeChannelReady
     && hasAvailableModel
-    && (!streaming || (hasTextInput && !isCodexRuntime))
+    && (!streaming || (hasTextInput && !runtimeQueueUnsupported))
   const runnerModeControl = buildAgentRunnerModeControl(runtimeRunnerMode, streaming)
 
   const handleToggleRunnerMode = React.useCallback((): void => {
@@ -1416,8 +1482,13 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         {/* Agent Header */}
         <AgentHeader
           sessionId={sessionId}
-          channelId={isCodexRuntime ? agentCodexChannelId : stableChannelId}
+          channelId={isCodexRuntime
+            ? agentCodexChannelId
+            : isOpencodeRuntime
+              ? (agentOpencodeUseNativeAuth === false ? agentOpencodeChannelId : null)
+              : stableChannelId}
           modelId={runtimeModelId}
+          runtimeAgentName={isOpencodeRuntime ? opencodeAgentLabel : undefined}
           permissionMode={permissionMode}
           streaming={streaming}
           planMode={isPlanMode}
@@ -1441,7 +1512,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
         </div>
 
         {/* 消息区域 */}
-        {isCodexRuntime ? (
+        {usesRuntimeTranscript ? (
           <RuntimeTranscript
             runtimeEvents={runtimeEvents}
             sdkMessages={persistedSDKMessages}
@@ -1449,6 +1520,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
             streaming={streaming}
             streamState={streamState}
             sessionModelId={runtimeModelId}
+            runtimeLabel={currentRuntimeLabel}
             sessionPath={sessionPath}
             attachedDirs={attachedDirs}
             messagesLoaded={messagesLoaded}
@@ -1506,17 +1578,18 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
                 interactionLocked: hasBannerOverlay,
                 streaming,
                 hasTextInput,
-                queueUnsupported: isCodexRuntime,
+                queueUnsupported: runtimeQueueUnsupported,
+                queueUnsupportedLabel: currentRuntimeLabel,
               })
-              const notice = codexRuntimeUnavailable
-                ? 'Codex Runtime 功能开关已关闭，此会话仅可查看历史'
+              const notice = runtimeFeatureUnavailable
+                ? `${currentRuntimeLabel} 功能开关已关闭，此会话仅可查看历史`
                 : composerState.notice
               if (!notice) return null
               return (
               <div className="agent-command-deck__status relative z-10 flex flex-wrap items-center gap-2 px-4 py-2 text-sm text-status-waiting-fg">
                 <Settings size={14} />
                 <span className="min-w-0 flex-1">{notice}</span>
-                {!codexRuntimeUnavailable && (!runtimeChannelReady || !hasAvailableModel) && (
+                {!runtimeFeatureUnavailable && (!runtimeChannelReady || !hasAvailableModel) && (
                   <button
                     type="button"
                     className="text-xs underline underline-offset-2 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
@@ -1590,10 +1663,10 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
                     ? '输入消息... (⌘/Ctrl+Enter 发送，Enter 换行，@ 引用文件，/ 调用 Skill，# 调用 MCP)'
                     : '输入消息... (Enter 发送，Shift+Enter 换行，@ 引用文件，/ 调用 Skill，# 调用 MCP)'
                   : !runtimeChannelReady
-                    ? isCodexRuntime
-                      ? codexRuntimeUnavailable
-                        ? 'Codex Runtime 功能开关已关闭，此会话仅可查看历史'
-                        : '请先在设置中选择 Codex 认证来源'
+                    ? usesRuntimeTranscript
+                      ? runtimeFeatureUnavailable
+                        ? `${currentRuntimeLabel} 功能开关已关闭，此会话仅可查看历史`
+                        : `请先在设置中选择 ${currentRuntimeLabel} 认证来源`
                       : '请先在设置中选择 Agent 供应商'
                     : '暂无可用模型，请先在设置中启用渠道'
               }
@@ -1612,10 +1685,28 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
             {/* Footer 工具栏 */}
             <div className="agent-command-footer relative z-10 flex min-h-[56px] flex-wrap items-center justify-between gap-2 border-t border-border-subtle/45 px-2.5 py-1.5">
               <div className="agent-command-footer__cluster flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                {isCodexRuntime ? (
-                  <div className="inline-flex h-[36px] items-center gap-1.5 rounded-control border border-border-subtle/60 bg-surface-muted px-2 text-xs font-semibold text-foreground/70">
-                    <Bot className="size-4" />
-                    <span>{codexRuntimeUnavailable ? 'Codex 已关闭' : `Codex · ${runtimeModelId}`}</span>
+                {usesRuntimeTranscript ? (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <div className="inline-flex h-[36px] items-center gap-1.5 rounded-control border border-border-subtle/60 bg-surface-muted px-2 text-xs font-semibold text-foreground/70">
+                      <Bot className="size-4" />
+                      <span>
+                        {runtimeFeatureUnavailable
+                          ? `${formatRuntimeHeaderLabel(currentRuntimeKind)} 已关闭`
+                          : `${formatRuntimeHeaderLabel(currentRuntimeKind)} · ${runtimeModelId}`}
+                      </span>
+                      {isOpencodeRuntime && (
+                        <span className="hidden rounded-full bg-background/60 px-1.5 py-0.5 text-[10px] text-text-tertiary sm:inline">
+                          {opencodeAgentLabel}
+                        </span>
+                      )}
+                    </div>
+                    {isOpencodeRuntime && (
+                      <PermissionModeSelector
+                        sessionId={sessionId}
+                        disabled={streaming}
+                        disabledDescription="opencode Runtime 暂不支持运行中切换权限；新的权限模式会在下次发送时生效。"
+                      />
+                    )}
                   </div>
                 ) : (
                   <>
@@ -1704,7 +1795,7 @@ export function AgentView({ sessionId }: { sessionId: string }): React.ReactElem
                   contextWindow={contextStatus.contextWindow}
                   isCompacting={contextStatus.isCompacting}
                   isProcessing={streaming}
-                  onCompact={isCodexRuntime ? undefined : handleCompact}
+                  onCompact={runtimeSupportsCompact ? handleCompact : undefined}
                 />
                 {/* <FeishuNotifyToggle sessionId={sessionId} /> */}
               </div>

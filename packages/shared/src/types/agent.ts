@@ -4,6 +4,8 @@
  * 包含 Agent SDK 集成所需的事件类型、会话管理、消息持久化和 IPC 通道常量。
  */
 
+import type { AgentStreamEnvelope } from '../agent/runtime-events'
+
 // ===== 记忆配置 =====
 
 /** 全局记忆配置（MemOS Cloud） */
@@ -526,6 +528,7 @@ export type CodeInsightsEvent =
 /** IPC 传输的统一 payload（替代 AgentEvent） */
 export type AgentStreamPayload =
   | { kind: 'sdk_message'; message: SDKMessage }
+  | { kind: 'runtime_envelope'; envelope: AgentStreamEnvelope }
   | { kind: 'codeinsights_event'; event: CodeInsightsEvent }
   /** 兼容重命名前已持久化的历史 JSONL。新事件只写入 codeinsights_event。 */
   | { kind: 'rv_insights_event'; event: CodeInsightsEvent }
@@ -1145,6 +1148,8 @@ export interface PermissionRequest {
   requestId: string
   /** 会话 ID */
   sessionId: string
+  /** 来源 Runtime，用于复用同一 Banner 展示不同 runtime 的权限请求 */
+  runtimeKind?: CodingAgentRuntimeKind
   /** 工具名称 */
   toolName: string
   /** 工具输入参数 */
@@ -1153,8 +1158,14 @@ export interface PermissionRequest {
   description: string
   /** 具体命令（Bash 工具时有值��� */
   command?: string
+  /** 工作目录（Runtime 可提供时展示） */
+  cwd?: string
   /** 危险等级 */
   dangerLevel: DangerLevel
+  /** Runtime 提供或 CodeInsights 归类后的风险标签 */
+  riskLabel?: string
+  /** 当前请求允许的作用域；缺省表示沿用旧权限服务能力 */
+  scopeOptions?: Array<'once' | 'session'>
   /** SDK 提供的原因说明 */
   decisionReason?: string
   /** SDK 提供的工具显示名称，如 "Write" */
@@ -1168,6 +1179,8 @@ export interface PermissionRequest {
 /** 权限响应（渲染进程 → 主进程） */
 export interface PermissionResponse {
   requestId: string
+  /** Runtime 权限请求需要 sessionId 才能路由到对应活跃 runtime */
+  sessionId?: string
   behavior: 'allow' | 'deny'
   /** 是否记住选择（加入会话白名单） */
   alwaysAllow: boolean

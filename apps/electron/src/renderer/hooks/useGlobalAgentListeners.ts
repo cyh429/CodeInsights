@@ -78,6 +78,32 @@ function inferContextWindow(model?: string): number | undefined {
 }
 
 function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
+  if (payload.kind === 'runtime_envelope') {
+    const evt = payload.envelope.event
+    switch (evt.type) {
+      case 'permission_requested':
+        return evt.request ? [{ type: 'permission_request', request: evt.request }] : []
+      case 'permission_resolved':
+        return [{
+          type: 'permission_resolved',
+          requestId: evt.requestId,
+          behavior: evt.decision === 'allowed' ? 'allow' : 'deny',
+        }]
+      case 'ask_user_requested':
+        return evt.request ? [{ type: 'ask_user_request', request: evt.request }] : []
+      case 'ask_user_resolved':
+        return [{ type: 'ask_user_resolved', requestId: evt.requestId }]
+      case 'plan_mode_entered':
+        return evt.request
+          ? [{ type: 'exit_plan_mode_request', request: evt.request }]
+          : []
+      case 'plan_mode_exited':
+        return evt.requestId ? [{ type: 'exit_plan_mode_resolved', requestId: evt.requestId }] : []
+      default:
+        return []
+    }
+  }
+
   if (payload.kind === 'codeinsights_event' || payload.kind === 'rv_insights_event') {
     const evt = payload.event
     switch (evt.type) {
@@ -281,6 +307,7 @@ function payloadToLegacyEvents(payload: AgentStreamPayload): AgentEvent[] {
 }
 
 function resolveRuntimeSource(payload: AgentStreamPayload, event: AgentRuntimeEvent): AgentStreamEnvelope['source'] {
+  if (payload.kind === 'runtime_envelope') return payload.envelope.source
   if (payload.kind === 'sdk_message') return 'claude_sdk'
   if (event.type.startsWith('permission_')) return 'permission_service'
   if (event.type.startsWith('ask_user_')) return 'ask_user_service'
@@ -390,7 +417,28 @@ export function useGlobalAgentListeners(): void {
     }
 
     const recordRuntimeEnvelopes = (sessionId: string, payload: AgentStreamPayload): AgentStreamEnvelope[] => {
+      if (payload.kind === 'runtime_envelope') {
+        const current = runtimeEnvelopeBySession.get(sessionId) ?? []
+        const exists = current.some((envelope) =>
+          envelope.runId === payload.envelope.runId
+          && envelope.sequence === payload.envelope.sequence
+          && envelope.source === payload.envelope.source
+        )
+        const nextEnvelopes = exists ? current : [...current, payload.envelope]
+        runtimeEnvelopeBySession.set(sessionId, nextEnvelopes)
+        runtimeEnvelopeRuns.set(sessionId, payload.envelope.runId)
+        runtimeEnvelopeSequences.set(
+          sessionId,
+          Math.max(runtimeEnvelopeSequences.get(sessionId) ?? 0, payload.envelope.sequence + 1),
+        )
+        runtimeEnvelopeSnapshots.set(sessionId, replayAgentStreamEnvelopes(nextEnvelopes))
+        return exists ? [] : [payload.envelope]
+      }
+
       if (payload.kind === 'sdk_message' && (payload.message as Record<string, unknown>).isReplay) {
+        return []
+      }
+      if (payload.kind === 'sdk_message' && (payload.message as Record<string, unknown>)._runtimeEnvelope === true) {
         return []
       }
       const runtimeEvents = adaptAgentStreamPayloadToRuntimeEvents(payload)
@@ -509,7 +557,9 @@ export function useGlobalAgentListeners(): void {
         }
 
         const runtimeEnvelopes = recordRuntimeEnvelopes(sessionId, payload)
-        const legacyEvents = payloadToLegacyEvents(payload)
+        const legacyEvents = payload.kind === 'runtime_envelope' && runtimeEnvelopes.length === 0
+          ? []
+          : payloadToLegacyEvents(payload)
 
         for (const event of legacyEvents) {
           // 会话首次进入 running 时，从 Working Done 集合移除（它会出现在 Running 组）

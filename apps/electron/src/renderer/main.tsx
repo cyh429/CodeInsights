@@ -73,7 +73,7 @@ import { toast } from 'sonner'
 import { diffCapabilities, migratePermissionMode } from '@codeinsights/shared'
 import type { WorkspaceCapabilities } from '@codeinsights/shared'
 import { showCapabilityChangeToasts } from './lib/capabilities-toast'
-import { cleanupAgentCodexChannelId, isAgentCodexRuntimeFeatureEnabled, isAgentOpencodeRuntimeFeatureEnabled, resolveEnabledAgentRuntimeKind } from './lib/agent-runtime-ui'
+import { cleanupAgentCodexChannelId, cleanupAgentOpencodeChannelId, isAgentCodexRuntimeFeatureEnabled, isAgentOpencodeRuntimeFeatureEnabled, resolveEnabledAgentRuntimeKind } from './lib/agent-runtime-ui'
 import { UpdateDialog } from './components/settings/UpdateDialog'
 import { GlobalShortcuts } from './components/shortcuts/GlobalShortcuts'
 import { TabSwitcher } from './components/tabs/TabSwitcher'
@@ -285,7 +285,12 @@ function AgentSettingsInitializer(): null {
       setCodexReasoningEffort(settings.agentCodexReasoningEffort)
       setCodexNetworkAccessEnabled(settings.agentCodexNetworkAccessEnabled)
       setCodexWebSearchMode(settings.agentCodexWebSearchMode)
-      setOpencodeChannelId(settings.agentOpencodeChannelId)
+      const validAgentOpencodeChannelId = cleanupAgentOpencodeChannelId(settings.agentOpencodeChannelId, channels)
+      setOpencodeChannelId(validAgentOpencodeChannelId)
+      if (validAgentOpencodeChannelId !== settings.agentOpencodeChannelId) {
+        console.warn('[AgentSettings] agentOpencodeChannelId 指向不可用的 opencode 渠道，清除')
+        window.electronAPI.updateSettings({ agentOpencodeChannelId: undefined }).catch(console.error)
+      }
       setOpencodeModelId(settings.agentOpencodeModelId)
       setOpencodeAgentName(settings.agentOpencodeAgentName)
       setOpencodeUseNativeAuth(settings.agentOpencodeUseNativeAuth)
@@ -327,7 +332,7 @@ function AgentSettingsInitializer(): null {
       console.error(err)
       setAgentSettingsReady(true) // 即使出错也标记就绪，避免永远阻塞
     })
-  }, [setAgentChannelId, setAgentModelId, setAgentChannelIds, setAgentWorkspaces, setCurrentWorkspaceId, setPermissionMode, setThinking, setEffort, setMaxBudget, setMaxTurns, setRuntimeRunnerMode, setRuntimeKind, setCodexChannelId, setCodexModelId, setCodexReasoningEffort, setCodexNetworkAccessEnabled, setCodexWebSearchMode, setPipelineCodexChannelId, setChannels, setChannelsLoaded, setAgentSettingsReady, store])
+  }, [setAgentChannelId, setAgentModelId, setAgentChannelIds, setAgentWorkspaces, setCurrentWorkspaceId, setPermissionMode, setThinking, setEffort, setMaxBudget, setMaxTurns, setRuntimeRunnerMode, setRuntimeKind, setCodexChannelId, setCodexModelId, setCodexReasoningEffort, setCodexNetworkAccessEnabled, setCodexWebSearchMode, setOpencodeChannelId, setOpencodeModelId, setOpencodeAgentName, setOpencodeUseNativeAuth, setOpencodeAutoupdate, setOpencodeSnapshotEnabled, setPipelineCodexChannelId, setChannels, setChannelsLoaded, setAgentSettingsReady, store])
 
   // 工作区切换时重置能力缓存，预加载基线
   useEffect(() => {

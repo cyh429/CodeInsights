@@ -39,9 +39,15 @@ const MODE_CONFIG: Record<CodeInsightsPermissionMode, {
 
 interface PermissionModeSelectorProps {
   sessionId: string
+  disabled?: boolean
+  disabledDescription?: string
 }
 
-export function PermissionModeSelector({ sessionId }: PermissionModeSelectorProps): React.ReactElement | null {
+export function PermissionModeSelector({
+  sessionId,
+  disabled = false,
+  disabledDescription,
+}: PermissionModeSelectorProps): React.ReactElement | null {
   const [modeMap, setModeMap] = useAtom(agentPermissionModeMapAtom)
   const defaultMode = useAtomValue(agentDefaultPermissionModeAtom)
   const setDefaultMode = useSetAtom(agentDefaultPermissionModeAtom)
@@ -85,6 +91,7 @@ export function PermissionModeSelector({ sessionId }: PermissionModeSelectorProp
 
   /** 循环切换模式 */
   const cycleMode = React.useCallback(async () => {
+    if (disabled) return
     const currentIndex = CODEINSIGHTS_PERMISSION_MODE_ORDER.indexOf(mode)
     const nextIndex = (currentIndex + 1) % CODEINSIGHTS_PERMISSION_MODE_ORDER.length
     const nextMode = CODEINSIGHTS_PERMISSION_MODE_ORDER[nextIndex]!
@@ -104,7 +111,7 @@ export function PermissionModeSelector({ sessionId }: PermissionModeSelectorProp
         console.error('[PermissionModeSelector] 保存权限模式失败:', error)
       }
     }
-  }, [mode, sessionId, workspaceSlug, setModeMap])
+  }, [disabled, mode, sessionId, workspaceSlug, setModeMap])
 
   const config = MODE_CONFIG[mode]
   const Icon = config.icon
@@ -116,7 +123,8 @@ export function PermissionModeSelector({ sessionId }: PermissionModeSelectorProp
           <button
             type="button"
             onClick={() => { cycleMode(); requestAnimationFrame(() => document.querySelector<HTMLElement>('.ProseMirror')?.focus()) }}
-            className="flex items-center gap-1 px-1.5 py-1 rounded text-xs font-medium transition-colors text-muted-foreground hover:text-foreground"
+            disabled={disabled}
+            className="flex items-center gap-1 px-1.5 py-1 rounded text-xs font-medium transition-colors text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon className="size-3.5" />
             <span className="hidden sm:inline">{config.label}</span>
@@ -124,8 +132,10 @@ export function PermissionModeSelector({ sessionId }: PermissionModeSelectorProp
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-[200px]">
           <p className="font-medium">{config.label}模式</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
-          <p className="text-xs text-muted-foreground mt-1">点击切换模式</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {disabled ? disabledDescription ?? '当前状态暂不能切换权限模式' : config.description}
+          </p>
+          {!disabled && <p className="text-xs text-muted-foreground mt-1">点击切换模式</p>}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -93,6 +93,10 @@ export function PermissionBanner({ sessionId, active = true }: PermissionBannerP
   const isDangerous = request.dangerLevel === 'dangerous'
   const IconComponent = isDangerous ? ShieldAlert : Shield
   const tone = getBannerToneForPermission(request.dangerLevel)
+  const canAllowForSession = request.scopeOptions?.includes('session') ?? true
+  const runtimeLabel = request.runtimeKind === 'opencode'
+    ? 'opencode 请求执行工具'
+    : isDangerous ? '危险操作需要确认' : '需要允许工具操作'
 
   /** 响应权限请求 */
   const respond = async (behavior: 'allow' | 'deny', alwaysAllow = false): Promise<void> => {
@@ -102,6 +106,7 @@ export function PermissionBanner({ sessionId, active = true }: PermissionBannerP
     try {
       await window.electronAPI.respondPermission({
         requestId: request.requestId,
+        sessionId,
         behavior,
         alwaysAllow,
       })
@@ -139,7 +144,7 @@ export function PermissionBanner({ sessionId, active = true }: PermissionBannerP
         <div className="flex min-w-0 items-center gap-2">
           <IconComponent className={`size-4 ${iconColor}`} />
           <span className="truncate text-sm font-medium">
-            {isDangerous ? '危险操作需要确认' : '需要允许工具操作'}
+            {runtimeLabel}
           </span>
           {requests.length > 1 && (
             <span className="shrink-0 text-xs text-current/60">
@@ -176,6 +181,20 @@ export function PermissionBanner({ sessionId, active = true }: PermissionBannerP
         {request.sdkDescription && request.sdkDescription !== request.sdkTitle && (
           <p className="text-xs text-current/70">{request.sdkDescription}</p>
         )}
+        {(request.cwd || request.riskLabel) && (
+          <div className="flex flex-wrap gap-1.5 text-[10px] text-current/60">
+            {request.riskLabel && (
+              <span className="rounded-full border border-current/10 bg-background/35 px-2 py-0.5">
+                {request.riskLabel}
+              </span>
+            )}
+            {request.cwd && (
+              <span className="max-w-full truncate rounded-full border border-current/10 bg-background/35 px-2 py-0.5 font-mono" title={request.cwd}>
+                {request.cwd}
+              </span>
+            )}
+          </div>
+        )}
         {/* Bash 命令：始终展示代码块 */}
         {request.command ? (
           <pre className="text-xs font-mono bg-background/60 rounded-control px-2 py-1.5 overflow-x-auto whitespace-pre-wrap break-all max-h-[120px] overflow-y-auto">
@@ -208,15 +227,17 @@ export function PermissionBanner({ sessionId, active = true }: PermissionBannerP
           拒绝
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => respond('allow', true)}
-          disabled={responding}
-          className="h-7 px-3 text-xs"
-        >
-          本次会话总是允许
-        </Button>
+        {canAllowForSession && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => respond('allow', true)}
+            disabled={responding}
+            className="h-7 px-3 text-xs"
+          >
+            本会话允许
+          </Button>
+        )}
 
         <Button
           variant="default"

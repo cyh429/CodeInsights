@@ -142,6 +142,11 @@ export class OpencodeServerManager {
     return this.statuses.get(key)
   }
 
+  getLatestStatus(): OpencodeServerStatus | undefined {
+    return [...this.statuses.values()]
+      .sort((a, b) => b.updatedAt - a.updatedAt)[0]
+  }
+
   async stop(key: string): Promise<void> {
     const entry = this.entries.get(key)
     if (!entry) {

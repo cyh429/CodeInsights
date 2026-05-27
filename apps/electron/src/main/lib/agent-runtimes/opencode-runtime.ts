@@ -31,10 +31,12 @@ import {
   type OpencodeClientWrapper,
   type OpencodeProviderAuthConfig,
   type OpencodeServerEntry,
+  type OpencodeServerStatus,
 } from '../opencode-runtime'
 import type {
   CodingAgentRuntime,
   CodingAgentRuntimeCapabilities,
+  CodingAgentRuntimePermissionResponseInput,
   CodingAgentRuntimeRunInput,
   OpencodeCodingAgentRuntimeRunInput,
   UnsupportedRuntimeCapability,
@@ -60,6 +62,7 @@ export interface OpencodeRuntimeServerLease {
 
 export interface OpencodeRuntimeServerManagerLike {
   ensure(input: OpencodeRuntimeServerEnsureInput): Promise<OpencodeRuntimeServerLease>
+  getStatus?(): OpencodeServerStatus | undefined
   abort?(input: OpencodeRuntimeAbortInput): void | Promise<void>
   release?(lease: OpencodeRuntimeServerLease): void | Promise<void>
   dispose?(): void
@@ -83,6 +86,7 @@ export interface OpencodeRuntimeAbortInput {
 
 export interface OpencodeRuntimeClientLike {
   stream(input: OpencodeRuntimeClientStreamInput): AsyncIterable<OpencodeRawEvent>
+  respondPermission?(input: OpencodeRuntimePermissionResponseInput): Promise<boolean>
 }
 
 export interface OpencodeRuntimeClientStreamInput {
@@ -97,11 +101,28 @@ export interface OpencodeRuntimeClientStreamInput {
   signal: AbortSignal
 }
 
+export interface OpencodeRuntimePermissionResponseInput {
+  sessionId: string
+  requestId: string
+  externalSessionId: string
+  directory: string
+  lease: OpencodeRuntimeServerLease
+  response: 'once' | 'always' | 'reject'
+}
+
 export interface OpencodeAgentRuntimeDeps {
   serverManager?: OpencodeRuntimeServerManagerLike
   client?: OpencodeRuntimeClientLike
   createRunId?: () => string
   now?: () => string
+}
+
+interface PendingOpencodePermission {
+  sessionId: string
+  requestId: string
+  externalSessionId: string
+  directory: string
+  lease: OpencodeRuntimeServerLease
 }
 
 const OPENCODE_AGENT_RUNTIME_CAPABILITIES: CodingAgentRuntimeCapabilities = {
@@ -121,6 +142,7 @@ const OPENCODE_AGENT_RUNTIME_CAPABILITIES: CodingAgentRuntimeCapabilities = {
 export class OpencodeAgentRuntime implements CodingAgentRuntime {
   readonly kind = 'opencode' as const
   private readonly activeAbortControllers = new Map<string, AbortController>()
+  private readonly pendingPermissions = new Map<string, PendingOpencodePermission>()
   private readonly serverManager: OpencodeRuntimeServerManagerLike
   private readonly client: OpencodeRuntimeClientLike
 
@@ -277,6 +299,7 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
             if (stopped.length > 0) yield stopped[0]!
             return
           }
+          this.capturePermissionEnvelope(envelope, lease, input.workingDirectory)
           yield envelope
           if (isAgentRuntimeTerminalEvent(envelope.event)) {
             terminalWritten = true
@@ -316,6 +339,7 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
       if (lease) {
         await this.serverManager.release?.(lease)
       }
+      this.clearSessionPendingPermissions(input.sessionId)
     }
   }
 
@@ -336,13 +360,102 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
     return unsupportedCapability('setPermissionMode')
   }
 
+  getServerStatus(): OpencodeServerStatus | undefined {
+    return this.serverManager.getStatus?.()
+  }
+
+  async respondPermission(input: CodingAgentRuntimePermissionResponseInput): Promise<boolean> {
+    const pending = this.pendingPermissions.get(makePermissionKey(input.sessionId, input.requestId))
+    if (!pending || pending.sessionId !== input.sessionId) return false
+
+    const response = input.behavior === 'deny'
+      ? 'reject'
+      : input.alwaysAllow ? 'always' : 'once'
+    const ok = this.client.respondPermission
+      ? await this.client.respondPermission({
+        sessionId: input.sessionId,
+        requestId: input.requestId,
+        externalSessionId: pending.externalSessionId,
+        directory: pending.directory,
+        lease: pending.lease,
+        response,
+      })
+      : await respondOpencodePermissionWithLease({
+        lease: pending.lease,
+        externalSessionId: pending.externalSessionId,
+        requestId: pending.requestId,
+        directory: pending.directory,
+        response,
+      })
+    if (ok) {
+      this.pendingPermissions.delete(makePermissionKey(input.sessionId, input.requestId))
+    }
+    return ok
+  }
+
   dispose(): void {
     for (const controller of this.activeAbortControllers.values()) {
       controller.abort()
     }
     this.activeAbortControllers.clear()
+    this.pendingPermissions.clear()
     this.serverManager.dispose?.()
   }
+
+  private capturePermissionEnvelope(
+    envelope: AgentStreamEnvelope,
+    lease: OpencodeRuntimeServerLease,
+    directory: string,
+  ): void {
+    if (envelope.event.type === 'permission_requested') {
+      const externalSessionId = envelope.metadata?.externalSessionId
+      if (!externalSessionId) return
+      this.pendingPermissions.set(makePermissionKey(envelope.sessionId, envelope.event.requestId), {
+        sessionId: envelope.sessionId,
+        requestId: envelope.event.requestId,
+        externalSessionId,
+        directory,
+        lease,
+      })
+      return
+    }
+
+    if (envelope.event.type === 'permission_resolved') {
+      this.pendingPermissions.delete(makePermissionKey(envelope.sessionId, envelope.event.requestId))
+    }
+  }
+
+  private clearSessionPendingPermissions(sessionId: string): void {
+    for (const [key, pending] of this.pendingPermissions) {
+      if (pending.sessionId === sessionId) {
+        this.pendingPermissions.delete(key)
+      }
+    }
+  }
+}
+
+async function respondOpencodePermissionWithLease(input: {
+  lease: OpencodeRuntimeServerLease
+  externalSessionId: string
+  requestId: string
+  directory: string
+  response: 'once' | 'always' | 'reject'
+}): Promise<boolean> {
+  const client = createOpencodeClientWrapper({
+    baseUrl: input.lease.endpoint,
+    auth: input.lease.auth,
+    timeoutMs: 30_000,
+  })
+  return await client.respondPermission({
+    sessionId: input.externalSessionId,
+    permissionId: input.requestId,
+    directory: input.directory,
+    response: input.response,
+  })
+}
+
+function makePermissionKey(sessionId: string, requestId: string): string {
+  return `${sessionId}\0${requestId}`
 }
 
 class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManagerLike {
@@ -400,6 +513,10 @@ class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManage
 
   release(lease: OpencodeRuntimeServerLease): void {
     this.manager.release(lease.key)
+  }
+
+  getStatus(): OpencodeServerStatus | undefined {
+    return this.manager.getLatestStatus()
   }
 
   dispose(): void {

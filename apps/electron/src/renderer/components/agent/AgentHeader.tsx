@@ -27,6 +27,7 @@ interface AgentHeaderProps {
   sessionId: string
   channelId?: string | null
   modelId?: string | null
+  runtimeAgentName?: string | null
   permissionMode?: string | null
   streaming?: boolean
   planMode?: boolean
@@ -37,6 +38,7 @@ export function AgentHeader({
   sessionId,
   channelId,
   modelId,
+  runtimeAgentName,
   permissionMode,
   streaming = false,
   planMode = false,
@@ -70,11 +72,12 @@ export function AgentHeader({
   const metaItems = React.useMemo(() => buildAgentHeaderMeta({
     workspaceName,
     modelName,
+    agentName: runtimeAgentName,
     permissionMode,
     streaming,
     planMode,
     runtimeKind,
-  }), [modelName, permissionMode, planMode, runtimeKind, streaming, workspaceName])
+  }), [modelName, permissionMode, planMode, runtimeAgentName, runtimeKind, streaming, workspaceName])
   const missionState = streaming ? '同步中' : planMode ? '规划中' : '待命'
   const missionStateTone = streaming ? 'running' : planMode ? 'waiting' : 'neutral'
 
@@ -227,6 +230,7 @@ export function AgentHeader({
                     'agent-meta-chip inline-flex h-7 min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] leading-4 whitespace-nowrap',
                     item.key === 'workspace' && 'max-w-[150px] 2xl:max-w-[190px]',
                     item.key === 'model' && 'max-w-[180px] 2xl:max-w-[220px]',
+                    item.key === 'agent' && 'max-w-[110px] 2xl:max-w-[140px]',
                     item.key === 'permission' && 'max-w-[112px] 2xl:max-w-[150px]',
                     item.key === 'runtime' && 'max-w-[136px] 2xl:max-w-[160px]',
                     item.tone === 'running' && 'border-status-running-border bg-status-running-bg text-status-running-fg',
@@ -237,6 +241,7 @@ export function AgentHeader({
                 >
                   {item.key === 'workspace' && <Folder className="size-3.5 shrink-0" />}
                   {item.key === 'model' && <Cpu className="size-3.5 shrink-0" />}
+                  {item.key === 'agent' && <Bot className="size-3.5 shrink-0" />}
                   {item.key === 'permission' && <ShieldCheck className="size-3.5 shrink-0" />}
                   {item.key === 'runtime' && <Activity className="size-3.5 shrink-0" />}
                   <span className="hidden shrink-0 text-current/65 2xl:inline">{item.label}</span>

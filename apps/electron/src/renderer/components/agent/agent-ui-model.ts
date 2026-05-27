@@ -6,6 +6,7 @@ export type AgentBannerTone = 'neutral' | 'waiting' | 'danger' | 'planning'
 export interface AgentHeaderMetaInput {
   workspaceName?: string | null
   modelName?: string | null
+  agentName?: string | null
   permissionMode?: string | null
   streaming?: boolean
   planMode?: boolean
@@ -13,19 +14,20 @@ export interface AgentHeaderMetaInput {
 }
 
 export interface AgentHeaderMetaItem {
-  key: 'runtime' | 'workspace' | 'model' | 'permission' | 'state'
+  key: 'runtime' | 'workspace' | 'model' | 'agent' | 'permission' | 'state'
   label: string
   value: string
   tone: 'neutral' | 'running' | 'waiting'
 }
 
 export function buildAgentHeaderMeta(input: AgentHeaderMetaInput): AgentHeaderMetaItem[] {
+  const isRuntimeBacked = input.runtimeKind === 'codex' || input.runtimeKind === 'opencode'
   const items: AgentHeaderMetaItem[] = [
     {
       key: 'runtime',
       label: 'Runtime',
       value: formatRuntimeKind(input.runtimeKind),
-      tone: input.runtimeKind === 'codex' ? 'running' : 'neutral',
+      tone: isRuntimeBacked ? 'running' : 'neutral',
     },
     {
       key: 'workspace',
@@ -39,6 +41,12 @@ export function buildAgentHeaderMeta(input: AgentHeaderMetaInput): AgentHeaderMe
       value: input.modelName?.trim() || '未选择模型',
       tone: input.modelName ? 'neutral' : 'waiting',
     },
+    ...(input.runtimeKind === 'opencode' ? [{
+      key: 'agent' as const,
+      label: 'Agent',
+      value: input.agentName?.trim() || 'build',
+      tone: 'neutral' as const,
+    }] : []),
     {
       key: 'permission',
       label: '权限',
@@ -120,6 +128,7 @@ export interface AgentComposerStateInput {
   streaming: boolean
   hasTextInput: boolean
   queueUnsupported?: boolean
+  queueUnsupportedLabel?: string
 }
 
 export interface AgentInteractionLockInput {
@@ -173,10 +182,11 @@ export function buildAgentComposerState(input: AgentComposerStateInput): AgentCo
   }
 
   if (input.streaming && input.hasTextInput && input.queueUnsupported) {
+    const label = input.queueUnsupportedLabel?.trim() || '当前 Runtime'
     return {
       disabled: true,
       canSend: false,
-      notice: 'Codex Runtime 暂不支持运行中追加消息，请先停止或等待完成',
+      notice: `${label} 暂不支持运行中追加消息，请先停止或等待完成`,
     }
   }
 

@@ -811,24 +811,31 @@ export class OpencodeEventAdapter {
     })
     const inputSummary = permission.title || summarizePermissionPattern(permission.pattern) || permission.type
     const command = getStringRecordValue(permission.metadata, 'command')
+    const cwd = getStringRecordValue(permission.metadata, 'cwd')
     const toolInput = buildPermissionToolInput(permission)
     const hasPreview = inputSummary.length > 0 || command !== undefined || permission.pattern !== undefined
+    const scopeOptions: Array<'once' | 'session'> = hasPreview ? ['once', 'session'] : ['once']
+    const riskLevel = riskForTool(permission.type)
     return [{
       event: {
         type: 'permission_requested',
         requestId: permission.id,
         toolName: permission.type,
-        riskLevel: riskForTool(permission.type),
+        riskLevel,
         inputSummary,
-        scopeOptions: hasPreview ? ['once', 'session'] : ['once'],
+        scopeOptions,
         request: {
           requestId: permission.id,
           sessionId: this.context.sessionId,
+          runtimeKind: 'opencode',
           toolName: permission.type,
           toolInput,
           description: inputSummary,
           ...(command ? { command } : {}),
-          dangerLevel: riskForTool(permission.type),
+          ...(cwd ? { cwd } : {}),
+          dangerLevel: riskLevel,
+          riskLabel: formatOpencodeRiskLabel(permission.type, riskLevel),
+          scopeOptions,
           sdkDisplayName: permission.type,
           sdkTitle: permission.title,
           sdkDescription: inputSummary,
@@ -1106,6 +1113,18 @@ function riskForTool(tool: string): AgentRuntimeRiskLevel {
     return 'safe'
   }
   return 'normal'
+}
+
+function formatOpencodeRiskLabel(tool: string, riskLevel: AgentRuntimeRiskLevel): string {
+  const normalized = tool.toLowerCase()
+  if (normalized.includes('bash')) return 'Shell 命令'
+  if (normalized.includes('edit') || normalized.includes('write') || normalized.includes('patch')) return '文件写入'
+  if (normalized.includes('web')) return '网络访问'
+  if (normalized.includes('mcp')) return 'MCP 工具'
+  if (normalized.includes('external')) return '外部目录'
+  if (riskLevel === 'safe') return '只读操作'
+  if (riskLevel === 'dangerous') return '高风险操作'
+  return '需要确认'
 }
 
 function buildPermissionToolInput(permission: OpencodePermission): OpencodeRecord {
