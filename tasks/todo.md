@@ -30,6 +30,23 @@
 - 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.47` 提升到 `0.1.48`，将 `@codeinsights/electron` 从 `0.0.117` 提升到 `0.0.118`。
 - 保持边界：未进入 MCP、packaged release、真实模型验收，未修改根 `README.md` / `AGENTS.md`；packaged Electron history reload smoke 留到 Phase 7 / Phase 8，Phase 6 用 renderer 单测覆盖 history replay。
 - 验证通过：`bun test packages/shared/src/agent/runtime-events.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/renderer/lib/agent-runtime-ui.test.ts`；`bun test apps/electron/src/renderer`；`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtime-event-log.test.ts apps/electron/src/main/lib/agent-session-manager.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' build:renderer`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`；`git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/electron/src/main packages/shared bun.lock apps/electron/package.json packages/shared/package.json tasks/todo.md docs/opencode-support`。
+- Phase 6 已单独提交：`bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。
+
+## 2026-05-27 Agent opencode Runtime Phase 6 后状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词和任务记录，明确 Phase 0-6 已完成、Phase 7-8 未完成，并将下次继续开发入口固定到 Phase 7；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认 Phase 6 开发提交为 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。
+- [x] 更新 opencode support README：写入 Phase 6 开发基线 `bb361a34`、完成/未完成清单和下一步 Phase 7 入口。
+- [x] 更新 opencode 开发清单：把最新状态快照、仓库状态要求、Phase 6 验证记录和阶段提交记录对齐到 `bb361a34`。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 7 延续提示词。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md`。
+
+## 2026-05-27 Agent opencode Runtime Phase 6 后状态同步 Review
+
+- 已将 Phase 6 开发基线固定为 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。
+- 已更新 `docs/opencode-support/README.md`、开发清单和 `next-session-prompt.md`：明确 Phase 0-6 已完成，Phase 7-8 未完成，下一步入口为 Phase 7 MCP / packaged / release readiness。
+- 保持边界：本次状态同步不修改业务代码，不修改根 `README.md` / `AGENTS.md`。
 
 ## 2026-05-27 Agent opencode Runtime Phase 5 后最新状态同步计划
 

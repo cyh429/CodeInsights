@@ -7,8 +7,9 @@
 
 项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
 当前分支：agent-mode-opencode
-预期最新开发状态：Phase 6 Renderer 接入已完成
-预期最新提交：本轮 Phase 6 阶段提交，提交主题应为 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入
+预期最新开发基线：bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入
+预期最新状态：Phase 6 后状态同步提交；若最新 HEAD 是文档同步提交，历史必须包含 bb361a34
+Phase 6 开发基线：bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入
 Phase 5 开发基线：b3e99265 feat(agent): 完成 opencode Runtime Phase 5 真实 Server 集成
 Phase 4 开发基线：647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由
 
@@ -31,12 +32,13 @@ Phase 4 开发基线：647d3046 feat(agent): 完成 opencode Runtime Phase 4 Moc
 - 权限响应已携带 `sessionId`，主进程可将 legacy permission service 找不到的响应路由到活跃 opencode runtime；opencode runtime 将 allow / session allow / deny 映射为 `once` / `always` / `reject`。
 - live runtime envelope 会直接推送到 renderer 并去重；兼容 SDKMessage 增加 `_runtimeEnvelope` 标记，避免 runtime transcript 重复渲染。
 - Agent 历史回放只依赖 CodeInsights runtime event log 和 session messages，不依赖 opencode server 仍在运行。
+- Phase 6 收尾已修复审查问题：runtime replay 去重使用 `runId + sequence`，feature flag 关闭时 opencode 不作为可点击 runtime 选项，server status 读取 runtime manager 最新状态。
 - `@codeinsights/shared` patch 版本已提升到 `0.1.48`，`@codeinsights/electron` patch 版本已提升到 `0.0.118`。
 - Phase 6 未进入 MCP、packaged release、真实模型验收或根 `README.md` / `AGENTS.md` 修改。
 
 请先执行：
 1. 读取项目指令和 `tasks/lessons.md`，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交是 Phase 6 后状态，且历史中包含 `786b6485`、`3b8a1286`、`b3e99265`、`647d3046`。不要回滚用户改动。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交是 Phase 6 后状态，且历史中包含 `bb361a34`、`786b6485`、`3b8a1286`、`b3e99265`、`647d3046`。不要回滚用户改动。
 3. 读取 `docs/opencode-support/README.md`、`docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md` 和 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`，重点看 Phase 6 验证记录、Phase 5 `OPENCODE_CONFIG_DIR` 暂缓结论和 Phase 7。
 4. 在 `tasks/todo.md` 写入本轮 Phase 7 计划，然后直接开始执行 Phase 7。
 
