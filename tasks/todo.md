@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 1 最新基线固化计划
+
+范围确认：本轮只固化 opencode support 文档里的最新开发状态、完成/未完成清单和下次启动提示词；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。用户再次要求“记住这个习惯”，因此同步强化 `tasks/lessons.md`。
+
+- [x] 确认当前工作树、最近提交和 Phase 1 后状态同步提交。
+- [x] 将 opencode support README、开发清单和 next-session prompt 中的 Phase 1 后基线固定为真实提交 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
+- [x] 将“不要留下 git log / 后续状态同步占位表达”的习惯写入 `tasks/lessons.md`。
+- [x] 运行 Markdown code fence、相对链接、`git diff --check` 和行尾空白验证。
+- [x] 在本节追加 Review，并按阶段纪律单独提交本轮状态同步成果。
+
+## 2026-05-27 Agent opencode Runtime Phase 1 最新基线固化 Review
+
+- 本轮开始时工作树干净，最新提交为 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
+- 已将 opencode support README、开发清单和 next-session prompt 的 Phase 1 后最新基线固定到 `a793172c`，不再留下“以 git log 为准”或“后续状态同步提交”这类恢复时需要猜测的占位表达。
+- 已明确当前完成项：opencode 主方案、方案深化、开发清单、阶段提交纪律、Phase 0 依赖 spike、Phase 0 后状态同步、Phase 1 契约冻结、Phase 1 后状态同步。
+- 已明确当前未完成项：Phase 2 runtime core、Phase 3 event adapter、Phase 4 runtime mock / orchestrator routing、Phase 5 真实 server 集成、Phase 6 renderer / UX、Phase 7 MCP / packaged / release readiness、Phase 8 真实验收与长期文档。
+- 已强化 `tasks/lessons.md`：以后用户要求更新最新开发状态或下次启动提示词时，要检查并移除占位基线，写入真实最新提交号。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖，未读取或输出凭证。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；Markdown code fence 检查；docs 相对链接检查；opencode support 占位基线检查；行尾空白检查。
+
 ## 2026-05-27 Agent opencode Runtime Phase 1 契约计划
 
 范围确认：本轮进入 Phase 1，只扩展 shared 类型、settings normalization、必要 IPC / preload / renderer settings 类型和 runtime selection 契约测试；不进入 opencode runtime core/server/event adapter/UI 实现，不安装 opencode 依赖，不修改根 `README.md` / `AGENTS.md`，长期落盘配置保持 secretless。

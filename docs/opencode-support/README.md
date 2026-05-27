@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 1 契约冻结完成时
+更新时间：2026-05-27，Phase 1 后状态同步完成时
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -31,7 +31,7 @@
   - `63aab807 docs(agent): 完成 opencode Runtime Phase 0 依赖 spike`
   - `668b8268 docs(agent): 同步 opencode Phase 0 后续开发状态`
   - `f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`
-  - Phase 1 后状态同步提交完成后，以 `git log -1 --oneline` 看到的本文件所在提交或其后的提交为最新基线。
+  - `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。

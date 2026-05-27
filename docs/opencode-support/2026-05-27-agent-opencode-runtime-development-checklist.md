@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 1 契约冻结完成时
+更新时间：2026-05-27，Phase 1 后状态同步完成时
 
 当前结论：
 
@@ -44,6 +44,7 @@
 - [x] Phase 0 依赖 spike 与基线冻结已完成。
 - [x] Phase 1 共享类型与 settings 契约已完成：shared/runtime events/settings/IPC/runtime selection 均可表达 `opencode`，且未进入 runtime core/server 实现。
 - [x] Phase 1 已单独提交：`f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结`。
+- [x] Phase 1 后状态同步已单独提交：`a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
 - [ ] Phase 2 opencode runtime core 未开始。
 - [ ] Phase 3 event adapter 未开始。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
@@ -55,7 +56,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期基线至少包含 `f4ac7325 feat(agent): 完成 opencode Runtime Phase 1 契约冻结` 以及其后的状态同步提交；若只有后续阶段改动，继续按阶段推进。
+- 预期最新基线为 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`，或其后的 Phase 2 开发提交。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -63,7 +64,7 @@
 
 下一步入口：
 
-1. 确认 Phase 1 已提交并且本轮状态同步已提交。
+1. 确认 Phase 1 与 Phase 1 后状态同步均已提交，预期至少看到 `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`。
 2. 进入 Phase 2，开始 opencode runtime core：binary/env/auth/config/server/client 基础设施。
 3. 不要直接跳到 renderer UI 或真实模型验收；Phase 2 先完成不依赖真实模型的 core 单测。
 
