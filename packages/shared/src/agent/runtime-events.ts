@@ -68,6 +68,7 @@ export interface AgentRuntimeEventMetadata {
   externalMessageId?: string
   externalPartId?: string
   occurredAt?: string
+  recovered?: boolean
 }
 
 export type AgentRuntimeEvent =
@@ -306,6 +307,9 @@ function validateAgentRuntimeEventMetadata(metadata: AgentRuntimeEventMetadata):
     && (typeof occurredAt !== 'string' || Number.isNaN(Date.parse(occurredAt)))
   ) {
     errors.push('metadata.occurredAt 必须是有效 ISO 时间')
+  }
+  if (metadata.recovered !== undefined && typeof metadata.recovered !== 'boolean') {
+    errors.push('metadata.recovered 必须是布尔值')
   }
   return errors
 }

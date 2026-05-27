@@ -137,6 +137,7 @@ describe('Agent runtime event contract', () => {
         externalMessageId: 'msg_opencode',
         externalPartId: 'part_opencode',
         occurredAt: createdAt,
+        recovered: true,
       },
       event: {
         type: 'run_started',
@@ -163,6 +164,7 @@ describe('Agent runtime event contract', () => {
       metadata: {
         runtimeKind: 'unknown-runtime',
         occurredAt: 'not-a-date',
+        recovered: 'yes',
       } as unknown as AgentStreamEnvelope['metadata'],
       event: { type: 'assistant_delta', messageId: 'msg-1', delta: 'x' },
     })
@@ -171,6 +173,7 @@ describe('Agent runtime event contract', () => {
     expect(result.ok).toBe(false)
     expect(result.errors).toContain('metadata.runtimeKind 非法')
     expect(result.errors).toContain('metadata.occurredAt 必须是有效 ISO 时间')
+    expect(result.errors).toContain('metadata.recovered 必须是布尔值')
   })
 
   test('rejects invalid run_started runtime kind', () => {

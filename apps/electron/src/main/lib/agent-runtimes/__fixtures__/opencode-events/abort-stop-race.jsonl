@@ -1,0 +1,3 @@
+{"id":"evt-session-abort","type":"session.created","properties":{"info":{"id":"ses_opencode_abort","projectID":"proj_1","directory":"/repo","title":"opencode abort","version":"1.15.11","time":{"created":1790400000000,"updated":1790400000000}}}}
+{"id":"evt-abort-error","type":"session.error","properties":{"sessionID":"ses_opencode_abort","error":{"name":"MessageAbortedError","data":{"message":"aborted by user"}}}}
+{"id":"evt-abort-late-idle","type":"session.idle","properties":{"sessionID":"ses_opencode_abort"}}

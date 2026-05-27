@@ -1,5 +1,30 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 3 Event Adapter 计划
+
+范围确认：本轮只实现 opencode SSE event / message part 到 CodeInsights runtime event 的纯状态机适配层与 fixtures；不进入 renderer UI、真实模型验收、真实 `opencode serve` 集成、runtime registry / orchestrator routing；不安装 `@opencode-ai/sdk` / `opencode-ai`；不修改根 `README.md` / `AGENTS.md`；长期配置继续保持 secretless。
+
+- [x] 复习项目指令、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认阶段完成即提交、重启恢复、状态同步、secretless config、Git guard 与 runtime binding 纪律。
+- [x] 运行 `git status --short` 和 `git log -3 --oneline`，确认启动基线为 `daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态` 且工作树干净。
+- [x] 梳理现有 shared runtime event 契约与 Codex adapter 模式，确认 Phase 3 只新增 opencode adapter、fixtures 和必要 shared validator 补强。
+- [x] 先写 opencode-event-adapter BDD fixtures / tests，覆盖 `server.connected`、session lifecycle、text delta/snapshot、reasoning、tool pending/running/completed/error、patch、agent/subtask、todo、permission ask/reply、abort/stop、recovered event 和错误分类。
+- [x] 实现 `OpencodeEventAdapter` 纯状态机：raw event 类型、part-level 文本累积、去重 key、terminal single-write guard、stop 后迟到 success 屏蔽、recovered metadata、错误分类 mapping。
+- [x] 补强 `packages/shared/src/agent/runtime-events.test.ts`，确保 opencode metadata / recovered 事件可验证且不会破坏现有回放。
+- [x] 运行 Phase 3 验证：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md docs/opencode-support`。
+- [ ] 更新 opencode 开发清单、support README、next-session prompt，并在本节追加 Review。
+- [ ] 按阶段纪律只提交 Phase 3 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+
+## 2026-05-27 Agent opencode Runtime Phase 3 Event Adapter Review
+
+- 启动基线已确认：本轮开始时工作树干净，最新提交为 `daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态`。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.ts`：定义 opencode raw event / part 类型，不引入真实 `@opencode-ai/sdk` 依赖；实现 server SSE / message part 到 `AgentRuntimeEvent` 的纯状态机转换。
+- 已新增 `apps/electron/src/main/lib/agent-runtimes/__fixtures__/opencode-events/` 与 `opencode-event-adapter.test.ts`：覆盖 server.connected、session lifecycle、user message 忽略、text delta/snapshot、tool pending/running/completed/error、patch、agent/subtask、todo、permission ask/reply、abort/stop、recovered 补读和错误分类。
+- 已实现关键状态规则：event key 去重、part-level 文本累积、completed snapshot 单次写入、tool/task start/completion 去重、terminal single-write guard、stop 后迟到 idle 不覆盖 `run_stopped`、recovered metadata。
+- 已补强 `packages/shared/src/agent/runtime-events.ts` 与测试：`AgentRuntimeEventMetadata` 支持 `recovered?: boolean`，validator 会拒绝非法类型。
+- 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.45` 提升到 `0.1.46`，将 `@codeinsights/electron` 从 `0.0.114` 提升到 `0.0.115`。
+- 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai` 依赖，未进入 renderer UI、真实 `opencode serve` 集成、runtime registry / orchestrator routing 或真实模型验收，未修改根 `README.md` / `AGENTS.md`。
+- 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md docs/opencode-support`。
+
 ## 2026-05-27 Agent opencode Runtime Phase 2 最新状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-2 已完成、Phase 3-8 未完成，并将下次继续开发入口固定到 Phase 3；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。

@@ -1,0 +1,4 @@
+{"id":"evt-session-permission","type":"session.created","properties":{"info":{"id":"ses_opencode_permission","projectID":"proj_1","directory":"/repo","title":"opencode permission","version":"1.15.11","time":{"created":1790400000000,"updated":1790400000000}}}}
+{"id":"evt-permission-ask","type":"permission.updated","properties":{"id":"perm_bash_1","type":"bash","pattern":"bun test*","sessionID":"ses_opencode_permission","messageID":"msg_assistant_permission","callID":"call_bash_permission","title":"运行 bun test","metadata":{"command":"bun test","cwd":"/repo"},"time":{"created":1790400001000}}}
+{"id":"evt-permission-reply","type":"permission.replied","properties":{"sessionID":"ses_opencode_permission","permissionID":"perm_bash_1","response":"once"}}
+{"id":"evt-permission-idle","type":"session.idle","properties":{"sessionID":"ses_opencode_permission"}}
