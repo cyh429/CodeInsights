@@ -7,7 +7,8 @@
 
 项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
 当前分支：agent-mode-opencode
-预期最新开发基线：Phase 4 mock runtime / orchestrator routing 完成提交（提交信息应为 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由）
+预期最新开发基线：647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由
+预期最新状态：Phase 4 后状态同步提交应位于 647d3046 之后；如果最新提交正是状态同步提交，以 `git log` 中包含 647d3046 为准。
 
 当前状态：
 - Phase 0 已完成：opencode 依赖/API spike。
@@ -33,7 +34,7 @@
 
 请先执行：
 1. 读取项目指令和 `tasks/lessons.md`，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；历史中必须包含 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`、`d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`、`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`，以及 Phase 4 完成提交。不要回滚用户改动。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认工作树状态和最新提交；历史中必须包含 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`、`bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`、`d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态` 和 `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。不要回滚用户改动。
 3. 读取 `docs/opencode-support/README.md`、`docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md` 和 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`，重点看 Phase 0-4 结论、Phase 4 验证记录和 Phase 5。
 4. 在 `tasks/todo.md` 写入本轮 Phase 5 计划，然后直接开始执行 Phase 5。
 

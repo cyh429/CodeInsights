@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 4 已完成，真实 opencode server 集成未开始
+状态：Phase 4 已完成并同步，真实 opencode server 集成未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 4 mock runtime / orchestrator routing 完成时
+更新时间：2026-05-27，Phase 4 后状态同步
 
 当前结论：
 
@@ -57,6 +57,8 @@
 - [x] Phase 3 最新启动基线已固化：真实开发基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
 - [x] Phase 4 runtime mock / orchestrator routing 已完成：新增 `OpencodeAgentRuntime` mock/fake，不启动真实 opencode server；已接入 feature flag、registry、orchestrator routing、session binding、event log 和 history replay；已绑定 opencode session 缺 manifest 或 workspace 丢失时阻断 resume。
 - [x] Phase 4 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.47`，提升 `@codeinsights/electron` patch 版本到 `0.0.116`。
+- [x] Phase 4 已单独提交：`647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+- [x] Phase 4 后状态同步已更新 support README、开发清单、next-session prompt 和 `tasks/todo.md`。
 - [ ] Phase 5 真实 opencode server 集成未开始。
 - [ ] Phase 6 renderer / UX 接入未开始。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
@@ -65,7 +67,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新开发基线为本轮 Phase 4 提交；Phase 3 最新启动基线为 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
+- 预期最新开发基线为 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`；本轮状态同步提交应位于其后。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -73,7 +75,7 @@
 
 下一步入口：
 
-1. 确认 Phase 3 实现提交与 Phase 3 后状态同步均已提交。
+1. 确认 Phase 4 实现提交 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由` 与本轮状态同步提交均已提交。
 2. 进入 Phase 5，开始真实 `opencode serve` 集成。
 3. 不要直接跳到 renderer UI 或发布验收；Phase 5 先完成真实 server health、event subscribe、session create、prompt async、permission response、abort 和 resume smoke。
 

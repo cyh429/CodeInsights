@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 4 后状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-4 已完成、Phase 5-8 未完成，并将下次继续开发入口固定到 Phase 5；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前工作树干净，最新开发提交为 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+- [x] 更新 opencode support README：写入 Phase 4 真实开发基线 `647d3046`、完成/未完成清单和下一步 Phase 5 入口。
+- [x] 更新 opencode 开发清单：把最新状态快照、仓库状态要求、Phase 4 验证记录和阶段提交记录对齐到 `647d3046`。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 5 延续提示词。
+- [x] 将“每次阶段完成或用户要求更新状态时默认同步 support 文档和提示词”的习惯再次写入 `tasks/lessons.md`。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md` 和状态占位检查。
+- [x] 在本节追加 Review，并按状态同步纪律单独提交本轮文档更新。
+
+## 2026-05-27 Agent opencode Runtime Phase 4 后状态同步 Review
+
+- 本轮开始时工作树干净，最新开发提交为 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+- 已更新 `docs/opencode-support/README.md`：最新开发基线固定到 `647d3046`，已完成范围明确为 Phase 0-4，未完成范围明确为 Phase 5-8，下一步入口改为 Phase 5 真实 `opencode serve` 集成。
+- 已更新 opencode 开发清单：顶部状态、最新状态快照、当前完成/未完成总览和下一步入口均同步到 Phase 4 后状态。
+- 已更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求确认历史中包含 `647d3046`，并从 Phase 5 继续。
+- 已更新 `tasks/lessons.md`：再次固化“阶段完成或用户要求更新状态时，默认同步 support 文档、任务记录和下次启动提示词”的习惯。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；opencode support 状态占位检查。
+
 ## 2026-05-27 Agent opencode Runtime Phase 4 Mock 路由计划
 
 范围确认：本轮只实现 opencode mock/fake runtime 与主进程路由闭环，不启动真实 `opencode serve`，不安装 `@opencode-ai/sdk` / `opencode-ai`，不进入 renderer UI、真实模型验收或真实 server 集成，不修改根 `README.md` / `AGENTS.md`。实现必须复用 Phase 3 `OpencodeEventAdapter`，保持长期配置和诊断 secretless。

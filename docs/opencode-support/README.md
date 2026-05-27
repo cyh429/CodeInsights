@@ -10,9 +10,9 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 4 mock runtime / orchestrator routing 完成时
+更新时间：2026-05-27，Phase 4 后状态同步
 
-当前开发基线：Phase 4 mock runtime / orchestrator routing 已完成。下一步从 Phase 5 真实 `opencode serve` 集成开始；当前实现仍不启动真实 opencode server。
+当前开发基线：`647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。Phase 4 mock runtime / orchestrator routing 已完成。下一步从 Phase 5 真实 `opencode serve` 集成开始；当前实现仍不启动真实 opencode server。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -32,6 +32,7 @@
   - Phase 3 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d2b718ad` 后状态。
   - Phase 3 最新启动基线固化：已固定到真实开发基线 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`。
   - Phase 4：已完成 opencode mock runtime / orchestrator routing。新增 `OpencodeAgentRuntime` mock/fake，通过 fake client/server manager 复用 Phase 3 `OpencodeEventAdapter` 输出 runtime events；已接入 feature flag、registry、orchestrator routing、session binding、event log、history replay、missing manifest / workspace 丢失阻断、stop race 和 unsupported queue/setPermissionMode。Phase 4 diagnostics 只声明 stream/resume/abort，真实 permission/server/model refresh 留到 Phase 5+。
+  - Phase 4 后状态同步：已将最新开发基线、完成/未完成清单和下次启动入口同步到 `647d3046` 后状态。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -49,6 +50,7 @@
   - `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`
   - `d2b718ad docs(agent): 同步 opencode Phase 3 后续开发状态`
   - `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线`
+  - `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -83,7 +85,7 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认历史包含开发基线 `bdef679f docs(agent): 固化 opencode Phase 3 最新启动基线` 和 Phase 4 完成提交。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认历史包含 Phase 4 开发基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由` 和本轮状态同步提交。
 3. 读取开发清单的“最新开发状态快照”和 Phase 5。
 4. 在 `tasks/todo.md` 写入 Phase 5 计划，然后开始真实 `opencode serve` 集成。
 
