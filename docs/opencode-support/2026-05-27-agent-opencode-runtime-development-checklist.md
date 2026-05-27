@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 2 已完成，event adapter 未开始
+状态：Phase 3 已完成，runtime mock / orchestrator routing 未开始
 日期：2026-05-27
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 2 后最新状态同步完成时
+更新时间：2026-05-27，Phase 3 Event Adapter 完成后
 
 当前结论：
 
@@ -49,7 +49,10 @@
 - [x] Phase 2 opencode runtime core 已完成：binary/env/auth/config/MCP/server manager/client wrapper 均有不依赖真实模型的单测覆盖。
 - [x] Phase 2 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.114`。
 - [x] Phase 2 后状态同步已单独提交：`d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
-- [ ] Phase 3 event adapter 未开始。
+- [x] Phase 2 最新启动基线已固化：`daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态`。
+- [x] Phase 3 event adapter 已完成：纯状态机 adapter、opencode fixtures、recovered metadata 和错误分类 mapping 均已通过单测。
+- [x] Phase 3 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.46`，提升 `@codeinsights/electron` patch 版本到 `0.0.115`。
+- [x] Phase 3 已单独提交：`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
 - [ ] Phase 5 真实 opencode server 集成未开始。
 - [ ] Phase 6 renderer / UX 接入未开始。
@@ -59,7 +62,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新基线为 `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
+- 预期至少包含最新 Phase 3 实现基线 `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -67,9 +70,9 @@
 
 下一步入口：
 
-1. 确认 Phase 2 与 Phase 2 后状态同步均已提交。
-2. 进入 Phase 3，开始 opencode event adapter 与 fixtures。
-3. 不要直接跳到 renderer UI 或真实模型验收；Phase 3 先完成 event adapter 纯状态机与 fixture 单测。
+1. 确认 Phase 3 实现提交与 Phase 3 后状态同步均已提交。
+2. 进入 Phase 4，开始 runtime mock、registry 和 orchestrator routing。
+3. 不要直接跳到 renderer UI 或真实模型验收；Phase 4 先完成 mock runtime、session binding、event log 与 history replay。
 
 ## 0.2 当前完成/未完成总览
 
@@ -83,7 +86,7 @@
 | Phase 0 | [x] | 依赖 spike 与基线冻结已完成 |
 | Phase 1 | [x] | shared/settings/IPC 契约已完成，未实现 runtime core |
 | Phase 2 | [x] | opencode binary/env/config/server/client core |
-| Phase 3 | [ ] | event adapter 与 fixtures |
+| Phase 3 | [x] | event adapter 与 fixtures |
 | Phase 4 | [ ] | runtime mock、registry、orchestrator routing |
 | Phase 5 | [ ] | 真实 `opencode serve` 集成 |
 | Phase 6 | [ ] | renderer 设置、权限交互、历史回放 |
@@ -371,27 +374,27 @@ git diff --check -- apps/electron/src/main/lib/opencode-runtime apps/electron/pa
 
 任务：
 
-- [ ] 定义 opencode raw event fixture 类型，不用 `any`。
-- [ ] fixture 覆盖 `server.connected`。
-- [ ] fixture 覆盖 `session.created` / `session.idle` / `session.error`。
-- [ ] fixture 覆盖 user message updated，确认不作为 assistant 输出。
-- [ ] fixture 覆盖 text delta。
-- [ ] fixture 覆盖 text snapshot completed。
-- [ ] fixture 覆盖 reasoning part。
-- [ ] fixture 覆盖 tool pending / running / completed / error。
-- [ ] fixture 覆盖 patch part。
-- [ ] fixture 覆盖 agent / subtask part。
-- [ ] fixture 覆盖 todo updated。
-- [ ] fixture 覆盖 permission updated / replied。
-- [ ] fixture 覆盖 abort / stopped。
-- [ ] 实现 `OpencodeEventAdapter` 纯状态机。
-- [ ] 实现 part-level text 累积，避免 delta / snapshot 重复。
-- [ ] 实现去重 key。
-- [ ] 实现 terminal single-write guard。
-- [ ] 实现 stop 后迟到 idle 改写或忽略。
-- [ ] 实现 recovered event metadata。
-- [ ] 实现错误分类 mapping。
-- [ ] 补充 runtime event validator 测试。
+- [x] 定义 opencode raw event fixture 类型，不用 `any`。
+- [x] fixture 覆盖 `server.connected`。
+- [x] fixture 覆盖 `session.created` / `session.idle` / `session.error`。
+- [x] fixture 覆盖 user message updated，确认不作为 assistant 输出。
+- [x] fixture 覆盖 text delta。
+- [x] fixture 覆盖 text snapshot completed。
+- [x] fixture 覆盖 reasoning part。
+- [x] fixture 覆盖 tool pending / running / completed / error。
+- [x] fixture 覆盖 patch part。
+- [x] fixture 覆盖 agent / subtask part。
+- [x] fixture 覆盖 todo updated。
+- [x] fixture 覆盖 permission updated / replied。
+- [x] fixture 覆盖 abort / stopped。
+- [x] 实现 `OpencodeEventAdapter` 纯状态机。
+- [x] 实现 part-level text 累积，避免 delta / snapshot 重复。
+- [x] 实现去重 key。
+- [x] 实现 terminal single-write guard。
+- [x] 实现 stop 后迟到 idle 改写或忽略。
+- [x] 实现 recovered event metadata。
+- [x] 实现错误分类 mapping。
+- [x] 补充 runtime event validator 测试。
 
 验证：
 
@@ -404,15 +407,28 @@ git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared ta
 
 退出标准：
 
-- [ ] delta 与 snapshot 不重复显示。
-- [ ] permission ask / reply 可映射到现有 PermissionBanner 所需字段。
-- [ ] 同一 run 只产生一个 terminal event。
-- [ ] SSE 断开补读 fixture 能生成 recovered event。
-- [ ] Phase 3 单独提交完成。
+- [x] delta 与 snapshot 不重复显示。
+- [x] permission ask / reply 可映射到现有 PermissionBanner 所需字段。
+- [x] 同一 run 只产生一个 terminal event。
+- [x] SSE 断开补读 fixture 能生成 recovered event。
+- [x] Phase 3 单独提交完成。
 
 回滚点：
 
 - 如果 opencode event 结构比预期更复杂，先保守映射 text / tool / terminal / permission，不扩展 UI 展示。
+
+### 5.1 Phase 3 验证记录
+
+- 启动基线：`git status --short` 为空，`git log -3 --oneline` 最新为 `daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态`。
+- 完成提交：`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
+- 改动范围：新增 `apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.ts`、`opencode-event-adapter.test.ts`、`__fixtures__/opencode-events/**`；扩展 shared runtime metadata `recovered?: boolean`；同步 `tasks/todo.md`；提升 `@codeinsights/shared` 到 `0.1.46`、`@codeinsights/electron` 到 `0.0.115`。
+- 完成内容：opencode raw event / part 类型、纯状态机 adapter、event key 去重、part-level 文本累积、tool/task start/completion 去重、terminal single-write guard、stop 后迟到 success 屏蔽、recovered metadata、Provider/API/abort 等错误分类 mapping。
+- 验证通过：
+  - `bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`
+  - `bun test packages/shared/src/agent/runtime-events.test.ts`
+  - `bun run --filter='@codeinsights/electron' typecheck`
+  - `git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md docs/opencode-support`
+- 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai`，未进入 renderer UI、真实 `opencode serve` 集成、runtime registry / orchestrator routing 或真实模型验收，未修改根 `README.md` / `AGENTS.md`。
 
 ## 6. Phase 4：Runtime Mock 接入与 Orchestrator 路由
 
@@ -725,8 +741,8 @@ Smoke summary 规则：
 | opencode 默认 permission 偏宽 | Phase 2 / 5 | [ ] | 强制生成 permission policy |
 | Git 操作污染用户仓库 | Phase 5 / 8 | [ ] | Git guard + refs/index 后验 |
 | settings 改变污染旧会话 | Phase 1 / 4 | [ ] | runtime manifest 固化绑定 |
-| SSE 丢事件或重复事件 | Phase 3 / 5 | [ ] | adapter 去重 + 补读 `/message` |
-| stop 后迟到 success | Phase 3 / 4 | [ ] | terminal single-write + stopped flag |
+| SSE 丢事件或重复事件 | Phase 3 / 5 | [~] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 仍需真实 SSE smoke |
+| stop 后迟到 success | Phase 3 / 4 | [~] | Phase 3 已完成 terminal single-write + stopped flag；Phase 4 仍需 orchestrator stop race |
 | packaged binary 缺失 | Phase 7 | [ ] | electron-builder files + packaged smoke |
 | server 进程泄漏 | Phase 2 / 5 | [ ] | app quit cleanup + idle timeout |
 | managed config 覆盖安全策略 | Phase 0 / 5 | [ ] | smoke 检测 resolved config 并阻断 |

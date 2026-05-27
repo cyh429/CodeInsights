@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 2 后最新状态同步完成时
+更新时间：2026-05-27，Phase 3 Event Adapter 完成后
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -25,6 +25,8 @@
   - Phase 1 最新启动基线固化：已将启动提示词和状态文档基线固定到 `5c110ae1`。
   - Phase 2：已完成不依赖真实模型的 opencode runtime core 基础设施。新增 binary/env/auth/config/MCP/server manager/client wrapper 与 24 个 BDD 单测；长期配置保持 secretless；未安装真实 opencode 依赖。
   - Phase 2 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d6768e0e` 后状态。
+  - Phase 2 最新启动基线固化：已将本轮启动基线固定到 `daa0795a`。
+  - Phase 3：已完成 opencode event adapter 与 fixtures。新增纯状态机 adapter，将 `server.connected`、session lifecycle、text delta/snapshot、tool、patch、agent/subtask、todo、permission、abort/stop、recovered 补读和错误分类映射为 CodeInsights runtime event；未进入 renderer UI、真实 server 或 orchestrator routing。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -38,6 +40,8 @@
   - `5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`
   - `25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`
   - `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`
+  - `daa0795a docs(agent): 固化 opencode Phase 2 最新开发状态`
+  - `7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -49,16 +53,15 @@
   - permission v1 响应 body 是 `{ response: "once" | "always" | "reject" }`，SDK 类型没有 `remember`；v2 新主路径是 `GET /permission` 与 `POST /permission/{requestID}/reply`。
   - `{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`，但 resolved `/config`、`/provider`、`/config/providers` 会暴露替换后的 secret，日志和持久化必须脱敏或避免读取原样响应。
 - 未完成：
-  - Phase 3：opencode event adapter。
   - Phase 4：runtime mock、registry 和 orchestrator routing。
   - Phase 5：真实 `opencode serve` 集成。
   - Phase 6：renderer 设置、权限交互和历史回放。
   - Phase 7：MCP、packaged binary 和 release readiness。
   - Phase 8：真实使用验收、故障排查、发布说明和公开文档同步准备。
 - 下一步：
-  - 从 Phase 3 开始，先实现 opencode event adapter 与 fixtures。
-  - Phase 3 不进入 renderer UI 或真实模型验收。
-  - 所有 config / diagnostics 继续保持 secretless，避免记录 resolved provider/config 中的 secret。
+  - 从 Phase 4 开始，在不启动真实 opencode server 的情况下接入 runtime mock、registry、orchestrator routing、session binding、event log 与 history replay。
+  - Phase 4 不进入 renderer UI、真实模型验收或真实 `opencode serve` 集成。
+  - 继续保持 config / diagnostics secretless，避免记录 resolved provider/config 中的 secret。
 - 暂缓 / 需要决策：
   - 默认认证来源：推荐 native opencode auth 优先，channel auth 显式选择。
   - channel auth 是否写入 opencode auth storage：推荐不写入，只用 env placeholder。
@@ -75,8 +78,8 @@
 
 1. 读取项目指令和 `tasks/lessons.md`。
 2. 运行 `git status --short` 和 `git log -3 --oneline`，确认最新基线。
-3. 读取开发清单的“最新开发状态快照”和 Phase 3。
-4. 在 `tasks/todo.md` 写入 Phase 3 计划，然后开始 opencode event adapter 实现。
+3. 读取开发清单的“最新开发状态快照”和 Phase 4。
+4. 在 `tasks/todo.md` 写入 Phase 4 计划，然后开始 runtime mock、registry 和 orchestrator routing。
 
 ## 设计定位
 

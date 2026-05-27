@@ -11,8 +11,8 @@
 - [x] 实现 `OpencodeEventAdapter` 纯状态机：raw event 类型、part-level 文本累积、去重 key、terminal single-write guard、stop 后迟到 success 屏蔽、recovered metadata、错误分类 mapping。
 - [x] 补强 `packages/shared/src/agent/runtime-events.test.ts`，确保 opencode metadata / recovered 事件可验证且不会破坏现有回放。
 - [x] 运行 Phase 3 验证：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`、`bun test packages/shared/src/agent/runtime-events.test.ts`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md docs/opencode-support`。
-- [ ] 更新 opencode 开发清单、support README、next-session prompt，并在本节追加 Review。
-- [ ] 按阶段纪律只提交 Phase 3 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
+- [x] 更新 opencode 开发清单、support README、next-session prompt，并在本节追加 Review。
+- [x] 按阶段纪律只提交 Phase 3 相关文件，提交信息用详细中文说明完成内容、验证结果和未包含内容。
 
 ## 2026-05-27 Agent opencode Runtime Phase 3 Event Adapter Review
 
@@ -24,6 +24,13 @@
 - 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.45` 提升到 `0.1.46`，将 `@codeinsights/electron` 从 `0.0.114` 提升到 `0.0.115`。
 - 保持边界：未安装 `@opencode-ai/sdk` / `opencode-ai` 依赖，未进入 renderer UI、真实 `opencode serve` 集成、runtime registry / orchestrator routing 或真实模型验收，未修改根 `README.md` / `AGENTS.md`。
 - 验证通过：`bun test apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts`；`bun test packages/shared/src/agent/runtime-events.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`git diff --check -- apps/electron/src/main/lib/agent-runtimes packages/shared tasks/todo.md docs/opencode-support`。
+
+## 2026-05-27 Agent opencode Runtime Phase 3 后状态同步 Review
+
+- Phase 3 实现已单独提交：`7c31b72d feat(agent): 完成 opencode Runtime Phase 3 Event Adapter`。
+- 已将真实提交号、Phase 3 完成状态、Phase 4 下次启动入口同步到 opencode 开发清单、support README、next-session prompt 和本任务记录。
+- 已更新开发清单风险跟踪：SSE 丢事件/重复事件与 stop 后迟到 success 的 Phase 3 部分已用 adapter 单测覆盖，Phase 5 / Phase 4 的真实 smoke 与 orchestrator race 仍待后续阶段完成。
+- 本次状态同步只修改 `docs/opencode-support/**` 与 `tasks/todo.md`，不修改业务代码、不修改根 `README.md` / `AGENTS.md`。
 
 ## 2026-05-27 Agent opencode Runtime Phase 2 最新状态同步计划
 
