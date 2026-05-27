@@ -1,5 +1,23 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime 开发进度清单计划
+
+范围确认：本轮根据已完成的 opencode runtime 接入方案，新增 `docs/opencode-support/` 下的开发进度跟踪清单，用于后续逐阶段迭代开发；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。
+
+- [x] 复核当前 HEAD、工作树、`tasks/lessons.md`、opencode 主方案和 Codex checklist 结构，确认本轮只产出文档清单。
+- [x] 设计 opencode checklist 的状态约定、产品门禁、阶段拆分、验证命令、提交纪律、风险清单和进度记录模板。
+- [x] 新增 `docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md`。
+- [x] 运行 Markdown code fence、相对链接、必备章节、`git diff --check` 和行尾空白验证。
+- [x] 在本节追加 Review，并按阶段纪律提交清单文档成果。
+
+## 2026-05-27 Agent opencode Runtime 开发进度清单 Review
+
+- 已以 `06c62406 docs(agent): 深化 opencode Runtime 接入方案` 为基线，确认本轮只产出 opencode 开发进度清单与任务记录，不改业务代码、不改根 `README.md` / `AGENTS.md`，不安装依赖，不读取或输出凭证。
+- 已新增 `docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md`：覆盖使用方式、最新状态快照、阶段提交纪律、产品与安全门禁、Phase 0-8 任务拆分、Smoke 测试矩阵、风险跟踪、阶段记录模板、后续维护项和参考入口。
+- 已将后续迭代入口固定为 Phase 0：先做依赖 spike、API 真实形态确认、配置/权限/MCP 行为确认和基线冻结，再进入 shared/settings/IPC 契约阶段。
+- 已明确主路径继续遵循方案结论：managed `opencode serve` + `@opencode-ai/sdk` client；`opencode run --format json` 仅作为 smoke / fallback；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 作为首期 feature flag。
+- 验证通过：Markdown code fence 检查；文档相对链接目标存在检查；必备章节检查；`git diff --check -- docs/opencode-support tasks/todo.md`；新增文档与任务文件行尾空白检查。
+
 ## 2026-05-27 Agent opencode Runtime 方案深化计划
 
 范围确认：本轮继续完善 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`，目标是把原方案从总体设计推进到更可执行的工程规格；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装新依赖，不读取或输出凭证。
