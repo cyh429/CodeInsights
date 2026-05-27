@@ -10,7 +10,7 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 2 runtime core 完成时
+更新时间：2026-05-27，Phase 2 后最新状态同步完成时
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -24,6 +24,7 @@
   - Phase 1：已完成 shared/settings/IPC 契约冻结。Agent 模式现在可在类型、settings、runtime selection 和诊断 IPC 层表达 `opencode` runtime；未实现 runtime core/server。
   - Phase 1 最新启动基线固化：已将启动提示词和状态文档基线固定到 `5c110ae1`。
   - Phase 2：已完成不依赖真实模型的 opencode runtime core 基础设施。新增 binary/env/auth/config/MCP/server manager/client wrapper 与 24 个 BDD 单测；长期配置保持 secretless；未安装真实 opencode 依赖。
+  - Phase 2 后状态同步：已将最新提交基线、完成/未完成清单和下次启动提示词同步到 `d6768e0e` 后状态。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -36,6 +37,7 @@
   - `a793172c docs(agent): 同步 opencode Phase 1 后续开发状态`
   - `5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`
   - `25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`
+  - `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -47,7 +49,6 @@
   - permission v1 响应 body 是 `{ response: "once" | "always" | "reject" }`，SDK 类型没有 `remember`；v2 新主路径是 `GET /permission` 与 `POST /permission/{requestID}/reply`。
   - `{env:VAR}` 可用于 provider `options.apiKey`、local MCP `environment` 和 remote MCP `headers`，但 resolved `/config`、`/provider`、`/config/providers` 会暴露替换后的 secret，日志和持久化必须脱敏或避免读取原样响应。
 - 未完成：
-  - Phase 2：已完成并提交：`25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`。
   - Phase 3：opencode event adapter。
   - Phase 4：runtime mock、registry 和 orchestrator routing。
   - Phase 5：真实 `opencode serve` 集成。

@@ -15,6 +15,7 @@
 - 用户要求“给下次启动提示词”时，不能只在最终回复里给文本；必须同时更新仓库内的 `next-session-prompt.md`、support README、development checklist 和 `tasks/todo.md` Review，并在验证后单独提交状态同步改动。
 - 对按 Phase 推进的 Agent runtime 接入任务，阶段提交完成后要立即把真实提交号写回最新状态和下次启动提示词；不要留下“以当前提示词所在提交为准”这类恢复时不够具体的表述。
 - 用户再次要求更新最新开发状态或下次启动提示词时，即使文档已经大体同步，也要检查是否仍有“以 git log 为准 / 后续状态同步提交”这类占位表达；必须写入真实最新提交号，并把这条习惯作为收尾检查项。
+- 用户要求“更新文档最新开发状态并给下次启动提示词”时，必须同步仓库内 support README、development checklist、next-session prompt 和 `tasks/todo.md` Review，并在最终回复中给一份可直接复制的提示词；这不是临时要求，后续默认执行。
 
 ## 2026-05-26 Codex native auth 中转配置
 

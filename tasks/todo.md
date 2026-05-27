@@ -1,5 +1,27 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent opencode Runtime Phase 2 最新状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-2 已完成、Phase 3-8 未完成，并将下次继续开发入口固定到 Phase 3；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前工作树干净，最新提交为 `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
+- [x] 更新 opencode support README：补齐最新状态同步提交，移除“未完成”里的 Phase 2 表述，清楚标注 Phase 0-2 已完成、Phase 3-8 未完成。
+- [x] 更新 opencode 开发清单：把启动基线固定为真实提交 `d6768e0e`，下次入口保持 Phase 3。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：生成可直接复制给下次 Codex 的 Phase 3 延续提示词。
+- [x] 将“用户要求更新文档并给提示词时，必须同时更新仓库文档与最终回复提示词”的习惯写入 `tasks/lessons.md`。
+- [x] 运行 Markdown code fence、相对链接、`git diff --check` 和占位基线检查。
+- [ ] 在本节追加 Review，并按阶段纪律单独提交本轮状态同步成果。
+
+## 2026-05-27 Agent opencode Runtime Phase 2 最新状态同步 Review
+
+- 本轮开始时工作树干净，最新提交为 `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
+- 已更新 `docs/opencode-support/README.md`：已完成列表加入 Phase 2 后状态同步；提交列表加入 `d6768e0e`；未完成列表从 Phase 3 开始，不再把 Phase 2 放入未完成。
+- 已更新 opencode 开发清单：最新开发状态快照和仓库状态要求固定到真实基线 `d6768e0e`，下一步入口保持 Phase 3 event adapter。
+- 已更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求先确认 `d6768e0e`，并从 Phase 3 event adapter 与 fixtures 继续。
+- 已更新 `tasks/lessons.md`：以后用户要求更新最新开发状态并给下次启动提示词时，必须同步仓库内文档和最终回复提示词，不再等待用户提醒。
+- 保持边界：未修改业务代码，未修改根 `README.md` / `AGENTS.md`，未安装依赖。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`；opencode support Markdown code fence 检查；相对链接目标检查；opencode support 占位基线检查。
+
 ## 2026-05-27 Agent opencode Runtime Phase 2 Core 计划
 
 范围确认：本轮进入 Phase 2，只实现不依赖真实模型的 opencode runtime core 基础设施：binary/env/auth/config/MCP/server manager/client wrapper。长期落盘配置保持 secretless；不进入 renderer UI、真实模型验收、event adapter 完整映射或 orchestrator routing；不把 opencode 当普通模型 Provider；不修改根 `README.md` / `AGENTS.md`。

@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 2 runtime core 完成时
+更新时间：2026-05-27，Phase 2 后最新状态同步完成时
 
 当前结论：
 
@@ -48,6 +48,7 @@
 - [x] Phase 1 最新启动基线已固化：`5c110ae1 docs(agent): 固化 opencode Phase 1 最新启动基线`。
 - [x] Phase 2 opencode runtime core 已完成：binary/env/auth/config/MCP/server manager/client wrapper 均有不依赖真实模型的单测覆盖。
 - [x] Phase 2 按受影响包规则提升 `@codeinsights/electron` patch 版本到 `0.0.114`。
+- [x] Phase 2 后状态同步已单独提交：`d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
 - [ ] Phase 3 event adapter 未开始。
 - [ ] Phase 4 runtime mock / orchestrator routing 未开始。
 - [ ] Phase 5 真实 opencode server 集成未开始。
@@ -58,7 +59,7 @@
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
-- 预期最新基线为 `25bfec59 feat(agent): 完成 opencode Runtime Phase 2 Core 基础设施`，或其后的 Phase 2 状态同步提交。
+- 预期最新基线为 `d6768e0e docs(agent): 同步 opencode Phase 2 后续开发状态`。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
