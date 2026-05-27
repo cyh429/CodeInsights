@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-27 状态同步与下次启动提示词
+
+- 阶段完成或用户要求“下次继续开发”时，必须同步三类信息：最新提交基线、已完成/未完成清单、下次启动提示词；不要只更新其中一处。
+- 下次启动提示词里的预期最新提交必须指向真实 HEAD 或明确“其后的状态同步提交”，避免恢复会话时误以为旧提交仍是最新状态。
+- 用户要求“记住这个习惯”时，要写入 `tasks/lessons.md`，并在后续收尾时主动检查 support README、development checklist 和 next-session prompt 是否一致。
+
 ## 2026-05-26 Codex native auth 中转配置
 
 - Codex native auth 隔离 smoke 不能只复制 `auth.json`；如果主机 `~/.codex/config.toml` 里配置了 `model_provider` / `model_providers.*.base_url` 等中转 API 信息，隔离 `CODEX_HOME` 缺少该文件会错误回落到默认 OpenAI 路径，导致 smoke 误判为凭证或网络问题。

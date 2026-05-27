@@ -1,5 +1,25 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-27 Agent Codex Runtime 最新状态与下次启动提示词同步计划
+
+范围确认：本轮只同步 Codex support 文档、下次启动提示词、任务记录和 lessons，明确已完成/未完成事项与最新提交基线；不修改根 `README.md` / `AGENTS.md`，不补跑 `CODEX_SMOKE_API_KEY`，不读取 ambient `OPENAI_API_KEY`，不 stage / commit `apps/electron/out/`。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`，当前仅有未跟踪 `apps/electron/out/`。
+- [x] 更新开发清单最新状态快照、当前完成/未完成总览和阶段提交记录，固定最新基线为 `d04ffb95`。
+- [x] 更新 `docs/codex-support/README.md` 和 `docs/codex-support/next-session-prompt.md`，确保下次启动能直接从当前进度继续。
+- [x] 将“收尾时同步最新开发状态和下次启动提示词”的习惯记录到 `tasks/lessons.md`。
+- [x] 运行 Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md tasks/lessons.md` 验证。
+- [x] 在本节追加 Review，并按阶段纪律提交本轮状态同步。
+
+## 2026-05-27 Agent Codex Runtime 最新状态与下次启动提示词同步 Review
+
+- 已将 Codex support 开发清单、README 和 next-session prompt 的最新基线同步到 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`。
+- 已明确当前完成项：Phase 0-8 主体实现、真实 smoke、文档发布、故障排查、发布说明和长期维护记录均已完成并提交。
+- 已明确当前未完成 / 暂缓项：`CODEX_SMOKE_API_KEY` channel API key smoke 暂缓；真实模型 MCP tool-call smoke、多平台 packaged binary 验证、`danger-full-access` UI、根 README / AGENTS 公开同步仍待后续按需处理。
+- 已将“收尾时同步最新开发状态和下次启动提示词”的习惯写入 `tasks/lessons.md`。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未补跑 API key smoke，未读取 ambient `OPENAI_API_KEY`，未 stage 或提交 `apps/electron/out/`。
+- 验证通过：Markdown code fence 检查；docs 相对链接检查；`git diff --check -- docs/codex-support tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-27 Agent Codex Runtime Phase 8 文档发布与长期维护计划
 
 范围确认：本轮直接进入 Phase 8 文档、故障排查、发布说明和长期维护记录；`CODEX_SMOKE_API_KEY` channel API key smoke 继续暂缓，不主动补跑，不读取 ambient `OPENAI_API_KEY`。不修改根 `README.md` / `AGENTS.md`，不 stage / commit `apps/electron/out/` 打包产物；用户已要求不再等待确认，计划写入后直接执行。

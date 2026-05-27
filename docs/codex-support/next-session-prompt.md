@@ -28,8 +28,8 @@
 - Phase 7 API key 最终残余复核已完成并提交：b2d8bc5f。当前环境仍未设置 `CODEX_SMOKE_API_KEY`，执行 `bun run --filter='@codeinsights/electron' smoke:agent-codex -- --only api-key` 退出码 0，脚本确认 `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`、binary `codex-cli 0.130.0`，`channel-api-key.readonly` 仍 skipped；未显式传 `--use-openai-api-key`，未读取 ambient `OPENAI_API_KEY`。
 - 最新状态已同步并提交：d989ae4f。2026-05-27 用户明确要求暂时不做 `CODEX_SMOKE_API_KEY` channel API key smoke 的“有凭证则补跑 / 无凭证则记录阻塞”两项；该 smoke 保留为已知未完成验证，不再作为下次启动优先级或 Phase 8 启动阻塞。
 - Phase 7 channel API key smoke 暂缓提示词更新已提交：2cd195b1。该提交解除 API key smoke 对 Phase 8 的阻塞，继续禁止主动补跑 API key smoke 或读取 ambient `OPENAI_API_KEY`。
-- Phase 8 support 文档、故障排查、发布说明和长期维护记录已完成同步：主方案已回填实际 runtime registry、CodexAgentRuntime、runtime events 历史、真实 smoke、MCP 注入、安全边界和 API key smoke 暂缓；开发清单已新增 SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
-- 最新提交号以 `git log -1 --oneline` 为准，预期最新提交为 `2cd195b1 docs(agent): 暂缓 Codex API key smoke` 或其后的 Phase 8 文档提交。
+- Phase 8 support 文档、故障排查、发布说明和长期维护记录已完成并提交：d04ffb95。主方案已回填实际 runtime registry、CodexAgentRuntime、runtime events 历史、真实 smoke、MCP 注入、安全边界和 API key smoke 暂缓；开发清单已新增 SDK / CLI 升级兼容记录、已知限制、故障排查和发布说明草稿。
+- 最新提交号以 `git log -1 --oneline` 为准，预期最新提交为 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档` 或其后的状态同步提交。
 - 2026-05-26 已修正 native smoke 隔离逻辑：复制主机 `~/.codex/auth.json` 时也复制同源 `config.toml`，保留中转 API `model_provider` / `base_url` 配置；同时不再默认强制 `modelReasoningEffort: "minimal"`，改为尊重 `config.toml`，仅在设置 `CODEX_SMOKE_REASONING_EFFORT` 时覆盖。
 - Phase 7 native / read-only / workspace-write / resume / web-search / stop 成功路径已通过真实 smoke：native thread `019e63a4-3186-7f40-a97b-a0cd2a6a0932`，read-only thread `019e63a5-0a1d-7571-a7f9-2ea212be46b5`，workspace-write thread `019e63a5-7da1-7fb3-ace8-deec5f2dc74d`，resume thread `019e63a6-5806-7013-a8af-651efad3ffe5`，web-search thread `019e63a7-0b84-7993-bf33-028d39b15593`。
 - Phase 7 仍有暂缓项：channel API key smoke 未通过真实 API key 路径验证；除非用户重新明确要求，否则下次启动不要补跑该 smoke，也不要因缺少 `CODEX_SMOKE_API_KEY` 阻塞 Phase 8。
@@ -40,7 +40,7 @@
 
 请先执行：
 1. 读取 AGENTS.md / 项目指令，并复习 tasks/lessons.md 中阶段完成即提交、Codex auth 隔离、native `config.toml` 中转配置、Agent stop、runtime events、Git guard、runtime binding 和“不再等待确认”相关教训。
-2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新提交为 `2cd195b1 docs(agent): 暂缓 Codex API key smoke` 或其后的 Phase 8 文档提交。不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
+2. 运行 `git status --short` 和 `git log -3 --oneline`，确认工作树状态和最新提交；预期最新提交为 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档` 或其后的状态同步提交。不要回滚用户改动。若只看到 `apps/electron/out/` 未跟踪，它是 Phase 7 打包产物，不要默认 stage / commit。
 3. 读取开发清单的“最新开发状态快照”、第 9 节 Phase 7 执行记录、第 10 节 Phase 8 和第 13 节当前未解决问题。
 4. 在 tasks/todo.md 写入本轮计划，然后直接开始执行。
 5. 启动前确认本轮边界：暂缓 Phase 7 channel API key smoke，不要主动执行“有凭证则补跑 / 无凭证则记录阻塞”两项；不要把未验证成功路径写成已通过，也不要修改根 README.md / AGENTS.md，除非用户明确允许。

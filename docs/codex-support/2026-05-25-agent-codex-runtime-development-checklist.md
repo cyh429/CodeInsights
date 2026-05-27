@@ -1,6 +1,6 @@
 # Agent 模式 Codex Runtime 开发进度清单
 
-状态：Phase 0-7 主体实现与真实 smoke 已完成并提交；Phase 7 channel API key smoke 暂缓，不再作为下次启动或 Phase 8 阻塞项；Phase 8 文档、故障排查、发布说明和长期维护记录已同步并通过文档验证，待本轮提交
+状态：Phase 0-8 主体实现、真实 smoke、文档发布和长期维护记录已完成并提交；Phase 7 channel API key smoke 暂缓，不再作为下次启动或 Phase 8 阻塞项；后续进入按需维护任务
 日期：2026-05-26
 主方案：[Agent 模式 Codex Runtime 接入开发方案](./2026-05-25-agent-codex-runtime-integration-plan.md)
 下次启动提示词：[Agent Codex Runtime 下次启动提示词](./next-session-prompt.md)
@@ -26,7 +26,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27 Phase 8 文档同步后
+更新时间：2026-05-27 Phase 8 文档提交后
 
 当前结论：
 
@@ -59,13 +59,13 @@
 - [x] 最新状态同步已提交：`d989ae4f docs(agent): 同步 Codex Runtime 最新状态`。
 - [x] Phase 7 channel API key smoke 暂缓提示词更新已提交：`2cd195b1 docs(agent): 暂缓 Codex API key smoke`。
 - [!] Phase 7 channel API key smoke 暂缓：2026-05-27 用户明确要求暂时不做“若提供 `CODEX_SMOKE_API_KEY` 则补跑 / 若未提供则记录阻塞”两项；保留为已知未完成验证，不默认读取 ambient `OPENAI_API_KEY`，不再阻塞 Phase 8 启动。
-- [x] Phase 8 文档发布和长期维护记录已同步：主方案、真实 smoke、SDK / CLI 升级兼容、已知限制、故障排查和发布说明草稿均已回填到 Codex support 文档。
+- [x] Phase 8 文档发布和长期维护记录已完成并提交：`d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`。主方案、真实 smoke、SDK / CLI 升级兼容、已知限制、故障排查和发布说明草稿均已回填到 Codex support 文档。
 
 当前仓库状态要求：
 
 - 下次启动时先运行 `git status --short`，确认是否仍是干净工作树。
 - 若发现未提交改动，先识别是否属于用户改动或上次阶段残留，不要自动回滚。
-- 最新已记录实现/验证提交为 `dae13cd7 feat(agent): 完成 Codex workspace MCP 注入`；最新已记录状态同步提交为 `2cd195b1 docs(agent): 暂缓 Codex API key smoke` 或其后的 Phase 8 文档提交；下次启动时以 `git log -1 --oneline` 为准。
+- 最新已记录阶段提交为 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`；下次启动时以 `git log -1 --oneline` 为准。
 - 下次启动时若仍看到 `apps/electron/out/` 未跟踪，这是本地打包产物，不应默认 stage / commit。
 - 下一步不再优先补跑 channel API key smoke；除非用户重新明确要求，否则把它作为已知暂缓项，后续维护优先处理真实模型 MCP tool-call smoke、多平台 packaged binary 验证、SDK / CLI 升级复核或公开文档同步确认。
 
@@ -145,7 +145,7 @@
 | Phase 6 | [x] | 已完成 Renderer 设置、runtime transcript 回放、feature flag 与 Codex UX 禁用态 |
 | Phase 7 实现与打包验证 | [x] | 已接入真实 Codex runtime、完成打包与 smoke 记录并提交 `1b94f9ad` |
 | Phase 7 成功路径补跑 | [!] | native / workspace-write / read-only / resume / web-search 已通过；history reload fixture-based packaged UI reload smoke 已通过；workspace MCP injection 已提交 `dae13cd7` 且 config smoke 已通过；API key smoke 已复核为 skipped，2026-05-27 用户要求暂缓，不再作为 Phase 8 阻塞 |
-| Phase 8 | [x] | Support 文档、故障排查、发布说明和长期维护记录已同步；根 README / AGENTS 仍需用户明确允许后再改 |
+| Phase 8 | [x] | 已提交 `d04ffb95`；Support 文档、故障排查、发布说明和长期维护记录已同步；根 README / AGENTS 仍需用户明确允许后再改 |
 
 ## 1. 产品决策门禁
 
@@ -815,6 +815,7 @@ Phase 8 执行记录：
 - 开发清单、support README 和 next-session prompt 均同步到 `2cd195b1 docs(agent): 暂缓 Codex API key smoke` 后状态；下次启动不再把 API key smoke 作为 Phase 8 前置阻塞。
 - 根 `README.md` / `AGENTS.md` 本轮未修改；若公开文档需要同步，仍需用户明确允许。
 - 文档验证通过：Markdown code fence 检查、docs 相对链接检查、`git diff --check -- docs/codex-support tasks/todo.md`。
+- Phase 8 文档成果已提交为 `d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`。
 
 真实 smoke test 记录：
 
@@ -926,7 +927,7 @@ UI：
 | Phase 5 | [x] | `codex/agent-codex-runtime-phase-0` | `40441fe8` | `bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-runner.test.ts`、`bun test apps/electron/src/main/lib/agent-runtime-event-log.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/codex-runtime.test.ts`、`bun test apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts`、`bun test apps/electron/src/main/lib/agent-session-manager.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查问题已修复并复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Renderer UI、runtime transcript 回放或真实 Codex SDK / CLI 调用 |
 | Phase 6 | [x] | `codex/agent-codex-runtime-phase-0` | `58164e35` | `bun test apps/electron/src/renderer`、`bun test apps/electron/src/main/lib/agent-orchestrator.test.ts`、`bun test packages/shared`、`bun run --filter='@codeinsights/electron' typecheck`、`git diff --check` 通过；代码审查复审无 Critical / High / Medium | Codex 仍为 mock runtime；尚未接 Phase 7 真实 Codex SDK / CLI 或打包发布验证 |
 | Phase 7 | [x] | `codex/agent-codex-runtime-phase-0` | `1b94f9ad` + `a439d541` + `79c7fc92` + `dae13cd7` | `bun run typecheck`、`bun test --isolate`、`bun run electron:build`、`CODEINSIGHTS_AGENT_CODEX_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast`、binary smoke、stop smoke、packaged startup smoke 通过；修正 native config 后 native / read-only / workspace-write / resume / web-search 成功路径通过；fixture-based packaged history reload UI smoke 通过；MCP config injection smoke 通过；安全复审无 Critical / High / Medium | channel API key smoke 因缺少 `CODEX_SMOKE_API_KEY` 且未显式 opt-in `OPENAI_API_KEY` 跳过 |
-| Phase 8 | [x] | `codex/agent-codex-runtime-phase-0` | 本轮 Phase 8 文档提交 | 主方案、开发清单、support README、next-session prompt 与 `tasks/todo.md` 已同步；Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 作为阶段验证 | channel API key smoke 暂缓；公开根 README/AGENTS 尚未同步，需用户明确允许 |
+| Phase 8 | [x] | `codex/agent-codex-runtime-phase-0` | `d04ffb95` | 主方案、开发清单、support README、next-session prompt 与 `tasks/todo.md` 已同步；Markdown code fence、docs 相对链接和 `git diff --check -- docs/codex-support tasks/todo.md` 通过 | channel API key smoke 暂缓；公开根 README/AGENTS 尚未同步，需用户明确允许 |
 
 ## 13. 当前未解决问题
 
