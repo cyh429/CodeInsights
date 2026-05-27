@@ -3717,3 +3717,172 @@ Phase 8 禁止事项：
 - 已明确当前完成状态：Phase 0-6 完成；Phase 7 真实 Codex runtime、打包验证、native/read-only/workspace-write/resume/web-search/stop、history reload UI smoke 和 workspace MCP 注入均完成；channel API key smoke 仍因缺少 `CODEX_SMOKE_API_KEY` 阻塞；Phase 8 未开始。
 - 已更新下次启动提示词：新会话应先检查 `git status --short` / `git log -3 --oneline`，确认 `apps/electron/out/` 不纳入提交；若提供 `CODEX_SMOKE_API_KEY` 才补跑 channel API key smoke，否则保持阻塞并进入 Phase 8 前不要伪造通过。
 - 验证通过：Codex support Markdown code fence / relative link check；`git diff --check -- docs/codex-support tasks/todo.md`。
+
+## 2026-05-27 GitHub Feature Issues 创建计划
+
+范围确认：本轮目标是在当前项目远程 GitHub 仓库为 5 个后续功能创建 issue；不修改产品代码，不修改根 `README.md` / `AGENTS.md`，不提交本地任务记录。当前 remote 为 `git@github.com:zcxGGmu/RV-Insights.git`，GitHub API 解析到实际仓库 `zcxGGmu/CodeInsights`，issues 已启用。
+
+- [x] 复习 `tasks/lessons.md`，确认本轮不涉及代码阶段提交和 Codex runtime 残余 smoke。
+- [x] 确认当前仓库 remote 与工作树状态。
+- [x] 检查本机 GitHub issue 创建能力：`gh` / `hub` 不存在，环境变量中无 `GITHUB_*` / `GH_*` token，macOS git credential 中无 github.com HTTPS token。
+- [x] 通过 GitHub API 匿名读取仓库元数据，确认 `zcxGGmu/RV-Insights` 已重命名/重定向到 `zcxGGmu/CodeInsights`，且 `has_issues: true`。
+- [x] 获取可用于 GitHub Issues API 的认证方式后创建 5 个 issue。
+- [x] 创建完成后记录 issue URL 并追加 Review。
+
+### Issue 草案 1：集成 Codex App 文件预览（右侧面板打开）
+
+```markdown
+## 背景
+
+当前 CodeInsights 已有右侧面板与文件浏览能力，但缺少类似 Codex App 的快速文件预览体验。用户在 Agent / Pipeline 输出、工具调用、文件浏览器或附件引用中看到文件路径时，应能在右侧面板直接打开预览，减少上下文切换。
+
+## 目标
+
+- 在右侧面板集成文件预览入口，支持从 Agent/Pipeline 记录、工具调用结果、文件浏览器和可点击路径打开。
+- 支持常见文本源码、Markdown、图片、PDF 以及已解析文档的只读预览。
+- 预览状态跟随当前工作区/会话隔离，不污染全局 Chat 回退路径。
+- 对大文件、二进制文件、缺失文件和权限不足场景提供清晰降级提示。
+
+## 验收标准
+
+- 点击文件路径后右侧面板打开预览，并高亮当前文件名、路径和所属工作区。
+- 文本文件支持语法高亮、行号和基础搜索；Markdown 可切换源码/渲染视图。
+- 图片/PDF 能在面板内预览，无法预览的文件提供“在系统中打开/复制路径”等安全操作。
+- Agent/Pipeline 切换会话后预览不会串会话；刷新历史后仍能恢复最近一次预览状态。
+- 补充 BDD 测试覆盖：路径点击、预览成功、不可预览降级、会话隔离。
+
+## 技术备注
+
+- 状态管理继续使用 Jotai。
+- 优先复用现有 `file-browser`、`ai-elements`、附件解析和右侧面板结构。
+- 新增 IPC 时同步 shared 契约、main handler、preload bridge 和 renderer 调用。
+```
+
+### Issue 草案 2：集成 Codex App Skill 工坊
+
+```markdown
+## 背景
+
+CodeInsights 已有 Agent workspace skills 目录能力，但缺少面向用户的 Skill 工坊。需要提供类似 Codex App 的技能浏览、安装、启用、编辑和验证体验，让用户能以工作区为边界管理 Agent 能力。
+
+## 目标
+
+- 新增 Skill 工坊入口，用于浏览本地 skills、项目内 skills 和可安装的推荐/远程 skills。
+- 支持安装、启用/禁用、更新、复制、删除、查看 README/SKILL.md 和基础校验。
+- Skill 配置按 Agent workspace 隔离，遵循本地文件优先和可移植配置原则。
+- 提供冲突检测：同名 skill、无效 `SKILL.md`、缺失引用文件、危险脚本提示。
+
+## 验收标准
+
+- 用户可以在设置或 Agent 工作区界面打开 Skill 工坊。
+- 能列出当前工作区已启用 skills，并能查看每个 skill 的说明、来源、路径和状态。
+- 能从本地目录或远程 GitHub repo/path 安装 skill，并写入工作区对应 skills 目录/配置。
+- 启用/禁用后，Agent 新会话能读取最新 workspace capabilities。
+- 补充 BDD 测试覆盖：列表加载、安装成功、校验失败、启用禁用、工作区隔离。
+
+## 技术备注
+
+- 安装远程依赖前需要先搜索/确认版本与来源，不默认引入新依赖。
+- UI 采用现代设置页风格，优先复用 Radix/Shadcn 风格组件。
+- 所有错误日志和用户提示优先中文，保留必要英文术语。
+```
+
+### Issue 草案 3：集成 Codex App 自动化任务
+
+```markdown
+## 背景
+
+CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App 的自动化任务系统。用户需要定时运行、监控、提醒、继续线程或在指定工作区执行重复任务。
+
+## 目标
+
+- 新增自动化任务模块，支持创建、查看、暂停、恢复、删除和运行历史。
+- 支持两类任务：定时工作区任务和当前线程 follow-up/heartbeat。
+- 每个任务绑定工作区、运行模型/渠道、提示词、计划规则、状态和最近执行结果。
+- 自动化执行必须有并发守卫、日志追踪、失败重试/退避和用户可见的错误状态。
+
+## 验收标准
+
+- 用户可创建每日/每周/间隔运行的自动化任务，并能看到下一次运行时间。
+- 任务运行时复用现有 Agent/Pipeline 运行能力，并按工作区隔离产物与日志。
+- 支持暂停/恢复/立即运行；删除任务不会删除历史会话，除非用户明确选择。
+- 应用重启后任务配置和运行状态可恢复。
+- 补充 BDD 测试覆盖：创建任务、调度触发、暂停恢复、失败记录、重启恢复。
+
+## 技术备注
+
+- 本地存储优先，使用 `~/.codeinsights/` 下 JSON 配置 + JSONL 运行日志，不引入本地数据库。
+- 计划表达不要直接暴露复杂底层规则给普通用户，UI 使用自然语言和明确时间展示。
+- 注意远程执行权限、API Key、工作区文件写入权限与现有 permission mode 的关系。
+```
+
+### Issue 草案 4：接入 Discord/Telegram 远程机器人
+
+```markdown
+## 背景
+
+用户希望通过 Discord / Telegram 远程触发 CodeInsights 的 Agent 或 Pipeline，并接收进度、权限请求、完成结果和失败通知。该能力可用于移动端远程协作和长任务通知。
+
+## 目标
+
+- 新增远程机器人集成，首期支持 Discord Bot 与 Telegram Bot。
+- 支持绑定本地 CodeInsights 实例、授权用户/群组白名单、工作区选择和命令路由。
+- 支持远程提交任务、查看运行状态、审批权限请求/人工 gate、停止任务和获取结果摘要。
+- 所有敏感配置本地加密存储，默认关闭，必须显式启用。
+
+## 验收标准
+
+- 用户可在设置页配置 Discord/Telegram token、允许的 user/chat/channel、默认工作区和通知策略。
+- 远程发送命令后，本地应用能创建对应 Agent/Pipeline 会话并返回会话状态。
+- 权限请求和 Pipeline gate 可通过机器人消息进行批准/拒绝，并写入审计记录。
+- 未授权用户、未知命令、应用离线、会话不存在等场景有明确反馈。
+- 补充 BDD 测试覆盖：授权校验、命令解析、任务创建、审批回传、错误路径。
+
+## 技术备注
+
+- 优先设计 provider 抽象，Discord/Telegram 作为不同 adapter，避免业务逻辑分叉。
+- 不在日志中输出 bot token、API key、用户敏感消息全文。
+- 需要评估长轮询、Webhook、本地桌面网络限制和代理设置复用方案。
+```
+
+### Issue 草案 5：支持全局流式语音输入（参考豆包）
+
+```markdown
+## 背景
+
+当前输入主要依赖键盘。需要支持类似豆包的全局流式语音输入：用户在任意输入场景按快捷键即可开始说话，语音实时转文本并插入当前 Composer，提高长提示词和移动办公效率。
+
+## 目标
+
+- 新增全局语音输入能力，支持快捷键唤起、悬浮状态提示、实时转写和一键提交/取消。
+- 支持 Agent、Pipeline、旧 Chat 回退输入框等主要输入场景。
+- 支持用户选择语音识别 Provider、语言、自动标点、热词/术语和是否保留音频。
+- 语音流式转写过程要低延迟、可中断，并在失败时保留已识别文本。
+
+## 验收标准
+
+- 全局快捷键可在应用前台任意页面唤起语音输入，并将转写文本写入当前可用 Composer。
+- 录音时有清晰状态：正在听、识别中、网络异常、已暂停、已取消。
+- 支持实时增量转写，用户可继续编辑最终文本后再提交。
+- 无麦克风权限、Provider 未配置、网络失败、无焦点输入目标等场景有明确降级。
+- 补充 BDD/E2E 测试覆盖：快捷键唤起、权限失败、流式增量、取消、跨页面输入目标。
+
+## 技术备注
+
+- 需要评估 Electron 麦克风权限、系统快捷键、音频流采集和可选本地/云端 ASR Provider。
+- 状态管理继续使用 Jotai；语音输入状态应全局唯一，避免多个会话并发录音。
+- 默认不持久化原始音频；如需保存必须有明确用户开关和隐私说明。
+```
+
+## 2026-05-27 GitHub Feature Issues 创建 Review
+
+- 初始环境无法直接创建远程 issue：本机缺少 `gh` / `hub`，环境变量无 GitHub token，macOS git credential 中也没有 github.com HTTPS token。
+- 已确认远程仓库实际 GitHub full name 为 `zcxGGmu/CodeInsights`，旧 `zcxGGmu/RV-Insights` remote 可被 GitHub API 重定向，issues 已启用。
+- 用户提供 GitHub token 后，已通过 GitHub Issues API 创建 5 个远程 issue：
+  - `#5`：`feat: 集成 Codex App 文件预览（右侧面板打开）` - https://github.com/zcxGGmu/CodeInsights/issues/5
+  - `#6`：`feat: 集成 Codex App Skill 工坊` - https://github.com/zcxGGmu/CodeInsights/issues/6
+  - `#7`：`feat: 集成 Codex App 自动化任务` - https://github.com/zcxGGmu/CodeInsights/issues/7
+  - `#8`：`feat: 接入 Discord/Telegram 远程机器人` - https://github.com/zcxGGmu/CodeInsights/issues/8
+  - `#9`：`feat: 支持全局流式语音输入（参考豆包）` - https://github.com/zcxGGmu/CodeInsights/issues/9
+- 已通过 GitHub Issues API 只读查询确认 `#5` 到 `#9` 均存在且为 open issue。
+- 本轮未修改产品代码，未修改根 `README.md` / `AGENTS.md`，未将 token 写入仓库文件。
