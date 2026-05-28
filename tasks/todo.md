@@ -1,5 +1,21 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-28 Agent opencode Runtime Phase 8 后状态同步计划
+
+范围确认：本轮只把 Phase 8 实际提交号 `60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档` 写回 opencode support README、development checklist、next-session prompt 和任务记录；不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不提交打包产物。
+
+- [x] 更新 opencode support README：记录 Phase 8 提交 `60bf4764`，并将下次启动入口改为 `60bf4764` 或其后的状态同步提交。
+- [x] 更新 opencode development checklist：记录 Phase 8 完成提交和当前恢复入口。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求确认 `60bf4764`、`992b560b`、`bcec66d6` 和关键历史提交。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md`。
+- [x] 按状态同步纪律单独提交。
+
+## 2026-05-28 Agent opencode Runtime Phase 8 后状态同步 Review
+
+- 已将 Phase 8 文档提交固定为 `60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档`。
+- 已更新 `docs/opencode-support/README.md`、development checklist 和 `next-session-prompt.md`：恢复入口现在要求确认 `60bf4764` 或其后的状态同步提交，同时保留 Phase 7 开发基线 `3ec2ebec` 和关键历史提交。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未修改业务代码，未提交 `apps/electron/out/` 打包产物。
+
 ## 2026-05-28 Agent opencode Runtime Phase 8 真实验收与发布准备计划
 
 范围确认：本轮进入 Phase 8，优先做真实使用验收、故障排查材料、release notes 草稿和公开文档同步准备。继续保持所有 diagnostics、smoke summary、event log 和文档示例 secretless；真实模型 / 凭证相关 smoke 只使用显式 native opencode auth 或 `OPENCODE_SMOKE_API_KEY`，不读取 ambient API key，不伪造通过；不修改根 `README.md` / `AGENTS.md`，除非用户明确允许。

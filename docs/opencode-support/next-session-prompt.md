@@ -8,8 +8,9 @@
 项目路径：/Users/zq/Desktop/ai-projs/posp/RV-Insights
 当前分支：agent-mode-opencode
 预期最新开发基线：3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证
+Phase 8 提交：60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档
 Phase 8 起始入口：992b560b docs(agent): 固化 opencode Phase 7 最新启动状态
-预期最新状态：最新 HEAD 应为本轮 Phase 8 提交或其后的状态同步提交；历史必须包含 992b560b、bcec66d6、3ec2ebec、0c84b37a、077fbc49、bb361a34、b3e99265、647d3046
+预期最新状态：最新 HEAD 应为 60bf4764 或其后的状态同步提交；历史必须包含 60bf4764、992b560b、bcec66d6、3ec2ebec、0c84b37a、077fbc49、bb361a34、b3e99265、647d3046
 Phase 7 开发基线：3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证
 Phase 7 后状态同步提交：bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态
 Phase 7 最新启动状态：992b560b docs(agent): 固化 opencode Phase 7 最新启动状态
@@ -60,7 +61,7 @@ Phase 8 剩余 gated 项：
 
 请先执行：
 1. 读取项目指令和 `tasks/lessons.md`，特别注意阶段完成即提交、重启恢复纪律、状态同步与下次启动提示词、secretless config、Git guard、runtime binding 等教训。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交是本轮 Phase 8 提交或其后的状态同步提交，且历史中包含 `992b560b`、`bcec66d6`、`3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`、`b3e99265`、`647d3046`。不要回滚用户改动。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交是 `60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档` 或其后的状态同步提交，且历史中包含 `992b560b`、`bcec66d6`、`3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`、`b3e99265`、`647d3046`。不要回滚用户改动。
 3. 读取 `docs/opencode-support/README.md`、`docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md` 和 `docs/opencode-support/2026-05-27-agent-opencode-runtime-integration-plan.md`，重点看 Phase 8 执行记录、gated 项、`OPENCODE_CONFIG_DIR` 暂缓结论和多平台 `[!]`。
 4. 继续处理 gated 项；不要默认修改根 `README.md` / `AGENTS.md`，除非用户明确允许。
 
