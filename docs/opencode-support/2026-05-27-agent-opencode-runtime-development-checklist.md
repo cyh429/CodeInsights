@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 6 已完成，Phase 7 MCP / packaged / release readiness 未开始
+状态：Phase 7 已完成，Phase 8 真实验收与公开文档同步准备未开始
 日期：2026-05-28
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-28，Phase 6 完成，已做最新状态同步
+更新时间：2026-05-28，Phase 7 完成，等待本轮状态同步提交
 
 当前结论：
 
@@ -68,14 +68,18 @@
 - [x] Phase 6 历史回放已完成：Codex / opencode 统一使用 runtime transcript；live runtime envelope 推送并去重；兼容 SDKMessage 加 `_runtimeEnvelope` 标记避免重复；回放只依赖 CodeInsights runtime event log，不依赖 opencode server 存活。
 - [x] Phase 6 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.48`，提升 `@codeinsights/electron` patch 版本到 `0.0.118`。
 - [x] Phase 6 后状态同步已单独提交：`077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`。
-- [ ] Phase 7 MCP / packaged / release readiness 未开始。
+- [x] Phase 6 最新状态同步已单独提交：`0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`。
+- [x] Phase 7 MCP / packaged / release readiness 已完成本轮范围：workspace MCP config/status、secretless summary、packaged binary/server smoke、packaged history reload smoke 和 `OPENCODE_CONFIG_DIR` 暂缓验证。
+- [x] Phase 7 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.49`，提升 `@codeinsights/electron` patch 版本到 `0.0.119`。
+- [x] Phase 7 已单独提交：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
+- [!] Phase 7 多平台 packaged smoke 未在本机完成：macOS x64、Windows x64、Linux 留后续 CI / 对应平台验证；DMG artifact 生成仍在 `hdiutil create` 阶段失败。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
 
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -5 --oneline`。
-- 预期最新开发基线为 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。
-- 当前最新状态同步提交为 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`；若后续补充状态同步提交，support 文档仍以真实 Phase 6 开发基线 `bb361a34` 为准，最终回复再补充实际 HEAD。
+- 预期最新开发基线为 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
+- 当前最新状态同步提交为本轮 Phase 7 后状态同步提交；support 文档以真实 Phase 7 开发基线 `3ec2ebec` 为准，最终回复再补充实际 HEAD。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -83,9 +87,9 @@
 
 下一步入口：
 
-1. 确认 Phase 6 阶段提交 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入` 和 Phase 6 后状态同步提交 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态` 已经存在，历史包含 `786b6485`、`3b8a1286`、`b3e99265` 和 `647d3046`。
-2. 进入 Phase 7，开始 MCP、packaged binary 和 release readiness。
-3. 不要直接跳到真实模型验收或公开文档同步；真实使用验收、故障排查和 release notes 留到 Phase 8。
+1. 确认 Phase 7 阶段提交 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证` 已经存在，历史包含 `0c84b37a`、`077fbc49`、`bb361a34`、`786b6485`、`b3e99265` 和 `647d3046`。
+2. 进入 Phase 8，开始真实使用验收、故障排查材料和发布准备。
+3. 不要在未经用户明确允许时修改根 `README.md` / `AGENTS.md`。
 
 ## 0.2 当前完成/未完成总览
 
@@ -103,7 +107,7 @@
 | Phase 4 | [x] | runtime mock、registry、orchestrator routing |
 | Phase 5 | [x] | 真实 `opencode serve` 集成 |
 | Phase 6 | [x] | renderer 设置、权限交互、历史回放 |
-| Phase 7 | [ ] | MCP、packaged binary、release readiness |
+| Phase 7 | [x] | MCP、packaged binary、release readiness |
 | Phase 8 | [ ] | 真实验收、故障排查、公开文档同步准备 |
 
 ## 0.3 阶段提交纪律
@@ -657,31 +661,31 @@ git diff --check -- apps/electron/src/renderer apps/electron/src/preload apps/el
 
 ## 9. Phase 7：MCP、Packaged Binary 与发布准备
 
-目标：完成 workspace MCP 到 opencode config 的安全映射、packaged app binary 验证、release readiness 和故障排查基础。
+目标：完成 workspace MCP 到 opencode config 的安全映射、packaged app binary 验证、packaged history replay smoke 和 secretless release readiness 基础。真实模型验收、故障排查实战、release notes 和根 `README.md` / `AGENTS.md` 修改不属于本轮 Phase 7。
 
 依赖：Phase 6 完成。
 
 任务：
 
-- [ ] workspace MCP local -> opencode `mcp.{name}.type = "local"`。
-- [ ] workspace MCP remote -> opencode `mcp.{name}.type = "remote"`。
-- [ ] remote headers 使用 `{env:VAR}`。
-- [ ] local environment 使用 `{env:VAR}`，若 smoke 不通过则跳过 secret local MCP。
-- [ ] OAuth MCP 首版只复用 opencode native OAuth 状态。
-- [ ] `POST /mcp` 动态添加仅用于 smoke 或临时能力，不写入长期主路径。
-- [ ] fake MCP tool discovery smoke。
-- [ ] MCP config-only smoke。
-- [ ] MCP tool-call smoke，如需真实模型则 gated。
-- [ ] 更新 `electron-builder.yml` files，包含 `opencode-ai` 和目标 platform packages。
-- [ ] packaged app binary smoke，证明不走系统 PATH。
-- [ ] packaged app 启动 opencode server smoke。
-- [ ] packaged reload history smoke。
-- [ ] macOS arm64 packaged 验证。
-- [ ] macOS x64 packaged 验证，如无 runner 则标记 `[!]`。
-- [ ] Windows x64 packaged 验证，如无环境则标记 `[!]`。
-- [ ] Linux packaged 验证按发布计划决定。
-- [ ] 故障排查草稿：binary missing、server auth failed、provider auth missing、model not found、MCP auth failed、permission stuck、SSE interrupted。
-- [ ] 发布说明草稿。
+- [x] workspace MCP local -> opencode `mcp.{name}.type = "local"`。
+- [x] workspace MCP remote -> opencode `mcp.{name}.type = "remote"`。
+- [x] remote headers 使用 `{env:VAR}`。
+- [x] local environment 使用 `{env:VAR}`；MCP args / URL 出现 secret-like 表达时跳过，避免写入 opencode config。
+- [x] OAuth MCP 首版只复用 opencode native OAuth 状态，CodeInsights 不代理 OAuth。
+- [ ] `POST /mcp` 动态添加仅用于 smoke 或临时能力，不写入长期主路径；本轮未采用动态添加，继续使用 config 主路径。
+- [x] fake MCP tool discovery / status smoke。
+- [x] MCP config-only / status smoke。
+- [ ] MCP tool-call smoke，如需真实模型则 gated；本轮用户明确不进入真实模型验收。
+- [x] 更新 `electron-builder.yml` files，包含 `opencode-ai`、`@opencode-ai/sdk` 和目标 platform packages。
+- [x] packaged app binary smoke，证明不走系统 PATH。
+- [x] packaged app 启动 opencode server smoke。
+- [x] packaged reload history smoke。
+- [x] macOS arm64 packaged app 验证。
+- [!] macOS x64 packaged 验证，如无 runner 则标记 `[!]`。
+- [!] Windows x64 packaged 验证，如无环境则标记 `[!]`。
+- [!] Linux packaged 验证按发布计划决定，当前未在本机执行。
+- [ ] 故障排查草稿：用户本轮明确不进入故障排查实战，留 Phase 8。
+- [ ] 发布说明草稿：用户本轮明确不进入 release notes，留 Phase 8。
 
 验证：
 
@@ -693,13 +697,26 @@ CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' 
 git diff --check -- apps/electron electron-builder.yml docs/opencode-support tasks/todo.md
 ```
 
+实际验证记录：
+
+- [x] `bun test apps/electron/src/main/lib/opencode-runtime/opencode-mcp-config.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-sdk-client.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-binary.test.ts`
+- [x] `bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts`
+- [x] `bun run --filter='@codeinsights/electron' typecheck`
+- [x] `bun install --frozen-lockfile --dry-run`
+- [x] `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only mcp`
+- [x] `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only packaged`
+- [x] `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui -- --runtime opencode`
+- [x] `git diff --check -- apps/electron packages/shared bun.lock tasks/todo.md`
+- [!] `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only mcp` 仍失败，reason 为 `The operation was aborted.`，因此 `OPENCODE_CONFIG_DIR` 保持默认关闭。
+- [!] `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast` 的 main/preload/renderer 构建和 `out/mac-arm64/CodeInsights.app` 生成成功，但 DMG `hdiutil create` 阶段 Exit code 1；本轮 packaged smoke 使用生成的 app bundle 验证，不声明 DMG artifact 通过。
+
 退出标准：
 
-- [ ] packaged app 使用 bundled opencode binary。
-- [ ] MCP secretless config smoke 通过。
-- [ ] 至少一个平台 packaged smoke 通过。
-- [ ] 多平台未验证项明确标记 `[!]`，不伪装为通过。
-- [ ] Phase 7 单独提交完成。
+- [x] packaged app 使用 bundled opencode binary。
+- [x] MCP secretless config smoke 通过。
+- [x] 至少一个平台 packaged smoke 通过。
+- [x] 多平台未验证项明确标记 `[!]`，不伪装为通过。
+- [x] Phase 7 单独提交完成：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
 
 回滚点：
 
@@ -775,11 +792,11 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 | abort | 可能 | 可能 | Phase 5 / 8 | [x] | Phase 5 no-reply abort smoke passed；真实模型场景留 Phase 8 |
 | resume | 是 | native/channel | Phase 8 | [x] | Phase 5 no-reply same-session smoke passed；真实模型 transcript 留 Phase 8 |
 | file edit guarded | 是 | native/channel | Phase 8 | [ ] | |
-| MCP config-only | 否 | 否 | Phase 7 | [ ] | |
-| MCP tool discovery | 否 | 否 | Phase 7 | [ ] | |
+| MCP config-only | 否 | 否 | Phase 7 | [x] | `smoke:agent-opencode -- --only mcp`，`configDirEnabled=false` |
+| MCP tool discovery | 否 | 否 | Phase 7 | [x] | fake stdio MCP `/mcp` status `connected` |
 | MCP tool-call | 是 | native/channel | Phase 8 | [ ] | |
-| packaged binary | 否 | 否 | Phase 7 | [ ] | |
-| packaged app reload | 否 | 否 | Phase 7 / 8 | [ ] | |
+| packaged binary | 否 | 否 | Phase 7 | [x] | bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled |
+| packaged app reload | 否 | 否 | Phase 7 / 8 | [x] | `smoke:agent-history-reload-ui -- --runtime opencode` |
 
 Smoke summary 规则：
 
@@ -795,13 +812,13 @@ Smoke summary 规则：
 | --- | --- | --- | --- |
 | opencode SDK / Server API 与文档不一致 | Phase 0 / 5 | [ ] | Phase 0 spike 先确认，wrapper 隔离差异 |
 | channel key 被写入 opencode auth storage | Phase 2 / 5 | [x] | Phase 5 未使用 `auth.set()`，channel key 只走 env placeholder |
-| local MCP secret 不能 env placeholder | Phase 0 / 7 | [ ] | 跳过或 0600 临时 config |
+| local MCP secret 不能 env placeholder | Phase 0 / 7 | [x] | Phase 7 local env / remote headers 均用 `{env:VAR}`；secret-like args / URL 跳过 |
 | opencode 默认 permission 偏宽 | Phase 2 / 5 | [x] | Phase 5 config smoke 已验证 CodeInsights permission policy |
 | Git 操作污染用户仓库 | Phase 5 / 8 | [ ] | Git guard + refs/index 后验 |
 | settings 改变污染旧会话 | Phase 1 / 4 | [x] | Phase 4 已覆盖 opencode runtimeSession snapshot resume，不回退当前 settings |
 | SSE 丢事件或重复事件 | Phase 3 / 5 | [x] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 真实 SSE subscribe smoke 通过 |
 | stop 后迟到 success | Phase 3 / 4 | [x] | Phase 3 adapter 与 Phase 4 orchestrator stop race 均已覆盖 |
-| packaged binary 缺失 | Phase 7 | [ ] | electron-builder files + packaged smoke |
+| packaged binary 缺失 | Phase 7 | [x] | electron-builder files + packaged smoke 已覆盖 macOS arm64 bundled binary；其他平台待 CI |
 | server 进程泄漏 | Phase 2 / 5 | [x] | Phase 5 smoke 后确认无残留 opencode 进程；app quit cleanup + idle timeout 已接入 |
 | managed config 覆盖安全策略 | Phase 0 / 5 | [x] | Phase 5 secretless config smoke 已检测 resolved server / permission / share / autoupdate summary |
 | Renderer 过度分叉 | Phase 6 | [x] | Phase 6 复用 `RuntimeTranscript` 与 `PermissionBanner`，通过 runtime label / capabilities 区分 Codex 与 opencode |

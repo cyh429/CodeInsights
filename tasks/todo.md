@@ -4397,7 +4397,7 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - [x] 验证 Electron packaged 场景包含 `opencode-ai` 和目标平台 `opencode-*` optional package，并补 packaged binary smoke 证明不走系统 PATH。
 - [x] 补充 packaged app server smoke 与 reload / history replay smoke；生成产物不纳入提交。
 - [x] 补齐 secretless 检查：MCP config、runtime diagnostics、smoke summary 和 event log 不输出 API key、Basic Auth password、MCP token、resolved headers 或 auth 文件内容。
-- [ ] 更新 opencode support README、development checklist、next-session prompt 和本节 Review；明确多平台未验证项用 `[!]`，不伪装通过。
+- [x] 更新 opencode support README、development checklist、next-session prompt 和本节 Review；明确多平台未验证项用 `[!]`，不伪装通过。
 - [x] 运行 Phase 7 验证：聚焦单测、`bun run --filter='@codeinsights/electron' typecheck`、相关 smoke、`git diff --check`。
 - [x] 代码改动后执行代码审查；通过后只提交 Phase 7 相关文件，提交信息使用详细中文。
 
@@ -4412,6 +4412,8 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已修复 packaged binary resolver 边界：packaged app 中若 `opencode-ai/package.json` 存在但 `opencode-ai/bin/opencode.exe` 不可执行或不存在，会继续回退到平台 optional package，而不是返回缺失路径。
 - 已根据代码审查修复 Phase 7 收尾问题：MCP args / URL 出现 secret-like 表达时直接跳过并记录 `unsafe_args` / `unsafe_url`；opencode MCP timeout 写入 config 时从秒转毫秒；platform optional package binary 缺失或不可执行时不再返回坏路径。
 - 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.48` 提升到 `0.1.49`，将 `@codeinsights/electron` 从 `0.0.118` 提升到 `0.0.119`，并同步 `bun.lock` workspace 版本。
+- Phase 7 已单独提交：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
+- 已更新 `docs/opencode-support/README.md`、development checklist 和 `next-session-prompt.md`：Phase 0-7 标记为已完成，Phase 8 未开始，下一步入口改为真实使用验收、故障排查材料和公开文档同步准备。
 - 保持阶段边界：未进入真实模型验收、故障排查实战、release notes、根 `README.md` 或根 `AGENTS.md` 修改；MCP tool-call 真实模型 smoke 留到 Phase 8 或显式凭证验收。
 - 多平台验证状态：macOS arm64 packaged app smoke 已通过；macOS x64、Windows x64、Linux packaged smoke 本机未验证，后续文档标记 `[!]`，不伪装通过。
 - `dist:fast` 结果：main/preload/renderer 构建和 `out/mac-arm64/CodeInsights.app` 生成成功；DMG 生成阶段仍因 `hdiutil create` Exit code 1 失败，因此本轮只证明 app bundle 可用，不声明 DMG artifact 通过。
