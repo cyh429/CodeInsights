@@ -21,7 +21,7 @@
 - opencode 是完整 Coding Agent runtime，不是普通模型 Provider。
 - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
 - 所有长期落盘配置必须 secretless。
-- `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 未开启时，Claude Code / Codex 行为必须保持不变。
+- opencode Runtime 已默认在设置页可见并可选；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME` 不再作为选择前置条件。
 - 每个阶段只提交该阶段相关文件，不提交打包产物、临时 smoke 目录、`.DS_Store` 或无关改动。
 - 根 `README.md` / `AGENTS.md` 只有在用户明确允许后再同步。
 
@@ -141,7 +141,7 @@
 | --- | --- | --- | --- |
 | [x] | 主接入方式 | managed `opencode serve` + SDK client | Phase 2-5 |
 | [x] | CLI `run --format json` 定位 | smoke / fallback，不作主路径 | Phase 5 |
-| [x] | feature flag | `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` | Phase 1-6 |
+| [x] | 设置页默认开放 | 不再要求 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`；用户可自行切换 opencode Runtime | Phase 8 后 |
 | [x] | 默认认证来源 | native opencode auth 优先，channel auth 显式选择 | Phase 6 |
 | [x] | channel auth 是否写入 opencode auth storage | 否，只用 env placeholder；Phase 0 已确认 provider/MCP env placeholder 可行 | Phase 2 / Phase 5 |
 | [x] | `bypassPermissions` 是否暴露 | 首版不公开；即使启用也保留 Git guard | Phase 6 |
@@ -259,7 +259,7 @@ git diff --check
 - [x] 扩展 `AgentRuntimeSessionRef` 或 runtime manifest 类型，支持 `agent`、`runtimeConfigHash`、`authSourceHash`。
 - [x] 扩展 `AppSettings`：`agentOpencodeChannelId`、`agentOpencodeModelId`、`agentOpencodeAgentName`、`agentOpencodeUseNativeAuth`、`agentOpencodeAutoupdate`、`agentOpencodeSnapshotEnabled`。
 - [x] settings normalization 区分 `null` 和 `undefined` 的 auth source 语义。
-- [x] feature flag 未启用时，settings 中的 opencode 字段不触发 runtime 切换。
+- [x] Phase 1-6 使用 feature flag 保护；Phase 8 后 opencode settings 字段可直接触发 runtime 切换。
 - [x] 增加 runtime capabilities 中立字段，不把 Codex 专用 helper 复制成 opencode 专用分支。
 - [x] 设计诊断 IPC：runtime capabilities、opencode server status、opencode model refresh。
 - [x] 补充 runtime selection 测试：新 session、旧 session、feature flag on/off。
@@ -608,7 +608,7 @@ git diff --check -- apps/electron scripts docs/opencode-support tasks/todo.md
 任务：
 
 - [x] Agent Runtime 设置三选：Claude Code / Codex / opencode。
-- [x] feature flag 未启用时显示实验功能关闭态。
+- [x] opencode Runtime 在设置页默认显示并可选；Codex Runtime 仍保留独立实验开关。
 - [x] opencode auth source UI：native auth / CodeInsights channel。
 - [x] opencode model 输入或 provider/model picker。
 - [x] opencode agent 选择：build / plan / custom。
@@ -808,7 +808,14 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
   - permission 三态和 workspace-write 仍需要真实模型诱导脚本或 server-side permission request fixture。
 - 下阶段入口：处理 gated smoke 自动化、补多平台 packaged CI、按用户许可同步公开根文档。
 
-### 10.2 SDK / CLI 升级兼容记录
+### 10.2 Phase 8 后设置页默认可选修正
+
+- 用户反馈：设置页看不到或不可选 opencode Runtime，原因是 Phase 6 留下的 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 构建时 feature flag 同时限制了 renderer 展示和 main process runtime 注册。
+- 当前修正：opencode Runtime 默认在 Settings -> Agent Runtime 三选中展示并可切换；新会话首次发送时绑定 opencode，已绑定会话继续使用自己的 runtime session。
+- 主进程修正：opencode runtime 默认注册，runtime selection 默认允许 `opencode`；不再因缺少 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 阻断发送。
+- 保持不变：Codex Runtime 仍保留独立实验开关；`OPENCODE_CONFIG_DIR` 继续默认关闭；真实模型 / channel auth / permission 三态 / workspace-write / MCP tool-call gated 项不因本次 UI 修正伪造通过。
+
+### 10.3 SDK / CLI 升级兼容记录
 
 - 当前锁定版本：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`。
 - 2026-05-28 `npm view` 结果：两个包的 `latest` 均仍为 `1.15.11`；`@opencode-ai/sdk` 依赖 `cross-spawn@7.0.6`；`opencode-ai` 的 bin 仍为 `opencode -> bin/opencode.exe`，optional package 列表仍包含 darwin / linux / windows 目标包。
@@ -822,7 +829,7 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
   - packaged reload UI smoke。
   - typecheck 与 opencode runtime 聚焦单测。
 
-### 10.3 故障排查
+### 10.4 故障排查
 
 - `opencode_binary_missing`：检查 packaged app 的 `Contents/Resources/app/node_modules/opencode-ai`、`@opencode-ai/sdk` 和当前平台 `opencode-*` package 是否存在；开发模式确认 `bun install` 后 workspace package 可解析；packaged 模式默认不走 PATH fallback。
 - `opencode_server_auth_failed`：确认 server 只监听 `127.0.0.1` 且启用 Basic Auth；无认证 health 应返回 401，authenticated health 应返回 `{ healthy: true }`；不要把 `OPENCODE_SERVER_PASSWORD` 写入日志。
@@ -834,7 +841,7 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 - `opencode_config_dir_abort`：默认保持 `OPENCODE_CONFIG_DIR` 关闭；仅在 assets / MCP 需要时通过显式 env 开关验证，失败时回退 config-only 主路径。
 - `opencode_dmg_hdiutil_failed`：本轮 `dist:fast` 已成功生成 APFS DMG；如 CI 再现 `hdiutil create` 失败，先检查 runner 架构、磁盘空间、旧 DMG 残留和 Electron Builder APFS/HFS+ 分支。
 
-### 10.4 发布说明草稿
+### 10.5 发布说明草稿
 
 - 新增：Agent 模式新增 opencode Coding Agent Runtime，支持 managed `opencode serve`、Basic Auth、本地 runtime event 回放、native/channel auth 配置、MCP secretless config/status 和 packaged bundled binary。
 - 验证：macOS arm64 dev smoke、native auth readonly prompt、packaged binary/server smoke、packaged history reload、DMG artifact、opencode runtime 聚焦单测和 Electron typecheck 均通过。

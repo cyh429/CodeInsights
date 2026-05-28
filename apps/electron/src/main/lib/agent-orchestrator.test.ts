@@ -342,7 +342,7 @@ describe('AgentOrchestrator Codex runtime routing', () => {
 })
 
 describe('AgentOrchestrator opencode runtime routing', () => {
-  test('opencode feature flag 关闭时主进程阻止继续执行既有 opencode 会话', async () => {
+  test('opencode 新会话不再依赖 feature flag，可继续路由到已注册 runtime', async () => {
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const {
@@ -353,17 +353,18 @@ describe('AgentOrchestrator opencode runtime routing', () => {
     } = await import('./agent-session-manager')
     const { updateSettings } = await import('./settings-service')
     updateSettings({ agentRuntimeKind: 'claude-code' })
-    const session = createAgentSession('opencode 已关闭会话')
+    const session = createAgentSession('opencode 默认开放新会话')
     updateAgentSessionMeta(session.id, {
       runtimeKind: 'opencode',
-      runtimeSession: {
-        kind: 'opencode',
-        externalSessionId: 'ses_opencode_disabled',
-        createdAt: 100,
-        updatedAt: 100,
-      },
     })
-    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus())
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'ses_opencode_resumed' },
+      { type: 'assistant_message' },
+      { type: 'run_completed' },
+    ]))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
     const errors: string[] = []
     const completions: unknown[] = []
 
@@ -373,16 +374,19 @@ describe('AgentOrchestrator opencode runtime routing', () => {
       onTitleUpdated: () => {},
     })
 
-    expect(errors[0]).toContain('opencode Runtime 已关闭')
+    expect(errors).toEqual([])
     expect(completions).toHaveLength(1)
-    expect(getAgentSessionRuntimeEvents(session.id)).toEqual([])
+    expect(getAgentSessionRuntimeEvents(session.id).map((event) => event.event.type)).toEqual([
+      'run_started',
+      'sdk_session',
+      'assistant_message',
+      'run_completed',
+    ])
     const sdkMessages = getAgentSessionSDKMessages(session.id)
-    expect(sdkMessages).toHaveLength(1)
-    expect((sdkMessages[0] as unknown as { _errorCode?: string })._errorCode).toBe('opencode_runtime_disabled')
+    expect(sdkMessages.some((message) => (message as unknown as { _runtimeEnvelope?: unknown })._runtimeEnvelope != null)).toBe(true)
   })
 
   test('settings 选择 opencode 时持久化 runtimeSession 并写 runtime event log', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionMeta, getAgentSessionRuntimeEvents, getAgentSessionSDKMessages } = await import('./agent-session-manager')
@@ -436,7 +440,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('opencode runtime 会接收工作区 MCP 的 secretless config 注入', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession } = await import('./agent-session-manager')
@@ -494,7 +497,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('已绑定 opencode session resume 不回退当前 settings 模型、agent 或 authSource', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionMeta, updateAgentSessionMeta } = await import('./agent-session-manager')
@@ -564,7 +566,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('已绑定 opencode session 缺少 workspace manifest 时阻断 resume', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionRuntimeEvents, updateAgentSessionMeta } = await import('./agent-session-manager')
@@ -602,7 +603,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('已绑定 opencode session 的 workspace 不可解析时也阻断 resume', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionRuntimeEvents, updateAgentSessionMeta } = await import('./agent-session-manager')
@@ -639,7 +639,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('stop 后 opencode runtime 的 late run_completed 不会落入 event log', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession, getAgentSessionRuntimeEvents } = await import('./agent-session-manager')
@@ -670,7 +669,6 @@ describe('AgentOrchestrator opencode runtime routing', () => {
   })
 
   test('opencode running session 不支持 queueMessage 或 setPermissionMode', async () => {
-    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
     const { AgentOrchestrator } = await import('./agent-orchestrator')
     const { createAgentSession } = await import('./agent-session-manager')

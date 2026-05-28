@@ -45,7 +45,7 @@ export interface ResolveAgentRuntimeSelectionInput {
   enabledRuntimeKinds?: readonly CodingAgentRuntimeKind[]
 }
 
-const DEFAULT_ENABLED_RUNTIME_KINDS: readonly CodingAgentRuntimeKind[] = ['claude-code', 'codex']
+const DEFAULT_ENABLED_RUNTIME_KINDS: readonly CodingAgentRuntimeKind[] = ['claude-code', 'codex', 'opencode']
 
 export class CodingAgentRuntimeRegistry {
   private readonly runtimes = new Map<CodingAgentRuntimeKind, CodingAgentRuntime>()

@@ -63,7 +63,7 @@ import type { AgentCodexReasoningEffort, AgentCodexWebSearchMode } from '@/types
 import { SettingsSection, SettingsCard, SettingsRow, SettingsSegmentedControl, SettingsInput } from './primitives'
 import { McpServerForm } from './McpServerForm'
 import { getSettingsDeleteDialogCopy } from './settings-ui-model'
-import { CODEX_NATIVE_AUTH_SELECT_VALUE, OPENCODE_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, getOpencodeCompatibleChannels, isAgentCodexRuntimeFeatureEnabled, isAgentOpencodeRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
+import { CODEX_NATIVE_AUTH_SELECT_VALUE, OPENCODE_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, getOpencodeCompatibleChannels, isAgentCodexRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
 
 /** 组件视图模式 */
 type ViewMode = 'list' | 'create' | 'edit'
@@ -1129,7 +1129,6 @@ function valueToEffort(value: string): AgentEffort | undefined {
 
 function AgentRuntimeSettings(): React.ReactElement {
   const codexFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
-  const opencodeFeatureEnabled = isAgentOpencodeRuntimeFeatureEnabled()
   const channels = useAtomValue(channelsAtom)
   const codexChannels = React.useMemo(() => getCodexCompatibleChannels(channels), [channels])
   const opencodeChannels = React.useMemo(() => getOpencodeCompatibleChannels(channels), [channels])
@@ -1192,12 +1191,6 @@ function AgentRuntimeSettings(): React.ReactElement {
     const next = value as CodingAgentRuntimeKind
     if (next === 'codex' && !codexFeatureEnabled) {
       toast.info('Codex Runtime 功能开关未启用')
-      return
-    }
-    if (next === 'opencode' && !opencodeFeatureEnabled) {
-      toast.info('opencode Runtime 实验功能未启用', {
-        description: '启动应用前设置 CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 后可选择。',
-      })
       return
     }
     setRuntimeKind(next)
@@ -1339,22 +1332,9 @@ function AgentRuntimeSettings(): React.ReactElement {
           onValueChange={updateRuntimeKind}
           options={RUNTIME_OPTIONS.filter((option) => {
             if (option.value === 'codex') return codexFeatureEnabled || runtimeKind === 'codex'
-            if (option.value === 'opencode') return opencodeFeatureEnabled || runtimeKind === 'opencode'
             return true
           })}
         />
-
-        {!opencodeFeatureEnabled && (
-          <SettingsRow
-            label="opencode 实验功能"
-            icon={<Activity size={18} className="text-muted-foreground" />}
-            description="功能开关未启用，opencode 只展示为关闭态"
-          >
-            <span className="rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1 text-xs text-text-secondary">
-              未启用
-            </span>
-          </SettingsRow>
-        )}
 
         {runtimeKind === 'codex' && (
           <>
@@ -1417,7 +1397,7 @@ function AgentRuntimeSettings(): React.ReactElement {
           </>
         )}
 
-        {runtimeKind === 'opencode' && opencodeFeatureEnabled && (
+        {runtimeKind === 'opencode' && (
           <>
             <SettingsRow
               label="opencode 认证来源"

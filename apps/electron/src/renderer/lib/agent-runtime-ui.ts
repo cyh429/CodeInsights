@@ -17,11 +17,10 @@ export function isAgentCodexRuntimeFeatureEnabled(
 }
 
 export function isAgentOpencodeRuntimeFeatureEnabled(
-  enabled: boolean = typeof __CODEINSIGHTS_AGENT_OPENCODE_RUNTIME_ENABLED__ !== 'undefined'
-    ? __CODEINSIGHTS_AGENT_OPENCODE_RUNTIME_ENABLED__
-    : false,
+  _enabled?: boolean,
 ): boolean {
-  return enabled === true
+  // opencode Runtime 已完成 Phase 8 基础验收，设置页默认开放给用户自行切换。
+  return true
 }
 
 export function isAgentRuntimeKindEnabled(
@@ -32,7 +31,7 @@ export function isAgentRuntimeKindEnabled(
   },
 ): boolean {
   if (kind === 'codex') return flags.codex
-  if (kind === 'opencode') return flags.opencode
+  if (kind === 'opencode') return true
   return true
 }
 

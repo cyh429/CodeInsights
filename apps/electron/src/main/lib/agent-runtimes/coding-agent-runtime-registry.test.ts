@@ -55,7 +55,7 @@ describe('resolveAgentRuntimeSelection', () => {
     })
   })
 
-  test('feature flag 未启用时 settings 中的 opencode 不触发 runtime 切换', () => {
+  test('settings 中的 opencode 默认触发 runtime 切换', () => {
     expect(resolveAgentRuntimeSelection({
       sessionMeta: createSession({ runtimeKind: 'claude-code' }),
       settings: {
@@ -65,12 +65,16 @@ describe('resolveAgentRuntimeSelection', () => {
         agentOpencodeAgentName: 'build',
       },
     })).toEqual({
-      kind: 'claude-code',
-      source: 'default',
+      kind: 'opencode',
+      source: 'settings',
+      channelId: null,
+      model: 'codeinsights-openai-compatible/gpt-5.1-codex',
+      agent: 'build',
+      authSource: 'native',
     })
   })
 
-  test('feature flag 启用时 settings 选择 opencode 并保留 native auth 语义', () => {
+  test('settings 选择 opencode 并保留 native auth 语义', () => {
     expect(resolveAgentRuntimeSelection({
       sessionMeta: createSession({ runtimeKind: 'claude-code' }),
       settings: {

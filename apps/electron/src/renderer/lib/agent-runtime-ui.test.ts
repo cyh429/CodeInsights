@@ -28,12 +28,13 @@ function channel(input: Partial<Channel> & Pick<Channel, 'id' | 'provider'>): Ch
 }
 
 describe('agent-runtime-ui', () => {
-  test('Codex runtime feature flag is closed by default', () => {
+  test('Codex runtime feature flag is closed by default while opencode is user-selectable', () => {
     expect(isAgentCodexRuntimeFeatureEnabled()).toBe(false)
     expect(isAgentCodexRuntimeFeatureEnabled(true)).toBe(true)
-    expect(isAgentOpencodeRuntimeFeatureEnabled()).toBe(false)
+    expect(isAgentOpencodeRuntimeFeatureEnabled()).toBe(true)
+    expect(isAgentOpencodeRuntimeFeatureEnabled(false)).toBe(true)
     expect(isAgentOpencodeRuntimeFeatureEnabled(true)).toBe(true)
-    expect(resolveEnabledAgentRuntimeKind('opencode', { codex: false, opencode: false })).toBe('claude-code')
+    expect(resolveEnabledAgentRuntimeKind('opencode', { codex: false, opencode: false })).toBe('opencode')
     expect(resolveEnabledAgentRuntimeKind('opencode', { codex: false, opencode: true })).toBe('opencode')
   })
 

@@ -8,7 +8,6 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __CODEINSIGHTS_AGENT_CODEX_RUNTIME_ENABLED__: JSON.stringify(process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'),
-    __CODEINSIGHTS_AGENT_OPENCODE_RUNTIME_ENABLED__: JSON.stringify(process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'),
   },
   root: resolve(__dirname, 'src/renderer'),
   base: './',

@@ -17,13 +17,7 @@
 - `opencode run --format json` 仅作为 CLI smoke、故障隔离和早期 fallback；它不应成为长期主实现，因为 server API 能覆盖 permission response、session status、MCP status、abort、message parts 和 diff 等更完整能力。
 - npm 调研显示 2026-05-27 最新稳定版本为 `@opencode-ai/sdk@1.15.11` 与 `opencode-ai@1.15.11`；CLI 包不是 `opencode`，也不是 `@opencode-ai/cli`。
 
-首版必须保持 feature flag：
-
-```text
-CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1
-```
-
-未开启时，现有 Claude Code / Codex 行为不变。
+Phase 1-8 使用 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 作为首期 feature flag。Phase 8 基础验收完成后，opencode Runtime 已默认开放给用户在 Settings -> Agent Runtime 中自行切换，不再要求启动前设置该环境变量。Codex Runtime 的实验开关保持不变。
 
 ### 0.3 Phase 8 验收后的当前结论
 
@@ -57,7 +51,7 @@ opencode Runtime 的实现要遵循以下原则，这些原则比某个具体 AP
 2. Contract-first：CodeInsights 内部只依赖 `CodingAgentRuntime` 与 `AgentRuntimeEvent` 契约，UI 不直接感知 opencode SSE 原始结构。
 3. Secretless disk：任何长期落盘文件都不能包含 API key、Bearer token、MCP secret、Basic Auth password；secret 只存在于 Electron 主进程内存、子进程 env 或 0600 临时文件。
 4. Session snapshot：Agent session 首次绑定 opencode runtime 后，必须固化 runtime kind、external session id、model、agent、auth source、permission policy hash 和 workspace cwd，后续 settings 改动不能污染旧会话 resume。
-5. Feature flag rollout：opencode 首版必须可完全关闭；未开启时不能改变 Claude Code / Codex session routing、settings normalization 和 renderer 默认行为。
+5. Rollout：Phase 1-8 期间使用 feature flag 隔离风险；Phase 8 后 opencode 默认开放设置页选择，Codex Runtime 继续保留独立实验开关。
 6. Smoke before release：每个实现 Phase 都必须有明确 smoke 或单测证据；真实模型 smoke 可以 gated，但 binary/server/config/permission/MCP secretless smoke 不应依赖外部 LLM。
 
 ## 1. 背景与目标
@@ -565,7 +559,7 @@ interface AgentRuntimeProfile {
 `settings-service.ts` 需要对 opencode 字段做运行时 normalization：
 
 - `agentRuntimeKind` 未设置时保持现有默认，不自动启用 opencode。
-- feature flag 未启用时，即使磁盘 settings 里有 `opencode`，也要回退到安全默认并保留原字段不删除。
+- opencode Runtime 默认可选；磁盘 settings 里有 `opencode` 时应保留并用于新会话 runtime selection。
 - `agentOpencodeModelId` 必须是非空字符串，推荐格式校验为 `provider/model`；不符合时只阻断 opencode run，不影响其他 runtime。
 - `agentOpencodeAgentName` 默认为 `build`，plan permission mode 可在 run input 层改为 `plan`，不要全局改 settings。
 - `agentOpencodeChannelId = null` 表示 native auth；`undefined` 表示沿用默认选择逻辑。两者要区分。
@@ -1442,7 +1436,7 @@ opencode 选中后展示：
 
 设置页交互规则：
 
-- feature flag 未启用：opencode 选项显示为实验功能关闭，不可选或带明确开关说明。
+- opencode 选项默认显示并可选；缺少 binary、auth 或模型时在运行前用诊断 / preflight 阻断，而不是隐藏 runtime 切换入口。
 - binary 未找到：允许保存设置，但运行前阻断，并提供诊断按钮。
 - native auth：显示“使用 opencode 原生认证”，提供 `opencode auth login` 指引，不读取 auth 文件内容。
 - channel auth：复用现有 Channel 选择器；模型输入提示必须使用 `provider/model`。

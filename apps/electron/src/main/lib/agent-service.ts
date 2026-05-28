@@ -49,12 +49,8 @@ const adapter = new ClaudeAgentAdapter()
 const runtimeRegistry = new CodingAgentRuntimeRegistry()
 runtimeRegistry.register(new ClaudeCodeRuntime(adapter))
 runtimeRegistry.register(new CodexAgentRuntime())
-const opencodeRuntime = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
-  ? new OpencodeAgentRuntime()
-  : null
-if (opencodeRuntime) {
-  runtimeRegistry.register(opencodeRuntime)
-}
+const opencodeRuntime = new OpencodeAgentRuntime()
+runtimeRegistry.register(opencodeRuntime)
 const orchestrator = new AgentOrchestrator(adapter, eventBus, { runtimeRegistry })
 
 /** 导出 EventBus 供飞书 Bridge 等外部服务订阅事件 */
@@ -307,7 +303,7 @@ export function listAgentRuntimeCapabilitiesDiagnostics(): AgentRuntimeCapabilit
 }
 
 export function getAgentOpencodeServerStatusDiagnostic(): AgentOpencodeServerStatus {
-  const featureEnabled = process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+  const featureEnabled = true
   const registered = runtimeRegistry.get('opencode') != null
   const status = opencodeRuntime?.getServerStatus()
   if (featureEnabled && registered && status) {
@@ -328,12 +324,10 @@ export function getAgentOpencodeServerStatusDiagnostic(): AgentOpencodeServerSta
   return {
     runtimeKind: 'opencode',
     featureEnabled,
-    state: featureEnabled ? (registered ? 'not_started' : 'not_configured') : 'disabled',
-    message: featureEnabled
-      ? registered
-        ? '真实 opencode serve 已接入，server 会在 opencode 会话运行时按需启动；诊断不读取 resolved provider/config 原文。'
-        : 'opencode runtime feature flag 已启用，但当前进程未注册 runtime。'
-      : 'opencode runtime feature flag 未启用。',
+    state: registered ? 'not_started' : 'not_configured',
+    message: registered
+      ? '真实 opencode serve 已接入，server 会在 opencode 会话运行时按需启动；诊断不读取 resolved provider/config 原文。'
+      : 'opencode Runtime 已默认开放，但当前进程未注册 runtime。',
     updatedAt: new Date().toISOString(),
   }
 }
@@ -383,7 +377,7 @@ export function refreshAgentOpencodeModelsDiagnostic(): AgentOpencodeModelRefres
 
 function isRuntimeFeatureEnabled(runtimeKind: CodingAgentRuntimeKind): boolean {
   if (runtimeKind === 'codex') return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
-  if (runtimeKind === 'opencode') return process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
+  if (runtimeKind === 'opencode') return true
   return true
 }
 
@@ -406,7 +400,7 @@ function buildRuntimeDiagnosticMessage(
   registered: boolean,
 ): string | undefined {
   if (runtimeKind === 'claude-code') return 'Claude Code legacy runtime 已注册。'
-  if (!featureEnabled) return `${runtimeKind} runtime feature flag 未启用。`
+  if (!featureEnabled) return `${runtimeKind} runtime 当前不可用。`
   if (!registered) return `${runtimeKind} runtime 未在当前进程注册。`
   if (runtimeKind === 'opencode') {
     return 'opencode 真实 server runtime 已接入；支持按需启动 server、事件流、恢复、中止和工具级权限。'

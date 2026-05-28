@@ -121,10 +121,6 @@ function isCodexRuntimeFeatureEnabled(): boolean {
   return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
 }
 
-function isOpencodeRuntimeFeatureEnabled(): boolean {
-  return process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME === '1'
-}
-
 function normalizeCodexModelForPersistence(model?: string): string | undefined {
   const trimmed = model?.trim()
   if (!trimmed) return undefined
@@ -659,9 +655,7 @@ export class AgentOrchestrator {
       sessionMeta,
       settings: appSettings,
       defaultKind: 'claude-code',
-      enabledRuntimeKinds: isOpencodeRuntimeFeatureEnabled()
-        ? ['claude-code', 'codex', 'opencode']
-        : ['claude-code', 'codex'],
+      enabledRuntimeKinds: ['claude-code', 'codex', 'opencode'],
     })
     console.log(`[Agent 编排] Runtime 选择: ${runtimeSelection.kind} (${runtimeSelection.source})`)
 
@@ -670,17 +664,6 @@ export class AgentOrchestrator {
         code: 'codex_runtime_disabled',
         title: 'Codex Runtime 已关闭',
         message: 'Codex Runtime 功能开关已关闭，此会话仅可查看历史，不能继续发送。',
-        actions: [],
-        canRetry: false,
-      })
-      return
-    }
-
-    if (runtimeSelection.kind === 'opencode' && !isOpencodeRuntimeFeatureEnabled()) {
-      reportPreflightError({
-        code: 'opencode_runtime_disabled',
-        title: 'opencode Runtime 已关闭',
-        message: 'opencode Runtime 功能开关已关闭，此会话仅可查看历史，不能继续发送。',
         actions: [],
         canRetry: false,
       })

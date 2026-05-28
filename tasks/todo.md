@@ -1,5 +1,28 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-28 Agent opencode Runtime 设置页默认可选计划
+
+范围确认：本轮只处理用户无法在设置页选择 opencode Runtime 的问题，让 opencode 作为已完成 Phase 8 后的可选 Runtime 默认开放；不修改根 `README.md` / `AGENTS.md`，不改变 `OPENCODE_CONFIG_DIR` 默认关闭策略，不执行真实模型 gated smoke。
+
+- [x] 复核项目指令、`tasks/lessons.md`、git 状态和 opencode support 文档入口，确认当前 HEAD 在 Phase 8 状态同步之后且历史包含关键提交。
+- [x] 移除 renderer 对 opencode Runtime 的构建时隐藏 / 禁用逻辑，设置页 Runtime 三选默认展示并允许切换 opencode。
+- [x] 移除 main process 对 opencode Runtime 的环境变量注册 / 路由阻断逻辑，确保用户选择后能实际进入 opencode runtime。
+- [x] 更新相关单测，覆盖 opencode 默认开放、settings 选择 opencode 不再依赖 feature flag、无 env flag 仍可运行已注册 opencode runtime。
+- [x] 同步 opencode support 文档和本节 Review，说明 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME` 不再是设置页选择前置条件。
+- [x] 按受影响包规则提升 `@codeinsights/electron` patch 版本并同步 lockfile。
+- [x] 运行聚焦单测、Electron typecheck、renderer build（显式 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0`）、diff check。
+- [x] 提交本轮变更，提交信息用中文说明设置页默认可选、验证结果和未包含 gated smoke。
+
+## 2026-05-28 Agent opencode Runtime 设置页默认可选 Review
+
+- 已确认根因：Phase 6 留下的 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 同时控制 renderer 展示、settings 初始化回退、main process runtime 注册和 orchestrator preflight，因此用户在默认启动时看不到 / 不能选 opencode。
+- 已修正 renderer：Settings -> Agent Runtime 默认展示 `Claude Code / Codex / opencode` 三选；opencode 切换不再弹 feature flag 未启用提示；选择 opencode 后会展示 native/channel auth、model、agent、snapshot、server status 和 MCP 摘要配置。
+- 已修正 main process：`OpencodeAgentRuntime` 默认注册；runtime selection 默认允许 `opencode`；缺少 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 不再阻断新会话或 settings 选择。
+- 保持边界：Codex Runtime 继续受 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1` 保护；已绑定 opencode session 缺少 manifest 时仍阻断 resume；`OPENCODE_CONFIG_DIR` 继续默认关闭；真实模型 / channel auth / permission 三态 / workspace-write / MCP tool-call gated 项没有伪造通过。
+- 已同步 opencode support README、development checklist、integration plan 和 next-session prompt；未修改根 `README.md` / `AGENTS.md`。
+- 已按版本规则将 `@codeinsights/electron` 从 `0.0.119` 提升到 `0.0.120`，并同步 `bun.lock` workspace 版本。
+- 验证通过：`bun test apps/electron/src/renderer/lib/agent-runtime-ui.test.ts apps/electron/src/main/lib/agent-runtimes/coding-agent-runtime-registry.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=0 bun run --filter='@codeinsights/electron' build:renderer`；`bun run --filter='@codeinsights/electron' build:main`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock docs/opencode-support tasks/todo.md`。
+
 ## 2026-05-28 Agent opencode Runtime Phase 8 后状态同步计划
 
 范围确认：本轮只把 Phase 8 实际提交号 `60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档` 写回 opencode support README、development checklist、next-session prompt 和任务记录；不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不提交打包产物。
