@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-28 README 架构图视觉验收
+
+- README 架构图不能只通过 SVG XML、碰撞脚本和缩略 contact sheet 就算验收；必须打开最终 PNG 的实际显示尺寸，逐张检查节点文字是否被边框压住、箭头标签是否遮挡节点、长虚线/总线是否割裂画面、图例是否挤占内容。
+- 技术图放在 README 中应优先选择展示型信息架构：节点内写清职责，连线少而明确；避免把所有调用关系都画出来，否则在 README 缩放后会变成调试拓扑而不是可读架构图。
+- `fireworks-tech-graph` 生成图后如果出现节点副标题靠近底边、箭头浮动标签贴近组件、路由总线跨越多层等问题，要重绘版式，而不是只靠自动校验脚本通过。
+
 ## 2026-05-28 Agent Runtime 设置页默认可选
 
 - 当用户反馈 Agent Runtime 设置页缺少某个已完成 runtime 时，要同时检查 renderer 选项过滤、settings 初始化回退、main process runtime 注册和 orchestrator preflight gate；只改设置页展示会导致用户选了也跑不起来。

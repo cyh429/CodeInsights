@@ -1,144 +1,147 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 880" width="1200" height="880">
+
   <defs>
-    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
-    </marker>
-    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
-    </marker>
-    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
-    </marker>
-    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
-    </marker>
-    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#6f6256"/>
     </marker>
     <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
-    .title { font-size: 24px; font-weight: 700; fill: #141413; }
-    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
-    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
-    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
-    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
-    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
-    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
-    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
+      .title { font-size: 28px; font-weight: 800; fill: #1a1a1a; }
+      .subtitle { font-size: 14px; font-weight: 600; fill: #8f8a80; }
+      .section { font-size: 13px; font-weight: 800; fill: #8b7355; letter-spacing: 3px; }
+      .node-type { font-size: 11px; font-weight: 800; fill: #9d9388; letter-spacing: 2.5px; }
+      .node-title { font-weight: 800; fill: #1a1a1a; }
+      .node-sub { font-size: 12px; font-weight: 650; fill: #6b6257; }
+      .footnote { font-size: 12px; font-weight: 650; fill: #a29a8f; }
+      .legend { font-size: 12px; font-weight: 750; fill: #6b6257; }
     </style>
   </defs>
-  <rect width="1200.0" height="820.0" fill="#f8f6f3"/>
-  <text x="48.0" y="48" text-anchor="start" class="title">Agent Runtime Flow</text>
-  <text x="48.0" y="72" text-anchor="start" class="subtitle">Session-first runtime selection with Claude Code, Codex, and opencode event envelopes</text>
-  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
-  <rect x="48.0" y="108.0" width="1104.0" height="98.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="132.0" class="section">RENDERER ENTRY</text>
-  <rect x="48.0" y="246.0" width="1104.0" height="128.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="270.0" class="section">ORCHESTRATION</text>
-  <rect x="48.0" y="414.0" width="1104.0" height="112.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="438.0" class="section">CODING RUNTIMES</text>
-  <rect x="48.0" y="566.0" width="1104.0" height="118.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="590.0" class="section">INTERACTION + PERSISTENCE</text>
-  <path d="M 254.0,159.0 L 318.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 512.0,159.0 L 576.0,159.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 671.0,186.0 L 671.0,226.0 L 196.0,226.0 L 196.0,282.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 308.0,315.0 L 370.0,315.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 608.0,315.0 L 670.0,315.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 782.0,348.0 L 650.0,348.0 L 650.0,530.0 L 1006.0,530.0 L 1006.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 489.0,348.0 L 489.0,394.0 L 211.0,394.0 L 211.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 489.0,348.0 L 489.0,368.4 L 518.0,368.4 L 518.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 489.0,348.0 L 489.0,394.0 L 825.0,394.0 L 825.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 308.0,315.0 L 330.0,315.0 L 330.0,232.0 L 930.0,232.0 L 930.0,315.0 L 956.0,315.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path d="M 1029.0,348.0 L 1029.0,394.0 L 211.0,394.0 L 211.0,444.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path d="M 1029.0,348.0 L 1029.0,394.0 L 825.0,394.0 L 825.0,444.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path d="M 330.0,473.0 L 360.0,473.0 L 360.0,394.0 L 1000.0,394.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 630.0,473.0 L 652.0,473.0 L 652.0,394.0 L 1000.0,394.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 944.0,473.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 1052.0,502.0 L 1052.0,546.0 L 741.0,546.0 L 741.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 1052.0,502.0 L 1052.0,546.0 L 462.0,546.0 L 462.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 1052.0,502.0 L 1052.0,546.0 L 191.0,546.0 L 191.0,602.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path d="M 191.0,602.0 L 191.0,544.0 L 947.0,544.0 L 947.0,186.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <path d="M 842.0,159.0 L 842.0,100.0 L 254.0,100.0 L 254.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <rect x="80.0" y="132.0" width="174.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="167.0" y="150.0" text-anchor="middle" class="node-type">RENDERER</text>
-  <text x="167.0" y="165.0" text-anchor="middle" class="node-title">AgentView</text>
-  <text x="167.0" y="187.0" text-anchor="middle" class="node-sub">messages + composer</text>
-  <rect x="318.0" y="132.0" width="194.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="415.0" y="150.0" text-anchor="middle" class="node-type">PRELOAD</text>
-  <text x="415.0" y="165.0" text-anchor="middle" class="node-title">electronAPI</text>
-  <text x="415.0" y="187.0" text-anchor="middle" class="node-sub">send/stop/respond</text>
-  <rect x="576.0" y="132.0" width="190.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="671.0" y="150.0" text-anchor="middle" class="node-type">MAIN</text>
-  <text x="671.0" y="165.0" text-anchor="middle" class="node-title">agent-service</text>
-  <text x="671.0" y="187.0" text-anchor="middle" class="node-sub">EventBus bridge</text>
-  <rect x="842.0" y="132.0" width="210.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="947.0" y="150.0" text-anchor="middle" class="node-type">RENDERER</text>
-  <text x="947.0" y="165.0" text-anchor="middle" class="node-title">Global Listener</text>
-  <text x="947.0" y="187.0" text-anchor="middle" class="node-sub">Jotai stream state</text>
-  <rect x="84.0" y="282.0" width="224.0" height="66.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="196.0" y="300.0" text-anchor="middle" class="node-type">CORE</text>
-  <text x="196.0" y="321.0" text-anchor="middle" class="node-title">AgentOrchestrator</text>
-  <text x="196.0" y="343.0" text-anchor="middle" class="node-sub">guard + prompt + retry</text>
-  <rect x="370.0" y="282.0" width="238.0" height="66.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="489.0" y="300.0" text-anchor="middle" class="node-type">REGISTRY</text>
-  <text x="489.0" y="321.0" text-anchor="middle" class="node-title">Runtime Selection</text>
-  <text x="489.0" y="343.0" text-anchor="middle" class="node-sub">session -&gt; legacy -&gt; settings</text>
-  <rect x="670.0" y="282.0" width="224.0" height="66.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="782.0" y="300.0" text-anchor="middle" class="node-type">WORKSPACE</text>
-  <text x="782.0" y="321.0" text-anchor="middle" class="node-title">Runtime Snapshot</text>
-  <text x="782.0" y="343.0" text-anchor="middle" class="node-sub">MCP + skills + manifest</text>
-  <rect x="956.0" y="282.0" width="146.0" height="66.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1029.0" y="300.0" text-anchor="middle" class="node-type">HUMAN</text>
-  <text x="1029.0" y="321.0" text-anchor="middle" class="node-title">User Gates</text>
-  <text x="1029.0" y="343.0" text-anchor="middle" class="node-sub">permission/AskUser/plan</text>
-  <rect x="92.0" y="444.0" width="238.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="211.0" y="462.0" text-anchor="middle" class="node-type">CLAUDE</text>
-  <text x="211.0" y="479.0" text-anchor="middle" class="node-title">Claude Code Runtime</text>
-  <text x="211.0" y="501.0" text-anchor="middle" class="node-sub">query() + runner-v2</text>
-  <rect x="406.0" y="444.0" width="224.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="518.0" y="462.0" text-anchor="middle" class="node-type">CODEX</text>
-  <text x="518.0" y="479.0" text-anchor="middle" class="node-title">Codex Runtime</text>
-  <text x="518.0" y="501.0" text-anchor="middle" class="node-sub">start/resume runStreamed</text>
-  <rect x="706.0" y="444.0" width="238.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="825.0" y="462.0" text-anchor="middle" class="node-type">OPENCODE</text>
-  <text x="825.0" y="479.0" text-anchor="middle" class="node-title">opencode Runtime</text>
-  <text x="825.0" y="501.0" text-anchor="middle" class="node-sub">managed server + client</text>
-  <rect x="1000.0" y="444.0" width="104.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1052.0" y="462.0" text-anchor="middle" class="node-type">EVENTS</text>
-  <text x="1052.0" y="479.0" text-anchor="middle" class="node-title">Adapters</text>
-  <text x="1052.0" y="501.0" text-anchor="middle" class="node-sub">event map</text>
-  <rect x="88.0" y="602.0" width="206.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="191.0" y="620.0" text-anchor="middle" class="node-type">PUSH</text>
-  <text x="191.0" y="637.0" text-anchor="middle" class="node-title">AgentEventBus</text>
-  <text x="191.0" y="659.0" text-anchor="middle" class="node-sub">ElectronAgentChannel</text>
-  <rect x="360.0" y="602.0" width="204.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="462.0" y="620.0" text-anchor="middle" class="node-type">COMPAT</text>
-  <text x="462.0" y="637.0" text-anchor="middle" class="node-title">SDKMessage JSONL</text>
-  <text x="462.0" y="659.0" text-anchor="middle" class="node-sub">{id}.jsonl</text>
-  <rect x="632.0" y="602.0" width="218.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="741.0" y="620.0" text-anchor="middle" class="node-type">ENVELOPE</text>
-  <text x="741.0" y="637.0" text-anchor="middle" class="node-title">Runtime Event Log</text>
-  <text x="741.0" y="659.0" text-anchor="middle" class="node-sub">{id}.events.jsonl</text>
-  <rect x="918.0" y="602.0" width="176.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1006.0" y="620.0" text-anchor="middle" class="node-type">LOCAL</text>
-  <text x="1006.0" y="637.0" text-anchor="middle" class="node-title">Workspace Files</text>
-  <text x="1006.0" y="659.0" text-anchor="middle" class="node-sub">cwd + mcp + skills</text>
-  <rect x="949.0" y="684.0" width="219" height="112" rx="10" fill="#fffaf3" opacity="0.94"/>
-  <line x1="959.0" y1="698.0" x2="989.0" y2="698.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <text x="999.0" y="702.0" class="legend">IPC command</text>
-  <line x1="959.0" y1="720.0" x2="989.0" y2="720.0" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <text x="999.0" y="724.0" class="legend">runtime stream</text>
-  <line x1="959.0" y1="742.0" x2="989.0" y2="742.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
-  <text x="999.0" y="746.0" class="legend">JSONL persistence</text>
-  <line x1="959.0" y1="764.0" x2="989.0" y2="764.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <text x="999.0" y="768.0" class="legend">async envelope / gate</text>
-  <text x="42.0" y="804.0" class="footnote">Codex and opencode are independent coding runtimes; Claude Code remains compatible with legacy SDKMessage JSONL.</text>
+
+<rect width="1200" height="880" fill="#f8f6f3"/>
+<text x="48" y="48" text-anchor="start" class="title">Agent Runtime Flow</text>
+<text x="48" y="75" text-anchor="start" class="subtitle">Session-first runtime selection with Claude Code, Codex, and opencode event envelopes</text>
+<line x1="48" y1="96" x2="1152" y2="96" stroke="#ded8cf" stroke-width="1.2"/>
+<rect x="48" y="120" width="1104" height="124" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="295" width="1104" height="124" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="470" width="1104" height="124" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="650" width="1104" height="116" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<line x1="275" y1="201" x2="335" y2="201" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="525" y1="201" x2="585" y2="201" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="775" y1="201" x2="875" y2="201" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 680,242 L 680,270 L 195,270 L 195,328" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="305" y1="376" x2="365" y2="376" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="585" y1="376" x2="645" y2="376" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="865" y1="376" x2="925" y2="376" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 1020,335 L 1020,270 L 990,270 L 990,249" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 475,417 L 475,450 L 220,450 L 220,503" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 475,417 L 475,450 L 585,450 L 585,503" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 475,417 L 475,450 L 930,450 L 930,503" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="220" y1="592" x2="190" y2="683" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="585" y1="592" x2="710" y2="683" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="930" y1="592" x2="985" y2="683" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="295" y1="725" x2="345" y2="725" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="535" y1="725" x2="605" y2="725" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="815" y1="725" x2="875" y2="725" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<text x="68" y="154" text-anchor="start" class="section">RENDERER ENTRY</text>
+<text x="68" y="329" text-anchor="start" class="section">ORCHESTRATION</text>
+<text x="68" y="504" text-anchor="start" class="section">CODING RUNTIMES</text>
+<text x="68" y="684" text-anchor="start" class="section">INTERACTION + PERSISTENCE</text>
+<g id="agentview">
+<rect x="85" y="160" width="190" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="180.0" y="182" text-anchor="middle" class="node-type">RENDERER</text>
+<text x="180.0" y="210" text-anchor="middle" class="node-title" style="font-size:17px">AgentView</text>
+<text x="180.0" y="232" text-anchor="middle" class="node-sub" style="font-size:12px">messages + composer</text>
+</g>
+<g id="preload">
+<rect x="335" y="160" width="190" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="430.0" y="182" text-anchor="middle" class="node-type">PRELOAD</text>
+<text x="430.0" y="210" text-anchor="middle" class="node-title" style="font-size:17px">electronAPI</text>
+<text x="430.0" y="232" text-anchor="middle" class="node-sub" style="font-size:12px">send / stop / respond</text>
+</g>
+<g id="service">
+<rect x="585" y="160" width="190" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="680.0" y="182" text-anchor="middle" class="node-type">MAIN</text>
+<text x="680.0" y="210" text-anchor="middle" class="node-title" style="font-size:17px">agent-service</text>
+<text x="680.0" y="232" text-anchor="middle" class="node-sub" style="font-size:12px">EventBus bridge</text>
+</g>
+<g id="listener">
+<rect x="875" y="160" width="230" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="990.0" y="182" text-anchor="middle" class="node-type">RENDERER</text>
+<text x="990.0" y="210" text-anchor="middle" class="node-title" style="font-size:17px">Global Listener</text>
+<text x="990.0" y="232" text-anchor="middle" class="node-sub" style="font-size:12px">Jotai state replay</text>
+</g>
+<g id="orch">
+<rect x="85" y="335" width="220" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="195.0" y="357" text-anchor="middle" class="node-type">CORE</text>
+<text x="195.0" y="385" text-anchor="middle" class="node-title" style="font-size:17px">AgentOrchestrator</text>
+<text x="195.0" y="407" text-anchor="middle" class="node-sub" style="font-size:12px">guard + prompt + retry</text>
+</g>
+<g id="selection">
+<rect x="365" y="335" width="220" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="475.0" y="357" text-anchor="middle" class="node-type">REGISTRY</text>
+<text x="475.0" y="385" text-anchor="middle" class="node-title" style="font-size:17px">Runtime Selection</text>
+<text x="475.0" y="407" text-anchor="middle" class="node-sub" style="font-size:12px">session / legacy / settings</text>
+</g>
+<g id="snapshot">
+<rect x="645" y="335" width="220" height="82" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="755.0" y="357" text-anchor="middle" class="node-type">WORKSPACE</text>
+<text x="755.0" y="385" text-anchor="middle" class="node-title" style="font-size:17px">Runtime Snapshot</text>
+<text x="755.0" y="407" text-anchor="middle" class="node-sub" style="font-size:12px">MCP + skills + manifest</text>
+</g>
+<g id="gates">
+<rect x="925" y="335" width="190" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="1020.0" y="357" text-anchor="middle" class="node-type">HUMAN</text>
+<text x="1020.0" y="385" text-anchor="middle" class="node-title" style="font-size:17px">User Gates</text>
+<text x="1020.0" y="407" text-anchor="middle" class="node-sub" style="font-size:12px">permission / AskUser</text>
+</g>
+<g id="claude">
+<rect x="95" y="510" width="250" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="220.0" y="532" text-anchor="middle" class="node-type">CLAUDE</text>
+<text x="220.0" y="560" text-anchor="middle" class="node-title" style="font-size:17px">Claude Code Runtime</text>
+<text x="220.0" y="582" text-anchor="middle" class="node-sub" style="font-size:12px">query() + runner-v2</text>
+</g>
+<g id="codex">
+<rect x="475" y="510" width="220" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="585.0" y="532" text-anchor="middle" class="node-type">CODEX</text>
+<text x="585.0" y="560" text-anchor="middle" class="node-title" style="font-size:17px">Codex Runtime</text>
+<text x="585.0" y="582" text-anchor="middle" class="node-sub" style="font-size:12px">runStreamed</text>
+</g>
+<g id="opencode">
+<rect x="805" y="510" width="250" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="930.0" y="532" text-anchor="middle" class="node-type">OPENCODE</text>
+<text x="930.0" y="560" text-anchor="middle" class="node-title" style="font-size:17px">opencode Runtime</text>
+<text x="930.0" y="582" text-anchor="middle" class="node-sub" style="font-size:12px">managed server + client</text>
+</g>
+<g id="adapter">
+<rect x="85" y="690" width="210" height="70" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="190.0" y="708" text-anchor="middle" class="node-type">EVENTS</text>
+<text x="190.0" y="733" text-anchor="middle" class="node-title" style="font-size:17px">Runtime Adapters</text>
+<text x="190.0" y="750" text-anchor="middle" class="node-sub" style="font-size:12px">envelope conversion</text>
+</g>
+<g id="eventbus">
+<rect x="345" y="690" width="190" height="70" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="440.0" y="708" text-anchor="middle" class="node-type">PUSH</text>
+<text x="440.0" y="733" text-anchor="middle" class="node-title" style="font-size:17px">AgentEventBus</text>
+<text x="440.0" y="750" text-anchor="middle" class="node-sub" style="font-size:12px">STREAM_EVENT push</text>
+</g>
+<g id="eventlog">
+<rect x="605" y="690" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="710.0" y="708" text-anchor="middle" class="node-type">JSONL</text>
+<text x="710.0" y="733" text-anchor="middle" class="node-title" style="font-size:17px">Runtime Event Log</text>
+<text x="710.0" y="750" text-anchor="middle" class="node-sub" style="font-size:12px">{id}.events.jsonl</text>
+</g>
+<g id="files">
+<rect x="875" y="690" width="220" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="985.0" y="708" text-anchor="middle" class="node-type">LOCAL</text>
+<text x="985.0" y="733" text-anchor="middle" class="node-title" style="font-size:17px">Workspace Files</text>
+<text x="985.0" y="750" text-anchor="middle" class="node-sub" style="font-size:12px">cwd + mcp + skills</text>
+</g>
+<g id="legend">
+<rect x="912" y="776" width="220" height="64" rx="10" fill="#fffaf3" opacity="40.96"/>
+<line x1="930" y1="758" x2="968" y2="758" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="984" y="803" text-anchor="start" class="legend">primary path</text>
+<line x1="930" y1="782" x2="968" y2="782" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<text x="984" y="827" text-anchor="start" class="legend">async / persisted state</text>
+</g>
+<text x="48" y="852" text-anchor="start" class="footnote">Codex and opencode are independent coding runtimes; Claude Code keeps SDKMessage compatibility.</text>
 </svg>

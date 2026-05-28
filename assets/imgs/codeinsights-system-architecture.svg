@@ -1,145 +1,149 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+
   <defs>
-    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
-    </marker>
-    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
-    </marker>
-    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
-    </marker>
-    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
-    </marker>
-    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#6f6256"/>
     </marker>
     <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
-    .title { font-size: 24px; font-weight: 700; fill: #141413; }
-    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
-    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
-    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
-    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
-    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
-    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
-    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
+      .title { font-size: 28px; font-weight: 800; fill: #1a1a1a; }
+      .subtitle { font-size: 14px; font-weight: 600; fill: #8f8a80; }
+      .section { font-size: 13px; font-weight: 800; fill: #8b7355; letter-spacing: 3px; }
+      .node-type { font-size: 11px; font-weight: 800; fill: #9d9388; letter-spacing: 2.5px; }
+      .node-title { font-weight: 800; fill: #1a1a1a; }
+      .node-sub { font-size: 12px; font-weight: 650; fill: #6b6257; }
+      .footnote { font-size: 12px; font-weight: 650; fill: #a29a8f; }
+      .legend { font-size: 12px; font-weight: 750; fill: #6b6257; }
     </style>
   </defs>
-  <rect width="1200.0" height="760.0" fill="#f8f6f3"/>
-  <text x="48.0" y="48" text-anchor="start" class="title">CodeInsights System Architecture</text>
-  <text x="48.0" y="72" text-anchor="start" class="subtitle">Electron desktop boundaries, Bun workspace packages, coding runtimes, and local-first state</text>
-  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
-  <rect x="48.0" y="108.0" width="1104.0" height="96.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="132.0" class="section">DESKTOP SURFACE</text>
-  <rect x="48.0" y="240.0" width="1104.0" height="96.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="264.0" class="section">SECURE IPC BRIDGE</text>
-  <rect x="48.0" y="372.0" width="1104.0" height="120.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="396.0" class="section">ELECTRON MAIN SERVICES</text>
-  <rect x="48.0" y="528.0" width="1104.0" height="116.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="552.0" class="section">FOUNDATION + STATE</text>
-  <path d="M 276.0,159.0 L 322.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 496.0,159.0 L 542.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 936.0,186.0 L 936.0,222.0 L 485.0,222.0 L 485.0,264.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 657.0,186.0 L 657.0,222.0 L 485.0,222.0 L 485.0,264.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 312.0,291.0 L 382.0,291.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 588.0,291.0 L 666.0,291.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 938.0,291.0 L 880.0,291.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 773.0,318.0 L 773.0,354.0 L 177.0,354.0 L 177.0,404.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 773.0,318.0 L 773.0,354.0 L 425.0,354.0 L 425.0,404.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 773.0,318.0 L 773.0,338.4 L 667.0,338.4 L 667.0,404.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 773.0,318.0 L 773.0,354.0 L 889.0,354.0 L 889.0,404.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 177.0,468.0 L 177.0,510.0 L 491.0,510.0 L 491.0,560.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 425.0,468.0 L 425.0,488.4 L 491.0,488.4 L 491.0,560.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <path d="M 667.0,468.0 L 667.0,510.0 L 196.0,510.0 L 196.0,560.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)" stroke-dasharray="6,4"/>
-  <path d="M 177.0,468.0 L 52.0,468.0 L 52.0,642.0 L 796.0,642.0 L 796.0,560.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 425.0,468.0 L 640.0,468.0 L 640.0,642.0 L 796.0,642.0 L 796.0,560.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 1037.0,560.0 L 1140.0,560.0 L 1140.0,222.0 L 657.0,222.0 L 657.0,186.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
-  <rect x="86.0" y="132.0" width="190.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="181.0" y="150.0" text-anchor="middle" class="node-type">UI</text>
-  <text x="181.0" y="165.0" text-anchor="middle" class="node-title">React Renderer</text>
-  <text x="181.0" y="187.0" text-anchor="middle" class="node-sub">Vite + Jotai + Radix</text>
-  <rect x="322.0" y="132.0" width="174.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="409.0" y="150.0" text-anchor="middle" class="node-type">NAV</text>
-  <text x="409.0" y="165.0" text-anchor="middle" class="node-title">AppShell</text>
-  <text x="409.0" y="187.0" text-anchor="middle" class="node-sub">Pipeline | Agent</text>
-  <rect x="542.0" y="132.0" width="230.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="657.0" y="150.0" text-anchor="middle" class="node-type">UX</text>
-  <text x="657.0" y="165.0" text-anchor="middle" class="node-title">Workbench Views</text>
-  <text x="657.0" y="187.0" text-anchor="middle" class="node-sub">records, gates, tools</text>
-  <rect x="838.0" y="132.0" width="196.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="936.0" y="150.0" text-anchor="middle" class="node-type">ENTRY</text>
-  <text x="936.0" y="165.0" text-anchor="middle" class="node-title">Quick Task</text>
-  <text x="936.0" y="187.0" text-anchor="middle" class="node-sub">global shortcut window</text>
-  <rect x="88.0" y="264.0" width="224.0" height="54.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="200.0" y="282.0" text-anchor="middle" class="node-type">TYPES</text>
-  <text x="200.0" y="297.0" text-anchor="middle" class="node-title">Shared Contracts</text>
-  <text x="200.0" y="319.0" text-anchor="middle" class="node-sub">@codeinsights/shared</text>
-  <rect x="382.0" y="264.0" width="206.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="485.0" y="282.0" text-anchor="middle" class="node-type">CONTEXT</text>
-  <text x="485.0" y="297.0" text-anchor="middle" class="node-title">Preload Bridge</text>
-  <text x="485.0" y="319.0" text-anchor="middle" class="node-sub">window.electronAPI</text>
-  <rect x="666.0" y="264.0" width="214.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="773.0" y="282.0" text-anchor="middle" class="node-type">MAIN</text>
-  <text x="773.0" y="297.0" text-anchor="middle" class="node-title">IPC Handlers</text>
-  <text x="773.0" y="319.0" text-anchor="middle" class="node-sub">ipcMain.handle domains</text>
-  <rect x="938.0" y="264.0" width="164.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1020.0" y="282.0" text-anchor="middle" class="node-type">VIEW</text>
-  <text x="1020.0" y="297.0" text-anchor="middle" class="node-title">Preview Preload</text>
-  <text x="1020.0" y="319.0" text-anchor="middle" class="node-sub">isolated file API</text>
-  <rect x="78.0" y="404.0" width="198.0" height="64.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="177.0" y="422.0" text-anchor="middle" class="node-type">AGENT</text>
-  <text x="177.0" y="442.0" text-anchor="middle" class="node-title">Agent Services</text>
-  <text x="177.0" y="464.0" text-anchor="middle" class="node-sub">orchestrator + runtimes</text>
-  <rect x="322.0" y="404.0" width="206.0" height="64.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="425.0" y="422.0" text-anchor="middle" class="node-type">PIPELINE</text>
-  <text x="425.0" y="442.0" text-anchor="middle" class="node-title">Pipeline Services</text>
-  <text x="425.0" y="464.0" text-anchor="middle" class="node-sub">LangGraph + gates</text>
-  <rect x="574.0" y="404.0" width="186.0" height="64.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="667.0" y="422.0" text-anchor="middle" class="node-type">AI</text>
-  <text x="667.0" y="442.0" text-anchor="middle" class="node-title">Provider Core</text>
-  <text x="667.0" y="464.0" text-anchor="middle" class="node-sub">channels + adapters</text>
-  <rect x="806.0" y="404.0" width="166.0" height="64.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="889.0" y="422.0" text-anchor="middle" class="node-type">REMOTE</text>
-  <text x="889.0" y="442.0" text-anchor="middle" class="node-title">Bridge Hub</text>
-  <text x="889.0" y="464.0" text-anchor="middle" class="node-sub">Feishu/DingTalk/WeChat</text>
-  <rect x="1010.0" y="404.0" width="104.0" height="64.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1062.0" y="422.0" text-anchor="middle" class="node-type">ENV</text>
-  <text x="1062.0" y="442.0" text-anchor="middle" class="node-title">Runtime</text>
-  <text x="1062.0" y="464.0" text-anchor="middle" class="node-sub">Bun/Git/Node</text>
-  <rect x="86.0" y="560.0" width="220.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="196.0" y="578.0" text-anchor="middle" class="node-type">BUN</text>
-  <text x="196.0" y="595.0" text-anchor="middle" class="node-title">Workspace Packages</text>
-  <text x="196.0" y="617.0" text-anchor="middle" class="node-sub">shared + core + ui</text>
-  <rect x="368.0" y="560.0" width="246.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="491.0" y="578.0" text-anchor="middle" class="node-type">SDK/CLI</text>
-  <text x="491.0" y="595.0" text-anchor="middle" class="node-title">Coding Runtimes</text>
-  <text x="491.0" y="617.0" text-anchor="middle" class="node-sub">Claude + Codex + opencode</text>
-  <rect x="690.0" y="560.0" width="212.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="796.0" y="578.0" text-anchor="middle" class="node-type">DISK</text>
-  <text x="796.0" y="595.0" text-anchor="middle" class="node-title">Local State</text>
-  <text x="796.0" y="617.0" text-anchor="middle" class="node-sub">JSON + JSONL files</text>
-  <rect x="966.0" y="560.0" width="142.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1037.0" y="578.0" text-anchor="middle" class="node-type">PUSH</text>
-  <text x="1037.0" y="595.0" text-anchor="middle" class="node-title">Watchers</text>
-  <text x="1037.0" y="617.0" text-anchor="middle" class="node-sub">files + tools</text>
-  <rect x="977.0" y="624.0" width="191" height="112" rx="10" fill="#fffaf3" opacity="0.94"/>
-  <line x1="987.0" y1="638.0" x2="1017.0" y2="638.0" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <text x="1027.0" y="642.0" class="legend">typed invoke path</text>
-  <line x1="987.0" y1="660.0" x2="1017.0" y2="660.0" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
-  <text x="1027.0" y="664.0" class="legend">runtime execution</text>
-  <line x1="987.0" y1="682.0" x2="1017.0" y2="682.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
-  <text x="1027.0" y="686.0" class="legend">local persistence</text>
-  <line x1="987.0" y1="704.0" x2="1017.0" y2="704.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <text x="1027.0" y="708.0" class="legend">async push events</text>
-  <text x="42.0" y="744.0" class="footnote">Local-first: no local database; portable JSON/JSONL configuration and records.</text>
+
+<rect width="1200" height="800" fill="#f8f6f3"/>
+<text x="48" y="48" text-anchor="start" class="title">CodeInsights System Architecture</text>
+<text x="48" y="75" text-anchor="start" class="subtitle">Electron boundaries, Bun workspace packages, coding runtimes, and local-first state</text>
+<line x1="48" y1="96" x2="1152" y2="96" stroke="#ded8cf" stroke-width="1.2"/>
+<rect x="48" y="120" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="270" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="420" width="1104" height="128" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="585" width="1104" height="110" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<line x1="275" y1="199" x2="340" y2="199" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="520" y1="199" x2="585" y2="199" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="300" y1="349" x2="390" y2="349" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="605" y1="349" x2="695" y2="349" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="960" y1="349" x2="905" y2="349" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 800,390 L 800,428 L 182,428 L 182,458" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 800,390 L 800,428 L 437,428 L 437,458" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 800,390 L 800,428 L 697,428 L 697,458" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 800,390 L 800,428 L 952,428 L 952,458" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="182" y1="547" x2="195" y2="608" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="437" y1="547" x2="480" y2="608" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="697" y1="547" x2="780" y2="608" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="952" y1="547" x2="1035" y2="608" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<text x="68" y="154" text-anchor="start" class="section">DESKTOP SURFACE</text>
+<text x="68" y="304" text-anchor="start" class="section">SECURE IPC BRIDGE</text>
+<text x="68" y="454" text-anchor="start" class="section">ELECTRON MAIN SERVICES</text>
+<text x="68" y="606" text-anchor="start" class="section">FOUNDATION + STATE</text>
+<g id="renderer">
+<rect x="85" y="158" width="190" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="180.0" y="180" text-anchor="middle" class="node-type">UI</text>
+<text x="180.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">React Renderer</text>
+<text x="180.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">Vite + Jotai</text>
+</g>
+<g id="shell">
+<rect x="340" y="158" width="180" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="430.0" y="180" text-anchor="middle" class="node-type">NAV</text>
+<text x="430.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">AppShell</text>
+<text x="430.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">Pipeline | Agent</text>
+</g>
+<g id="views">
+<rect x="585" y="158" width="220" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="695.0" y="180" text-anchor="middle" class="node-type">UX</text>
+<text x="695.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">Workbench Views</text>
+<text x="695.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">records + gates</text>
+</g>
+<g id="quick">
+<rect x="890" y="158" width="185" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="982.5" y="180" text-anchor="middle" class="node-type">ENTRY</text>
+<text x="982.5" y="208" text-anchor="middle" class="node-title" style="font-size:17px">Quick Task</text>
+<text x="982.5" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">shortcut window</text>
+</g>
+<g id="contracts">
+<rect x="90" y="308" width="210" height="82" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="195.0" y="330" text-anchor="middle" class="node-type">TYPES</text>
+<text x="195.0" y="358" text-anchor="middle" class="node-title" style="font-size:17px">Shared Contracts</text>
+<text x="195.0" y="380" text-anchor="middle" class="node-sub" style="font-size:12px">@codeinsights/shared</text>
+</g>
+<g id="preload">
+<rect x="390" y="308" width="215" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="497.5" y="330" text-anchor="middle" class="node-type">CONTEXT</text>
+<text x="497.5" y="358" text-anchor="middle" class="node-title" style="font-size:17px">Preload Bridge</text>
+<text x="497.5" y="380" text-anchor="middle" class="node-sub" style="font-size:12px">window.electronAPI</text>
+</g>
+<g id="ipc">
+<rect x="695" y="308" width="210" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="800.0" y="330" text-anchor="middle" class="node-type">MAIN</text>
+<text x="800.0" y="358" text-anchor="middle" class="node-title" style="font-size:17px">IPC Handlers</text>
+<text x="800.0" y="380" text-anchor="middle" class="node-sub" style="font-size:12px">main domains</text>
+</g>
+<g id="preview">
+<rect x="960" y="308" width="150" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="1035.0" y="330" text-anchor="middle" class="node-type">VIEW</text>
+<text x="1035.0" y="358" text-anchor="middle" class="node-title" style="font-size:17px">File Preview</text>
+<text x="1035.0" y="380" text-anchor="middle" class="node-sub" style="font-size:12px">isolated API</text>
+</g>
+<g id="agent">
+<rect x="80" y="465" width="205" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="182.5" y="487" text-anchor="middle" class="node-type">AGENT</text>
+<text x="182.5" y="515" text-anchor="middle" class="node-title" style="font-size:17px">Agent Services</text>
+<text x="182.5" y="537" text-anchor="middle" class="node-sub" style="font-size:12px">orchestrator + runtimes</text>
+</g>
+<g id="pipeline">
+<rect x="330" y="465" width="215" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="437.5" y="487" text-anchor="middle" class="node-type">PIPELINE</text>
+<text x="437.5" y="515" text-anchor="middle" class="node-title" style="font-size:17px">Pipeline Services</text>
+<text x="437.5" y="537" text-anchor="middle" class="node-sub" style="font-size:12px">LangGraph + gates</text>
+</g>
+<g id="provider">
+<rect x="595" y="465" width="205" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="697.5" y="487" text-anchor="middle" class="node-type">AI</text>
+<text x="697.5" y="515" text-anchor="middle" class="node-title" style="font-size:17px">Provider Core</text>
+<text x="697.5" y="537" text-anchor="middle" class="node-sub" style="font-size:12px">channels + adapters</text>
+</g>
+<g id="bridge">
+<rect x="850" y="465" width="205" height="82" rx="12" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="952.5" y="487" text-anchor="middle" class="node-type">REMOTE</text>
+<text x="952.5" y="515" text-anchor="middle" class="node-title" style="font-size:17px">Bridge Hub</text>
+<text x="952.5" y="537" text-anchor="middle" class="node-sub" style="font-size:12px">Feishu / DingTalk</text>
+</g>
+<g id="packages">
+<rect x="90" y="615" width="210" height="72" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="195.0" y="633" text-anchor="middle" class="node-type">BUN</text>
+<text x="195.0" y="658" text-anchor="middle" class="node-title" style="font-size:17px">Workspace Packages</text>
+<text x="195.0" y="675" text-anchor="middle" class="node-sub" style="font-size:12px">shared + core + ui</text>
+</g>
+<g id="runtimes">
+<rect x="365" y="615" width="230" height="72" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="480.0" y="633" text-anchor="middle" class="node-type">SDK/CLI</text>
+<text x="480.0" y="658" text-anchor="middle" class="node-title" style="font-size:17px">Coding Runtimes</text>
+<text x="480.0" y="675" text-anchor="middle" class="node-sub" style="font-size:12px">Claude / Codex / opencode</text>
+</g>
+<g id="state">
+<rect x="675" y="615" width="210" height="72" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="780.0" y="633" text-anchor="middle" class="node-type">DISK</text>
+<text x="780.0" y="658" text-anchor="middle" class="node-title" style="font-size:17px">Local State</text>
+<text x="780.0" y="675" text-anchor="middle" class="node-sub" style="font-size:12px">JSON + JSONL</text>
+</g>
+<g id="watchers">
+<rect x="950" y="615" width="170" height="72" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="1035.0" y="633" text-anchor="middle" class="node-type">PUSH</text>
+<text x="1035.0" y="658" text-anchor="middle" class="node-title" style="font-size:17px">Watchers</text>
+<text x="1035.0" y="675" text-anchor="middle" class="node-sub" style="font-size:12px">files + tools</text>
+</g>
+<g id="legend">
+<rect x="912" y="696" width="220" height="64" rx="10" fill="#fffaf3" opacity="0.96"/>
+<line x1="930" y1="718" x2="968" y2="718" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="984" y="723" text-anchor="start" class="legend">primary path</text>
+<line x1="930" y1="742" x2="968" y2="742" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<text x="984" y="747" text-anchor="start" class="legend">async / persisted state</text>
+</g>
+<text x="48" y="772" text-anchor="start" class="footnote">Display-oriented view: service responsibilities are inside nodes; only primary paths are drawn.</text>
 </svg>

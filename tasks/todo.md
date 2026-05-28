@@ -4548,3 +4548,20 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已用同名文件替换 `assets/imgs/` 下 5 个 PNG 与 5 个 SVG 源，README 继续使用原路径；同时更新 README 图片 alt 文案，避免继续写旧的“Claude SDK 与 JSONL 存储”。
 - 已做视觉复核并移除高干扰箭头浮动标签，保留节点技术说明和图例；PNG 尺寸为系统架构 `2400x1520`、Pipeline `2400x1720`、Agent/IPC/Local Storage `2400x1640`。
 - 验证通过：`bash /Users/zq/.codex/skills/fireworks-tech-graph/scripts/validate-svg.sh assets/imgs/codeinsights-*.svg`；Python `xml.etree.ElementTree` 解析 5 个 SVG；Playwright + Microsoft Edge 导出 5 个 PNG；PIL 检查 PNG 非空；README `assets/imgs` 图片引用路径存在；旧命名/旧架构残留扫描无命中；`git diff --check -- README.md assets/imgs tasks/todo.md`。
+
+## 2026-05-28 README 架构图视觉返工计划
+
+范围确认：修复上一版 style 6 图在 README 实际显示中的可读性问题；仍只修改 README 引用的 5 组 `assets/imgs/` SVG/PNG、README alt 文案（如需要）、`tasks/todo.md` 与 `tasks/lessons.md`。
+
+- [x] 记录用户纠正到 `tasks/lessons.md`，明确最终 PNG 视觉验收不能只看自动校验。
+- [x] 重新绘制 5 张展示型架构图：减少节点和连线，去掉箭头浮动标签，确保节点副标题与边框留足空间。
+- [x] 用最终 PNG 实际打开检查系统架构、Pipeline、Agent、IPC、本地存储 5 张图，确认没有文字压线、遮挡、穿线和图例挤压。
+- [x] 重新验证 SVG XML、PNG 尺寸/非空、README 图片引用、旧命名/旧架构残留、`git diff --check`。
+- [x] 在本节追加 Review，单独提交并推送修复提交。
+
+## 2026-05-28 README 架构图视觉返工 Review
+
+- 已承认并修复上一版图的核心问题：节点副标题贴边 / 重叠、箭头和虚线穿过节点正文、图例挤占内容区、局部 section label 与底层节点过近。
+- 已重新绘制 README 当前引用的 5 组同名 SVG/PNG：系统架构、Pipeline v2 LangGraph、Agent Runtime、IPC/Renderer 状态流、本地存储框架；新版本采用展示型信息架构，统一节点高度与文本基线，连线收敛为 style 6 暖灰实线 / 虚线，不再使用箭头浮动标签。
+- 已逐张打开最终 PNG 实际检查，并生成 contact sheet `/tmp/codeinsights-diagram-contact-sheet.png` 复核 README 缩放后的整体密度；未发现阻塞级文字压线、箭头穿正文或图例遮挡内容。
+- 验证通过：`bash /Users/zq/.codex/skills/fireworks-tech-graph/scripts/validate-svg.sh assets/imgs/codeinsights-*.svg`；Playwright + Microsoft Edge 导出 5 个 PNG；PIL 检查 PNG 尺寸与非空均值；README `assets/imgs` 引用存在；旧命名 / 旧架构残留扫描无命中；`git diff --check -- README.md assets/imgs tasks/todo.md tasks/lessons.md`。

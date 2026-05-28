@@ -1,128 +1,143 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 840" width="1200" height="840">
+
   <defs>
-    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
-    </marker>
-    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
-    </marker>
-    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
-    </marker>
-    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
-    </marker>
-    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
-    </marker>
-    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="8.5" refY="4" orient="auto">
+      <polygon points="0 0, 10 4, 0 8" fill="#6f6256"/>
     </marker>
     <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
-    .title { font-size: 24px; font-weight: 700; fill: #141413; }
-    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
-    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
-    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
-    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
-    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
-    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
-    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
-    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+      text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
+      .title { font-size: 28px; font-weight: 800; fill: #1a1a1a; }
+      .subtitle { font-size: 14px; font-weight: 600; fill: #8f8a80; }
+      .section { font-size: 13px; font-weight: 800; fill: #8b7355; letter-spacing: 3px; }
+      .node-type { font-size: 11px; font-weight: 800; fill: #9d9388; letter-spacing: 2.5px; }
+      .node-title { font-weight: 800; fill: #1a1a1a; }
+      .node-sub { font-size: 12px; font-weight: 650; fill: #6b6257; }
+      .footnote { font-size: 12px; font-weight: 650; fill: #a29a8f; }
+      .legend { font-size: 12px; font-weight: 750; fill: #6b6257; }
     </style>
   </defs>
-  <rect width="1200.0" height="820.0" fill="#f8f6f3"/>
-  <text x="48.0" y="48" text-anchor="start" class="title">Local Storage Framework</text>
-  <text x="48.0" y="72" text-anchor="start" class="subtitle">Portable JSON configuration, append-only JSONL records, runtime manifests, and repo-local patch-work evidence</text>
-  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
-  <rect x="48.0" y="108.0" width="1104.0" height="82.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="132.0" class="section">CONFIG ROOT</text>
-  <rect x="48.0" y="230.0" width="1104.0" height="114.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="254.0" class="section">GLOBAL CONFIG FILES</text>
-  <rect x="48.0" y="384.0" width="1104.0" height="132.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="408.0" class="section">SESSION RECORDS</text>
-  <rect x="48.0" y="556.0" width="1104.0" height="116.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
-  <text x="66.0" y="580.0" class="section">WORKSPACE SNAPSHOTS</text>
-  <path d="M 386.0,152.0 L 316.0,152.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <path d="M 197.0,176.0 L 197.0,210.0 L 186.0,210.0 L 186.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 197.0,176.0 L 197.0,210.0 L 444.0,210.0 L 444.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 197.0,176.0 L 197.0,210.0 L 708.0,210.0 L 708.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 965.0,318.0 L 965.0,360.0 L 40.0,360.0 L 40.0,540.0 L 206.0,540.0 L 206.0,592.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 336.0,621.0 L 392.0,621.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 508.0,592.0 L 508.0,540.0 L 434.0,540.0 L 434.0,482.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <path d="M 834.0,451.0 L 892.0,451.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 991.0,482.0 L 991.0,540.0 L 1020.0,540.0 L 1020.0,592.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <path d="M 712.0,482.0 L 712.0,540.0 L 779.0,540.0 L 779.0,592.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
-  <rect x="78.0" y="128.0" width="238.0" height="48.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="197.0" y="146.0" text-anchor="middle" class="node-type">ROOT</text>
-  <text x="197.0" y="158.0" text-anchor="middle" class="node-title">~/.codeinsights</text>
-  <text x="197.0" y="180.0" text-anchor="middle" class="node-sub">dev: ~/.codeinsights-dev</text>
-  <rect x="386.0" y="128.0" width="236.0" height="48.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="504.0" y="146.0" text-anchor="middle" class="node-type">ENV</text>
-  <text x="504.0" y="158.0" text-anchor="middle" class="node-title">Config Override</text>
-  <text x="504.0" y="180.0" text-anchor="middle" class="node-sub">CODEINSIGHTS_CONFIG_DIR</text>
-  <rect x="740.0" y="128.0" width="226.0" height="48.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="853.0" y="146.0" text-anchor="middle" class="node-type">PRINCIPLE</text>
-  <text x="853.0" y="158.0" text-anchor="middle" class="node-title">No Local DB</text>
-  <text x="853.0" y="180.0" text-anchor="middle" class="node-sub">portable files</text>
-  <rect x="82.0" y="262.0" width="208.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="186.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
-  <text x="186.0" y="296.0" text-anchor="middle" class="node-title">Providers + Secrets</text>
-  <text x="186.0" y="318.0" text-anchor="middle" class="node-sub">channels.json + safeStorage</text>
-  <rect x="340.0" y="262.0" width="208.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="444.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
-  <text x="444.0" y="296.0" text-anchor="middle" class="node-title">App Settings</text>
-  <text x="444.0" y="318.0" text-anchor="middle" class="node-sub">settings, profile, proxy</text>
-  <rect x="598.0" y="262.0" width="220.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="708.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
-  <text x="708.0" y="296.0" text-anchor="middle" class="node-title">Prompts + Memory</text>
-  <text x="708.0" y="318.0" text-anchor="middle" class="node-sub">system-prompts, tools</text>
-  <rect x="870.0" y="262.0" width="190.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="965.0" y="280.0" text-anchor="middle" class="node-type">SKILLS</text>
-  <text x="965.0" y="296.0" text-anchor="middle" class="node-title">Default Skills</text>
-  <text x="965.0" y="318.0" text-anchor="middle" class="node-sub">copied into workspaces</text>
-  <rect x="76.0" y="420.0" width="202.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="177.0" y="438.0" text-anchor="middle" class="node-type">JSON/FILES</text>
-  <text x="177.0" y="457.0" text-anchor="middle" class="node-title">Chat Records</text>
-  <text x="177.0" y="479.0" text-anchor="middle" class="node-sub">conversations + attachments</text>
-  <rect x="326.0" y="420.0" width="216.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="434.0" y="438.0" text-anchor="middle" class="node-type">JSONL</text>
-  <text x="434.0" y="457.0" text-anchor="middle" class="node-title">Agent Records</text>
-  <text x="434.0" y="479.0" text-anchor="middle" class="node-sub">messages + events JSONL</text>
-  <rect x="590.0" y="420.0" width="244.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="712.0" y="438.0" text-anchor="middle" class="node-type">JSONL</text>
-  <text x="712.0" y="457.0" text-anchor="middle" class="node-title">Pipeline State</text>
-  <text x="712.0" y="479.0" text-anchor="middle" class="node-sub">records + checkpoints</text>
-  <rect x="892.0" y="420.0" width="198.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="991.0" y="438.0" text-anchor="middle" class="node-type">TASKS</text>
-  <text x="991.0" y="457.0" text-anchor="middle" class="node-title">Contribution Tasks</text>
-  <text x="991.0" y="479.0" text-anchor="middle" class="node-sub">index + event JSONL</text>
-  <rect x="76.0" y="592.0" width="260.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="206.0" y="610.0" text-anchor="middle" class="node-type">LOCAL CWD</text>
-  <text x="206.0" y="627.0" text-anchor="middle" class="node-title">agent-workspaces/{slug}</text>
-  <text x="206.0" y="649.0" text-anchor="middle" class="node-sub">mcp, skills, workspace-files</text>
-  <rect x="392.0" y="592.0" width="232.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="508.0" y="610.0" text-anchor="middle" class="node-type">SNAPSHOT</text>
-  <text x="508.0" y="627.0" text-anchor="middle" class="node-title">sessions/{id}/cwd</text>
-  <text x="508.0" y="649.0" text-anchor="middle" class="node-sub">runtime-manifest.json</text>
-  <rect x="680.0" y="592.0" width="198.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="779.0" y="610.0" text-anchor="middle" class="node-type">ARTIFACTS</text>
-  <text x="779.0" y="627.0" text-anchor="middle" class="node-title">Pipeline Artifacts</text>
-  <text x="779.0" y="649.0" text-anchor="middle" class="node-sub">session output folders</text>
-  <rect x="936.0" y="592.0" width="168.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
-  <text x="1020.0" y="610.0" text-anchor="middle" class="node-type">REPO</text>
-  <text x="1020.0" y="627.0" text-anchor="middle" class="node-title">./patch-work</text>
-  <text x="1020.0" y="649.0" text-anchor="middle" class="node-sub">repo evidence docs</text>
-  <rect x="907.0" y="706.0" width="261" height="90" rx="10" fill="#fffaf3" opacity="0.94"/>
-  <line x1="917.0" y1="720.0" x2="947.0" y2="720.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
-  <text x="957.0" y="724.0" class="legend">directory resolution</text>
-  <line x1="917.0" y1="742.0" x2="947.0" y2="742.0" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
-  <text x="957.0" y="746.0" class="legend">read / seed</text>
-  <line x1="917.0" y1="764.0" x2="947.0" y2="764.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
-  <text x="957.0" y="768.0" class="legend">atomic JSON or append JSONL</text>
-  <text x="42.0" y="804.0" class="footnote">Pipeline patch-work lives in the contribution repository; application state lives under the selected CodeInsights config root.</text>
+
+<rect width="1200" height="840" fill="#f8f6f3"/>
+<text x="48" y="48" text-anchor="start" class="title">Local Storage Framework</text>
+<text x="48" y="75" text-anchor="start" class="subtitle">Portable JSON configuration, append-only JSONL records, runtime manifests, and repo-local patch-work evidence</text>
+<line x1="48" y1="96" x2="1152" y2="96" stroke="#ded8cf" stroke-width="1.2"/>
+<rect x="48" y="120" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="285" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="445" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<rect x="48" y="620" width="1104" height="118" rx="16" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="6 6"/>
+<line x1="430" y1="199" x2="310" y2="199" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<path d="M 200,240 L 200,275 L 190,316" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 200,240 L 200,275 L 440,316" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 200,240 L 200,275 L 700,316" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<path d="M 200,240 L 200,275 L 970,316" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="970" y1="393" x2="970" y2="476" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="545" y1="518" x2="585" y2="518" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="815" y1="518" x2="865" y2="518" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<line x1="190" y1="553" x2="210" y2="651" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="440" y1="553" x2="515" y2="651" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="700" y1="553" x2="790" y2="651" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="970" y1="553" x2="1030" y2="651" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<line x1="335" y1="693" x2="405" y2="693" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="68" y="154" text-anchor="start" class="section">CONFIG ROOT</text>
+<text x="68" y="319" text-anchor="start" class="section">GLOBAL CONFIG FILES</text>
+<text x="68" y="479" text-anchor="start" class="section">SESSION RECORDS</text>
+<text x="68" y="654" text-anchor="start" class="section">WORKSPACE SNAPSHOTS</text>
+<g id="root">
+<rect x="90" y="158" width="220" height="82" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="200.0" y="180" text-anchor="middle" class="node-type">ROOT</text>
+<text x="200.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">~/.codeinsights</text>
+<text x="200.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">dev / codeinsights-dev</text>
+</g>
+<g id="env">
+<rect x="430" y="158" width="220" height="82" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="540.0" y="180" text-anchor="middle" class="node-type">ENV</text>
+<text x="540.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">Config Override</text>
+<text x="540.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">CODEINSIGHTS_CONFIG_DIR</text>
+</g>
+<g id="nodb">
+<rect x="760" y="158" width="220" height="82" rx="12" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="870.0" y="180" text-anchor="middle" class="node-type">PRINCIPLE</text>
+<text x="870.0" y="208" text-anchor="middle" class="node-title" style="font-size:17px">No Local DB</text>
+<text x="870.0" y="230" text-anchor="middle" class="node-sub" style="font-size:12px">portable files</text>
+</g>
+<g id="providers">
+<rect x="85" y="323" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="190.0" y="341" text-anchor="middle" class="node-type">CONFIG</text>
+<text x="190.0" y="366" text-anchor="middle" class="node-title" style="font-size:17px">Providers + Secrets</text>
+<text x="190.0" y="383" text-anchor="middle" class="node-sub" style="font-size:12px">channels.json + safeStorage</text>
+</g>
+<g id="settings">
+<rect x="335" y="323" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="440.0" y="341" text-anchor="middle" class="node-type">CONFIG</text>
+<text x="440.0" y="366" text-anchor="middle" class="node-title" style="font-size:17px">App Settings</text>
+<text x="440.0" y="383" text-anchor="middle" class="node-sub" style="font-size:12px">settings / profile / proxy</text>
+</g>
+<g id="prompts">
+<rect x="585" y="323" width="230" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="700.0" y="341" text-anchor="middle" class="node-type">CONFIG</text>
+<text x="700.0" y="366" text-anchor="middle" class="node-title" style="font-size:17px">Prompts + Memory</text>
+<text x="700.0" y="383" text-anchor="middle" class="node-sub" style="font-size:12px">system prompts / tools</text>
+</g>
+<g id="skills">
+<rect x="865" y="323" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="970.0" y="341" text-anchor="middle" class="node-type">SKILLS</text>
+<text x="970.0" y="366" text-anchor="middle" class="node-title" style="font-size:17px">Default Skills</text>
+<text x="970.0" y="383" text-anchor="middle" class="node-sub" style="font-size:12px">workspace templates</text>
+</g>
+<g id="chat">
+<rect x="85" y="483" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="190.0" y="501" text-anchor="middle" class="node-type">JSONL</text>
+<text x="190.0" y="526" text-anchor="middle" class="node-title" style="font-size:17px">Chat Records</text>
+<text x="190.0" y="543" text-anchor="middle" class="node-sub" style="font-size:12px">conversations + attachments</text>
+</g>
+<g id="agent">
+<rect x="335" y="483" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="440.0" y="501" text-anchor="middle" class="node-type">JSONL</text>
+<text x="440.0" y="526" text-anchor="middle" class="node-title" style="font-size:17px">Agent Records</text>
+<text x="440.0" y="543" text-anchor="middle" class="node-sub" style="font-size:12px">messages + events</text>
+</g>
+<g id="pipeline">
+<rect x="585" y="483" width="230" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="700.0" y="501" text-anchor="middle" class="node-type">JSONL</text>
+<text x="700.0" y="526" text-anchor="middle" class="node-title" style="font-size:17px">Pipeline State</text>
+<text x="700.0" y="543" text-anchor="middle" class="node-sub" style="font-size:12px">records + checkpoints</text>
+</g>
+<g id="tasks">
+<rect x="865" y="483" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="970.0" y="501" text-anchor="middle" class="node-type">TASKS</text>
+<text x="970.0" y="526" text-anchor="middle" class="node-title" style="font-size:17px">Contribution Tasks</text>
+<text x="970.0" y="543" text-anchor="middle" class="node-sub" style="font-size:12px">index + event JSONL</text>
+</g>
+<g id="workspace">
+<rect x="85" y="658" width="250" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="210.0" y="676" text-anchor="middle" class="node-type">LOCAL CWD</text>
+<text x="210.0" y="701" text-anchor="middle" class="node-title" style="font-size:17px">agent-workspaces/{slug}</text>
+<text x="210.0" y="718" text-anchor="middle" class="node-sub" style="font-size:12px">mcp + skills + workspace-files</text>
+</g>
+<g id="cwd">
+<rect x="405" y="658" width="220" height="70" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="515.0" y="676" text-anchor="middle" class="node-type">SNAPSHOT</text>
+<text x="515.0" y="701" text-anchor="middle" class="node-title" style="font-size:17px">sessions/{id}/cwd</text>
+<text x="515.0" y="718" text-anchor="middle" class="node-sub" style="font-size:12px">runtime-manifest.json</text>
+</g>
+<g id="artifacts">
+<rect x="685" y="658" width="210" height="70" rx="12" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="790.0" y="676" text-anchor="middle" class="node-type">ARTIFACTS</text>
+<text x="790.0" y="701" text-anchor="middle" class="node-title" style="font-size:17px">Pipeline Artifacts</text>
+<text x="790.0" y="718" text-anchor="middle" class="node-sub" style="font-size:12px">session output folders</text>
+</g>
+<g id="patch">
+<rect x="945" y="658" width="170" height="70" rx="12" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.3"/>
+<text x="1030.0" y="676" text-anchor="middle" class="node-type">REPO</text>
+<text x="1030.0" y="701" text-anchor="middle" class="node-title" style="font-size:17px">./patch-work</text>
+<text x="1030.0" y="718" text-anchor="middle" class="node-sub" style="font-size:12px">repo evidence docs</text>
+</g>
+<g id="legend">
+<rect x="912" y="736" width="220" height="64" rx="10" fill="#fffaf3" opacity="0.96"/>
+<line x1="930" y1="758" x2="968" y2="758" fill="none" stroke="#6f6256" stroke-width="2.2" marker-end="url(#arrow)"/>
+<text x="984" y="763" text-anchor="start" class="legend">primary path</text>
+<line x1="930" y1="782" x2="968" y2="782" fill="none" stroke="#6f6256" stroke-width="2.2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<text x="984" y="787" text-anchor="start" class="legend">async / persisted state</text>
+</g>
+<text x="48" y="812" text-anchor="start" class="footnote">Pipeline patch-work lives in the contribution repository; application state lives under the selected CodeInsights config root.</text>
 </svg>
