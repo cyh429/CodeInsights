@@ -1,124 +1,128 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760">
-  <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
   <defs>
-    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#10a37f"/></marker>
-    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#71717a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    </marker>
+    <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+    .title { font-size: 24px; font-weight: 700; fill: #141413; }
+    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
+    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
+    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
+    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
+    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+    </style>
   </defs>
-  <rect width="1200" height="760" fill="#ffffff"/>
-  <text x="600" y="34" text-anchor="middle" fill="#0d0d0d" font-size="22" font-weight="600">Local Storage and Configuration Framework</text>
-  <text x="600" y="58" text-anchor="middle" fill="#6e6e80" font-size="13">Local-first JSON indexes, JSONL logs, workspace files, and encrypted channel credentials</text>
-  <rect x="58" y="88" width="1084" height="596" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="70" y="108" fill="#6e6e80" font-size="12" font-weight="500">~/.codeinsights or ~/.codeinsights-dev</text>
-  <rect x="92" y="132" width="474" height="190" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="104" y="152" fill="#6e6e80" font-size="12" font-weight="500">Configuration JSON</text>
-  <rect x="118" y="166" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="118" y="166" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="189" y="197" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">channels.json</text>
-  <text x="189" y="219" text-anchor="middle" fill="#6e6e80" font-size="12">safeStorage keys</text>
-  <rect x="292" y="166" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="292" y="166" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="363" y="197" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">settings.json</text>
-  <text x="363" y="219" text-anchor="middle" fill="#6e6e80" font-size="12">theme + defaults</text>
-  <rect x="466" y="166" width="72" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="466" y="166" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="502" y="197" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">proxy</text>
-  <text x="502" y="219" text-anchor="middle" fill="#6e6e80" font-size="12">network</text>
-  <rect x="118" y="238" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="118" y="238" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="189" y="269" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">memory.json</text>
-  <text x="189" y="291" text-anchor="middle" fill="#6e6e80" font-size="12">Memos config</text>
-  <rect x="292" y="238" width="142" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="292" y="238" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="363" y="269" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">system prompts</text>
-  <text x="363" y="291" text-anchor="middle" fill="#6e6e80" font-size="12">prompt presets</text>
-  <rect x="466" y="238" width="72" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="466" y="238" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="502" y="269" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">bots</text>
-  <text x="502" y="291" text-anchor="middle" fill="#6e6e80" font-size="12">bridge cfg</text>
-  <rect x="634" y="132" width="474" height="190" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="646" y="152" fill="#6e6e80" font-size="12" font-weight="500">Session Indexes and Logs</text>
-  <ellipse cx="750" cy="166" rx="75.0" ry="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <path d="M 675.0,166 L 675.0,224 Q 750,248 825.0,224 L 825.0,166" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <ellipse cx="750" cy="224" rx="75.0" ry="12" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="675.0" y="166" width="4" height="58" fill="#10a37f" opacity="0.85"/>
-  <text x="750" y="194" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">conversations</text>
-  <text x="750" y="215" text-anchor="middle" fill="#6e6e80" font-size="12">index + JSONL</text>
-  <ellipse cx="938" cy="166" rx="75.0" ry="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <path d="M 863.0,166 L 863.0,224 Q 938,248 1013.0,224 L 1013.0,166" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <ellipse cx="938" cy="224" rx="75.0" ry="12" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="863.0" y="166" width="4" height="58" fill="#10a37f" opacity="0.85"/>
-  <text x="938" y="194" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">agent-sessions</text>
-  <text x="938" y="215" text-anchor="middle" fill="#6e6e80" font-size="12">SDK JSONL + events</text>
-  <ellipse cx="750" cy="252" rx="75.0" ry="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <path d="M 675.0,252 L 675.0,310 Q 750,334 825.0,310 L 825.0,252" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <ellipse cx="750" cy="310" rx="75.0" ry="12" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="675.0" y="252" width="4" height="58" fill="#10a37f" opacity="0.85"/>
-  <text x="750" y="280" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">pipeline-sessions</text>
-  <text x="750" y="301" text-anchor="middle" fill="#6e6e80" font-size="12">records JSONL</text>
-  <ellipse cx="938" cy="252" rx="75.0" ry="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <path d="M 863.0,252 L 863.0,310 Q 938,334 1013.0,310 L 1013.0,252" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <ellipse cx="938" cy="310" rx="75.0" ry="12" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="863.0" y="252" width="4" height="58" fill="#10a37f" opacity="0.85"/>
-  <text x="938" y="280" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">contribution tasks</text>
-  <text x="938" y="301" text-anchor="middle" fill="#6e6e80" font-size="12">event JSONL</text>
-  <rect x="502" y="356" width="196" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="502" y="356" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="600" y="387" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Main Services</text>
-  <text x="600" y="409" text-anchor="middle" fill="#6e6e80" font-size="12">safe file + path APIs</text>
-  <path d="M 330,322 L 330,356 L 502,385" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="373.0" y="349" width="86" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="416" y="362" text-anchor="middle" fill="#6e6e80" font-size="12">read/write</text>
-  <path d="M 868,322 L 868,356 L 698,385" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="754.0" y="349" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="783" y="362" text-anchor="middle" fill="#6e6e80" font-size="12">append</text>
-  <rect x="92" y="456" width="474" height="178" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="104" y="476" fill="#6e6e80" font-size="12" font-weight="500">Agent Workspace Tree</text>
-  <rect x="118" y="498" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="118" y="498" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="195" y="529" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">workspace index</text>
-  <text x="195" y="551" text-anchor="middle" fill="#6e6e80" font-size="12">agent-workspaces.json</text>
-  <rect x="310" y="498" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="310" y="498" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="387" y="529" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">workspace slug</text>
-  <text x="387" y="551" text-anchor="middle" fill="#6e6e80" font-size="12">mcp + skills</text>
-  <rect x="118" y="566" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="118" y="566" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="195" y="597" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">session cwd</text>
-  <text x="195" y="619" text-anchor="middle" fill="#6e6e80" font-size="12">isolated runtime</text>
-  <rect x="310" y="566" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="310" y="566" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="387" y="597" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">workspace-files</text>
-  <text x="387" y="619" text-anchor="middle" fill="#6e6e80" font-size="12">shared local files</text>
-  <rect x="634" y="456" width="474" height="178" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="646" y="476" fill="#6e6e80" font-size="12" font-weight="500">Pipeline Runtime State</text>
-  <rect x="660" y="498" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="660" y="498" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="737" y="529" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">checkpoints</text>
-  <text x="737" y="551" text-anchor="middle" fill="#6e6e80" font-size="12">memory-saver.json</text>
-  <rect x="850" y="498" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="850" y="498" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="927" y="529" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">artifacts</text>
-  <text x="927" y="551" text-anchor="middle" fill="#6e6e80" font-size="12">stage outputs</text>
-  <rect x="660" y="566" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="660" y="566" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="737" y="597" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">patch-work</text>
-  <text x="737" y="619" text-anchor="middle" fill="#6e6e80" font-size="12">plans + evidence</text>
-  <rect x="850" y="566" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="850" y="566" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="927" y="597" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">git drafts</text>
-  <text x="927" y="619" text-anchor="middle" fill="#6e6e80" font-size="12">commit / PR docs</text>
-  <path d="M 502,385 L 392,385 L 392,456" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="407.5" y="364" width="79" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="447" y="377" text-anchor="middle" fill="#6e6e80" font-size="12">workspace</text>
-  <path d="M 698,385 L 778,385 L 778,456" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="705.5" y="364" width="65" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="738" y="377" text-anchor="middle" fill="#6e6e80" font-size="12">recover</text>
-  <g transform="translate(62,704)">
-    <line x1="0" y1="8" x2="34" y2="8" stroke="#10a37f" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-    <text x="44" y="12" fill="#6e6e80" font-size="12">同步请求 / 主数据流</text>
-    <line x1="0" y1="30" x2="34" y2="30" stroke="#10a37f" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
-    <text x="44" y="34" fill="#6e6e80" font-size="12">异步事件 / 流式回传</text>
-  </g>
+  <rect width="1200.0" height="820.0" fill="#f8f6f3"/>
+  <text x="48.0" y="48" text-anchor="start" class="title">Local Storage Framework</text>
+  <text x="48.0" y="72" text-anchor="start" class="subtitle">Portable JSON configuration, append-only JSONL records, runtime manifests, and repo-local patch-work evidence</text>
+  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
+  <rect x="48.0" y="108.0" width="1104.0" height="82.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="132.0" class="section">CONFIG ROOT</text>
+  <rect x="48.0" y="230.0" width="1104.0" height="114.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="254.0" class="section">GLOBAL CONFIG FILES</text>
+  <rect x="48.0" y="384.0" width="1104.0" height="132.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="408.0" class="section">SESSION RECORDS</text>
+  <rect x="48.0" y="556.0" width="1104.0" height="116.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="580.0" class="section">WORKSPACE SNAPSHOTS</text>
+  <path d="M 386.0,152.0 L 316.0,152.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 197.0,176.0 L 197.0,210.0 L 186.0,210.0 L 186.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 197.0,176.0 L 197.0,210.0 L 444.0,210.0 L 444.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 197.0,176.0 L 197.0,210.0 L 708.0,210.0 L 708.0,262.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 965.0,318.0 L 965.0,360.0 L 40.0,360.0 L 40.0,540.0 L 206.0,540.0 L 206.0,592.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 336.0,621.0 L 392.0,621.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 508.0,592.0 L 508.0,540.0 L 434.0,540.0 L 434.0,482.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 834.0,451.0 L 892.0,451.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 991.0,482.0 L 991.0,540.0 L 1020.0,540.0 L 1020.0,592.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 712.0,482.0 L 712.0,540.0 L 779.0,540.0 L 779.0,592.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <rect x="78.0" y="128.0" width="238.0" height="48.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="197.0" y="146.0" text-anchor="middle" class="node-type">ROOT</text>
+  <text x="197.0" y="158.0" text-anchor="middle" class="node-title">~/.codeinsights</text>
+  <text x="197.0" y="180.0" text-anchor="middle" class="node-sub">dev: ~/.codeinsights-dev</text>
+  <rect x="386.0" y="128.0" width="236.0" height="48.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="504.0" y="146.0" text-anchor="middle" class="node-type">ENV</text>
+  <text x="504.0" y="158.0" text-anchor="middle" class="node-title">Config Override</text>
+  <text x="504.0" y="180.0" text-anchor="middle" class="node-sub">CODEINSIGHTS_CONFIG_DIR</text>
+  <rect x="740.0" y="128.0" width="226.0" height="48.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="853.0" y="146.0" text-anchor="middle" class="node-type">PRINCIPLE</text>
+  <text x="853.0" y="158.0" text-anchor="middle" class="node-title">No Local DB</text>
+  <text x="853.0" y="180.0" text-anchor="middle" class="node-sub">portable files</text>
+  <rect x="82.0" y="262.0" width="208.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="186.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
+  <text x="186.0" y="296.0" text-anchor="middle" class="node-title">Providers + Secrets</text>
+  <text x="186.0" y="318.0" text-anchor="middle" class="node-sub">channels.json + safeStorage</text>
+  <rect x="340.0" y="262.0" width="208.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="444.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
+  <text x="444.0" y="296.0" text-anchor="middle" class="node-title">App Settings</text>
+  <text x="444.0" y="318.0" text-anchor="middle" class="node-sub">settings, profile, proxy</text>
+  <rect x="598.0" y="262.0" width="220.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="708.0" y="280.0" text-anchor="middle" class="node-type">CONFIG</text>
+  <text x="708.0" y="296.0" text-anchor="middle" class="node-title">Prompts + Memory</text>
+  <text x="708.0" y="318.0" text-anchor="middle" class="node-sub">system-prompts, tools</text>
+  <rect x="870.0" y="262.0" width="190.0" height="56.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="965.0" y="280.0" text-anchor="middle" class="node-type">SKILLS</text>
+  <text x="965.0" y="296.0" text-anchor="middle" class="node-title">Default Skills</text>
+  <text x="965.0" y="318.0" text-anchor="middle" class="node-sub">copied into workspaces</text>
+  <rect x="76.0" y="420.0" width="202.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="177.0" y="438.0" text-anchor="middle" class="node-type">JSON/FILES</text>
+  <text x="177.0" y="457.0" text-anchor="middle" class="node-title">Chat Records</text>
+  <text x="177.0" y="479.0" text-anchor="middle" class="node-sub">conversations + attachments</text>
+  <rect x="326.0" y="420.0" width="216.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="434.0" y="438.0" text-anchor="middle" class="node-type">JSONL</text>
+  <text x="434.0" y="457.0" text-anchor="middle" class="node-title">Agent Records</text>
+  <text x="434.0" y="479.0" text-anchor="middle" class="node-sub">messages + events JSONL</text>
+  <rect x="590.0" y="420.0" width="244.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="712.0" y="438.0" text-anchor="middle" class="node-type">JSONL</text>
+  <text x="712.0" y="457.0" text-anchor="middle" class="node-title">Pipeline State</text>
+  <text x="712.0" y="479.0" text-anchor="middle" class="node-sub">records + checkpoints</text>
+  <rect x="892.0" y="420.0" width="198.0" height="62.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="991.0" y="438.0" text-anchor="middle" class="node-type">TASKS</text>
+  <text x="991.0" y="457.0" text-anchor="middle" class="node-title">Contribution Tasks</text>
+  <text x="991.0" y="479.0" text-anchor="middle" class="node-sub">index + event JSONL</text>
+  <rect x="76.0" y="592.0" width="260.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="206.0" y="610.0" text-anchor="middle" class="node-type">LOCAL CWD</text>
+  <text x="206.0" y="627.0" text-anchor="middle" class="node-title">agent-workspaces/{slug}</text>
+  <text x="206.0" y="649.0" text-anchor="middle" class="node-sub">mcp, skills, workspace-files</text>
+  <rect x="392.0" y="592.0" width="232.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="508.0" y="610.0" text-anchor="middle" class="node-type">SNAPSHOT</text>
+  <text x="508.0" y="627.0" text-anchor="middle" class="node-title">sessions/{id}/cwd</text>
+  <text x="508.0" y="649.0" text-anchor="middle" class="node-sub">runtime-manifest.json</text>
+  <rect x="680.0" y="592.0" width="198.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="779.0" y="610.0" text-anchor="middle" class="node-type">ARTIFACTS</text>
+  <text x="779.0" y="627.0" text-anchor="middle" class="node-title">Pipeline Artifacts</text>
+  <text x="779.0" y="649.0" text-anchor="middle" class="node-sub">session output folders</text>
+  <rect x="936.0" y="592.0" width="168.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="1020.0" y="610.0" text-anchor="middle" class="node-type">REPO</text>
+  <text x="1020.0" y="627.0" text-anchor="middle" class="node-title">./patch-work</text>
+  <text x="1020.0" y="649.0" text-anchor="middle" class="node-sub">repo evidence docs</text>
+  <rect x="907.0" y="706.0" width="261" height="90" rx="10" fill="#fffaf3" opacity="0.94"/>
+  <line x1="917.0" y1="720.0" x2="947.0" y2="720.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <text x="957.0" y="724.0" class="legend">directory resolution</text>
+  <line x1="917.0" y1="742.0" x2="947.0" y2="742.0" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <text x="957.0" y="746.0" class="legend">read / seed</text>
+  <line x1="917.0" y1="764.0" x2="947.0" y2="764.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
+  <text x="957.0" y="768.0" class="legend">atomic JSON or append JSONL</text>
+  <text x="42.0" y="804.0" class="footnote">Pipeline patch-work lives in the contribution repository; application state lives under the selected CodeInsights config root.</text>
 </svg>

@@ -1,123 +1,140 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="1200" height="720">
-  <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
   <defs>
-    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#10a37f"/></marker>
-    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#71717a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    </marker>
+    <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+    .title { font-size: 24px; font-weight: 700; fill: #141413; }
+    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
+    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
+    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
+    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
+    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+    </style>
   </defs>
-  <rect width="1200" height="720" fill="#ffffff"/>
-  <text x="600" y="34" text-anchor="middle" fill="#0d0d0d" font-size="22" font-weight="600">IPC and Renderer State Flow</text>
-  <text x="600" y="58" text-anchor="middle" fill="#6e6e80" font-size="13">Typed invoke paths plus global stream listeners keep sessions alive across navigation</text>
-  <rect x="54" y="86" width="1092" height="112" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="66" y="106" fill="#6e6e80" font-size="12" font-weight="500">Renderer Command Path</text>
-  <rect x="78" y="120" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="78" y="120" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="155" y="151" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Component</text>
-  <text x="155" y="166" text-anchor="middle" fill="#6e6e80" font-size="12">Composer / Settings</text>
-  <rect x="278" y="120" width="154" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="278" y="120" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="355" y="151" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Jotai Action</text>
-  <text x="355" y="166" text-anchor="middle" fill="#6e6e80" font-size="12">atoms + helpers</text>
-  <rect x="478" y="120" width="180" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="478" y="120" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="568" y="151" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">electronAPI</text>
-  <text x="568" y="166" text-anchor="middle" fill="#6e6e80" font-size="12">preload facade</text>
-  <rect x="710" y="120" width="168" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="710" y="120" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="794" y="151" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">IPC Handler</text>
-  <text x="794" y="166" text-anchor="middle" fill="#6e6e80" font-size="12">main/ipc/*</text>
-  <rect x="930" y="120" width="170" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="930" y="120" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="1015" y="151" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Main Service</text>
-  <text x="1015" y="166" text-anchor="middle" fill="#6e6e80" font-size="12">lib domain layer</text>
-  <path d="M 232,149 L 278,149" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="226.0" y="128" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="255" y="141" text-anchor="middle" fill="#6e6e80" font-size="12">intent</text>
-  <path d="M 432,149 L 478,149" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="432.0" y="128" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="455" y="141" text-anchor="middle" fill="#6e6e80" font-size="12">call</text>
-  <path d="M 658,149 L 710,149" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="655.0" y="128" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="684" y="141" text-anchor="middle" fill="#6e6e80" font-size="12">invoke</text>
-  <path d="M 878,149 L 930,149" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="871.5" y="128" width="65" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="904" y="141" text-anchor="middle" fill="#6e6e80" font-size="12">execute</text>
-  <rect x="54" y="246" width="1092" height="154" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="66" y="266" fill="#6e6e80" font-size="12" font-weight="500">Stream Return Path</text>
-  <rect x="88" y="294" width="166" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="88" y="294" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="171" y="325" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Event Sources</text>
-  <text x="171" y="340" text-anchor="middle" fill="#6e6e80" font-size="12">AgentBus / StreamBus</text>
-  <rect x="318" y="294" width="192" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="318" y="294" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="414" y="325" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Preload Listeners</text>
-  <text x="414" y="340" text-anchor="middle" fill="#6e6e80" font-size="12">ipcRenderer.on()</text>
-  <rect x="576" y="294" width="210" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="576" y="294" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="681" y="325" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Global Hooks</text>
-  <text x="681" y="340" text-anchor="middle" fill="#6e6e80" font-size="12">mounted in main.tsx</text>
-  <rect x="850" y="278" width="224" height="92" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="850" y="278" width="4" height="92" rx="2" ry="2" fill="#10a37f"/>
-  <text x="962" y="309" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Jotai Maps</text>
-  <text x="962" y="358" text-anchor="middle" fill="#6e6e80" font-size="12">state, gates, live output</text>
-  <path d="M 254,323 L 318,323" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="263.0" y="302" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="286" y="315" text-anchor="middle" fill="#6e6e80" font-size="12">send</text>
-  <path d="M 510,323 L 576,323" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="507.0" y="302" width="72" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="543" y="315" text-anchor="middle" fill="#6e6e80" font-size="12">callback</text>
-  <path d="M 786,323 L 850,323" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="789.0" y="302" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="818" y="315" text-anchor="middle" fill="#6e6e80" font-size="12">reduce</text>
-  <rect x="74" y="462" width="476" height="140" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="86" y="482" fill="#6e6e80" font-size="12" font-weight="500">Agent State Slices</text>
-  <rect x="108" y="506" width="128" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="108" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="172" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Sessions</text>
-  <text x="172" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">agentSessions</text>
-  <rect x="270" y="506" width="138" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="270" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="339" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Streaming</text>
-  <text x="339" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">SDK messages</text>
-  <rect x="442" y="506" width="78" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="442" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="481" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Pending</text>
-  <text x="481" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">queues</text>
-  <rect x="650" y="462" width="476" height="140" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="662" y="482" fill="#6e6e80" font-size="12" font-weight="500">Pipeline State Slices</text>
-  <rect x="680" y="506" width="130" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="680" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="745" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Sessions</text>
-  <text x="745" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">pipelineSessions</text>
-  <rect x="844" y="506" width="130" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="844" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="909" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Snapshots</text>
-  <text x="909" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">stateMap</text>
-  <rect x="1008" y="506" width="88" height="54" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="1008" y="506" width="4" height="54" rx="2" ry="2" fill="#10a37f"/>
-  <text x="1052" y="537" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Records</text>
-  <text x="1052" y="548" text-anchor="middle" fill="#6e6e80" font-size="12">tail</text>
-  <path d="M 920,370 L 920,424 L 312,424 L 312,506" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="562.5" y="403" width="107" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="616" y="416" text-anchor="middle" fill="#6e6e80" font-size="12">agent derived</text>
-  <path d="M 996,370 L 996,424 L 908,424 L 908,506" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="888.0" y="403" width="128" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="952" y="416" text-anchor="middle" fill="#6e6e80" font-size="12">pipeline derived</text>
-  <rect x="502" y="642" width="196" height="48" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="502" y="642" width="4" height="48" rx="2" ry="2" fill="#10a37f"/>
-  <text x="600" y="673" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Visible UI</text>
-  <text x="600" y="678" text-anchor="middle" fill="#6e6e80" font-size="12">AppShell, tabs, panels</text>
-  <path d="M 312,560 L 312,620 L 600,620 L 600,642" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="427.0" y="599" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="456" y="612" text-anchor="middle" fill="#6e6e80" font-size="12">render</text>
-  <path d="M 908,560 L 908,620 L 600,620 L 600,642" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="725.0" y="599" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="754" y="612" text-anchor="middle" fill="#6e6e80" font-size="12">render</text>
-  <g transform="translate(62,654)">
-    <line x1="0" y1="8" x2="34" y2="8" stroke="#10a37f" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-    <text x="44" y="12" fill="#6e6e80" font-size="12">同步请求 / 主数据流</text>
-    <line x1="0" y1="30" x2="34" y2="30" stroke="#10a37f" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
-    <text x="44" y="34" fill="#6e6e80" font-size="12">异步事件 / 流式回传</text>
-  </g>
+  <rect width="1200.0" height="820.0" fill="#f8f6f3"/>
+  <text x="48.0" y="48" text-anchor="start" class="title">IPC and Renderer State Flow</text>
+  <text x="48.0" y="72" text-anchor="start" class="subtitle">Typed channels, preload whitelist, stream buses, global listeners, and Jotai state maps</text>
+  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
+  <rect x="48.0" y="108.0" width="1104.0" height="98.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="132.0" class="section">CONTRACTS</text>
+  <rect x="48.0" y="246.0" width="1104.0" height="116.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="270.0" class="section">MAIN PROCESS HANDLERS</text>
+  <rect x="48.0" y="402.0" width="1104.0" height="96.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="426.0" class="section">PRELOAD WHITELIST</text>
+  <rect x="48.0" y="538.0" width="1104.0" height="122.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="562.0" class="section">RENDERER STATE</text>
+  <path d="M 332.0,159.0 L 332.0,100.0 L 700.0,100.0 L 700.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 614.0,159.0 L 700.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 810.0,186.0 L 810.0,224.0 L 172.0,224.0 L 172.0,278.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 262.0,307.0 L 314.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 262.0,307.0 L 284.0,307.0 L 284.0,238.0 L 546.0,238.0 L 546.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 262.0,307.0 L 284.0,307.0 L 284.0,238.0 L 796.0,238.0 L 796.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 494.0,307.0 L 522.0,307.0 L 522.0,238.0 L 1014.0,238.0 L 1014.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 744.0,307.0 L 772.0,307.0 L 772.0,238.0 L 1014.0,238.0 L 1014.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 972.0,307.0 L 1014.0,307.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 172.0,336.0 L 172.0,382.0 L 238.0,382.0 L 238.0,430.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 404.0,336.0 L 404.0,382.0 L 548.0,382.0 L 548.0,430.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 1062.0,336.0 L 1062.0,382.0 L 862.0,382.0 L 862.0,430.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 356.0,457.0 L 448.0,457.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 648.0,457.0 L 742.0,457.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 238.0,484.0 L 238.0,518.0 L 199.0,518.0 L 199.0,574.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 862.0,484.0 L 862.0,518.0 L 469.0,518.0 L 469.0,574.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 862.0,484.0 L 862.0,518.0 L 728.0,518.0 L 728.0,574.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 862.0,484.0 L 862.0,504.4 L 997.0,504.4 L 997.0,574.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 312.0,603.0 L 374.0,603.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 312.0,603.0 L 334.0,603.0 L 334.0,538.0 L 728.0,538.0 L 728.0,574.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <rect x="88.0" y="132.0" width="244.0" height="54.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="210.0" y="150.0" text-anchor="middle" class="node-type">PACKAGES</text>
+  <text x="210.0" y="165.0" text-anchor="middle" class="node-title">Shared IPC Types</text>
+  <text x="210.0" y="187.0" text-anchor="middle" class="node-sub">agent/pipeline/chat/etc.</text>
+  <rect x="396.0" y="132.0" width="218.0" height="54.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="505.0" y="150.0" text-anchor="middle" class="node-type">APP TYPES</text>
+  <text x="505.0" y="165.0" text-anchor="middle" class="node-title">Local Electron Types</text>
+  <text x="505.0" y="187.0" text-anchor="middle" class="node-sub">settings/profile/quick task</text>
+  <rect x="700.0" y="132.0" width="220.0" height="54.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="810.0" y="150.0" text-anchor="middle" class="node-type">NAMES</text>
+  <text x="810.0" y="165.0" text-anchor="middle" class="node-title">Channel Constants</text>
+  <text x="810.0" y="187.0" text-anchor="middle" class="node-sub">request/response contracts</text>
+  <rect x="82.0" y="278.0" width="180.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="172.0" y="296.0" text-anchor="middle" class="node-type">MAIN</text>
+  <text x="172.0" y="313.0" text-anchor="middle" class="node-title">ipc.ts</text>
+  <text x="172.0" y="335.0" text-anchor="middle" class="node-sub">root registry</text>
+  <rect x="314.0" y="278.0" width="180.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="404.0" y="296.0" text-anchor="middle" class="node-type">AGENT</text>
+  <text x="404.0" y="313.0" text-anchor="middle" class="node-title">Agent Handlers</text>
+  <text x="404.0" y="335.0" text-anchor="middle" class="node-sub">send/respond/files</text>
+  <rect x="546.0" y="278.0" width="198.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="645.0" y="296.0" text-anchor="middle" class="node-type">PIPELINE</text>
+  <text x="645.0" y="313.0" text-anchor="middle" class="node-title">Pipeline Handlers</text>
+  <text x="645.0" y="335.0" text-anchor="middle" class="node-sub">start/resume/gate</text>
+  <rect x="796.0" y="278.0" width="176.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="884.0" y="296.0" text-anchor="middle" class="node-type">SYSTEM</text>
+  <text x="884.0" y="313.0" text-anchor="middle" class="node-title">Domain Handlers</text>
+  <text x="884.0" y="335.0" text-anchor="middle" class="node-sub">channels/settings/bridge</text>
+  <rect x="1014.0" y="278.0" width="96.0" height="58.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="1062.0" y="296.0" text-anchor="middle" class="node-type">PUSH</text>
+  <text x="1062.0" y="313.0" text-anchor="middle" class="node-title">Streams</text>
+  <text x="1062.0" y="335.0" text-anchor="middle" class="node-sub">bus/events</text>
+  <rect x="120.0" y="430.0" width="236.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="238.0" y="448.0" text-anchor="middle" class="node-type">PRELOAD</text>
+  <text x="238.0" y="463.0" text-anchor="middle" class="node-title">window.electronAPI</text>
+  <text x="238.0" y="485.0" text-anchor="middle" class="node-sub">contextBridge whitelist</text>
+  <rect x="448.0" y="430.0" width="200.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="548.0" y="448.0" text-anchor="middle" class="node-type">RPC</text>
+  <text x="548.0" y="463.0" text-anchor="middle" class="node-title">Invoke APIs</text>
+  <text x="548.0" y="485.0" text-anchor="middle" class="node-sub">list/create/start/respond</text>
+  <rect x="742.0" y="430.0" width="240.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="862.0" y="448.0" text-anchor="middle" class="node-type">ASYNC</text>
+  <text x="862.0" y="463.0" text-anchor="middle" class="node-title">Event Subscriptions</text>
+  <text x="862.0" y="485.0" text-anchor="middle" class="node-sub">STREAM_* / STATUS_*</text>
+  <rect x="86.0" y="574.0" width="226.0" height="58.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="199.0" y="592.0" text-anchor="middle" class="node-type">BOOT</text>
+  <text x="199.0" y="609.0" text-anchor="middle" class="node-title">Top-level Initializers</text>
+  <text x="199.0" y="631.0" text-anchor="middle" class="node-sub">main.tsx always mounted</text>
+  <rect x="374.0" y="574.0" width="190.0" height="58.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="469.0" y="592.0" text-anchor="middle" class="node-type">JOTAI</text>
+  <text x="469.0" y="609.0" text-anchor="middle" class="node-title">Agent Atoms</text>
+  <text x="469.0" y="631.0" text-anchor="middle" class="node-sub">live, pending, runtime</text>
+  <rect x="626.0" y="574.0" width="204.0" height="58.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="728.0" y="592.0" text-anchor="middle" class="node-type">JOTAI</text>
+  <text x="728.0" y="609.0" text-anchor="middle" class="node-title">Pipeline Atoms</text>
+  <text x="728.0" y="631.0" text-anchor="middle" class="node-sub">state, gates, records</text>
+  <rect x="892.0" y="574.0" width="210.0" height="58.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="997.0" y="592.0" text-anchor="middle" class="node-type">JOTAI</text>
+  <text x="997.0" y="609.0" text-anchor="middle" class="node-title">Chat + Settings</text>
+  <text x="997.0" y="631.0" text-anchor="middle" class="node-sub">fallback stream + tabState</text>
+  <rect x="963.0" y="684.0" width="205" height="112" rx="10" fill="#fffaf3" opacity="0.94"/>
+  <line x1="973.0" y1="698.0" x2="1003.0" y2="698.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <text x="1013.0" y="702.0" class="legend">ipcMain handle path</text>
+  <line x1="973.0" y1="720.0" x2="1003.0" y2="720.0" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <text x="1013.0" y="724.0" class="legend">typed preload API</text>
+  <line x1="973.0" y1="742.0" x2="1003.0" y2="742.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <text x="1013.0" y="746.0" class="legend">stream/status push</text>
+  <line x1="973.0" y1="764.0" x2="1003.0" y2="764.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
+  <text x="1013.0" y="768.0" class="legend">atom hydration</text>
+  <text x="42.0" y="804.0" class="footnote">Global listeners stay mounted while users switch tabs, settings, file panels, or background sessions.</text>
 </svg>

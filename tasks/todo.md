@@ -4530,3 +4530,21 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 多平台验证状态：macOS arm64 packaged app smoke 已通过；macOS x64、Windows x64、Linux packaged smoke 本机未验证，后续文档标记 `[!]`，不伪装通过。
 - `dist:fast` 结果：main/preload/renderer 构建和 `out/mac-arm64/CodeInsights.app` 生成成功；DMG 生成阶段仍因 `hdiutil create` Exit code 1 失败，因此本轮只证明 app bundle 可用，不声明 DMG artifact 通过。
 - 验证通过：`bun test apps/electron/src/main/lib/opencode-runtime/opencode-mcp-config.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-sdk-client.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-binary.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only mcp`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only packaged`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui -- --runtime opencode`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron packages/shared bun.lock tasks/todo.md`。
+
+## 2026-05-28 README 架构图 style 6 刷新计划
+
+范围确认：本轮只深入分析当前项目架构，并使用 `fireworks-tech-graph` 生成 style 6（Claude Official）风格的 README 架构/流程/框架图，替换 `assets/imgs/` 下 README 正在引用的 5 张图及对应 SVG 源；不调整 README 正文结构，不修改 `README_en.md`，不进入业务代码实现。
+
+- [x] 复习 `tasks/lessons.md`、README 架构章节和现有 `assets/imgs/` 图片，确认需要替换的目标与响应式图片风险。
+- [x] 并行梳理当前项目实际架构：Electron 三进程、Bun workspace、Agent Runtime、Pipeline v2、IPC/Jotai、本地配置存储。
+- [x] 基于 style 6 参考设计 5 张图的版式与节点，确保与 README 当前章节一一对应。
+- [x] 生成并导出 `codeinsights-system-architecture`、`codeinsights-pipeline-langgraph-flow`、`codeinsights-agent-runtime-flow`、`codeinsights-ipc-state-flow`、`codeinsights-local-storage-framework` 的 SVG 和 PNG。
+- [x] 验证 SVG XML、PNG 尺寸/可读性、README 图片引用路径、敏感信息扫描和 `git diff --check`，并在本节追加 Review。
+
+## 2026-05-28 README 架构图 style 6 刷新 Review
+
+- 已使用 `fireworks-tech-graph` style 6（Claude Official）重新生成 README 当前引用的 5 组图：系统架构、Pipeline v2 LangGraph、Agent Runtime、IPC/Renderer 状态流、本地存储框架。
+- 已根据当前项目实现更新图中事实：Pipeline v2 标明 `explorer/planner` 走 Claude、`developer/reviewer/tester/committer` 走 Codex；Agent Runtime 标明 session-first runtime 选择、Claude Code / Codex / opencode 三 runtime、runtime envelope 与 JSONL 双线；IPC 图标明 shared/local types、main handlers、preload 白名单、stream bus 与 Jotai atoms；存储图标明 config root、JSON 配置、JSONL 记录、runtime manifest、Pipeline artifacts 与 repo `./patch-work`。
+- 已用同名文件替换 `assets/imgs/` 下 5 个 PNG 与 5 个 SVG 源，README 继续使用原路径；同时更新 README 图片 alt 文案，避免继续写旧的“Claude SDK 与 JSONL 存储”。
+- 已做视觉复核并移除高干扰箭头浮动标签，保留节点技术说明和图例；PNG 尺寸为系统架构 `2400x1520`、Pipeline `2400x1720`、Agent/IPC/Local Storage `2400x1640`。
+- 验证通过：`bash /Users/zq/.codex/skills/fireworks-tech-graph/scripts/validate-svg.sh assets/imgs/codeinsights-*.svg`；Python `xml.etree.ElementTree` 解析 5 个 SVG；Playwright + Microsoft Edge 导出 5 个 PNG；PIL 检查 PNG 非空；README `assets/imgs` 图片引用路径存在；旧命名/旧架构残留扫描无命中；`git diff --check -- README.md assets/imgs tasks/todo.md`。

@@ -1,114 +1,144 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760">
-  <style>
-    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica Neue, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; letter-spacing: 0; }
-  </style>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" width="1200" height="820">
   <defs>
-    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#10a37f"/></marker>
-    <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#71717a"/></marker>
+    <marker id="arrowA" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowB" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7b8b5c"/>
+    </marker>
+    <marker id="arrowC" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8c6f5a"/>
+    </marker>
+    <marker id="arrowE" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#b45309"/>
+    </marker>
+    <marker id="arrowF" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9a6fb0"/>
+    </marker>
+    <marker id="arrowG" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#d97757"/>
+    </marker>
+    <marker id="arrowH" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8f8a80"/>
+    </marker>
+    <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+    .title { font-size: 24px; font-weight: 700; fill: #141413; }
+    .subtitle { font-size: 13px; font-weight: 500; fill: #8f8a80; }
+    .section { font-size: 13px; font-weight: 700; fill: #8b7355; letter-spacing: 1.4px; }
+    .section-sub { font-size: 12px; font-weight: 500; fill: #b4aba0; }
+    .node-title { font-size: 18px; font-weight: 700; fill: #141413; }
+    .node-sub { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .node-type { font-size: 11px; font-weight: 700; fill: #a29a8f; letter-spacing: 0.08em; }
+    .arrow-label { font-size: 12px; font-weight: 600; fill: #6b6257; }
+    .legend { font-size: 12px; font-weight: 500; fill: #6b6257; }
+    .footnote { font-size: 12px; font-weight: 500; fill: #a29a8f; }
+    </style>
   </defs>
-  <rect width="1200" height="760" fill="#ffffff"/>
-  <text x="600" y="34" text-anchor="middle" fill="#0d0d0d" font-size="22" font-weight="600">Agent Runtime Flow</text>
-  <text x="600" y="58" text-anchor="middle" fill="#6e6e80" font-size="13">Session-isolated Claude Agent SDK execution with local persistence and interactive gates</text>
-  <rect x="52" y="94" width="268" height="540" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="64" y="114" fill="#6e6e80" font-size="12" font-weight="500">Renderer</text>
-  <rect x="86" y="140" width="190" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="86" y="140" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="181" y="171" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">AgentView</text>
-  <text x="181" y="186" text-anchor="middle" fill="#6e6e80" font-size="12">send + live output</text>
-  <rect x="86" y="282" width="190" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="86" y="282" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="181" y="313" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Permission UI</text>
-  <text x="181" y="328" text-anchor="middle" fill="#6e6e80" font-size="12">permission / AskUser / plan</text>
-  <rect x="86" y="424" width="190" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="86" y="424" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="181" y="455" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">SidePanel</text>
-  <text x="181" y="470" text-anchor="middle" fill="#6e6e80" font-size="12">files + tasks</text>
-  <rect x="382" y="94" width="392" height="540" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="394" y="114" fill="#6e6e80" font-size="12" font-weight="500">Main Agent Layer</text>
-  <rect x="424" y="138" width="166" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="424" y="138" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="507" y="169" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">agent-service</text>
-  <text x="507" y="184" text-anchor="middle" fill="#6e6e80" font-size="12">IPC wrapper</text>
-  <rect x="608" y="138" width="126" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="608" y="138" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="671" y="169" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">EventBus</text>
-  <text x="671" y="184" text-anchor="middle" fill="#6e6e80" font-size="12">stream fanout</text>
-  <rect x="474" y="266" width="210" height="70" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="474" y="266" width="4" height="70" rx="2" ry="2" fill="#10a37f"/>
-  <text x="579" y="297" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">AgentOrchestrator</text>
-  <text x="579" y="324" text-anchor="middle" fill="#6e6e80" font-size="12">guard, prompt, retry, title</text>
-  <rect x="414" y="414" width="150" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="414" y="414" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="489" y="445" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Channel + Env</text>
-  <text x="489" y="460" text-anchor="middle" fill="#6e6e80" font-size="12">key, proxy, SDK path</text>
-  <rect x="596" y="414" width="150" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="596" y="414" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="671" y="445" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Workspace Tools</text>
-  <text x="671" y="460" text-anchor="middle" fill="#6e6e80" font-size="12">MCP, skills, memory</text>
-  <rect x="496" y="538" width="168" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="496" y="538" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="580" y="569" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Permission Core</text>
-  <text x="580" y="584" text-anchor="middle" fill="#6e6e80" font-size="12">canUseTool dispatcher</text>
-  <rect x="836" y="94" width="312" height="540" rx="8" ry="8" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4,3"/>
-  <text x="848" y="114" fill="#6e6e80" font-size="12" font-weight="500">Runtime + Storage</text>
-  <rect x="878" y="142" width="220" height="62" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="878" y="142" width="4" height="62" rx="2" ry="2" fill="#10a37f"/>
-  <text x="988" y="173" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Claude Agent SDK</text>
-  <text x="988" y="192" text-anchor="middle" fill="#6e6e80" font-size="12">query() async iterable</text>
-  <rect x="878" y="276" width="220" height="62" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="878" y="276" width="4" height="62" rx="2" ry="2" fill="#10a37f"/>
-  <text x="988" y="307" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Runner v2</text>
-  <text x="988" y="326" text-anchor="middle" fill="#6e6e80" font-size="12">runtime envelopes</text>
-  <ellipse cx="988" cy="420" rx="92.0" ry="12" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <path d="M 896.0,420 L 896.0,484 Q 988,508 1080.0,484 L 1080.0,420" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <ellipse cx="988" cy="484" rx="92.0" ry="12" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="896.0" y="420" width="4" height="64" fill="#10a37f" opacity="0.85"/>
-  <text x="988" y="448" text-anchor="middle" fill="#0d0d0d" font-size="14" font-weight="600">Agent JSONL</text>
-  <text x="988" y="469" text-anchor="middle" fill="#6e6e80" font-size="12">SDK messages + events</text>
-  <rect x="878" y="552" width="220" height="58" rx="8" ry="8" fill="#ffffff" stroke="#e5e5e5" stroke-width="1.5"/>
-  <rect x="878" y="552" width="4" height="58" rx="2" ry="2" fill="#10a37f"/>
-  <text x="988" y="583" text-anchor="middle" fill="#0d0d0d" font-size="15" font-weight="600">Session CWD</text>
-  <text x="988" y="598" text-anchor="middle" fill="#6e6e80" font-size="12">workspace/session runtime</text>
-  <path d="M 276,169 L 424,167" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="327.0" y="147" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="350" y="160" text-anchor="middle" fill="#6e6e80" font-size="12">send</text>
-  <path d="M 590,167 L 608,167" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="563.0" y="146" width="72" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="599" y="159" text-anchor="middle" fill="#6e6e80" font-size="12">register</text>
-  <path d="M 530,196 L 530,266" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="494.0" y="210" width="72" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="530" y="223" text-anchor="middle" fill="#6e6e80" font-size="12">delegate</text>
-  <path d="M 684,301 L 780,301 L 780,173 L 878,173" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="754.5" y="216" width="51" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="780" y="229" text-anchor="middle" fill="#6e6e80" font-size="12">query</text>
-  <path d="M 684,301 L 780,301 L 780,307 L 878,307" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="806.0" y="286" width="46" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="829" y="299" text-anchor="middle" fill="#6e6e80" font-size="12">run</text>
-  <path d="M 734,167 L 808,167 L 808,112 L 168,112 L 168,140" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="434.5" y="91" width="107" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="488" y="104" text-anchor="middle" fill="#6e6e80" font-size="12">stream events</text>
-  <path d="M 474,301 L 336,301 L 336,311 L 276,311" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="369.0" y="280" width="72" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="405" y="293" text-anchor="middle" fill="#6e6e80" font-size="12">requests</text>
-  <path d="M 276,311 L 360,311 L 360,567 L 496,567" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="320.5" y="418" width="79" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="360" y="431" text-anchor="middle" fill="#6e6e80" font-size="12">responses</text>
-  <path d="M 564,443 L 580,443 L 580,538" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="551.0" y="469" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="580" y="482" text-anchor="middle" fill="#6e6e80" font-size="12">policy</text>
-  <path d="M 746,443 L 812,443 L 812,581 L 878,581" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)" stroke-dasharray="4,3"/>
-  <rect x="772.5" y="491" width="79" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="812" y="504" text-anchor="middle" fill="#6e6e80" font-size="12">cwd + MCP</text>
-  <path d="M 988,338 L 988,420" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="959.0" y="358" width="58" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="988" y="371" text-anchor="middle" fill="#6e6e80" font-size="12">append</text>
-  <path d="M 988,552 L 988,496" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
-  <rect x="962.5" y="503" width="51" height="18" rx="4" fill="#ffffff" opacity="0.96"/>
-  <text x="988" y="516" text-anchor="middle" fill="#6e6e80" font-size="12">files</text>
-  <g transform="translate(62,704)">
-    <line x1="0" y1="8" x2="34" y2="8" stroke="#10a37f" stroke-width="1.5" marker-end="url(#arrow-green)"/>
-    <text x="44" y="12" fill="#6e6e80" font-size="12">同步请求 / 主数据流</text>
-    <line x1="0" y1="30" x2="34" y2="30" stroke="#10a37f" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
-    <text x="44" y="34" fill="#6e6e80" font-size="12">异步事件 / 流式回传</text>
-  </g>
+  <rect width="1200.0" height="820.0" fill="#f8f6f3"/>
+  <text x="48.0" y="48" text-anchor="start" class="title">Agent Runtime Flow</text>
+  <text x="48.0" y="72" text-anchor="start" class="subtitle">Session-first runtime selection with Claude Code, Codex, and opencode event envelopes</text>
+  <line x1="48" y1="100" x2="1152.0" y2="100" stroke="#ded8cf" stroke-width="1"/>
+  <rect x="48.0" y="108.0" width="1104.0" height="98.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="132.0" class="section">RENDERER ENTRY</text>
+  <rect x="48.0" y="246.0" width="1104.0" height="128.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="270.0" class="section">ORCHESTRATION</text>
+  <rect x="48.0" y="414.0" width="1104.0" height="112.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="438.0" class="section">CODING RUNTIMES</text>
+  <rect x="48.0" y="566.0" width="1104.0" height="118.0" rx="16.0" fill="none" stroke="#ded8cf" stroke-width="1.4" stroke-dasharray="5 4"/>
+  <text x="66.0" y="590.0" class="section">INTERACTION + PERSISTENCE</text>
+  <path d="M 254.0,159.0 L 318.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <path d="M 512.0,159.0 L 576.0,159.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 671.0,186.0 L 671.0,226.0 L 196.0,226.0 L 196.0,282.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 308.0,315.0 L 370.0,315.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <path d="M 608.0,315.0 L 670.0,315.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 782.0,348.0 L 650.0,348.0 L 650.0,530.0 L 1006.0,530.0 L 1006.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 489.0,348.0 L 489.0,394.0 L 211.0,394.0 L 211.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 489.0,348.0 L 489.0,368.4 L 518.0,368.4 L 518.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 489.0,348.0 L 489.0,394.0 L 825.0,394.0 L 825.0,444.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 308.0,315.0 L 330.0,315.0 L 330.0,232.0 L 930.0,232.0 L 930.0,315.0 L 956.0,315.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 1029.0,348.0 L 1029.0,394.0 L 211.0,394.0 L 211.0,444.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 1029.0,348.0 L 1029.0,394.0 L 825.0,394.0 L 825.0,444.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 330.0,473.0 L 360.0,473.0 L 360.0,394.0 L 1000.0,394.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 630.0,473.0 L 652.0,473.0 L 652.0,394.0 L 1000.0,394.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 944.0,473.0 L 1000.0,473.0" fill="none" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <path d="M 1052.0,502.0 L 1052.0,546.0 L 741.0,546.0 L 741.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 1052.0,502.0 L 1052.0,546.0 L 462.0,546.0 L 462.0,602.0" fill="none" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)" stroke-dasharray="6,4"/>
+  <path d="M 1052.0,502.0 L 1052.0,546.0 L 191.0,546.0 L 191.0,602.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 191.0,602.0 L 191.0,544.0 L 947.0,544.0 L 947.0,186.0" fill="none" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)" stroke-dasharray="6,4"/>
+  <path d="M 842.0,159.0 L 842.0,100.0 L 254.0,100.0 L 254.0,159.0" fill="none" stroke="#8c6f5a" stroke-width="2.1" marker-end="url(#arrowC)"/>
+  <rect x="80.0" y="132.0" width="174.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="167.0" y="150.0" text-anchor="middle" class="node-type">RENDERER</text>
+  <text x="167.0" y="165.0" text-anchor="middle" class="node-title">AgentView</text>
+  <text x="167.0" y="187.0" text-anchor="middle" class="node-sub">messages + composer</text>
+  <rect x="318.0" y="132.0" width="194.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="415.0" y="150.0" text-anchor="middle" class="node-type">PRELOAD</text>
+  <text x="415.0" y="165.0" text-anchor="middle" class="node-title">electronAPI</text>
+  <text x="415.0" y="187.0" text-anchor="middle" class="node-sub">send/stop/respond</text>
+  <rect x="576.0" y="132.0" width="190.0" height="54.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="671.0" y="150.0" text-anchor="middle" class="node-type">MAIN</text>
+  <text x="671.0" y="165.0" text-anchor="middle" class="node-title">agent-service</text>
+  <text x="671.0" y="187.0" text-anchor="middle" class="node-sub">EventBus bridge</text>
+  <rect x="842.0" y="132.0" width="210.0" height="54.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="947.0" y="150.0" text-anchor="middle" class="node-type">RENDERER</text>
+  <text x="947.0" y="165.0" text-anchor="middle" class="node-title">Global Listener</text>
+  <text x="947.0" y="187.0" text-anchor="middle" class="node-sub">Jotai stream state</text>
+  <rect x="84.0" y="282.0" width="224.0" height="66.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="196.0" y="300.0" text-anchor="middle" class="node-type">CORE</text>
+  <text x="196.0" y="321.0" text-anchor="middle" class="node-title">AgentOrchestrator</text>
+  <text x="196.0" y="343.0" text-anchor="middle" class="node-sub">guard + prompt + retry</text>
+  <rect x="370.0" y="282.0" width="238.0" height="66.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="489.0" y="300.0" text-anchor="middle" class="node-type">REGISTRY</text>
+  <text x="489.0" y="321.0" text-anchor="middle" class="node-title">Runtime Selection</text>
+  <text x="489.0" y="343.0" text-anchor="middle" class="node-sub">session -&gt; legacy -&gt; settings</text>
+  <rect x="670.0" y="282.0" width="224.0" height="66.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="782.0" y="300.0" text-anchor="middle" class="node-type">WORKSPACE</text>
+  <text x="782.0" y="321.0" text-anchor="middle" class="node-title">Runtime Snapshot</text>
+  <text x="782.0" y="343.0" text-anchor="middle" class="node-sub">MCP + skills + manifest</text>
+  <rect x="956.0" y="282.0" width="146.0" height="66.0" rx="12.0" fill="#a8c5e6" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="1029.0" y="300.0" text-anchor="middle" class="node-type">HUMAN</text>
+  <text x="1029.0" y="321.0" text-anchor="middle" class="node-title">User Gates</text>
+  <text x="1029.0" y="343.0" text-anchor="middle" class="node-sub">permission/AskUser/plan</text>
+  <rect x="92.0" y="444.0" width="238.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="211.0" y="462.0" text-anchor="middle" class="node-type">CLAUDE</text>
+  <text x="211.0" y="479.0" text-anchor="middle" class="node-title">Claude Code Runtime</text>
+  <text x="211.0" y="501.0" text-anchor="middle" class="node-sub">query() + runner-v2</text>
+  <rect x="406.0" y="444.0" width="224.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="518.0" y="462.0" text-anchor="middle" class="node-type">CODEX</text>
+  <text x="518.0" y="479.0" text-anchor="middle" class="node-title">Codex Runtime</text>
+  <text x="518.0" y="501.0" text-anchor="middle" class="node-sub">start/resume runStreamed</text>
+  <rect x="706.0" y="444.0" width="238.0" height="58.0" rx="12.0" fill="#9dd4c7" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="825.0" y="462.0" text-anchor="middle" class="node-type">OPENCODE</text>
+  <text x="825.0" y="479.0" text-anchor="middle" class="node-title">opencode Runtime</text>
+  <text x="825.0" y="501.0" text-anchor="middle" class="node-sub">managed server + client</text>
+  <rect x="1000.0" y="444.0" width="104.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="1052.0" y="462.0" text-anchor="middle" class="node-type">EVENTS</text>
+  <text x="1052.0" y="479.0" text-anchor="middle" class="node-title">Adapters</text>
+  <text x="1052.0" y="501.0" text-anchor="middle" class="node-sub">event map</text>
+  <rect x="88.0" y="602.0" width="206.0" height="58.0" rx="12.0" fill="#f4e4c1" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="191.0" y="620.0" text-anchor="middle" class="node-type">PUSH</text>
+  <text x="191.0" y="637.0" text-anchor="middle" class="node-title">AgentEventBus</text>
+  <text x="191.0" y="659.0" text-anchor="middle" class="node-sub">ElectronAgentChannel</text>
+  <rect x="360.0" y="602.0" width="204.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="462.0" y="620.0" text-anchor="middle" class="node-type">COMPAT</text>
+  <text x="462.0" y="637.0" text-anchor="middle" class="node-title">SDKMessage JSONL</text>
+  <text x="462.0" y="659.0" text-anchor="middle" class="node-sub">{id}.jsonl</text>
+  <rect x="632.0" y="602.0" width="218.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="741.0" y="620.0" text-anchor="middle" class="node-type">ENVELOPE</text>
+  <text x="741.0" y="637.0" text-anchor="middle" class="node-title">Runtime Event Log</text>
+  <text x="741.0" y="659.0" text-anchor="middle" class="node-sub">{id}.events.jsonl</text>
+  <rect x="918.0" y="602.0" width="176.0" height="58.0" rx="12.0" fill="#e8e6e3" stroke="#4a4a4a" stroke-width="2.2"/>
+  <text x="1006.0" y="620.0" text-anchor="middle" class="node-type">LOCAL</text>
+  <text x="1006.0" y="637.0" text-anchor="middle" class="node-title">Workspace Files</text>
+  <text x="1006.0" y="659.0" text-anchor="middle" class="node-sub">cwd + mcp + skills</text>
+  <rect x="949.0" y="684.0" width="219" height="112" rx="10" fill="#fffaf3" opacity="0.94"/>
+  <line x1="959.0" y1="698.0" x2="989.0" y2="698.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <text x="999.0" y="702.0" class="legend">IPC command</text>
+  <line x1="959.0" y1="720.0" x2="989.0" y2="720.0" stroke="#b45309" stroke-width="2.1" marker-end="url(#arrowE)"/>
+  <text x="999.0" y="724.0" class="legend">runtime stream</text>
+  <line x1="959.0" y1="742.0" x2="989.0" y2="742.0" stroke="#7b8b5c" stroke-width="2.1" marker-end="url(#arrowB)"/>
+  <text x="999.0" y="746.0" class="legend">JSONL persistence</text>
+  <line x1="959.0" y1="764.0" x2="989.0" y2="764.0" stroke="#d97757" stroke-width="2.1" marker-end="url(#arrowA)"/>
+  <text x="999.0" y="768.0" class="legend">async envelope / gate</text>
+  <text x="42.0" y="804.0" class="footnote">Codex and opencode are independent coding runtimes; Claude Code remains compatible with legacy SDKMessage JSONL.</text>
 </svg>
