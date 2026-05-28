@@ -4565,3 +4565,44 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已重新绘制 README 当前引用的 5 组同名 SVG/PNG：系统架构、Pipeline v2 LangGraph、Agent Runtime、IPC/Renderer 状态流、本地存储框架；新版本采用展示型信息架构，统一节点高度与文本基线，连线收敛为 style 6 暖灰实线 / 虚线，不再使用箭头浮动标签。
 - 已逐张打开最终 PNG 实际检查，并生成 contact sheet `/tmp/codeinsights-diagram-contact-sheet.png` 复核 README 缩放后的整体密度；未发现阻塞级文字压线、箭头穿正文或图例遮挡内容。
 - 验证通过：`bash /Users/zq/.codex/skills/fireworks-tech-graph/scripts/validate-svg.sh assets/imgs/codeinsights-*.svg`；Playwright + Microsoft Edge 导出 5 个 PNG；PIL 检查 PNG 尺寸与非空均值；README `assets/imgs` 引用存在；旧命名 / 旧架构残留扫描无命中；`git diff --check -- README.md assets/imgs tasks/todo.md tasks/lessons.md`。
+
+## 2026-05-28 Pipeline v1 优化方案文档计划
+
+范围确认：本轮只深入探索当前 Pipeline 模式并新增 `docs/improve/pipeline/v1/` 下的 Markdown 优化方案文档；同步 `tasks/todo.md` 任务记录。不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不做真实模型 smoke。
+
+- [x] 复习 `tasks/lessons.md` 和现有 Pipeline 文档，确认历史约束、v0 方案和当前 README 所述 v2 事实。
+- [x] 梳理 Pipeline 后端实现：shared 类型、IPC handler、LangGraph、节点路由、Claude / Codex runner、service 生命周期、gate、checkpoint、artifact、patch-work、preflight 和 Git submission。
+- [x] 梳理 Pipeline 前端实现：Jotai atoms、全局监听、PipelineView、Header、StageRail、Records、GateCard、Explorer / Reviewer / Tester / Committer 面板和设置项。
+- [x] 形成优化方案：当前状态、主要问题、目标架构、前后端改造、新增功能、数据契约、迁移策略、验证计划和分阶段路线。
+- [x] 新增 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 并验证 Markdown、路径与引用。
+- [x] 在本节追加 Review，说明产出、未修改范围和验证结果。
+
+## 2026-05-28 Pipeline v1 优化方案文档 Review
+
+- 已新增 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`，明确本文 v1 是优化方案版本，不是旧 `PipelineVersion = 1` 协议。
+- 已基于当前真实代码梳理 Pipeline 后端：shared 契约、v1/v2 状态回放、LangGraph、节点路由、Claude / Codex runner、PipelineService 生命周期、gate side effects、checkpoint、patch-work、preflight、ContributionTask 和 Git submission。
+- 已基于当前真实代码梳理 Pipeline 前端：默认 v2 入口、Jotai atoms、全局 stream listener、PipelineView、StageRail、Records、Explorer / Review / Reviewer / Tester / Committer 面板和 renderer preflight。
+- 方案中记录了优先优化点：接入 repository preflight IPC / UI / start guard，修复 Records v2 committer 过滤与分组，拆分 PipelineView，建设 Patch-work Document Workbench，收敛远端写二次确认语义，补 ContributionTask Dashboard、SubmissionPlan、PR Preview / GitHub API / existing PR update。
+- 本轮仅新增方案文档并更新 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未执行真实模型 smoke。
+- 验证通过：`test -f docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无命中；`git diff --check -- tasks/todo.md`；`git diff --check --no-index /dev/null docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无空白错误。
+
+## 2026-05-28 Pipeline v1 优化方案二次完善计划
+
+范围确认：继续完善 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`，尽可能补充每部分的实现细节、文件落点、数据契约、UI 行为、验收标准和风险控制；仍不修改业务代码、根 `README.md` / `AGENTS.md`，不安装依赖，不做真实模型 smoke。
+
+- [x] 复习 `tasks/lessons.md` 和现有 v1 方案，确认本轮扩写要覆盖 preflight 主路径、v2 前端可见性、Git 防护、abort 副作用和阶段验证。
+- [x] 补充方案文档的实现级细节：后端文件落点、IPC / preload / shared 契约、service 拆分、read model、gate 幂等和错误处理。
+- [x] 补充前端细节：Jotai atom、hook 拆分、组件职责、交互状态、空态/错误态、可访问性和测试点。
+- [x] 补充新增功能细节：Preflight Center、Patch-work Workbench、Submission Plan、Contribution Dashboard、Workflow Profile、Report Export 的分期 MVP 和验收。
+- [x] 补充迁移兼容、验证矩阵、风险清单和下一轮最小实现 PR 范围。
+- [x] 验证文档和任务记录，并追加 Review。
+
+## 2026-05-28 Pipeline v1 优化方案二次完善 Review
+
+- 已在 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 中扩写方案细节，文档从初版分析扩展为可拆 PR 的实现蓝图。
+- 已补充当前文件级依赖图、可复用能力清单、风险优先级、运行主流程、Gate 状态目标态、IPC 增量清单、运行时校验规则和错误码建议。
+- 已补充后端实现细节：preflight 主路径文件落点、`PipelineService` 拆分边界、gate side effect 幂等、独立远端写确认、abort-before-side-effects、GitHub API / existing PR 增强和 read model / export report。
+- 已补充前端实现细节：`PipelineView` hook 拆分顺序、Preflight Center 分组展示、Records v2 committer 修复、Patch-work Document Workbench、三段式 CommitterPanel、Contribution Dashboard 和 Workflow Profile 设置策略。
+- 已补充新增功能的 MVP / 增强范围 / 验收标准，并补充 Phase 完成定义、BDD 场景、测试矩阵、fixture repo、smoke 分层、不回归检查、迁移兼容和下一轮最小切片文件清单。
+- 本轮仍只修改方案文档和 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未执行真实模型 smoke。
+- 验证通过：`test -f docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无命中；Markdown 代码块 fence 成对；`git diff --check -- tasks/todo.md`；`git diff --check --no-index /dev/null docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无空白错误。
