@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 接入开发方案
 
-状态：设计方案
+状态：Phase 8 本轮可验证范围已完成；真实模型 / 多平台 gated 项待后续
 日期：2026-05-27
 目标目录：`docs/opencode-support/`
 适用范围：CodeInsights Electron Agent 模式
@@ -24,6 +24,18 @@ CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1
 ```
 
 未开启时，现有 Claude Code / Codex 行为不变。
+
+### 0.3 Phase 8 验收后的当前结论
+
+2026-05-28 Phase 8 已完成本轮可验证范围：
+
+- 默认 `smoke:agent-opencode` 通过，覆盖 binary、server / Basic Auth、config、permission config、abort、resume 和 MCP config/status/tool discovery；默认无显式 env 时 readonly / channel / native 按 reason skipped。
+- native auth readonly 真实 prompt 通过：`OPENCODE_SMOKE_ENABLE_NATIVE=1 OPENCODE_SMOKE_ENABLE_MODEL=1` 只记录 native source 和 prompt accepted，不读取 auth 文件内容。
+- macOS arm64 packaged smoke 通过，packaged app 使用 bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled；packaged history reload first-open / reopen 通过。
+- `dist:fast` 本轮成功生成 `out/CodeInsights-0.0.119-arm64.dmg` 和 `.blockmap`，此前 DMG `hdiutil create` 失败不再作为当前阻塞。
+- `@opencode-ai/sdk` / `opencode-ai` latest 复核仍为 `1.15.11`，当前锁定版本未漂移。
+- 仍 gated：channel auth readonly、真实 permission request 三态、workspace-write file edit、MCP tool-call、macOS x64 / Windows x64 / Linux packaged smoke。
+- 根 `README.md` / `AGENTS.md` 未获用户明确允许，继续不修改。
 
 ### 0.1 Phase 0 spike 后的修正结论
 

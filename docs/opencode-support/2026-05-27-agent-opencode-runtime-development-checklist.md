@@ -1,6 +1,6 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 7 已完成，Phase 8 真实验收与公开文档同步准备未开始
+状态：Phase 8 已完成本轮可验证范围，真实模型 gated 项按 skipped / `[!]` 记录
 日期：2026-05-28
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-28，Phase 7 完成，Phase 7 后恢复入口已固定到 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 或其后的文档同步提交
+更新时间：2026-05-28，Phase 8 完成本轮可验证范围，Phase 8 起始提交为 `992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`
 
 当前结论：
 
@@ -73,14 +73,17 @@
 - [x] Phase 7 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.49`，提升 `@codeinsights/electron` patch 版本到 `0.0.119`。
 - [x] Phase 7 已单独提交：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
 - [x] Phase 7 后状态同步已单独提交：`bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态`。
-- [!] Phase 7 多平台 packaged smoke 未在本机完成：macOS x64、Windows x64、Linux 留后续 CI / 对应平台验证；DMG artifact 生成仍在 `hdiutil create` 阶段失败。
-- [ ] Phase 8 真实使用验收与长期文档未开始。
+- [x] Phase 7 最新启动状态已固化：`992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`。
+- [!] Phase 7 多平台 packaged smoke 未在本机完成：macOS x64、Windows x64、Linux 留后续 CI / 对应平台验证。
+- [x] Phase 8 已复跑 macOS arm64 `dist:fast`，DMG artifact 本轮成功生成 `CodeInsights-0.0.119-arm64.dmg`，不再保留 `hdiutil create` 失败为当前阻塞。
+- [x] Phase 8 已完成无凭证 smoke、native auth readonly 真实 prompt、packaged smoke、packaged history reload、SDK/CLI latest 复核、故障排查材料和 release notes 草稿。
+- [!] Phase 8 gated 项仍未完成：channel auth readonly 缺少显式 `OPENCODE_SMOKE_API_KEY`；permission reject / once / session allow 缺少真实 permission request id 或诱导脚本；workspace-write file edit 和 MCP tool-call 缺少真实模型自动化验收。
 
 当前仓库状态要求：
 
 - 下次启动先运行 `git status --short` 和 `git log -5 --oneline`。
-- 预期最新开发基线为 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
-- 当前恢复入口要求历史中包含 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 和 Phase 7 开发基线 `3ec2ebec`；如果 HEAD 是其后的文档同步提交，以最新 HEAD 作为实际启动入口。
+- 预期最新开发基线为 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`，Phase 8 起始状态同步为 `992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`。
+- 当前恢复入口要求历史中包含 `992b560b`、`bcec66d6` 和 Phase 7 开发基线 `3ec2ebec`；如果 HEAD 是其后的 Phase 8 或文档同步提交，以最新 HEAD 作为实际启动入口。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -88,8 +91,8 @@
 
 下一步入口：
 
-1. 确认 Phase 7 状态同步提交 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 和 Phase 7 阶段提交 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证` 已经存在，历史包含 `0c84b37a`、`077fbc49`、`bb361a34`、`786b6485`、`b3e99265` 和 `647d3046`。
-2. 进入 Phase 8，开始真实使用验收、故障排查材料和发布准备。
+1. 确认 Phase 8 相关提交或其后的状态同步提交已在最新 HEAD，历史包含 `992b560b`、`bcec66d6`、`3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`、`b3e99265` 和 `647d3046`。
+2. 继续处理 Phase 8 gated 项：显式 channel auth、真实 permission request 三态、workspace-write file edit、MCP tool-call、多平台 packaged smoke。
 3. 不要在未经用户明确允许时修改根 `README.md` / `AGENTS.md`。
 
 ## 0.2 当前完成/未完成总览
@@ -109,7 +112,7 @@
 | Phase 5 | [x] | 真实 `opencode serve` 集成 |
 | Phase 6 | [x] | renderer 设置、权限交互、历史回放 |
 | Phase 7 | [x] | MCP、packaged binary、release readiness |
-| Phase 8 | [ ] | 真实验收、故障排查、公开文档同步准备 |
+| Phase 8 | [x] | 本轮可验证项完成；真实模型 / 多平台 gated 项保留 `[!]` |
 
 ## 0.3 阶段提交纪律
 
@@ -731,29 +734,29 @@ git diff --check -- apps/electron electron-builder.yml docs/opencode-support tas
 
 真实验收场景：
 
-- [ ] native auth readonly：使用本机 opencode auth，固定 prompt 返回短文本。
-- [ ] channel auth readonly：使用显式 `OPENCODE_SMOKE_API_KEY`，不读取 ambient key。
-- [ ] permission reject：诱导 bash / edit，拒绝后 run 继续或给出可解释失败。
-- [ ] permission once：允许 `git status` 只读命令。
-- [ ] session allow：仅当前 opencode session 生效，不写入长期规则。
-- [ ] file edit：临时目录中修改受控文件，Git refs / index 不变。
-- [ ] resume：同一 CodeInsights session 二次发送复用 opencode session id。
-- [ ] stop：长任务能停止，最终态为 `run_stopped`。
-- [ ] reload：app 重启后历史 transcript 不依赖 opencode server。
-- [ ] MCP config-only：无 secret MCP 出现在 `/mcp`。
-- [ ] MCP tool discovery：fake MCP tool list 可见。
-- [ ] MCP tool-call：真实模型调用 MCP tool，如无凭证则 `[!]`。
+- [x] native auth readonly：`OPENCODE_SMOKE_ENABLE_NATIVE=1 OPENCODE_SMOKE_ENABLE_MODEL=1` 真实 prompt 已 accepted；summary 不读取 auth 文件内容。
+- [!] channel auth readonly：缺少显式 `OPENCODE_SMOKE_API_KEY`，不读取 ambient key，按 skipped 记录。
+- [!] permission reject：真实 permission request id / 诱导脚本未提供；当前覆盖为 permission config + synthetic endpoint 404 + runtime 单测映射。
+- [!] permission once：真实 permission request id / 诱导脚本未提供；runtime 单测已覆盖 `once` 映射。
+- [!] session allow：真实 permission request id / 诱导脚本未提供；runtime 单测已覆盖 `always` 映射，语义仍限定当前 opencode session。
+- [!] file edit：缺少真实模型 workspace-write 自动化脚本；本轮未让 opencode 修改文件，只保留 Git guard / refs-index 后验为后续 gated 项。
+- [x] resume：no-reply same-session API smoke 复用同一 opencode session id；真实模型 transcript 仍属于 gated 增强。
+- [x] stop：`abort` smoke 通过 `/session/:id/abort`；adapter / runtime 单测覆盖 `run_stopped` 与迟到 success 不覆盖终态。
+- [x] reload：packaged app 首次打开 / 重开均可从 CodeInsights runtime event log 回放 opencode transcript，不依赖 opencode server。
+- [x] MCP config-only：无 secret MCP 出现在 resolved config summary，`configDirEnabled=false`。
+- [x] MCP tool discovery：fake MCP `/mcp` status 为 `connected`，summary 只输出 server name / status。
+- [!] MCP tool-call：真实模型调用 MCP tool 未执行；现有 smoke 已覆盖 fake MCP discovery，不覆盖模型主动 tool-call。
 
 文档任务：
 
-- [ ] 新增 `docs/opencode-support/README.md`。
-- [ ] 新增或更新 `docs/opencode-support/next-session-prompt.md`。
-- [ ] 在 checklist 中记录所有真实 smoke 结果。
-- [ ] 记录 SDK / CLI 升级兼容检查步骤。
-- [ ] 记录已知限制。
-- [ ] 记录故障排查。
-- [ ] 写发布说明草稿。
-- [ ] 如用户允许，同步根 `README.md` / `AGENTS.md`。
+- [x] 更新 `docs/opencode-support/README.md`。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`。
+- [x] 在 checklist 中记录所有真实 smoke 结果。
+- [x] 记录 SDK / CLI 升级兼容检查步骤。
+- [x] 记录已知限制。
+- [x] 记录故障排查。
+- [x] 写发布说明草稿。
+- [!] 如用户允许，同步根 `README.md` / `AGENTS.md`；本轮未获明确允许，继续不修改。
 
 验证：
 
@@ -766,15 +769,76 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 
 退出标准：
 
-- [ ] 真实验收场景结果全部记录为 passed / skipped / failed。
-- [ ] skipped 必须有 reason。
-- [ ] support README 和 next-session prompt 已同步最新 HEAD。
-- [ ] 根文档只有用户允许后才改。
-- [ ] Phase 8 单独提交完成。
+- [x] 真实验收场景结果全部记录为 passed / skipped / failed。
+- [x] skipped 必须有 reason。
+- [x] support README 和 next-session prompt 已同步到 Phase 8 当前结果；阶段提交后如需记录真实提交号，再做状态同步提交。
+- [x] 根文档只有用户允许后才改；本轮未修改根 `README.md` / `AGENTS.md`。
+- [x] Phase 8 单独提交完成；实际提交号以本轮提交结果和最终回复为准。
 
 回滚点：
 
 - 如果真实模型或凭证缺失，只标记 gated smoke skipped，不阻塞无凭证可验证项。
+
+### 10.1 Phase 8 执行记录
+
+- 分支：`agent-mode-opencode`
+- 起始提交：`992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`
+- 完成提交：待本轮 Phase 8 提交生成；提交后以下次状态同步记录为准
+- 改动范围：`docs/opencode-support/**`、`tasks/todo.md`
+- 验证结果：
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode` passed；binary/server/config/permission/abort/resume/mcp passed，readonly/channel/native 在默认无显式 env 时 skipped。
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 OPENCODE_SMOKE_ENABLE_NATIVE=1 OPENCODE_SMOKE_ENABLE_MODEL=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only native,readonly` passed；native auth 不读取 auth 文件内容，readonly prompt accepted。
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only packaged` passed；macOS arm64 app 使用 bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled，server health passed。
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui -- --runtime opencode` passed；first-open 和 reopen 均通过。
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 CSC_IDENTITY_AUTO_DISCOVERY=false bun run --filter='@codeinsights/electron' dist:fast` passed；本轮成功生成 `out/CodeInsights-0.0.119-arm64.dmg` 和 `.blockmap`。
+  - `npm view @opencode-ai/sdk version dependencies dist-tags --json` 与 `npm view opencode-ai version optionalDependencies bin dist-tags --json` 确认 latest 仍为 `1.15.11`，当前锁定版本未漂移。
+  - `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' typecheck` passed。
+  - `bun test apps/electron/src/main/lib/opencode-runtime/opencode-mcp-config.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-sdk-client.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-binary.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-runtimes/opencode-event-adapter.test.ts` passed，34 pass。
+- skipped / gated 项：
+  - channel auth readonly：`OPENCODE_SMOKE_API_KEY` 未设置；按项目规则不读取 ambient API key。
+  - permission reject / once / session allow：没有真实 permission request id 或诱导脚本；当前只验证 config、endpoint synthetic 404 和 runtime 映射单测。
+  - workspace-write file edit：没有真实模型 file edit smoke；本轮不让 opencode 修改用户仓库。
+  - MCP tool-call：没有真实模型 tool-call smoke；当前只验证 fake MCP discovery。
+  - macOS x64 / Windows x64 / Linux packaged smoke：当前机器为 macOS arm64，留 CI 或对应平台验证。
+- 已知限制：
+  - `OPENCODE_CONFIG_DIR` 默认继续关闭；显式启用仍保留 Phase 7 的 `The operation was aborted.` 结论。
+  - `readonly` smoke 当前验证 prompt accepted，不解析固定回复 token；后续如果要严格验收输出内容，需要补 message/result polling。
+  - channel auth smoke 当前仅能在缺少 `OPENCODE_SMOKE_API_KEY` 时记录 skipped；有 key 后还需要端到端 prompt 验证。
+  - permission 三态和 workspace-write 仍需要真实模型诱导脚本或 server-side permission request fixture。
+- 下阶段入口：处理 gated smoke 自动化、补多平台 packaged CI、按用户许可同步公开根文档。
+
+### 10.2 SDK / CLI 升级兼容记录
+
+- 当前锁定版本：`@opencode-ai/sdk@1.15.11`、`opencode-ai@1.15.11`。
+- 2026-05-28 `npm view` 结果：两个包的 `latest` 均仍为 `1.15.11`；`@opencode-ai/sdk` 依赖 `cross-spawn@7.0.6`；`opencode-ai` 的 bin 仍为 `opencode -> bin/opencode.exe`，optional package 列表仍包含 darwin / linux / windows 目标包。
+- 升级前复核：
+  - `npm view @opencode-ai/sdk version dependencies dist-tags --json`
+  - `npm view opencode-ai version optionalDependencies bin dist-tags --json`
+  - 检查 `apps/electron/package.json`、`electron-builder.yml` 和 binary resolver 的平台包列表。
+- 升级后验证：
+  - binary/server/config/permission/MCP smoke。
+  - packaged app bundled binary smoke。
+  - packaged reload UI smoke。
+  - typecheck 与 opencode runtime 聚焦单测。
+
+### 10.3 故障排查
+
+- `opencode_binary_missing`：检查 packaged app 的 `Contents/Resources/app/node_modules/opencode-ai`、`@opencode-ai/sdk` 和当前平台 `opencode-*` package 是否存在；开发模式确认 `bun install` 后 workspace package 可解析；packaged 模式默认不走 PATH fallback。
+- `opencode_server_auth_failed`：确认 server 只监听 `127.0.0.1` 且启用 Basic Auth；无认证 health 应返回 401，authenticated health 应返回 `{ healthy: true }`；不要把 `OPENCODE_SERVER_PASSWORD` 写入日志。
+- `opencode_provider_auth_missing`：native auth 失败时提示用户使用 opencode 原生命令登录；channel auth 失败时只检查显式 `OPENCODE_SMOKE_API_KEY` 或 CodeInsights channel 解密结果，不读取 ambient key。
+- `opencode_model_not_found`：检查 model 是否为 `provider/model` 形式；channel auth 要确认 provider id、model id、baseURL 与 opencode resolved provider summary 一致，但不要记录 resolved secret。
+- `opencode_mcp_auth_failed`：只输出 MCP server name、status 和 skip reason；remote header / bearer token 必须通过 `{env:VAR}` 间接注入，resolved config / `/mcp` 原文不得持久化。
+- `opencode_permission_stuck`：先确认 PermissionBanner 是否收到 `permission_requested` runtime event；缺少 preview 时只展示 reject / once；若 response 后 server 无终态，检查 permission id、session id 和 `response: once|always|reject` 映射。
+- `opencode_sse_interrupted`：检查 `/event` 首包 `server.connected`、adapter recovered metadata 和最终补读；stop 后迟到 idle / success 不能覆盖 `run_stopped`。
+- `opencode_config_dir_abort`：默认保持 `OPENCODE_CONFIG_DIR` 关闭；仅在 assets / MCP 需要时通过显式 env 开关验证，失败时回退 config-only 主路径。
+- `opencode_dmg_hdiutil_failed`：本轮 `dist:fast` 已成功生成 APFS DMG；如 CI 再现 `hdiutil create` 失败，先检查 runner 架构、磁盘空间、旧 DMG 残留和 Electron Builder APFS/HFS+ 分支。
+
+### 10.4 发布说明草稿
+
+- 新增：Agent 模式新增 opencode Coding Agent Runtime，支持 managed `opencode serve`、Basic Auth、本地 runtime event 回放、native/channel auth 配置、MCP secretless config/status 和 packaged bundled binary。
+- 验证：macOS arm64 dev smoke、native auth readonly prompt、packaged binary/server smoke、packaged history reload、DMG artifact、opencode runtime 聚焦单测和 Electron typecheck 均通过。
+- 安全：长期配置 secretless；MCP env/header 使用 `{env:VAR}` placeholder；summary 检查 API key、Basic Auth、MCP token 和 auth 文件内容不泄漏；server 固定 `127.0.0.1`。
+- 已知限制：channel auth prompt、permission 三态真实 request、workspace-write file edit、MCP tool-call、多平台 packaged smoke 仍为 gated；根 `README.md` / `AGENTS.md` 需用户允许后再公开同步。
 
 ## 11. Smoke 测试矩阵
 
@@ -786,18 +850,19 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 | config resolved | 否 | 否 | Phase 5 | [x] | secretless `/config` summary passed |
 | permission config | 否 | 否 | Phase 5 | [x] | permission policy passed；response endpoint synthetic 404 gated |
 | event subscribe | 否 | 否 | Phase 5 | [x] | SSE 首包 `server.connected` |
-| readonly native auth | 是 | native auth | Phase 8 | [ ] | |
-| readonly channel auth | 是 | `OPENCODE_SMOKE_API_KEY` | Phase 8 | [ ] | |
-| permission reject | 可能 | 可能 | Phase 8 | [ ] | |
-| permission once | 可能 | 可能 | Phase 8 | [ ] | |
-| abort | 可能 | 可能 | Phase 5 / 8 | [x] | Phase 5 no-reply abort smoke passed；真实模型场景留 Phase 8 |
-| resume | 是 | native/channel | Phase 8 | [x] | Phase 5 no-reply same-session smoke passed；真实模型 transcript 留 Phase 8 |
-| file edit guarded | 是 | native/channel | Phase 8 | [ ] | |
+| readonly native auth | 是 | native auth | Phase 8 | [x] | `OPENCODE_SMOKE_ENABLE_NATIVE=1 OPENCODE_SMOKE_ENABLE_MODEL=1 smoke:agent-opencode -- --only native,readonly` passed；prompt accepted |
+| readonly channel auth | 是 | `OPENCODE_SMOKE_API_KEY` | Phase 8 | [!] | `OPENCODE_SMOKE_API_KEY` 未设置；不读取 ambient key |
+| permission reject | 可能 | 可能 | Phase 8 | [!] | config + synthetic 404 + runtime 单测覆盖；真实 permission id / 诱导脚本未提供 |
+| permission once | 可能 | 可能 | Phase 8 | [!] | runtime 单测覆盖 `once` 映射；真实 permission id / 诱导脚本未提供 |
+| abort | 可能 | 可能 | Phase 5 / 8 | [x] | no-reply abort smoke passed；adapter / runtime 单测覆盖 `run_stopped` |
+| resume | 是 | native/channel | Phase 8 | [x] | no-reply same-session smoke passed；真实模型 transcript 仍为 gated 增强 |
+| file edit guarded | 是 | native/channel | Phase 8 | [!] | 缺少真实模型 workspace-write 自动化脚本；本轮不让 opencode 修改仓库 |
 | MCP config-only | 否 | 否 | Phase 7 | [x] | `smoke:agent-opencode -- --only mcp`，`configDirEnabled=false` |
 | MCP tool discovery | 否 | 否 | Phase 7 | [x] | fake stdio MCP `/mcp` status `connected` |
-| MCP tool-call | 是 | native/channel | Phase 8 | [ ] | |
-| packaged binary | 否 | 否 | Phase 7 | [x] | bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled |
-| packaged app reload | 否 | 否 | Phase 7 / 8 | [x] | `smoke:agent-history-reload-ui -- --runtime opencode` |
+| MCP tool-call | 是 | native/channel | Phase 8 | [!] | fake MCP discovery passed；真实模型 tool-call 未执行 |
+| packaged binary | 否 | 否 | Phase 7 / 8 | [x] | bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled |
+| packaged app reload | 否 | 否 | Phase 7 / 8 | [x] | `smoke:agent-history-reload-ui -- --runtime opencode` first-open / reopen passed |
+| DMG artifact | 否 | 否 | Phase 8 | [x] | `dist:fast` 成功生成 `CodeInsights-0.0.119-arm64.dmg` 和 `.blockmap` |
 
 Smoke summary 规则：
 
@@ -815,11 +880,11 @@ Smoke summary 规则：
 | channel key 被写入 opencode auth storage | Phase 2 / 5 | [x] | Phase 5 未使用 `auth.set()`，channel key 只走 env placeholder |
 | local MCP secret 不能 env placeholder | Phase 0 / 7 | [x] | Phase 7 local env / remote headers 均用 `{env:VAR}`；secret-like args / URL 跳过 |
 | opencode 默认 permission 偏宽 | Phase 2 / 5 | [x] | Phase 5 config smoke 已验证 CodeInsights permission policy |
-| Git 操作污染用户仓库 | Phase 5 / 8 | [ ] | Git guard + refs/index 后验 |
+| Git 操作污染用户仓库 | Phase 5 / 8 | [!] | Git guard + refs/index 后验保留；真实 opencode workspace-write file edit smoke 未执行 |
 | settings 改变污染旧会话 | Phase 1 / 4 | [x] | Phase 4 已覆盖 opencode runtimeSession snapshot resume，不回退当前 settings |
 | SSE 丢事件或重复事件 | Phase 3 / 5 | [x] | Phase 3 已完成 adapter 去重与 recovered 补读 metadata；Phase 5 真实 SSE subscribe smoke 通过 |
 | stop 后迟到 success | Phase 3 / 4 | [x] | Phase 3 adapter 与 Phase 4 orchestrator stop race 均已覆盖 |
-| packaged binary 缺失 | Phase 7 | [x] | electron-builder files + packaged smoke 已覆盖 macOS arm64 bundled binary；其他平台待 CI |
+| packaged binary 缺失 | Phase 7 / 8 | [x] | electron-builder files + packaged smoke 已覆盖 macOS arm64 bundled binary；其他平台待 CI |
 | server 进程泄漏 | Phase 2 / 5 | [x] | Phase 5 smoke 后确认无残留 opencode 进程；app quit cleanup + idle timeout 已接入 |
 | managed config 覆盖安全策略 | Phase 0 / 5 | [x] | Phase 5 secretless config smoke 已检测 resolved server / permission / share / autoupdate summary |
 | Renderer 过度分叉 | Phase 6 | [x] | Phase 6 复用 `RuntimeTranscript` 与 `PermissionBanner`，通过 runtime label / capabilities 区分 Codex 与 opencode |

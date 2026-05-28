@@ -1,5 +1,36 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-28 Agent opencode Runtime Phase 8 真实验收与发布准备计划
+
+范围确认：本轮进入 Phase 8，优先做真实使用验收、故障排查材料、release notes 草稿和公开文档同步准备。继续保持所有 diagnostics、smoke summary、event log 和文档示例 secretless；真实模型 / 凭证相关 smoke 只使用显式 native opencode auth 或 `OPENCODE_SMOKE_API_KEY`，不读取 ambient API key，不伪造通过；不修改根 `README.md` / `AGENTS.md`，除非用户明确允许。
+
+- [x] 读取项目指令、`tasks/lessons.md`，确认阶段提交、状态同步、secretless config、runtime binding、Git guard 和根文档修改边界。
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前工作树干净，最新提交为 `992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`，历史包含 `bcec66d6`、`3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`、`b3e99265`、`647d3046`。
+- [x] 读取 `docs/opencode-support/README.md`、development checklist、integration plan 和 `next-session-prompt.md`，确认 Phase 7 残余与 Phase 8 入口。
+- [x] 盘点现有 opencode smoke 脚本、环境变量和 summary 规则，明确哪些 Phase 8 场景已有自动化入口、哪些需要补脚本或只记录 gated / manual。
+- [x] 运行无凭证可验证项：binary/server/config/Basic Auth/SSE、MCP config-only/tool discovery、packaged history reload 或对应最小 smoke，确认 summary 不含 secret。
+- [x] 运行或记录真实模型 gated 验收：native auth readonly、channel auth readonly、permission reject/once/session allow、workspace-write/file edit、resume、stop、MCP tool-call；缺少凭证或模型时标记 skipped 并写明 reason。
+- [x] 复核 Git guard 与 file edit 验收边界：本轮不执行真实 workspace-write file edit，不让 opencode 修改用户仓库；该项按 gated 保留，后续需要临时目录自动化脚本和 refs/index 后验。
+- [x] 整理故障排查材料：binary missing、server auth failed、provider auth missing、model not found、MCP auth failed、permission stuck、SSE interrupted。
+- [x] 整理发布准备材料：多平台 packaged smoke 状态、DMG `hdiutil create` 残余判断、release notes 草稿、公开文档同步准备；根 `README.md` / `AGENTS.md` 仅列为待用户允许项。
+- [x] 更新 opencode development checklist、support README、next-session prompt 和本节 Review，记录所有 passed / skipped / failed 证据。
+- [x] 运行 Phase 8 验证命令：`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' typecheck`、必要聚焦测试 / smoke、`git diff --check -- docs/opencode-support tasks/todo.md`。
+- [x] 按阶段纪律单独提交 Phase 8 成果，提交信息用中文说明完成内容、验证结果、未包含或暂缓项；实际提交号以本轮提交结果和最终回复为准。
+
+## 2026-05-28 Agent opencode Runtime Phase 8 真实验收与发布准备 Review
+
+- 启动基线已确认：当前分支为 `agent-mode-opencode`，本轮开始时最新提交为 `992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`，历史包含 `bcec66d6`、`3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`、`b3e99265`、`647d3046`。
+- 已完成 smoke 入口盘点：`apps/electron/scripts/agent-opencode-smoke.ts` 支持 binary/server/config/permission/abort/resume/MCP/packaged/readonly/channel/native；`agent-history-reload-ui-smoke.ts` 支持 packaged reload；permission 三态、workspace-write file edit、MCP tool-call 仍需要后续真实模型或诱导脚本。
+- 默认 opencode smoke 通过：binary、server/Basic Auth、config、permission config、abort、resume、MCP config-only/tool discovery 均 passed；readonly/channel/native 在未设置显式 env 时按 reason skipped，summary 未包含 secret。
+- native auth readonly 真实 prompt 通过：`OPENCODE_SMOKE_ENABLE_NATIVE=1 OPENCODE_SMOKE_ENABLE_MODEL=1` 时 readonly prompt accepted，native smoke 只记录 `source: native`，不读取 auth 文件内容。
+- packaged 验证通过：macOS arm64 packaged app 使用 bundled `opencode-darwin-arm64/bin/opencode`，PATH fallback disabled，server health passed；packaged history reload first-open / reopen 均 passed。
+- DMG 残余已复核：本轮 `dist:fast` 成功生成 `out/CodeInsights-0.0.119-arm64.dmg` 和 `.blockmap`；此前 `hdiutil create` 失败不再作为当前阻塞。
+- SDK / CLI 复核完成：`@opencode-ai/sdk` 和 `opencode-ai` 的 npm `latest` 仍为 `1.15.11`，当前锁定版本未漂移。
+- gated 项保持诚实记录：channel auth readonly 缺少 `OPENCODE_SMOKE_API_KEY`；permission reject / once / session allow 缺少真实 permission request id 或诱导脚本；workspace-write file edit 和 MCP tool-call 未执行；macOS x64 / Windows x64 / Linux packaged smoke 留 CI / 对应平台验证。
+- 已更新 `docs/opencode-support/2026-05-27-agent-opencode-runtime-development-checklist.md`、integration plan、support README 和 next-session prompt：记录 smoke 结果、故障排查、release notes 草稿、DMG 最新判断和后续 gated 项。
+- 保持边界：未修改根 `README.md` / `AGENTS.md`，未提交 `apps/electron/out/` 打包产物，未读取 ambient API key，未让 opencode 修改用户仓库。
+- 验证通过：`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' typecheck`；opencode runtime 聚焦单测 34 pass；`git diff --check -- docs/opencode-support tasks/todo.md`；opencode support Markdown code fence 校验。
+
 ## 2026-05-28 Agent opencode Runtime Phase 7 最新开发状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-7 已完成、Phase 8 未开始、Phase 7 残余验证项仍未完成；不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不进入真实模型验收、故障排查实战或 release notes。
