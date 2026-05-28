@@ -14,6 +14,7 @@ import type {
   SandboxMode,
   WebSearchMode,
 } from '@openai/codex-sdk'
+import type { OpencodeMcpConfigBuildResult } from '../opencode-runtime'
 
 export type CodingAgentRuntimeCapability =
   | 'streamEvents'
@@ -70,6 +71,7 @@ export interface OpencodeCodingAgentRuntimeRunInput extends CodingAgentRuntimeRu
   runtimeConfigHash?: string
   authSourceHash?: string
   permissionPolicyHash?: string
+  opencodeMcp?: OpencodeMcpConfigBuildResult
 }
 
 export interface CodingAgentRuntimeRunResult {

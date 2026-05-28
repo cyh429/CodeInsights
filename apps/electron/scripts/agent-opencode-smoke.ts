@@ -1,11 +1,14 @@
-import { mkdtemp, mkdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
+import { dirname, join, resolve } from 'node:path'
 import { homedir, tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 import {
   applyOpencodeRuntimeConfigEnv,
   buildOpencodeBaseEnv,
   buildOpencodeConfig,
   buildOpencodeMcpConfigFromWorkspace,
+  createOpencodeMcpStatusSummary,
   createOpencodeAuthState,
   createOpencodeClientWrapper,
   createOpencodeServerKey,
@@ -15,8 +18,10 @@ import {
   OpencodeServerManager,
   redactSecretText,
   resolveOpencodeCliPath,
+  resolveOpencodePlatformPackage,
   writeOpencodeRuntimeConfig,
   type OpencodeClientWrapper,
+  type OpencodeMcpConfigBuildResult,
   type OpencodeServerEntry,
 } from '../src/main/lib/opencode-runtime'
 
@@ -27,6 +32,8 @@ type SmokeName =
   | 'permission'
   | 'abort'
   | 'resume'
+  | 'mcp'
+  | 'packaged'
   | 'readonly'
   | 'channel'
   | 'native'
@@ -37,6 +44,7 @@ interface SmokeOptions {
   only: Set<SmokeName>
   strict: boolean
   keepArtifacts: boolean
+  packagedAppPath?: string
 }
 
 interface SmokeResult {
@@ -66,16 +74,22 @@ interface SmokeServerLease {
   configSummary: Record<string, unknown>
 }
 
-const ALL_SMOKES: SmokeName[] = [
+const DEFAULT_SMOKES: SmokeName[] = [
   'binary',
   'server',
   'config',
   'permission',
   'abort',
   'resume',
+  'mcp',
   'readonly',
   'channel',
   'native',
+]
+
+const SUPPORTED_SMOKES: SmokeName[] = [
+  ...DEFAULT_SMOKES,
+  'packaged',
 ]
 
 const OPENCODE_SDK_VERSION = '1.15.11'
@@ -111,6 +125,7 @@ export function parseOptions(args: string[]): SmokeOptions {
   const only = new Set<SmokeName>()
   let strict = false
   let keepArtifacts = false
+  let packagedAppPath: string | undefined
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index]
@@ -129,29 +144,40 @@ export function parseOptions(args: string[]): SmokeOptions {
     }
     if (arg?.startsWith('--only=')) {
       for (const name of parseSmokeNames(arg.slice('--only='.length))) only.add(name)
+      continue
+    }
+    if (arg === '--app') {
+      const value = args[index + 1]
+      if (value) packagedAppPath = resolve(value)
+      index += 1
+      continue
+    }
+    if (arg?.startsWith('--app=')) {
+      packagedAppPath = resolve(arg.slice('--app='.length))
     }
   }
 
   return {
-    only: only.size > 0 ? only : new Set(ALL_SMOKES),
+    only: only.size > 0 ? only : new Set(DEFAULT_SMOKES),
     strict,
     keepArtifacts,
+    ...(packagedAppPath ? { packagedAppPath } : {}),
   }
 }
 
 async function runSmoke(options: SmokeOptions, ctx: SmokeContext): Promise<SmokeResult[]> {
   const results: SmokeResult[] = []
-  for (const name of ALL_SMOKES) {
+  for (const name of SUPPORTED_SMOKES) {
     if (!options.only.has(name)) continue
-    results.push(await runSmokeStep(name, ctx))
+    results.push(await runSmokeStep(name, ctx, options))
   }
   return results
 }
 
-async function runSmokeStep(name: SmokeName, ctx: SmokeContext): Promise<SmokeResult> {
+async function runSmokeStep(name: SmokeName, ctx: SmokeContext, options: SmokeOptions): Promise<SmokeResult> {
   const startedAt = Date.now()
   try {
-    const details = await runNamedSmoke(name, ctx)
+    const details = await runNamedSmoke(name, ctx, options)
     return {
       name,
       status: details?.skipped ? 'skipped' : 'passed',
@@ -172,6 +198,7 @@ async function runSmokeStep(name: SmokeName, ctx: SmokeContext): Promise<SmokeRe
 async function runNamedSmoke(
   name: SmokeName,
   ctx: SmokeContext,
+  options: SmokeOptions,
 ): Promise<{ skipped?: boolean; reason?: string; details?: Record<string, unknown> } | undefined> {
   switch (name) {
     case 'binary':
@@ -186,6 +213,10 @@ async function runNamedSmoke(
       return { details: await runAbortSmoke(ctx) }
     case 'resume':
       return { details: await runResumeSmoke(ctx) }
+    case 'mcp':
+      return { details: await runMcpSmoke(ctx) }
+    case 'packaged':
+      return { details: await runPackagedSmoke(ctx, options) }
     case 'readonly':
       return await runReadonlySmoke(ctx)
     case 'channel':
@@ -396,6 +427,91 @@ async function runResumeSmoke(ctx: SmokeContext): Promise<Record<string, unknown
   }
 }
 
+async function runMcpSmoke(ctx: SmokeContext): Promise<Record<string, unknown>> {
+  const fakeMcpPath = await writeFakeMcpServer(ctx)
+  const mcp = buildOpencodeMcpConfigFromWorkspace({
+    servers: {
+      fake_tools: {
+        type: 'stdio',
+        command: process.execPath,
+        args: [fakeMcpPath],
+        env: { CI_MCP_TOKEN: 'codeinsights-mcp-secret' },
+        timeout: 5,
+        enabled: true,
+      },
+    },
+  })
+  const serializedConfig = JSON.stringify(mcp.config)
+  if (serializedConfig.includes('codeinsights-mcp-secret')) {
+    throw new Error('MCP config 泄露了真实 env secret')
+  }
+
+  const lease = await ensureSmokeServer(ctx, ctx.manager, {
+    mcp,
+    includeConfigDir: process.env.OPENCODE_SMOKE_ENABLE_CONFIG_DIR === '1',
+  })
+  try {
+    const config = await lease.client.getConfigSummary()
+    if (!config.mcp.serverNames.includes('fake_tools')) {
+      throw new Error('opencode resolved config 未包含 fake_tools MCP')
+    }
+    const status = await waitForMcpStatus(lease.client, 'fake_tools')
+    return {
+      configDirEnabled: process.env.OPENCODE_SMOKE_ENABLE_CONFIG_DIR === '1',
+      configMcp: config.mcp,
+      status,
+      skipped: mcp.skipped,
+    }
+  } finally {
+    await ctx.manager.stop(lease.entry.key)
+  }
+}
+
+async function runPackagedSmoke(ctx: SmokeContext, options: SmokeOptions): Promise<Record<string, unknown>> {
+  const appPath = options.packagedAppPath ?? defaultPackagedAppPath()
+  const appRoot = resolvePackagedAppRoot(appPath)
+  const packagePresence = verifyPackagedOpencodePackages(appRoot)
+  const binary = resolveOpencodeCliPath({
+    isPackaged: true,
+    allowSystemPathFallback: false,
+    moduleResolve: createPackagedModuleResolve(appRoot),
+    env: { PATH: join(ctx.rootDir, 'path-decoy') },
+  })
+  if (binary.source !== 'bundled') {
+    throw new Error(`packaged opencode binary source 不是 bundled: ${binary.source}`)
+  }
+  if (!binary.path.startsWith(appRoot)) {
+    throw new Error(`packaged opencode binary 不在 app resources 内: ${binary.path}`)
+  }
+  if (!existsSync(binary.path)) {
+    throw new Error(`packaged opencode binary 不存在: ${binary.path}`)
+  }
+  const version = await detectOpencodeBinaryVersion(binary)
+  ctx.binary = {
+    path: redactHomePath(version.path),
+    source: version.source,
+    version: version.version,
+  }
+
+  const manager = new OpencodeServerManager({ idleTimeoutMs: 0, healthTimeoutMs: 20_000, authMode: 'basic' })
+  const lease = await ensureSmokeServer(ctx, manager, { binaryPath: version.path })
+  try {
+    const health = await lease.client.getHealth()
+    return {
+      appRoot: redactHomePath(appRoot),
+      binary: ctx.binary,
+      packagePresence,
+      server: {
+        healthy: health.healthy,
+        version: health.version,
+      },
+      pathFallback: 'disabled',
+    }
+  } finally {
+    await manager.stop(lease.entry.key)
+  }
+}
+
 async function runReadonlySmoke(
   ctx: SmokeContext,
 ): Promise<{ skipped?: boolean; reason?: string; details?: Record<string, unknown> }> {
@@ -453,18 +569,24 @@ async function runNativeAuthSmoke(
 async function ensureSmokeServer(
   ctx: SmokeContext,
   manager: OpencodeServerManager = ctx.manager,
+  options: {
+    mcp?: OpencodeMcpConfigBuildResult
+    includeConfigDir?: boolean
+    binaryPath?: string
+  } = {},
 ): Promise<SmokeServerLease> {
-  const binary = resolveOpencodeCliPath({
-    allowSystemPathFallback: process.env.CODEINSIGHTS_AGENT_OPENCODE_ALLOW_SYSTEM_PATH === '1',
-  })
-  const version = await detectOpencodeBinaryVersion(binary)
+  const version = options.binaryPath
+    ? await detectOpencodeBinaryVersion({ path: options.binaryPath, source: 'bundled' })
+    : await detectOpencodeBinaryVersion(resolveOpencodeCliPath({
+      allowSystemPathFallback: process.env.CODEINSIGHTS_AGENT_OPENCODE_ALLOW_SYSTEM_PATH === '1',
+    }))
   ctx.binary = {
     path: redactHomePath(version.path),
     source: version.source,
     version: version.version,
   }
   const auth = createOpencodeAuthState({ source: 'native', modelId: 'anthropic/claude-sonnet-4-5' })
-  const mcp = buildOpencodeMcpConfigFromWorkspace({ servers: {} })
+  const mcp = options.mcp ?? buildOpencodeMcpConfigFromWorkspace({ servers: {} })
   const built = buildOpencodeConfig({
     modelId: 'anthropic/claude-sonnet-4-5',
     agentName: 'build',
@@ -485,7 +607,7 @@ async function ensureSmokeServer(
     configPath: written.configPath,
     configDir: written.configDir,
     inlinePolicyContent: written.inlinePolicyContent,
-    includeConfigDir: process.env.OPENCODE_SMOKE_ENABLE_CONFIG_DIR === '1',
+    includeConfigDir: options.includeConfigDir ?? process.env.OPENCODE_SMOKE_ENABLE_CONFIG_DIR === '1',
   })
   const key = createOpencodeServerKey({
     workspaceId: 'smoke',
@@ -498,6 +620,7 @@ async function ensureSmokeServer(
     binaryPath: version.path,
     cwd: ctx.workspaceDir,
     env,
+    mcp: createOpencodeMcpStatusSummary(mcp.config, mcp.skipped),
   })
   return {
     entry,
@@ -531,6 +654,110 @@ async function readEventAfterTrigger(
   }
 }
 
+async function waitForMcpStatus(
+  client: OpencodeClientWrapper,
+  expectedName: string,
+): Promise<Record<string, unknown>> {
+  const deadline = Date.now() + 10_000
+  let latest: Awaited<ReturnType<OpencodeClientWrapper['getMcpStatusSummary']>> | undefined
+  while (Date.now() < deadline) {
+    latest = await client.getMcpStatusSummary()
+    if (latest.serverNames.includes(expectedName) && latest.statuses?.[expectedName] !== undefined) {
+      return latest as unknown as Record<string, unknown>
+    }
+    await new Promise((resolvePromise) => setTimeout(resolvePromise, 250))
+  }
+  if (latest?.serverNames.includes(expectedName)) {
+    return latest as unknown as Record<string, unknown>
+  }
+  throw new Error(`等待 opencode /mcp 状态超时: ${expectedName}`)
+}
+
+async function writeFakeMcpServer(ctx: SmokeContext): Promise<string> {
+  const serverPath = join(ctx.rootDir, 'fake-mcp-server.mjs')
+  await writeFile(serverPath, [
+    'process.stdin.setEncoding("utf-8")',
+    'let buffer = ""',
+    'function send(message) { process.stdout.write(`${JSON.stringify(message)}\\n`) }',
+    'process.stdin.on("data", (chunk) => {',
+    '  buffer += chunk',
+    '  while (buffer.includes("\\n")) {',
+    '    const index = buffer.indexOf("\\n")',
+    '    const line = buffer.slice(0, index).trim()',
+    '    buffer = buffer.slice(index + 1)',
+    '    if (!line) continue',
+    '    const message = JSON.parse(line)',
+    '    if (message.method === "initialize") {',
+    '      send({ jsonrpc: "2.0", id: message.id, result: { protocolVersion: message.params?.protocolVersion ?? "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "codeinsights-fake-mcp", version: "1.0.0" } } })',
+    '    } else if (message.method === "tools/list") {',
+    '      send({ jsonrpc: "2.0", id: message.id, result: { tools: [{ name: "echo", description: "Echo text for CodeInsights smoke", inputSchema: { type: "object", properties: { text: { type: "string" } } } }] } })',
+    '    } else if (message.method === "tools/call") {',
+    '      send({ jsonrpc: "2.0", id: message.id, result: { content: [{ type: "text", text: "ok" }] } })',
+    '    } else if (message.id !== undefined) {',
+    '      send({ jsonrpc: "2.0", id: message.id, result: {} })',
+    '    }',
+    '  }',
+    '})',
+    'setInterval(() => {}, 1000)',
+    '',
+  ].join('\n'), 'utf-8')
+  return serverPath
+}
+
+function defaultPackagedAppPath(): string {
+  const scriptDir = dirname(fileURLToPath(import.meta.url))
+  const electronRoot = dirname(scriptDir)
+  if (process.platform === 'darwin') {
+    const archDir = process.arch === 'arm64' ? 'mac-arm64' : 'mac'
+    return join(electronRoot, 'out', archDir, 'CodeInsights.app', 'Contents', 'MacOS', 'CodeInsights')
+  }
+  if (process.platform === 'win32') {
+    return join(electronRoot, 'out', 'win-unpacked', 'CodeInsights.exe')
+  }
+  return join(electronRoot, 'out', 'linux-unpacked', 'CodeInsights')
+}
+
+function resolvePackagedAppRoot(appPath: string): string {
+  const resolved = resolve(appPath)
+  if (process.platform === 'darwin') {
+    const marker = `${join('Contents', 'MacOS')}`
+    const markerIndex = resolved.indexOf(marker)
+    if (markerIndex >= 0) {
+      const bundleRoot = resolved.slice(0, markerIndex)
+      return join(bundleRoot, 'Contents', 'Resources', 'app')
+    }
+    if (resolved.endsWith('.app')) {
+      return join(resolved, 'Contents', 'Resources', 'app')
+    }
+  }
+  return join(dirname(resolved), 'resources', 'app')
+}
+
+function verifyPackagedOpencodePackages(appRoot: string): Record<string, unknown> {
+  const packages = [
+    '@opencode-ai/sdk',
+    'opencode-ai',
+    resolveOpencodePlatformPackage(),
+  ]
+  const presence: Record<string, string> = {}
+  for (const packageName of packages) {
+    const packageJsonPath = join(appRoot, 'node_modules', packageName, 'package.json')
+    if (!existsSync(packageJsonPath)) {
+      throw new Error(`packaged app 缺少 opencode package: ${packageName}`)
+    }
+    presence[packageName] = redactHomePath(packageJsonPath)
+  }
+  return presence
+}
+
+function createPackagedModuleResolve(appRoot: string): (specifier: string) => string {
+  return (specifier: string): string => {
+    const packageJsonPath = join(appRoot, 'node_modules', specifier)
+    if (existsSync(packageJsonPath)) return packageJsonPath
+    throw new Error(`packaged module missing: ${specifier}`)
+  }
+}
+
 function createSummary(ctx: SmokeContext, results: SmokeResult[]): Record<string, unknown> {
   return {
     tool: 'agent-opencode-smoke',
@@ -551,7 +778,7 @@ function parseSmokeNames(value: string): SmokeName[] {
 }
 
 function isSmokeName(value: string): value is SmokeName {
-  return (ALL_SMOKES as string[]).includes(value)
+  return (SUPPORTED_SMOKES as string[]).includes(value)
 }
 
 function assertEqual(actual: unknown, expected: unknown, label: string): void {
@@ -591,6 +818,7 @@ function assertSecretlessSummary(summary: string): void {
     process.env.OPENCODE_SMOKE_API_KEY,
     process.env.OPENCODE_SERVER_PASSWORD,
     process.env.CODEINSIGHTS_OPENCODE_CHANNEL_API_KEY,
+    'codeinsights-mcp-secret',
   ].filter((value): value is string => Boolean(value && value.length >= 4))
   for (const value of forbidden) {
     if (summary.includes(value)) {

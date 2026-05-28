@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import type { WorkspaceMcpConfig } from '@codeinsights/shared'
-import { buildOpencodeMcpConfigFromWorkspace, sanitizeOpencodeMcpName } from './opencode-mcp-config'
+import {
+  buildOpencodeMcpConfigFromWorkspace,
+  createOpencodeMcpStatusSummary,
+  sanitizeOpencodeMcpName,
+} from './opencode-mcp-config'
 
 describe('opencode-mcp-config', () => {
   test('将 stdio MCP 映射为 local config，env 使用 placeholder 且不泄露 secret', () => {
@@ -24,7 +28,7 @@ describe('opencode-mcp-config', () => {
       type: 'local',
       command: ['node', 'server.mjs'],
       enabled: true,
-      timeout: 12,
+      timeout: 12000,
       environment: {
         DOCS_TOKEN: `{env:${Object.keys(result.env)[0]}}`,
       },
@@ -50,6 +54,34 @@ describe('opencode-mcp-config', () => {
     expect(headerValue).toMatch(/^Bearer \{env:CODEINSIGHTS_OPENCODE_MCP_GITHUB_HEADER_AUTHORIZATION_[A-F0-9]{8}\}$/)
     expect(Object.values(result.env)).toEqual(['gh-secret'])
     expect(JSON.stringify(result.config)).not.toContain('gh-secret')
+  })
+
+  test('跳过会把 secret 写入 opencode config 的 args 与 URL', () => {
+    const result = buildOpencodeMcpConfigFromWorkspace({
+      servers: {
+        cli: {
+          type: 'stdio',
+          command: 'node',
+          args: ['server.mjs', '--api-key=sk-secret-token'],
+          enabled: true,
+        },
+        remote: {
+          type: 'http',
+          url: 'https://user:pass@mcp.example.test/mcp?token=secret-token',
+          enabled: true,
+        },
+      },
+    })
+
+    expect(result.serverCount).toBe(0)
+    expect(result.config.mcp).toEqual({})
+    expect(result.env).toEqual({})
+    expect(result.skipped).toEqual([
+      { name: 'cli', reason: 'unsafe_args' },
+      { name: 'remote', reason: 'unsafe_url' },
+    ])
+    expect(JSON.stringify(result.config)).not.toContain('secret-token')
+    expect(JSON.stringify(result.config)).not.toContain('sk-secret-token')
   })
 
   test('清理 MCP name 并检测冲突', () => {
@@ -82,5 +114,43 @@ describe('opencode-mcp-config', () => {
       { name: 'git', reason: 'reserved_env_name' },
       { name: 'proxy', reason: 'reserved_env_name' },
     ])
+  })
+
+  test('生成 MCP 状态摘要时只包含名称、状态和 skip reason', () => {
+    const result = buildOpencodeMcpConfigFromWorkspace({
+      servers: {
+        docs: {
+          type: 'stdio',
+          command: 'node',
+          env: { DOCS_TOKEN: 'secret-token' },
+          enabled: true,
+        },
+        bad: {
+          type: 'stdio',
+          command: 'node',
+          env: { PATH: '/tmp/override' },
+          enabled: true,
+        },
+      },
+    })
+
+    const summary = createOpencodeMcpStatusSummary(result.config, result.skipped, {
+      docs: { status: 'connected' },
+      remote: { status: 'needs_auth', error: 'Bearer secret-token' },
+    })
+
+    expect(summary).toEqual({
+      configuredCount: 1,
+      statusCount: 2,
+      connectedCount: 1,
+      skippedCount: 1,
+      serverNames: ['docs', 'remote'],
+      statuses: {
+        docs: 'connected',
+        remote: 'needs_auth',
+      },
+      skipped: [{ name: 'bad', reason: 'reserved_env_name' }],
+    })
+    expect(JSON.stringify(summary)).not.toContain('secret-token')
   })
 })

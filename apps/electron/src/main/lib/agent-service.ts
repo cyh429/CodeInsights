@@ -24,6 +24,7 @@ import type {
   AgentStreamEvent,
   AgentStreamPayload,
   AgentRuntimeCapabilitiesDiagnostic,
+  AgentOpencodeMcpStatusSummary,
   AgentOpencodeModelRefreshResult,
   AgentOpencodeServerStatus,
   AgentQueueMessageInput,
@@ -316,6 +317,7 @@ export function getAgentOpencodeServerStatusDiagnostic(): AgentOpencodeServerSta
       state: status.state === 'idle' ? 'not_started' : status.state,
       version: status.version,
       endpoint: status.endpoint,
+      ...(status.mcp ? { mcp: toAgentOpencodeMcpStatusSummary(status.mcp) } : {}),
       message: status.lastError
         ? `opencode server 最近错误: ${status.lastError}`
         : 'opencode server 状态来自当前 runtime manager；诊断不读取 resolved provider/config 原文。',
@@ -334,6 +336,40 @@ export function getAgentOpencodeServerStatusDiagnostic(): AgentOpencodeServerSta
       : 'opencode runtime feature flag 未启用。',
     updatedAt: new Date().toISOString(),
   }
+}
+
+function toAgentOpencodeMcpStatusSummary(status: {
+  configuredCount: number
+  statusCount?: number
+  connectedCount?: number
+  skippedCount: number
+  serverNames: string[]
+  statuses?: Record<string, string>
+  skipped?: Array<{ name: string; reason: string }>
+}): AgentOpencodeMcpStatusSummary {
+  return {
+    configuredCount: status.configuredCount,
+    ...(status.statusCount !== undefined ? { statusCount: status.statusCount } : {}),
+    ...(status.connectedCount !== undefined ? { connectedCount: status.connectedCount } : {}),
+    skippedCount: status.skippedCount,
+    serverNames: status.serverNames,
+    ...(status.statuses ? { statuses: normalizeOpencodeMcpStatuses(status.statuses) } : {}),
+    ...(status.skipped ? { skipped: status.skipped } : {}),
+  }
+}
+
+function normalizeOpencodeMcpStatuses(statuses: Record<string, string>): AgentOpencodeMcpStatusSummary['statuses'] {
+  const next: NonNullable<AgentOpencodeMcpStatusSummary['statuses']> = {}
+  for (const [name, status] of Object.entries(statuses)) {
+    next[name] = status === 'connected'
+      || status === 'disabled'
+      || status === 'failed'
+      || status === 'needs_auth'
+      || status === 'needs_client_registration'
+      ? status
+      : 'unknown'
+  }
+  return next
 }
 
 export function refreshAgentOpencodeModelsDiagnostic(): AgentOpencodeModelRefreshResult {

@@ -1527,10 +1527,10 @@ function AgentRuntimeSettings(): React.ReactElement {
             <SettingsRow
               label="MCP 摘要"
               icon={<Plug size={18} className="text-muted-foreground" />}
-              description="opencode /mcp 摘要保留到 Phase 7，本阶段不读取或展示 MCP secret 相关响应"
+              description={formatOpencodeMcpSummary(opencodeServerStatus)}
             >
               <span className="rounded-full border border-border-subtle bg-surface-muted px-2.5 py-1 text-xs text-text-secondary">
-                未接入
+                {formatOpencodeMcpBadge(opencodeServerStatus)}
               </span>
             </SettingsRow>
           </>
@@ -1574,6 +1574,27 @@ function formatOpencodeServerState(state: AgentOpencodeServerStatus['state'] | u
   if (state === 'degraded') return '降级'
   if (state === 'not_configured') return '未配置'
   return '未启动'
+}
+
+function formatOpencodeMcpSummary(status: AgentOpencodeServerStatus | null): string {
+  const mcp = status?.mcp
+  if (!mcp) return '尚无 opencode MCP 状态；server 会在会话运行时按需刷新摘要'
+  const statusPart = mcp.statusCount !== undefined
+    ? `，/mcp 返回 ${mcp.statusCount} 个状态`
+    : ''
+  const connectedPart = mcp.connectedCount !== undefined
+    ? `，已连接 ${mcp.connectedCount} 个`
+    : ''
+  const skippedPart = mcp.skippedCount > 0 ? `，跳过 ${mcp.skippedCount} 个` : ''
+  const names = mcp.serverNames.length > 0 ? `：${mcp.serverNames.join(', ')}` : ''
+  return `已配置 ${mcp.configuredCount} 个${statusPart}${connectedPart}${skippedPart}${names}`
+}
+
+function formatOpencodeMcpBadge(status: AgentOpencodeServerStatus | null): string {
+  const mcp = status?.mcp
+  if (!mcp) return '未启动'
+  if (mcp.connectedCount !== undefined) return `${mcp.connectedCount}/${mcp.statusCount ?? mcp.configuredCount}`
+  return `${mcp.configuredCount} 个`
 }
 
 /** 内置 Agent 工具状态展示 */

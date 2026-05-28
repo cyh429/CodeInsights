@@ -9,6 +9,8 @@ export type OpencodeMcpSkipReason =
   | 'invalid_env_name'
   | 'reserved_env_name'
   | 'env_name_conflict'
+  | 'unsafe_args'
+  | 'unsafe_url'
   | 'unsupported_transport'
 
 export interface OpencodeMcpConfigSkip {
@@ -46,6 +48,24 @@ export interface OpencodeMcpConfigBuildResult {
   env: Record<string, string>
   serverCount: number
   skipped: OpencodeMcpConfigSkip[]
+}
+
+export type OpencodeMcpRuntimeStatus =
+  | 'connected'
+  | 'disabled'
+  | 'failed'
+  | 'needs_auth'
+  | 'needs_client_registration'
+  | 'unknown'
+
+export interface OpencodeMcpStatusSummary {
+  configuredCount: number
+  statusCount?: number
+  connectedCount?: number
+  skippedCount: number
+  serverNames: string[]
+  statuses?: Record<string, OpencodeMcpRuntimeStatus>
+  skipped?: OpencodeMcpConfigSkip[]
 }
 
 const ENV_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/
@@ -97,6 +117,37 @@ export function sanitizeOpencodeMcpName(name: string): string {
   return sanitized || 'mcp_server'
 }
 
+export function createOpencodeMcpStatusSummary(
+  config: OpencodeMcpConfig,
+  skipped: OpencodeMcpConfigSkip[] = [],
+  runtimeStatus?: unknown,
+): OpencodeMcpStatusSummary {
+  const configuredNames = Object.keys(config.mcp).sort()
+  const statuses = summarizeOpencodeMcpStatusResponse(runtimeStatus)
+  const statusNames = Object.keys(statuses).sort()
+  const serverNames = [...new Set([...configuredNames, ...statusNames])].sort()
+  const connectedCount = Object.values(statuses).filter((status) => status === 'connected').length
+
+  return {
+    configuredCount: configuredNames.length,
+    ...(statusNames.length > 0 ? { statusCount: statusNames.length } : {}),
+    ...(statusNames.length > 0 ? { connectedCount } : {}),
+    skippedCount: skipped.length,
+    serverNames,
+    ...(statusNames.length > 0 ? { statuses } : {}),
+    ...(skipped.length > 0 ? { skipped } : {}),
+  }
+}
+
+export function summarizeOpencodeMcpStatusResponse(value: unknown): Record<string, OpencodeMcpRuntimeStatus> {
+  const record = toRecord(value)
+  const statuses: Record<string, OpencodeMcpRuntimeStatus> = {}
+  for (const [name, item] of Object.entries(record)) {
+    statuses[name] = normalizeMcpRuntimeStatus(toRecord(item).status)
+  }
+  return statuses
+}
+
 function buildOpencodeMcpServerConfig(
   configName: string,
   entry: McpServerEntry,
@@ -106,6 +157,7 @@ function buildOpencodeMcpServerConfig(
     if (!command) return { reason: 'missing_command' }
     const envValidation = validateLocalMcpEnv(entry.env)
     if (envValidation) return { reason: envValidation }
+    if (hasSecretLikeMcpArgs(entry.args)) return { reason: 'unsafe_args' }
 
     const env: Record<string, string> = {}
     const environment: Record<string, string> = {}
@@ -121,7 +173,7 @@ function buildOpencodeMcpServerConfig(
         type: 'local',
         command: [command, ...(entry.args ?? [])],
         enabled: true,
-        ...(entry.timeout && entry.timeout > 0 ? { timeout: entry.timeout } : {}),
+        ...(entry.timeout && entry.timeout > 0 ? { timeout: entry.timeout * 1000 } : {}),
         ...(Object.keys(environment).length > 0 ? { environment } : {}),
       },
     }
@@ -130,6 +182,7 @@ function buildOpencodeMcpServerConfig(
   if (entry.type === 'http' || entry.type === 'sse') {
     const url = entry.url?.trim()
     if (!url) return { reason: 'missing_url' }
+    if (hasSecretLikeMcpUrl(url)) return { reason: 'unsafe_url' }
     const env: Record<string, string> = {}
     const headers: Record<string, string> = {}
     for (const [headerName, headerValue] of Object.entries(entry.headers ?? {})) {
@@ -145,13 +198,65 @@ function buildOpencodeMcpServerConfig(
         type: 'remote',
         url,
         enabled: true,
-        ...(entry.timeout && entry.timeout > 0 ? { timeout: entry.timeout } : {}),
+        ...(entry.timeout && entry.timeout > 0 ? { timeout: entry.timeout * 1000 } : {}),
         ...(Object.keys(headers).length > 0 ? { headers } : {}),
       },
     }
   }
 
   return { reason: 'unsupported_transport' }
+}
+
+function hasSecretLikeMcpArgs(args: string[] | undefined): boolean {
+  const secretFlagPattern = /^--?(?:api[-_]?key|token|access[-_]?token|secret|password|passwd|auth|authorization|credential|credentials)(?:=|$)/i
+  let previousWasSecretFlag = false
+  for (const arg of args ?? []) {
+    const trimmed = arg.trim()
+    if (!trimmed) {
+      previousWasSecretFlag = false
+      continue
+    }
+    if (previousWasSecretFlag) return true
+    if (secretFlagPattern.test(trimmed)) return true
+    if (/\bbearer\s+\S+/i.test(trimmed)) return true
+    if (/\bsk-[A-Za-z0-9_-]{8,}\b/.test(trimmed)) return true
+    previousWasSecretFlag = /^--?(?:api[-_]?key|token|access[-_]?token|secret|password|passwd|auth|authorization|credential|credentials)$/i.test(trimmed)
+  }
+  return false
+}
+
+function hasSecretLikeMcpUrl(value: string): boolean {
+  let parsed: URL
+  try {
+    parsed = new URL(value)
+  } catch {
+    return false
+  }
+  if (parsed.username || parsed.password) return true
+  for (const [key, queryValue] of parsed.searchParams) {
+    if (isSecretLikeUrlQueryKey(key)) return true
+    if (/\bbearer\s+\S+/i.test(queryValue)) return true
+    if (/\bsk-[A-Za-z0-9_-]{8,}\b/.test(queryValue)) return true
+  }
+  return false
+}
+
+function isSecretLikeUrlQueryKey(key: string): boolean {
+  const normalized = key.toLowerCase().replaceAll(/[^a-z0-9]/g, '')
+  return normalized === 'apikey'
+    || normalized === 'key'
+    || normalized === 'token'
+    || normalized === 'accesstoken'
+    || normalized === 'refreshtoken'
+    || normalized === 'secret'
+    || normalized === 'clientsecret'
+    || normalized === 'password'
+    || normalized === 'passwd'
+    || normalized === 'authorization'
+    || normalized === 'credential'
+    || normalized === 'credentials'
+    || normalized === 'signature'
+    || normalized === 'sig'
 }
 
 function validateLocalMcpEnv(entryEnv: Record<string, string> | undefined): OpencodeMcpSkipReason | undefined {
@@ -213,4 +318,23 @@ function hasEnvNameConflict(
   nextEnv: Record<string, string>,
 ): boolean {
   return Object.entries(nextEnv).some(([key, value]) => currentEnv[key] !== undefined && currentEnv[key] !== value)
+}
+
+function normalizeMcpRuntimeStatus(value: unknown): OpencodeMcpRuntimeStatus {
+  if (
+    value === 'connected'
+    || value === 'disabled'
+    || value === 'failed'
+    || value === 'needs_auth'
+    || value === 'needs_client_registration'
+  ) {
+    return value
+  }
+  return 'unknown'
+}
+
+function toRecord(value: unknown): Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {}
 }

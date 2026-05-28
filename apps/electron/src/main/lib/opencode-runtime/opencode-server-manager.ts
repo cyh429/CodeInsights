@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { createServer } from 'node:net'
 import { createOpencodeClientWrapper, redactSecretText, type OpencodeServerAuth } from './opencode-sdk-client'
+import type { OpencodeMcpStatusSummary } from './opencode-mcp-config'
 
 export type OpencodeServerState =
   | 'idle'
@@ -54,6 +55,7 @@ export interface OpencodeServerEnsureInput {
   binaryPath: string
   cwd: string
   env: Record<string, string>
+  mcp?: OpencodeMcpStatusSummary
   cleanup?: () => Promise<void>
 }
 
@@ -67,6 +69,7 @@ export interface OpencodeServerEntry {
   spawn: OpencodeServerProcessFactoryStartInput
   version?: string
   lastError?: string
+  mcp?: OpencodeMcpStatusSummary
   cleanup?: () => Promise<void>
   idleTimer?: ReturnType<typeof setTimeout>
   updatedAt: number
@@ -78,6 +81,7 @@ export interface OpencodeServerStatus {
   endpoint?: string
   version?: string
   lastError?: string
+  mcp?: OpencodeMcpStatusSummary
   updatedAt: number
 }
 
@@ -145,6 +149,21 @@ export class OpencodeServerManager {
   getLatestStatus(): OpencodeServerStatus | undefined {
     return [...this.statuses.values()]
       .sort((a, b) => b.updatedAt - a.updatedAt)[0]
+  }
+
+  updateMcpStatus(key: string, mcp: OpencodeMcpStatusSummary): void {
+    const entry = this.entries.get(key)
+    if (entry) {
+      entry.mcp = mcp
+      entry.updatedAt = Date.now()
+      this.statuses.set(key, toStatus(entry))
+      return
+    }
+
+    const status = this.statuses.get(key)
+    if (status) {
+      this.statuses.set(key, { ...status, mcp, updatedAt: Date.now() })
+    }
   }
 
   async stop(key: string): Promise<void> {
@@ -219,6 +238,7 @@ export class OpencodeServerManager {
       auth,
       process,
       spawn: spawnInput,
+      mcp: input.mcp,
       cleanup: input.cleanup,
       updatedAt: Date.now(),
     }
@@ -316,6 +336,7 @@ function toStatus(entry: OpencodeServerEntry): OpencodeServerStatus {
     endpoint: entry.endpoint,
     ...(entry.version ? { version: entry.version } : {}),
     ...(entry.lastError ? { lastError: entry.lastError } : {}),
+    ...(entry.mcp ? { mcp: entry.mcp } : {}),
     updatedAt: entry.updatedAt,
   }
 }

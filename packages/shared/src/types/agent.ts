@@ -585,6 +585,30 @@ export interface AgentRuntimeCapabilitiesDiagnostic {
   message?: string
 }
 
+export type AgentOpencodeMcpRuntimeStatus =
+  | 'connected'
+  | 'disabled'
+  | 'failed'
+  | 'needs_auth'
+  | 'needs_client_registration'
+  | 'unknown'
+
+export interface AgentOpencodeMcpSkipSummary {
+  name: string
+  reason: string
+}
+
+/** opencode MCP 状态摘要，不包含 env、headers 或 OAuth token */
+export interface AgentOpencodeMcpStatusSummary {
+  configuredCount: number
+  statusCount?: number
+  connectedCount?: number
+  skippedCount: number
+  serverNames: string[]
+  statuses?: Record<string, AgentOpencodeMcpRuntimeStatus>
+  skipped?: AgentOpencodeMcpSkipSummary[]
+}
+
 /** opencode server 状态诊断 */
 export interface AgentOpencodeServerStatus {
   runtimeKind: 'opencode'
@@ -592,6 +616,7 @@ export interface AgentOpencodeServerStatus {
   state: 'disabled' | 'not_configured' | 'not_started' | 'starting' | 'healthy' | 'degraded' | 'stopping' | 'stopped' | 'failed'
   version?: string
   endpoint?: string
+  mcp?: AgentOpencodeMcpStatusSummary
   message?: string
   updatedAt: string
 }

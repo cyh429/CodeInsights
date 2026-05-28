@@ -19,7 +19,7 @@ const createdAt = '2026-05-27T00:00:00.000Z'
 interface MockRuntime {
   runtime: OpencodeAgentRuntime
   calls: {
-    ensure: Array<{ sessionId: string; workingDirectory: string; model?: string; agent?: string; channelId?: string | null }>
+    ensure: Array<{ sessionId: string; workingDirectory: string; model?: string; agent?: string; channelId?: string | null; mcpServerCount?: number }>
     stream: OpencodeRuntimeClientStreamInput[]
     permissionResponses: OpencodeRuntimePermissionResponseInput[]
     abort: Array<{ sessionId: string; externalSessionId?: string }>
@@ -58,6 +58,7 @@ function createMockRuntime(
         model: input.model,
         agent: input.agent,
         channelId: input.channelId,
+        mcpServerCount: input.opencodeMcp?.serverCount,
       })
       return { key: `server-${input.sessionId}`, endpoint: 'mock://opencode', version: '1.15.11' }
     },
@@ -238,6 +239,7 @@ describe('OpencodeAgentRuntime', () => {
       model: 'provider/model',
       agent: 'build',
       channelId: 'opencode-channel',
+      mcpServerCount: undefined,
     }])
     expect(calls.stream[0]).toMatchObject({
       sessionId: 'session-opencode-start',

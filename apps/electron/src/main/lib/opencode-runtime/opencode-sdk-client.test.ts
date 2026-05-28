@@ -77,4 +77,45 @@ describe('opencode-sdk-client', () => {
       trace: 'smoke',
     }])
   })
+
+  test('config 与 MCP status 摘要不透传 header/env secret', async () => {
+    const client = createOpencodeClientWrapper({
+      baseUrl: 'http://127.0.0.1:4101',
+      fetchImpl: async (url) => {
+        if (String(url).endsWith('/mcp')) {
+          return new Response(JSON.stringify({
+            docs: { status: 'connected' },
+            remote: { status: 'failed', error: 'Bearer remote-secret' },
+          }), { status: 200 })
+        }
+        return new Response(JSON.stringify({
+          model: 'anthropic/claude-sonnet',
+          mcp: {
+            docs: {
+              type: 'remote',
+              headers: { Authorization: 'Bearer remote-secret' },
+            },
+          },
+        }), { status: 200 })
+      },
+    })
+
+    await expect(client.getConfigSummary()).resolves.toMatchObject({
+      mcp: {
+        configuredCount: 1,
+        serverNames: ['docs'],
+      },
+    })
+    const mcpStatus = await client.getMcpStatusSummary()
+    expect(mcpStatus).toMatchObject({
+      configuredCount: 0,
+      statusCount: 2,
+      connectedCount: 1,
+      statuses: {
+        docs: 'connected',
+        remote: 'failed',
+      },
+    })
+    expect(JSON.stringify(mcpStatus)).not.toContain('remote-secret')
+  })
 })

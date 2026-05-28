@@ -12,6 +12,7 @@ import type {
   CodingAgentRuntime,
   CodingAgentRuntimeCapabilities,
   CodingAgentRuntimeRunInput,
+  OpencodeCodingAgentRuntimeRunInput,
   UnsupportedRuntimeCapabilityResult,
 } from './agent-runtimes/coding-agent-runtime-types'
 
@@ -434,6 +435,64 @@ describe('AgentOrchestrator opencode runtime routing', () => {
     ])
   })
 
+  test('opencode runtime 会接收工作区 MCP 的 secretless config 注入', async () => {
+    process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+    const { AgentEventBus } = await import('./agent-event-bus')
+    const { AgentOrchestrator } = await import('./agent-orchestrator')
+    const { createAgentSession } = await import('./agent-session-manager')
+    const { createAgentWorkspace, saveWorkspaceMcpConfig } = await import('./agent-workspace-manager')
+    const { updateSettings } = await import('./settings-service')
+    updateSettings({
+      agentRuntimeKind: 'opencode',
+      agentOpencodeChannelId: null,
+      agentOpencodeUseNativeAuth: true,
+      agentOpencodeModelId: 'anthropic/claude-sonnet-4-5',
+    })
+    const workspace = createAgentWorkspace('opencode MCP Workspace')
+    saveWorkspaceMcpConfig(workspace.slug, {
+      servers: {
+        docs: {
+          type: 'stdio',
+          command: 'node',
+          args: ['server.mjs'],
+          env: { DOCS_TOKEN: 'secret-token' },
+          timeout: 15,
+          enabled: true,
+        },
+      },
+    })
+    const session = createAgentSession('opencode MCP 会话')
+    let capturedMcp: OpencodeCodingAgentRuntimeRunInput['opencodeMcp']
+    const registry = new CodingAgentRuntimeRegistry()
+    registry.register(createFakeOpencodeRuntime([
+      { type: 'run_started' },
+      { type: 'sdk_session', id: 'ses_opencode_mcp' },
+      { type: 'run_completed' },
+    ], undefined, (input) => {
+      capturedMcp = input.opencodeMcp
+    }))
+    const orchestrator = new AgentOrchestrator(createUnusedAdapter(), new AgentEventBus(), { runtimeRegistry: registry })
+
+    await orchestrator.sendMessage({
+      ...createSendInput(session.id),
+      workspaceId: workspace.id,
+    }, {
+      onError: () => {},
+      onComplete: () => {},
+      onTitleUpdated: () => {},
+    })
+
+    expect(capturedMcp?.serverCount).toBe(1)
+    expect(capturedMcp?.config.mcp.docs).toMatchObject({
+      type: 'local',
+      command: ['node', 'server.mjs'],
+      enabled: true,
+      timeout: 15000,
+    })
+    expect(Object.values(capturedMcp?.env ?? {})).toEqual(['secret-token'])
+    expect(JSON.stringify(capturedMcp?.config)).not.toContain('secret-token')
+  })
+
   test('已绑定 opencode session resume 不回退当前 settings 模型、agent 或 authSource', async () => {
     process.env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
     const { AgentEventBus } = await import('./agent-event-bus')
@@ -760,7 +819,7 @@ type FakeOpencodeStep =
   | { type: 'late_run_completed_after_stop' }
   | { type: 'wait_until_released' }
 
-interface FakeOpencodeRunInput extends CodingAgentRuntimeRunInput {
+interface FakeOpencodeRunInput extends OpencodeCodingAgentRuntimeRunInput {
   agent?: string
   authSource?: AgentRuntimeAuthSource
   runtimeConfigHash?: string

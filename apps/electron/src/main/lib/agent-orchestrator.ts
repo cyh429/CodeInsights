@@ -92,6 +92,7 @@ import type {
   OpencodeCodingAgentRuntimeRunInput,
 } from './agent-runtimes/coding-agent-runtime-types'
 import { buildCodexMcpConfigFromWorkspace } from './codex-runtime/codex-mcp-config'
+import { buildOpencodeMcpConfigFromWorkspace } from './opencode-runtime'
 
 // ===== 类型定义 =====
 
@@ -363,6 +364,20 @@ export class AgentOrchestrator {
       codexConfig: result.config,
       ...(Object.keys(result.env).length > 0 ? { codexConfigEnv: result.env } : {}),
     }
+  }
+
+  private buildOpencodeMcpConfig(workspaceSlug: string | undefined): Pick<OpencodeCodingAgentRuntimeRunInput, 'opencodeMcp'> | undefined {
+    if (!workspaceSlug) return undefined
+
+    const result = buildOpencodeMcpConfigFromWorkspace(getWorkspaceMcpConfig(workspaceSlug))
+    if (result.serverCount > 0) {
+      console.log(`[Agent 编排] 已注入 ${result.serverCount} 个 opencode MCP 服务器`)
+    }
+    for (const skipped of result.skipped) {
+      console.warn(`[Agent 编排] 跳过 opencode MCP 服务器 ${skipped.name}: ${skipped.reason}`)
+    }
+    if (result.serverCount === 0 && result.skipped.length === 0) return undefined
+    return { opencodeMcp: result }
   }
 
   /**
@@ -993,6 +1008,7 @@ export class AgentOrchestrator {
         const opencodeModelForRun = runtimeSelection.source === 'session'
           ? runtimeSelection.model
           : runtimeSelection.model ?? appSettings.agentOpencodeModelId
+        const opencodeMcpConfig = this.buildOpencodeMcpConfig(workspaceSlug)
         await this.runWithOpencodeRuntime({
           sessionId,
           prompt: finalPrompt,
@@ -1010,6 +1026,7 @@ export class AgentOrchestrator {
           additionalDirectories: this.buildRuntimeAdditionalDirectories(additionalDirectories, workspaceSlug),
           runtimeHash: materializedRuntimeManifest?.runtimeHash,
           repositoryRoot: agentCwd ?? homedir(),
+          ...(opencodeMcpConfig?.opencodeMcp ? { opencodeMcp: opencodeMcpConfig.opencodeMcp } : {}),
         })
         return
       }
@@ -2055,6 +2072,7 @@ export class AgentOrchestrator {
     additionalDirectories?: string[]
     runtimeHash?: string
     repositoryRoot?: string
+    opencodeMcp?: OpencodeCodingAgentRuntimeRunInput['opencodeMcp']
   }): Promise<void> {
     const runtime = this.runtimeRegistry.require('opencode')
     this.activeCodingRuntimes.set(input.sessionId, runtime)
@@ -2074,6 +2092,7 @@ export class AgentOrchestrator {
       runtimeConfigHash,
       authSourceHash: input.runtimeSelection.authSourceHash,
       permissionPolicyHash: input.runtimeSelection.permissionPolicyHash,
+      opencodeMcp: input.opencodeMcp,
       runnerMode: 'runner-v2',
       repositoryRoot: input.repositoryRoot,
       abortSignal: input.abortController.signal,

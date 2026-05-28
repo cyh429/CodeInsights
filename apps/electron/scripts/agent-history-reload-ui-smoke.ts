@@ -13,6 +13,7 @@ interface SmokeOptions {
   appPath: string
   cleanup: boolean
   timeoutMs: number
+  runtime: 'codex' | 'opencode'
 }
 
 interface SmokeContext {
@@ -162,6 +163,7 @@ try {
   const failed = results.filter((result) => result.status === 'failed')
   console.log(JSON.stringify({
     appPath: options.appPath,
+    runtime: options.runtime,
     artifactRoot: options.cleanup ? 'cleanup enabled' : context.rootDir,
     codeinsightsConfigDir: options.cleanup ? 'cleanup enabled' : context.codeinsightsConfigDir,
     userDataDir: options.cleanup ? 'cleanup enabled' : context.userDataDir,
@@ -188,10 +190,13 @@ process.exit(exitCode)
 function parseOptions(args: string[]): SmokeOptions {
   const appIndex = args.indexOf('--app')
   const timeoutIndex = args.indexOf('--timeout-ms')
+  const runtimeIndex = args.indexOf('--runtime')
+  const runtime = runtimeIndex >= 0 && args[runtimeIndex + 1] === 'opencode' ? 'opencode' : 'codex'
   return {
     appPath: resolve(appIndex >= 0 && args[appIndex + 1] ? args[appIndex + 1]! : defaultPackagedAppPath()),
     cleanup: !args.includes('--keep-artifacts'),
     timeoutMs: timeoutIndex >= 0 && args[timeoutIndex + 1] ? Number(args[timeoutIndex + 1]) : 45_000,
+    runtime,
   }
 }
 
@@ -226,14 +231,24 @@ async function createSmokeContext(): Promise<SmokeContext> {
 
 async function seedHistoryReloadFixture(context: SmokeContext): Promise<void> {
   const now = Date.now()
-  const threadId = `codex-thread-${context.sessionId}`
+  const runtime = options.runtime
+  const threadId = runtime === 'opencode'
+    ? `ses_opencode_${context.sessionId.replaceAll('-', '_')}`
+    : `codex-thread-${context.sessionId}`
   const runId = `run-${context.sessionId}`
   await writeJson(join(context.codeinsightsConfigDir, 'settings.json'), {
     themeMode: 'system',
     onboardingCompleted: true,
     environmentCheckSkipped: true,
-    agentRuntimeKind: 'codex',
-    agentCodexChannelId: null,
+    agentRuntimeKind: runtime,
+    ...(runtime === 'codex'
+      ? { agentCodexChannelId: null }
+      : {
+        agentOpencodeChannelId: null,
+        agentOpencodeUseNativeAuth: true,
+        agentOpencodeModelId: 'anthropic/claude-sonnet-4-5',
+        agentOpencodeAgentName: 'build',
+      }),
     tabState: {
       tabs: [{
         id: context.sessionId,
@@ -249,12 +264,13 @@ async function seedHistoryReloadFixture(context: SmokeContext): Promise<void> {
     sessions: [{
       id: context.sessionId,
       title: context.titleToken,
-      runtimeKind: 'codex',
+      runtimeKind: runtime,
       runtimeSession: {
-        kind: 'codex',
+        kind: runtime,
         externalSessionId: threadId,
         channelId: null,
-        model: 'gpt-5-codex',
+        model: runtime === 'opencode' ? 'anthropic/claude-sonnet-4-5' : 'gpt-5-codex',
+        ...(runtime === 'opencode' ? { agent: 'build', authSource: 'native' } : {}),
         createdAt: now - 5_000,
         updatedAt: now - 1_000,
       },
@@ -269,7 +285,7 @@ async function seedHistoryReloadFixture(context: SmokeContext): Promise<void> {
       content: [{ type: 'text', text: context.userToken }],
     },
     parent_tool_use_id: null,
-    session_id: threadId,
+      session_id: threadId,
     uuid: `user-${context.sessionId}`,
     _createdAt: now - 4_000,
   }
@@ -282,29 +298,29 @@ async function seedHistoryReloadFixture(context: SmokeContext): Promise<void> {
   const events: AgentStreamEnvelope[] = [
     createEnvelope(context.sessionId, runId, 0, now - 3_500, {
       type: 'run_started',
-      model: 'gpt-5-codex',
+      model: runtime === 'opencode' ? 'anthropic/claude-sonnet-4-5' : 'gpt-5-codex',
       cwd: context.rootDir,
       permissionMode: 'plan',
       runtimeHash: 'history-reload-ui-smoke',
       runnerMode: 'runner-v2',
-      runtimeKind: 'codex',
-    }),
+      runtimeKind: runtime,
+    }, runtime),
     createEnvelope(context.sessionId, runId, 1, now - 3_250, {
       type: 'sdk_session',
       sdkSessionId: threadId,
-    }),
+    }, runtime),
     createEnvelope(context.sessionId, runId, 2, now - 3_000, {
       type: 'assistant_message',
       messageId: `assistant-${context.sessionId}`,
       contentBlocks: [{ type: 'text', text: context.assistantToken }],
       status: 'complete',
-    }),
+    }, runtime),
     createEnvelope(context.sessionId, runId, 3, now - 2_500, {
       type: 'run_completed',
       resultSubtype: 'success',
       usage: {},
       sdkSessionId: threadId,
-    }),
+    }, runtime),
   ]
   await writeFile(
     join(context.codeinsightsConfigDir, 'agent-sessions', `${context.sessionId}.events.jsonl`),
@@ -319,6 +335,7 @@ function createEnvelope(
   sequence: number,
   createdAt: number,
   event: AgentStreamEnvelope['event'],
+  runtime: 'codex' | 'opencode',
 ): AgentStreamEnvelope {
   return {
     schemaVersion: 1,
@@ -326,7 +343,9 @@ function createEnvelope(
     runId,
     sequence,
     createdAt: new Date(createdAt).toISOString(),
-    source: event.type === 'run_started' || event.type === 'run_completed' ? 'runtime_service' : 'codex_sdk',
+    source: event.type === 'run_started' || event.type === 'run_completed'
+      ? 'runtime_service'
+      : runtime === 'opencode' ? 'opencode_server' : 'codex_sdk',
     event,
   }
 }
@@ -447,7 +466,11 @@ function buildChildEnv(context: SmokeContext): NodeJS.ProcessEnv {
   env.CODEINSIGHTS_AUTOMATION = '1'
   env.CODEINSIGHTS_CONFIG_DIR = context.codeinsightsConfigDir
   env.CODEINSIGHTS_USER_DATA_DIR = context.userDataDir
-  env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
+  if (options.runtime === 'opencode') {
+    env.CODEINSIGHTS_AGENT_OPENCODE_RUNTIME = '1'
+  } else {
+    env.CODEINSIGHTS_AGENT_CODEX_RUNTIME = '1'
+  }
   env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true'
   return env
 }

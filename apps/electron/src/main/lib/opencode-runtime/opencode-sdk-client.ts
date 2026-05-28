@@ -2,6 +2,10 @@ import { request as httpRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
 import { Readable } from 'node:stream'
 import type { OpencodeClient } from '@opencode-ai/sdk/client'
+import {
+  createOpencodeMcpStatusSummary,
+  type OpencodeMcpStatusSummary,
+} from './opencode-mcp-config'
 
 export interface OpencodeServerAuth {
   username: string
@@ -88,6 +92,10 @@ export interface OpencodeConfigSummary {
   }
   providerIds: string[]
   enabledProviderIds: string[]
+  mcp: {
+    configuredCount: number
+    serverNames: string[]
+  }
 }
 
 export type OpencodeServerEvent = Record<string, unknown>
@@ -101,6 +109,7 @@ export interface OpencodeClientWrapper {
   listMessages(input: OpencodeListMessagesInput): Promise<unknown[]>
   respondPermission(input: OpencodePermissionReplyInput): Promise<boolean>
   getConfigSummary(): Promise<OpencodeConfigSummary>
+  getMcpStatusSummary(): Promise<OpencodeMcpStatusSummary>
   requestJson<T>(path: string, init?: RequestInit): Promise<T>
 }
 
@@ -252,6 +261,10 @@ export function createOpencodeClientWrapper(input: CreateOpencodeClientWrapperIn
       const config = await requestJson<unknown>('/config')
       return summarizeOpencodeConfig(config)
     },
+    async getMcpStatusSummary() {
+      const status = await requestJson<unknown>('/mcp')
+      return createOpencodeMcpStatusSummary({ mcp: {} }, [], status)
+    },
   }
 }
 
@@ -392,6 +405,7 @@ function summarizeOpencodeConfig(value: unknown): OpencodeConfigSummary {
   const permission = toRecord(config.permission)
   const bash = toRecord(permission.bash)
   const provider = toRecord(config.provider)
+  const mcp = toRecord(config.mcp)
   return {
     ...(typeof config.model === 'string' ? { model: config.model } : {}),
     ...(typeof config.share === 'string' ? { share: config.share } : {}),
@@ -410,6 +424,10 @@ function summarizeOpencodeConfig(value: unknown): OpencodeConfigSummary {
     enabledProviderIds: Array.isArray(config.enabled_providers)
       ? config.enabled_providers.filter((item): item is string => typeof item === 'string').sort()
       : [],
+    mcp: {
+      configuredCount: Object.keys(mcp).length,
+      serverNames: Object.keys(mcp).sort(),
+    },
   }
 }
 

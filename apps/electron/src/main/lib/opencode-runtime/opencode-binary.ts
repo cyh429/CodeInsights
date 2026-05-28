@@ -81,26 +81,32 @@ export function resolveOpencodeCliPath(options: ResolveOpencodeCliPathOptions = 
 
   const mainPackagePath = tryResolveModule(moduleResolve, 'opencode-ai/package.json')
   if (mainPackagePath) {
-    return {
-      path: buildOpencodeBinaryPath({
-        packageJsonPath: mainPackagePath,
-        packageName: 'opencode-ai',
-        isPackaged,
-      }),
-      source: isPackaged ? 'bundled' : 'workspace',
+    const mainBinaryPath = buildOpencodeBinaryPath({
+      packageJsonPath: mainPackagePath,
+      packageName: 'opencode-ai',
+      isPackaged,
+    })
+    if (isExecutable(mainBinaryPath)) {
+      return {
+        path: mainBinaryPath,
+        source: isPackaged ? 'bundled' : 'workspace',
+      }
     }
   }
 
   const platformPackageName = resolveOpencodePlatformPackage(options.platform, options.arch)
   const platformPackagePath = tryResolveModule(moduleResolve, `${platformPackageName}/package.json`)
   if (platformPackagePath) {
-    return {
-      path: buildOpencodeBinaryPath({
-        packageJsonPath: platformPackagePath,
-        packageName: platformPackageName,
-        isPackaged,
-      }),
-      source: isPackaged ? 'bundled' : 'workspace',
+    const platformBinaryPath = buildOpencodeBinaryPath({
+      packageJsonPath: platformPackagePath,
+      packageName: platformPackageName,
+      isPackaged,
+    })
+    if (isExecutable(platformBinaryPath)) {
+      return {
+        path: platformBinaryPath,
+        source: isPackaged ? 'bundled' : 'workspace',
+      }
     }
   }
 

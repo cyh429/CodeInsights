@@ -4382,3 +4382,37 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已更新 `docs/opencode-support/next-session-prompt.md`：下次 Codex 启动提示词要求先核对 `63aab807` 及其后的状态同步提交，再写入 Phase 1 计划并开始契约实现。
 - 本轮仅修改状态文档、lessons 和任务记录，未进入 Phase 1 业务实现，未修改根 `README.md` / `AGENTS.md`。
 - 验证：`git diff --check`。
+
+## 2026-05-28 Agent opencode Runtime Phase 7 计划
+
+范围确认：本轮继续 `agent-mode-opencode` 分支的 Phase 7。只接入 opencode MCP config/status、packaged binary inclusion、`OPENCODE_CONFIG_DIR` 显式开关验证、packaged app reload/history replay smoke，以及 secretless diagnostics / smoke summary / event log 约束；不进入真实模型验收、故障排查实战、release notes、根 `README.md` 或根 `AGENTS.md` 修改。
+
+- [x] 读取 `AGENTS.md`、`tasks/lessons.md`、opencode support README、开发清单和主方案，确认 Phase 7 范围、secretless、阶段提交和状态同步纪律。
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认工作树干净，最新提交为 `0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`。
+- [x] 用更深的 `git log` 确认历史包含 `077fbc49`、`bb361a34`、`786b6485`、`b3e99265`、`647d3046`。
+- [x] 盘点现有 opencode runtime / smoke / packaging 代码，复用 Phase 2-6 已有 helper，不引入无关抽象。
+- [x] 接入 workspace MCP -> opencode config/status：local / remote / OAuth native 复用、name sanitize、env placeholder、status summary 脱敏。
+- [x] 保持 `OPENCODE_CONFIG_DIR` 默认暂缓，只在 assets / MCP 需要时通过 `CODEINSIGHTS_AGENT_OPENCODE_ENABLE_CONFIG_DIR=1` 或 `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 显式验证后启用。
+- [x] 补充 MCP config-only / status smoke，不依赖真实模型；tool-call 真实模型 smoke 保持 gated。
+- [x] 验证 Electron packaged 场景包含 `opencode-ai` 和目标平台 `opencode-*` optional package，并补 packaged binary smoke 证明不走系统 PATH。
+- [x] 补充 packaged app server smoke 与 reload / history replay smoke；生成产物不纳入提交。
+- [x] 补齐 secretless 检查：MCP config、runtime diagnostics、smoke summary 和 event log 不输出 API key、Basic Auth password、MCP token、resolved headers 或 auth 文件内容。
+- [ ] 更新 opencode support README、development checklist、next-session prompt 和本节 Review；明确多平台未验证项用 `[!]`，不伪装通过。
+- [x] 运行 Phase 7 验证：聚焦单测、`bun run --filter='@codeinsights/electron' typecheck`、相关 smoke、`git diff --check`。
+- [x] 代码改动后执行代码审查；通过后只提交 Phase 7 相关文件，提交信息使用详细中文。
+
+## 2026-05-28 Agent opencode Runtime Phase 7 Review
+
+- 启动基线已确认：本轮开始时最新提交为 `0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`，历史包含 `077fbc49`、`bb361a34`、`786b6485`、`b3e99265`、`647d3046`。
+- 已完成 workspace MCP 注入：opencode runtime 会读取工作区 MCP 配置并生成 secretless `mcp` config；stdio/local env 和 remote headers 均使用 `{env:VAR}` placeholder，真实 secret 只进入子进程 env，不写入长期 config、diagnostics、smoke summary 或 event log。
+- 已完成 MCP 状态摘要：新增 `/mcp` status summary 归一化，只保留 server name、连接状态和 skip reason；设置页 MCP 摘要从 Phase 7 占位改为显示 configured / connected / skipped 计数。
+- 已保持 `OPENCODE_CONFIG_DIR` 默认关闭：默认 MCP smoke 通过且 `configDirEnabled=false`；显式 `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 的 MCP smoke 仍失败，错误为 `The operation was aborted.`，因此不启用 config-dir。
+- 已完成 packaged binary 验证：`electron-builder.yml` 纳入 `@opencode-ai/sdk`、`opencode-ai` 和全部目标 `opencode-*` optional package；packaged smoke 证明 macOS arm64 app 使用 `opencode-darwin-arm64/bin/opencode`，source 为 `bundled`，PATH fallback disabled，并可启动 server health。
+- 已补充 packaged history reload smoke：`smoke:agent-history-reload-ui -- --runtime opencode` 会种子化 opencode runtime session/events，并验证 packaged app 首次打开和重开后均能回放用户/助手历史。
+- 已修复 packaged binary resolver 边界：packaged app 中若 `opencode-ai/package.json` 存在但 `opencode-ai/bin/opencode.exe` 不可执行或不存在，会继续回退到平台 optional package，而不是返回缺失路径。
+- 已根据代码审查修复 Phase 7 收尾问题：MCP args / URL 出现 secret-like 表达时直接跳过并记录 `unsafe_args` / `unsafe_url`；opencode MCP timeout 写入 config 时从秒转毫秒；platform optional package binary 缺失或不可执行时不再返回坏路径。
+- 已按受影响包 patch 版本规则将 `@codeinsights/shared` 从 `0.1.48` 提升到 `0.1.49`，将 `@codeinsights/electron` 从 `0.0.118` 提升到 `0.0.119`，并同步 `bun.lock` workspace 版本。
+- 保持阶段边界：未进入真实模型验收、故障排查实战、release notes、根 `README.md` 或根 `AGENTS.md` 修改；MCP tool-call 真实模型 smoke 留到 Phase 8 或显式凭证验收。
+- 多平台验证状态：macOS arm64 packaged app smoke 已通过；macOS x64、Windows x64、Linux packaged smoke 本机未验证，后续文档标记 `[!]`，不伪装通过。
+- `dist:fast` 结果：main/preload/renderer 构建和 `out/mac-arm64/CodeInsights.app` 生成成功；DMG 生成阶段仍因 `hdiutil create` Exit code 1 失败，因此本轮只证明 app bundle 可用，不声明 DMG artifact 通过。
+- 验证通过：`bun test apps/electron/src/main/lib/opencode-runtime/opencode-mcp-config.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-sdk-client.test.ts apps/electron/src/main/lib/opencode-runtime/opencode-binary.test.ts`；`bun test apps/electron/src/main/lib/agent-runtimes/opencode-runtime.test.ts apps/electron/src/main/lib/agent-orchestrator.test.ts`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only mcp`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only packaged`；`CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1 bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui -- --runtime opencode`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron packages/shared bun.lock tasks/todo.md`。

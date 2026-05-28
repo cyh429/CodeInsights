@@ -19,6 +19,7 @@ import {
   buildOpencodeBaseEnv,
   buildOpencodeConfig,
   buildOpencodeMcpConfigFromWorkspace,
+  createOpencodeMcpStatusSummary,
   createOpencodeAuthState,
   createOpencodeClientWrapper,
   createOpencodeServerKey,
@@ -29,6 +30,7 @@ import {
   resolveOpencodeCliPath,
   writeOpencodeRuntimeConfig,
   type OpencodeClientWrapper,
+  type OpencodeMcpConfigBuildResult,
   type OpencodeProviderAuthConfig,
   type OpencodeServerEntry,
   type OpencodeServerStatus,
@@ -77,6 +79,7 @@ export interface OpencodeRuntimeServerEnsureInput {
   authSource?: string
   runtimeHash?: string
   permissionMode?: CodeInsightsPermissionMode
+  opencodeMcp?: OpencodeMcpConfigBuildResult
 }
 
 export interface OpencodeRuntimeAbortInput {
@@ -243,6 +246,7 @@ export class OpencodeAgentRuntime implements CodingAgentRuntime {
         authSource: input.authSource,
         runtimeHash: input.runtimeHash,
         permissionMode: input.permissionMode,
+        opencodeMcp: input.opencodeMcp,
       })
 
       if (abortController.signal.aborted) {
@@ -467,7 +471,7 @@ class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManage
     })
     const binaryVersion = await detectOpencodeBinaryVersion(binary)
     const authState = await resolveOpencodeRuntimeAuth(input)
-    const mcp = buildOpencodeMcpConfigFromWorkspace({ servers: {} })
+    const mcp = input.opencodeMcp ?? buildOpencodeMcpConfigFromWorkspace({ servers: {} })
     const providerAuth = await toOpencodeProviderAuthConfig(authState, input)
     const builtConfig = buildOpencodeConfig({
       modelId: normalizeOpencodeConfigModel(input.model, authState.source),
@@ -504,7 +508,9 @@ class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManage
       binaryPath: binaryVersion.path,
       cwd: input.workingDirectory,
       env,
+      mcp: createOpencodeMcpStatusSummary(mcp.config, mcp.skipped),
     })
+    await this.refreshMcpStatus(entry, mcp)
     return toRuntimeServerLease(entry, {
       model: writtenConfig.config.model,
       agent: input.agent,
@@ -517,6 +523,23 @@ class DefaultOpencodeRuntimeServerManager implements OpencodeRuntimeServerManage
 
   getStatus(): OpencodeServerStatus | undefined {
     return this.manager.getLatestStatus()
+  }
+
+  private async refreshMcpStatus(
+    entry: OpencodeServerEntry,
+    mcp: OpencodeMcpConfigBuildResult,
+  ): Promise<void> {
+    try {
+      const client = createOpencodeClientWrapper({
+        baseUrl: entry.endpoint,
+        auth: entry.auth,
+        timeoutMs: 5000,
+      })
+      const runtimeStatus = await client.requestJson<unknown>('/mcp')
+      this.manager.updateMcpStatus(entry.key, createOpencodeMcpStatusSummary(mcp.config, mcp.skipped, runtimeStatus))
+    } catch {
+      this.manager.updateMcpStatus(entry.key, createOpencodeMcpStatusSummary(mcp.config, mcp.skipped))
+    }
   }
 
   dispose(): void {
