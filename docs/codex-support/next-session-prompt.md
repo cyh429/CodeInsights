@@ -51,7 +51,7 @@
 3. 后续维护按需选择：真实模型 MCP tool-call smoke、多平台 packaged binary 验证、Codex SDK / CLI 升级兼容复核、`danger-full-access` UI 设计，或在用户明确允许后同步根 README / AGENTS。
 
 Phase 8 已同步内容：
-- 主方案与实际实现一致性：runtime registry、CodexAgentRuntime、runtime events、MCP 注入和 feature flag 状态。
+- 主方案与实际实现一致性：runtime registry、CodexAgentRuntime、runtime events、MCP 注入和默认设置页可选状态。
 - 真实 smoke test 记录：binary、native、readonly、workspace-write、resume、web-search、stop、history reload UI、MCP config injection；channel API key 标为 skipped / 暂缓。
 - SDK / CLI 升级兼容入口：升级前查类型和打包配置，升级后重跑单测、gated smoke 和 packaged UI smoke。
 - 已知限制：permission parity、queue、soft interrupt、rewind、fork、legacy SSE MCP、复杂 header key、真实模型 MCP tool-call smoke、Linux packaged binary。
@@ -82,7 +82,7 @@ Phase 7 已通过验证：
 - 提交信息用详细中文，说明完成内容、验证结果和残余风险。
 - 不修改根 README.md 或 AGENTS.md，除非用户明确允许。
 - 默认测试不能依赖本机登录、真实 API key 或真实 Codex 服务；真实 smoke 结果要和 mock 单测分离记录。
-- 保持 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` feature flag 边界，关闭 flag 时不应暴露 Codex runtime 入口。
+- Codex Runtime 入口默认暴露；缺少认证、模型或 runtime 依赖时由运行前诊断 / 错误路径处理。
 - 保持 Codex auth 隔离：native auth / API key / custom channel 不得混用宿主全局 `CODEX_HOME` 或泄漏宿主 secrets。
 - 不把 Codex 当作普通 OpenAI Provider；目标是接入完整 Codex Coding Agent Runtime。
 ```

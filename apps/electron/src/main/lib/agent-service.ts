@@ -376,7 +376,7 @@ export function refreshAgentOpencodeModelsDiagnostic(): AgentOpencodeModelRefres
 }
 
 function isRuntimeFeatureEnabled(runtimeKind: CodingAgentRuntimeKind): boolean {
-  if (runtimeKind === 'codex') return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
+  if (runtimeKind === 'codex') return true
   if (runtimeKind === 'opencode') return true
   return true
 }

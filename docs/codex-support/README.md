@@ -10,9 +10,10 @@
 
 ## 最新状态
 
-更新时间：2026-05-27 Phase 8 文档提交后
+更新时间：2026-05-28 Phase 8 后设置页默认开放修正
 
 - 已完成：需求调研、主方案、二次细化、开发进度清单、文档索引、下次启动提示词、产品决策门禁确认、Phase 0 基线冻结与实施准备、Phase 1 共享类型与设置契约、Phase 2 Codex Runtime Core 抽取、Phase 3 Codex Event Adapter、Phase 4 CodexAgentRuntime Mock 接入、Phase 5 Orchestrator Runtime Routing、Phase 6 Renderer 设置/历史/UX、Phase 7 真实 Codex runtime 接入、打包验证、安全加固、native/read-only/workspace-write/resume/web-search/stop/history reload/MCP smoke 记录、API key 残余复核记录，以及 Phase 8 support 文档、故障排查、发布说明和长期维护记录，最新阶段提交为 `d04ffb95`。
+- 设置页状态：Codex Runtime 已默认在 Settings -> Agent Runtime 中可见并可由用户切换，不再要求启动前设置 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1`。缺少认证、模型或 runtime 依赖时仍由运行前诊断 / 错误路径处理。
 - 已提交：
   - `feb46548 docs: 规划 Agent Codex Runtime 接入`
   - `c546bc4e docs: 同步 Agent Codex Runtime 开发状态`

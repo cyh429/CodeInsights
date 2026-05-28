@@ -608,7 +608,7 @@ git diff --check -- apps/electron scripts docs/opencode-support tasks/todo.md
 任务：
 
 - [x] Agent Runtime 设置三选：Claude Code / Codex / opencode。
-- [x] opencode Runtime 在设置页默认显示并可选；Codex Runtime 仍保留独立实验开关。
+- [x] Codex / opencode Runtime 在设置页默认显示并可选。
 - [x] opencode auth source UI：native auth / CodeInsights channel。
 - [x] opencode model 输入或 provider/model picker。
 - [x] opencode agent 选择：build / plan / custom。
@@ -813,7 +813,7 @@ git diff --check -- docs/opencode-support tasks/todo.md README.md AGENTS.md
 - 用户反馈：设置页看不到或不可选 opencode Runtime，原因是 Phase 6 留下的 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 构建时 feature flag 同时限制了 renderer 展示和 main process runtime 注册。
 - 当前修正：opencode Runtime 默认在 Settings -> Agent Runtime 三选中展示并可切换；新会话首次发送时绑定 opencode，已绑定会话继续使用自己的 runtime session。
 - 主进程修正：opencode runtime 默认注册，runtime selection 默认允许 `opencode`；不再因缺少 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 阻断发送。
-- 保持不变：Codex Runtime 仍保留独立实验开关；`OPENCODE_CONFIG_DIR` 继续默认关闭；真实模型 / channel auth / permission 三态 / workspace-write / MCP tool-call gated 项不因本次 UI 修正伪造通过。
+- 保持不变：`OPENCODE_CONFIG_DIR` 继续默认关闭；真实模型 / channel auth / permission 三态 / workspace-write / MCP tool-call gated 项不因本次 UI 修正伪造通过。Codex / opencode Runtime 均默认可由用户在设置页切换，缺少认证、模型或 runtime 依赖时仍由运行前诊断 / 错误路径处理。
 
 ### 10.3 SDK / CLI 升级兼容记录
 

@@ -17,7 +17,7 @@
 - `opencode run --format json` 仅作为 CLI smoke、故障隔离和早期 fallback；它不应成为长期主实现，因为 server API 能覆盖 permission response、session status、MCP status、abort、message parts 和 diff 等更完整能力。
 - npm 调研显示 2026-05-27 最新稳定版本为 `@opencode-ai/sdk@1.15.11` 与 `opencode-ai@1.15.11`；CLI 包不是 `opencode`，也不是 `@opencode-ai/cli`。
 
-Phase 1-8 使用 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 作为首期 feature flag。Phase 8 基础验收完成后，opencode Runtime 已默认开放给用户在 Settings -> Agent Runtime 中自行切换，不再要求启动前设置该环境变量。Codex Runtime 的实验开关保持不变。
+Phase 1-8 使用 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1` 作为首期 feature flag。Phase 8 基础验收完成后，Codex / opencode Runtime 均已默认开放给用户在 Settings -> Agent Runtime 中自行切换，不再要求启动前设置 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1` 或 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`。
 
 ### 0.3 Phase 8 验收后的当前结论
 
@@ -51,7 +51,7 @@ opencode Runtime 的实现要遵循以下原则，这些原则比某个具体 AP
 2. Contract-first：CodeInsights 内部只依赖 `CodingAgentRuntime` 与 `AgentRuntimeEvent` 契约，UI 不直接感知 opencode SSE 原始结构。
 3. Secretless disk：任何长期落盘文件都不能包含 API key、Bearer token、MCP secret、Basic Auth password；secret 只存在于 Electron 主进程内存、子进程 env 或 0600 临时文件。
 4. Session snapshot：Agent session 首次绑定 opencode runtime 后，必须固化 runtime kind、external session id、model、agent、auth source、permission policy hash 和 workspace cwd，后续 settings 改动不能污染旧会话 resume。
-5. Rollout：Phase 1-8 期间使用 feature flag 隔离风险；Phase 8 后 opencode 默认开放设置页选择，Codex Runtime 继续保留独立实验开关。
+5. Rollout：Phase 1-8 期间使用 feature flag 隔离风险；Phase 8 后 Codex / opencode 均默认开放设置页选择，后续如需停用某个 runtime 应重新引入明确的产品开关或降级到 Claude Code。
 6. Smoke before release：每个实现 Phase 都必须有明确 smoke 或单测证据；真实模型 smoke 可以 gated，但 binary/server/config/permission/MCP secretless smoke 不应依赖外部 LLM。
 
 ## 1. 背景与目标

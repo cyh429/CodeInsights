@@ -9,11 +9,10 @@ export interface AgentRuntimeFeatureFlags {
 }
 
 export function isAgentCodexRuntimeFeatureEnabled(
-  enabled: boolean = typeof __CODEINSIGHTS_AGENT_CODEX_RUNTIME_ENABLED__ !== 'undefined'
-    ? __CODEINSIGHTS_AGENT_CODEX_RUNTIME_ENABLED__
-    : false,
+  _enabled?: boolean,
 ): boolean {
-  return enabled === true
+  // Codex Runtime 默认开放给用户在设置页自行切换。
+  return true
 }
 
 export function isAgentOpencodeRuntimeFeatureEnabled(
@@ -30,7 +29,7 @@ export function isAgentRuntimeKindEnabled(
     opencode: isAgentOpencodeRuntimeFeatureEnabled(),
   },
 ): boolean {
-  if (kind === 'codex') return flags.codex
+  if (kind === 'codex') return true
   if (kind === 'opencode') return true
   return true
 }

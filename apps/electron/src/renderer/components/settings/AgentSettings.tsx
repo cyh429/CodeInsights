@@ -63,7 +63,7 @@ import type { AgentCodexReasoningEffort, AgentCodexWebSearchMode } from '@/types
 import { SettingsSection, SettingsCard, SettingsRow, SettingsSegmentedControl, SettingsInput } from './primitives'
 import { McpServerForm } from './McpServerForm'
 import { getSettingsDeleteDialogCopy } from './settings-ui-model'
-import { CODEX_NATIVE_AUTH_SELECT_VALUE, OPENCODE_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, getOpencodeCompatibleChannels, isAgentCodexRuntimeFeatureEnabled } from '@/lib/agent-runtime-ui'
+import { CODEX_NATIVE_AUTH_SELECT_VALUE, OPENCODE_NATIVE_AUTH_SELECT_VALUE, getCodexCompatibleChannels, getOpencodeCompatibleChannels } from '@/lib/agent-runtime-ui'
 
 /** 组件视图模式 */
 type ViewMode = 'list' | 'create' | 'edit'
@@ -1128,7 +1128,6 @@ function valueToEffort(value: string): AgentEffort | undefined {
 }
 
 function AgentRuntimeSettings(): React.ReactElement {
-  const codexFeatureEnabled = isAgentCodexRuntimeFeatureEnabled()
   const channels = useAtomValue(channelsAtom)
   const codexChannels = React.useMemo(() => getCodexCompatibleChannels(channels), [channels])
   const opencodeChannels = React.useMemo(() => getOpencodeCompatibleChannels(channels), [channels])
@@ -1189,10 +1188,6 @@ function AgentRuntimeSettings(): React.ReactElement {
 
   const updateRuntimeKind = (value: string): void => {
     const next = value as CodingAgentRuntimeKind
-    if (next === 'codex' && !codexFeatureEnabled) {
-      toast.info('Codex Runtime 功能开关未启用')
-      return
-    }
     setRuntimeKind(next)
     window.electronAPI.updateSettings({
       agentRuntimeKind: next,
@@ -1330,10 +1325,7 @@ function AgentRuntimeSettings(): React.ReactElement {
           description="新会话首次发送时绑定 runtime；已绑定会话继续使用创建时的 runtime"
           value={runtimeKind}
           onValueChange={updateRuntimeKind}
-          options={RUNTIME_OPTIONS.filter((option) => {
-            if (option.value === 'codex') return codexFeatureEnabled || runtimeKind === 'codex'
-            return true
-          })}
+          options={RUNTIME_OPTIONS}
         />
 
         {runtimeKind === 'codex' && (

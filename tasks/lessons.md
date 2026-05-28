@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-28 Agent Runtime 设置页默认可选
+
+- 当用户反馈 Agent Runtime 设置页缺少某个已完成 runtime 时，要同时检查 renderer 选项过滤、settings 初始化回退、main process runtime 注册和 orchestrator preflight gate；只改设置页展示会导致用户选了也跑不起来。
+- Codex / opencode 都完成基础验收后，设置页应默认展示 `Claude Code / Codex / opencode` 三选；旧的 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` / `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME` 只能作为历史 rollout 记录，不能继续作为用户选择前置条件。
+- 做 opencode 可见性修正时必须顺手检查 Codex 可见性，避免只开放一个 runtime 造成用户继续看不到另一个选项。
+
 ## 2026-05-28 opencode 状态同步默认动作
 
 - 用户要求更新 opencode 最新开发状态、完成/未完成清单或下次启动提示词时，直接同步 `docs/opencode-support/README.md`、development checklist、`next-session-prompt.md`、`tasks/todo.md` Review 和 `tasks/lessons.md`，并在最终回复给一份可直接复制的提示词，不再等待用户重复提醒。

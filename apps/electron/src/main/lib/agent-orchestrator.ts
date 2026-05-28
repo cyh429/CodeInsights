@@ -117,10 +117,6 @@ export interface AgentOrchestratorOptions {
 
 // ===== 工具函数 =====
 
-function isCodexRuntimeFeatureEnabled(): boolean {
-  return process.env.CODEINSIGHTS_AGENT_CODEX_RUNTIME === '1'
-}
-
 function normalizeCodexModelForPersistence(model?: string): string | undefined {
   const trimmed = model?.trim()
   if (!trimmed) return undefined
@@ -658,17 +654,6 @@ export class AgentOrchestrator {
       enabledRuntimeKinds: ['claude-code', 'codex', 'opencode'],
     })
     console.log(`[Agent 编排] Runtime 选择: ${runtimeSelection.kind} (${runtimeSelection.source})`)
-
-    if (runtimeSelection.kind === 'codex' && !isCodexRuntimeFeatureEnabled()) {
-      reportPreflightError({
-        code: 'codex_runtime_disabled',
-        title: 'Codex Runtime 已关闭',
-        message: 'Codex Runtime 功能开关已关闭，此会话仅可查看历史，不能继续发送。',
-        actions: [],
-        canRetry: false,
-      })
-      return
-    }
 
     const reportOpencodeMissingManifest = (details: string[]): void => {
       reportPreflightError({

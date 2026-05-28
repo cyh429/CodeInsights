@@ -16,7 +16,7 @@
 
 Phase 8 提交：`60bf4764 docs(agent): 完成 opencode Runtime Phase 8 验收文档`。Phase 8 起始入口：`992b560b docs(agent): 固化 opencode Phase 7 最新启动状态`。下次启动时历史中应包含 `60bf4764`、`992b560b`、Phase 7 开发基线 `3ec2ebec`、Phase 6 最新状态同步提交 `0c84b37a`、Phase 6 开发基线 `bb361a34`、Phase 6 后状态同步提交 `077fbc49`、Phase 5 开发基线 `b3e99265` 和 Phase 4 开发基线 `647d3046`；若 HEAD 是其后的文档同步提交，以最新 HEAD 为准。
 
-Phase 8 后设置页修正：opencode Runtime 已默认开放给用户在 Settings -> Agent Runtime 中自行切换，不再要求启动前设置 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`。Codex Runtime 的实验开关保持不变；`OPENCODE_CONFIG_DIR` 仍默认关闭，仅在 assets / MCP 需要时通过显式开关验证后再启用。
+Phase 8 后设置页修正：Codex / opencode Runtime 均已默认开放给用户在 Settings -> Agent Runtime 中自行切换，不再要求启动前设置 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1` 或 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`。`OPENCODE_CONFIG_DIR` 仍默认关闭，仅在 assets / MCP 需要时通过显式开关验证后再启用。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。

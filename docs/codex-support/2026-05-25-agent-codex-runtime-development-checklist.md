@@ -23,6 +23,7 @@
 - Agent Codex 设置与 Pipeline Codex 设置分离。
 - Codex 会话历史以 runtime events 为主数据，不长期伪造成 Claude SDKMessage。
 - 所有真实 Codex 集成验证必须和 mock 单测分离，默认 CI 不依赖本机登录或真实 API key。
+- Codex Runtime 已默认在 Agent Runtime 设置页可见并可由用户切换；`CODEINSIGHTS_AGENT_CODEX_RUNTIME` 不再作为选择前置条件。
 
 ## 0.1 最新开发状态快照
 
@@ -60,6 +61,7 @@
 - [x] Phase 7 channel API key smoke 暂缓提示词更新已提交：`2cd195b1 docs(agent): 暂缓 Codex API key smoke`。
 - [!] Phase 7 channel API key smoke 暂缓：2026-05-27 用户明确要求暂时不做“若提供 `CODEX_SMOKE_API_KEY` 则补跑 / 若未提供则记录阻塞”两项；保留为已知未完成验证，不默认读取 ambient `OPENAI_API_KEY`，不再阻塞 Phase 8 启动。
 - [x] Phase 8 文档发布和长期维护记录已完成并提交：`d04ffb95 docs(agent): 完成 Codex Runtime Phase 8 文档`。主方案、真实 smoke、SDK / CLI 升级兼容、已知限制、故障排查和发布说明草稿均已回填到 Codex support 文档。
+- [x] Phase 8 后设置页修正：Codex Runtime 默认显示在 Settings -> Agent Runtime 三选中，不再要求 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1`；缺少认证、模型或 runtime 依赖时由运行前诊断 / 错误路径处理。
 
 当前仓库状态要求：
 
@@ -582,7 +584,7 @@ Phase 4 执行记录：
 
 回滚点：
 
-- [ ] 关闭 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` 后所有新会话回到 Claude Code。
+- [!] 历史回滚点：开发阶段曾计划关闭 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` 后所有新会话回到 Claude Code；当前 Codex Runtime 已默认可选，若需要停用应重新引入明确产品开关或让用户切回 Claude Code。
 
 Phase 5 执行记录：
 
@@ -733,11 +735,11 @@ Phase 6 执行记录：
 
 回滚点：
 
-- [ ] 若真实 Codex 集成不稳定，保留代码但默认关闭 `CODEINSIGHTS_AGENT_CODEX_RUNTIME`。
+- [!] 历史回滚点：若真实 Codex 集成不稳定，保留代码并通过设置页 / 产品开关回退到 Claude Code；不再依赖 `CODEINSIGHTS_AGENT_CODEX_RUNTIME` 作为设置页选择前置条件。
 
 Phase 7 执行记录：
 
-- 真实 runtime 接入：`apps/electron/src/main/lib/agent-service.ts` 已注册 `new CodexAgentRuntime()`，不再使用 Phase 5/6 mock Codex runtime；feature flag 仍保护 Codex Agent 路径。
+- 真实 runtime 接入：`apps/electron/src/main/lib/agent-service.ts` 已注册 `new CodexAgentRuntime()`，不再使用 Phase 5/6 mock Codex runtime；Phase 7 当时仍由 feature flag 保护 Codex Agent 路径，Phase 8 后设置页默认开放。
 - 版本确认：本地 `@openai/codex-sdk@0.130.0`、`@openai/codex@0.130.0`；npm latest 查询结果为 `0.133.0`。Phase 7 未升级依赖，保持当前锁定版本验证。
 - SDK 契约确认：官方 TypeScript SDK 仍使用 `@openai/codex-sdk`、`Codex().startThread()`、`resumeThread()` 和 streaming API；实现继续动态 import SDK，避免主进程 bundle 吞掉外部包。
 - 打包策略确认：`build:main` / `watch:main` external 已包含 `@openai/codex-sdk`、`@openai/codex`；`electron-builder.yml` files 已包含 SDK、CLI 和六个目标平台包 glob。
@@ -859,7 +861,7 @@ SDK / CLI 升级兼容记录：
 
 发布说明草稿：
 
-- 新增 Agent 模式 Codex Runtime 实验性支持，可在 feature flag 下选择 Codex 作为 coding-agent runtime。
+- 新增 Agent 模式 Codex Runtime 支持，可在 Agent Runtime 设置中选择 Codex 作为 coding-agent runtime。
 - 新增 Codex runtime 设置：auth 来源、模型、reasoning effort、network access 和 web search。
 - 新增 Codex runtime transcript 历史回放，重开应用后可恢复 Codex 会话主要消息与工具活动。
 - 新增 Codex workspace MCP stdio/http 原生配置注入，secret 通过环境变量间接传递，避免出现在 CLI argv。

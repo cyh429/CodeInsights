@@ -73,7 +73,7 @@ import { toast } from 'sonner'
 import { diffCapabilities, migratePermissionMode } from '@codeinsights/shared'
 import type { WorkspaceCapabilities } from '@codeinsights/shared'
 import { showCapabilityChangeToasts } from './lib/capabilities-toast'
-import { cleanupAgentCodexChannelId, cleanupAgentOpencodeChannelId, isAgentCodexRuntimeFeatureEnabled, resolveEnabledAgentRuntimeKind } from './lib/agent-runtime-ui'
+import { cleanupAgentCodexChannelId, cleanupAgentOpencodeChannelId, resolveEnabledAgentRuntimeKind } from './lib/agent-runtime-ui'
 import { UpdateDialog } from './components/settings/UpdateDialog'
 import { GlobalShortcuts } from './components/shortcuts/GlobalShortcuts'
 import { TabSwitcher } from './components/tabs/TabSwitcher'
@@ -262,15 +262,10 @@ function AgentSettingsInitializer(): null {
       if (settings.agentRuntimeRunnerMode === 'legacy' || settings.agentRuntimeRunnerMode === 'runner-v2') {
         setRuntimeRunnerMode(settings.agentRuntimeRunnerMode)
       }
-      const codexRuntimeEnabled = isAgentCodexRuntimeFeatureEnabled()
       setRuntimeKind(resolveEnabledAgentRuntimeKind(settings.agentRuntimeKind, {
-        codex: codexRuntimeEnabled,
+        codex: true,
         opencode: true,
       }))
-      if (!codexRuntimeEnabled && settings.agentRuntimeKind === 'codex') {
-        console.warn('[AgentSettings] Codex runtime feature flag 已关闭，恢复 Claude Code')
-        window.electronAPI.updateSettings({ agentRuntimeKind: 'claude-code' }).catch(console.error)
-      }
       const validAgentCodexChannelId = cleanupAgentCodexChannelId(settings.agentCodexChannelId, channels)
       setCodexChannelId(validAgentCodexChannelId)
       if (validAgentCodexChannelId !== settings.agentCodexChannelId) {

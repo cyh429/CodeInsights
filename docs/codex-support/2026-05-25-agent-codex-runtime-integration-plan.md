@@ -11,7 +11,7 @@
 
 已落地的关键状态：
 
-- Agent 主进程已注册 `CodexAgentRuntime`，通过 `CodingAgentRuntimeRegistry` 在 Claude Code 与 Codex 之间选择 runtime；`CODEINSIGHTS_AGENT_CODEX_RUNTIME` 继续作为显式 feature flag 边界。
+- Agent 主进程已注册 `CodexAgentRuntime`，通过 `CodingAgentRuntimeRegistry` 在 Claude Code、Codex 与 opencode 之间选择 runtime；Codex Runtime 已默认在设置页可见并可由用户切换，不再要求启动前设置 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1`。
 - Codex runtime 使用 `@openai/codex-sdk@0.130.0` / `@openai/codex@0.130.0`，真实运行走 `runStreamed()`，并把 Codex `ThreadEvent` 映射到 CodeInsights runtime events。
 - Renderer 已接入 Agent runtime 设置、Codex auth/model/reasoning/network/web-search 配置、runtime badge 和 Codex runtime transcript 历史回放。
 - Phase 7 已验证 native / read-only / workspace-write / resume / web-search / stop / packaged startup / packaged history reload / MCP config injection。
@@ -21,7 +21,7 @@
 
 ## 1. 背景与目标
 
-CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的默认后端仍是 `@anthropic-ai/claude-agent-sdk`，但现在已经具备可插拔 `CodingAgentRuntime` 边界，并在 feature flag 下接入 Agent Codex runtime。应用层负责会话、工作区、权限、MCP 配置、消息持久化、事件转发和 UI 展示；Claude / Codex 只承担具体 coding-agent runtime 执行。Pipeline 模式也已经接入 `@openai/codex-sdk` / `@openai/codex`，但该接入仍是面向 Pipeline 节点的结构化一次性执行，不等同于 Agent 自由对话 runtime。
+CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的默认后端仍是 `@anthropic-ai/claude-agent-sdk`，但现在已经具备可插拔 `CodingAgentRuntime` 边界，并已接入 Agent Codex runtime。应用层负责会话、工作区、权限、MCP 配置、消息持久化、事件转发和 UI 展示；Claude / Codex 只承担具体 coding-agent runtime 执行。Pipeline 模式也已经接入 `@openai/codex-sdk` / `@openai/codex`，但该接入仍是面向 Pipeline 节点的结构化一次性执行，不等同于 Agent 自由对话 runtime。
 
 本方案的目标是在 Agent 模式新增一个 **Codex Runtime 后端接入点**。这不是新增一个普通 OpenAI 模型 Provider，也不是用 Responses API 或自研工具循环重写 Codex 能力，而是让 CodeInsights 作为 Coding Agent 产品的代理层，直接复用完整 Codex runtime：
 
@@ -41,7 +41,7 @@ CodeInsights 当前公开主入口是 `Pipeline | Agent`。Agent 模式的默认
 - 复用现有 Agent UI、IPC、Jotai、会话列表和工作区体系，第一阶段不做大规模 UI 改版。
 - 复用现有 Pipeline Codex 中已经验证过的 Codex binary 解析、auth/env 隔离、打包配置和进程清理经验。
 - 用 `@openai/codex-sdk` 的 `runStreamed()` 作为 Agent Codex runtime 的优先接入方式。
-- 保留现有 Claude Agent 路径作为默认和回滚路径，Codex 通过显式设置或 feature flag 开启。
+- 保留现有 Claude Agent 路径作为默认和回滚路径，Codex 通过 Agent Runtime 设置显式切换。
 
 ### 2.2 本次不做
 
@@ -1700,23 +1700,23 @@ git diff --check -- docs/codex-support tasks/todo.md
 
 ### 28.1 Feature flags
 
-建议至少保留三个开关：
+历史设计建议至少保留三个开关；当前实现中 Codex Runtime 已默认开放设置页选择，下面的 Codex feature flag 项仅作为历史 rollout 记录保留：
 
 | Flag | 默认 | 作用 |
 | --- | --- | --- |
-| `CODEINSIGHTS_AGENT_CODEX_RUNTIME` | `0` | 是否允许选择 Codex Agent runtime |
+| `CODEINSIGHTS_AGENT_CODEX_RUNTIME` | 历史默认 `0` | 历史 rollout 开关；当前不再作为设置页选择前置条件 |
 | `CODEINSIGHTS_AGENT_RUNTIME_EVENTS_HISTORY` | `0` 到 Phase 6 后改 `1` | 是否启用 runtime events 历史渲染 |
 | `CODEINSIGHTS_AGENT_CODEX_DANGER_FULL_ACCESS` | `0` | 是否允许 Codex 使用 danger-full-access |
 
-开发阶段 UI 可以隐藏 Codex runtime，只有 flag 开启时显示。这样主分支可以合并底层抽象而不向普通用户暴露半成品。
+开发阶段 UI 曾通过 flag 隐藏 Codex runtime。当前 Codex Runtime 已完成基础验收，设置页默认展示，缺少认证、模型或 runtime 依赖时由运行前诊断 / 错误路径处理。
 
 ### 28.2 回滚路径
 
 如果 Codex Agent 出现严重问题：
 
-1. 关闭 `CODEINSIGHTS_AGENT_CODEX_RUNTIME`。
+1. 临时从设置页切回 Claude Code，或在后续版本重新引入显式产品开关。
 2. 新会话默认回到 Claude Code。
-3. 已有 Codex session 保留在列表中，但发送按钮禁用并提示“当前版本暂时禁用 Codex runtime”。
+3. 已有 Codex session 保留在列表中；若 runtime 不可用，由运行前诊断 / 错误路径提示。
 4. 不删除 runtime events 和 `runtimeSession`。
 5. Claude session 不受影响，因为 Claude runner 包装路径保持独立。
 

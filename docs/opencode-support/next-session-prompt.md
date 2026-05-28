@@ -30,7 +30,7 @@ Phase 4 开发基线：647d3046 feat(agent): 完成 opencode Runtime Phase 4 Moc
 - Phase 6 已完成：renderer 设置、权限交互和历史回放。
 - Phase 7 已完成：MCP config/status、packaged binary/server smoke、packaged history replay smoke 和 secretless 加固。
 - Phase 8 已完成本轮可验证范围：无凭证 smoke、native auth readonly 真实 prompt、macOS arm64 packaged smoke、packaged history reload、DMG artifact、SDK/CLI latest 复核、故障排查材料和 release notes 草稿。
-- Phase 8 后设置页修正已进入实现：opencode Runtime 默认在 Settings -> Agent Runtime 可见并可选，不再要求 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`；Codex Runtime 开关不变，`OPENCODE_CONFIG_DIR` 仍默认关闭。
+- Phase 8 后设置页修正已完成：Codex / opencode Runtime 默认在 Settings -> Agent Runtime 可见并可选，不再要求 `CODEINSIGHTS_AGENT_CODEX_RUNTIME=1` 或 `CODEINSIGHTS_AGENT_OPENCODE_RUNTIME=1`；`OPENCODE_CONFIG_DIR` 仍默认关闭。
 
 已完成的 Phase 7 范围：
 - workspace MCP 会注入 opencode config：stdio/local env 与 remote headers 使用 `{env:VAR}` placeholder，真实 secret 只进入子进程 env。
