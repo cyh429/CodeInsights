@@ -4606,3 +4606,22 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已补充新增功能的 MVP / 增强范围 / 验收标准，并补充 Phase 完成定义、BDD 场景、测试矩阵、fixture repo、smoke 分层、不回归检查、迁移兼容和下一轮最小切片文件清单。
 - 本轮仍只修改方案文档和 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未执行真实模型 smoke。
 - 验证通过：`test -f docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无命中；Markdown 代码块 fence 成对；`git diff --check -- tasks/todo.md`；`git diff --check --no-index /dev/null docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 无空白错误。
+
+## 2026-05-28 Pipeline v1 开发跟踪清单计划
+
+范围确认：基于 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md` 新增一份可长期勾选的开发跟踪清单，作为后续 Pipeline 优化迭代的执行入口；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不做真实模型 smoke。
+
+- [x] 复习 `tasks/lessons.md`、v1 优化方案和历史 v0 checklist，确认阶段提交、preflight、v2 可见性、Git 防护和验证纪律。
+- [x] 新增 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，包含强制规则、状态标记、里程碑、阶段任务、文件落点、验证命令、完成定义、风险门禁和阶段 Review 模板。
+- [x] 确保清单能直接作为后续迭代入口：Phase 0-6 任务可勾选，P0/P1/P2 优先级清晰，旧会话兼容和文档同步边界明确。
+- [x] 验证文档路径、Markdown 空白、占位符和任务记录，并追加 Review。
+- [x] 按阶段纪律提交本轮文档成果。
+
+## 2026-05-28 Pipeline v1 开发跟踪清单 Review
+
+- 已新增 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，作为后续 Pipeline v1 优化迭代的长期执行入口。
+- 清单已按 Phase 0-6 拆分：清理与对齐、Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / Submission Plan、远端写确认 / GitHub 增强、真实端到端验收。
+- 每个 Phase 都包含阶段状态、目标、入口条件、测试任务、实现任务、触达文件、验证命令、完成定义、禁止事项和 Review 模板，便于后续按阶段勾选和独立提交。
+- 已补充横向工程纪律：安全审查、可用性检查、测试纪律、版本与提交清单、后续积压池和下一轮启动入口。
+- 本轮仅新增开发清单并更新 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未执行真实模型 smoke。
+- 验证通过：`test -f docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 无命中；Markdown 代码块 fence 成对；`git diff --check -- tasks/todo.md`；`git diff --check --no-index /dev/null docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 无空白错误。
