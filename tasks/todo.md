@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-28 Agent opencode Runtime Phase 6 最新状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-6 已完成、Phase 7-8 未完成，并将下次继续开发入口固定到 Phase 7；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前最新状态同步提交为 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`，历史包含 `bb361a34`、`786b6485`、`3b8a1286`、`b3e99265`、`647d3046`。
+- [x] 复查 `docs/opencode-support/README.md`、开发清单、`next-session-prompt.md`、`tasks/todo.md` 和 `tasks/lessons.md`，确认 Phase 6 完成状态、Phase 7 入口和默认状态同步纪律。
+- [x] 更新 opencode support README：写入 2026-05-28 最新状态，明确当前开发基线仍为 `bb361a34`，上一状态同步提交为 `077fbc49`，下一步从 Phase 7 开始。
+- [x] 更新 opencode 开发清单：把最新状态快照、仓库状态要求和完成/未完成总览对齐到 Phase 6 后状态同步。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词包含 `077fbc49`、`bb361a34` 和 Phase 7 入口。
+- [x] 更新 `tasks/lessons.md`：再次固化“更新最新开发状态和下次启动提示词是默认收尾动作，不需要用户重复提醒”的习惯。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`。
+
+## 2026-05-28 Agent opencode Runtime Phase 6 最新状态同步 Review
+
+- 已确认当前业务开发基线仍为 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`，当前最新已知状态同步提交为 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`。
+- 已更新 `docs/opencode-support/README.md`、开发清单和 `next-session-prompt.md`：明确 Phase 0-6 已完成，Phase 7-8 未完成，下一步从 Phase 7 MCP / packaged / release readiness 开始。
+- 已更新 `tasks/lessons.md`：以后用户要求更新最新开发状态、完成/未完成清单或下次启动提示词时，默认同步 support README、development checklist、next-session prompt、`tasks/todo.md` Review 和 lessons，并在最终回复给可复制提示词。
+- 保持边界：本次状态同步不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不安装依赖，不进入 Phase 7 实现。
+
 ## 2026-05-27 Agent opencode Runtime Phase 6 Renderer 接入计划
 
 范围确认：本轮进入 Phase 6，只接入 renderer 设置、权限交互、runtime capabilities 展示和历史回放验证；不进入 MCP、packaged release、真实模型验收或根 `README.md` / `AGENTS.md` 修改。UI 不做 opencode 专用 message list，继续复用现有 runtime transcript 和 `PermissionBanner`。

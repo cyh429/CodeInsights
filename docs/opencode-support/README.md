@@ -10,11 +10,11 @@
 
 ## 最新状态
 
-更新时间：2026-05-27，Phase 6 完成
+更新时间：2026-05-28，Phase 6 完成，已做最新状态同步
 
 当前开发基线：`bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。Phase 6 renderer 设置、权限交互和历史回放已完成，下一步从 Phase 7 MCP、packaged binary 和 release readiness 开始。
 
-上一状态同步提交：`786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`。下次启动时以 Phase 6 后状态为入口，历史中应包含 Phase 6 开发基线 `bb361a34`、Phase 5 开发基线 `b3e99265` 和 Phase 4 开发基线 `647d3046`。
+上一状态同步提交：`077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`。下次启动时以 Phase 6 后状态为入口，历史中应包含 Phase 6 开发基线 `bb361a34`、Phase 6 后状态同步提交 `077fbc49`、Phase 5 开发基线 `b3e99265` 和 Phase 4 开发基线 `647d3046`。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -44,6 +44,7 @@
   - Phase 6 权限交互：opencode permission events 复用现有 `PermissionBanner`，展示 tool preview、cwd、risk label，支持 reject / once / session allow，缺少 preview 时隐藏 session allow。
   - Phase 6 历史回放：Codex / opencode 统一使用 `RuntimeTranscript`，live runtime envelope 直接推送并去重，兼容 SDKMessage 标记 `_runtimeEnvelope` 避免重复，回放只依赖 CodeInsights runtime event log，不依赖 opencode server 存活。
   - Phase 6 审查修复：runtime replay 去重改为 `runId + sequence`，避免多 run sequence 从 0 开始时丢事件；feature flag 关闭时 opencode 不再作为可点击 runtime 选项；server status 读取 runtime manager 最新状态。
+  - Phase 6 后状态同步：已将最新开发状态、完成/未完成清单和下次启动入口同步到 `077fbc49` 后状态。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -66,6 +67,7 @@
   - `3b8a1286 docs(agent): 同步 opencode Phase 5 后续开发状态`
   - `786b6485 docs(agent): 固化 opencode Phase 5 最新启动状态`
   - `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`
+  - `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -98,7 +100,7 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 6 后状态，历史包含 Phase 6 开发基线 `bb361a34`、Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 6 后状态同步提交，历史包含 Phase 6 开发基线 `bb361a34`、Phase 6 后状态同步提交 `077fbc49`、Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
 3. 读取开发清单的“最新开发状态快照”和 Phase 7。
 4. 在 `tasks/todo.md` 写入 Phase 7 计划，然后开始 MCP、packaged binary 和 release readiness。
 

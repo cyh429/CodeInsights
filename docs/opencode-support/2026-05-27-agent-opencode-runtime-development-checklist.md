@@ -1,7 +1,7 @@
 # Agent 模式 opencode Runtime 开发进度清单
 
-状态：Phase 6 已完成，MCP / packaged / release readiness 未开始
-日期：2026-05-27
+状态：Phase 6 已完成，Phase 7 MCP / packaged / release readiness 未开始
+日期：2026-05-28
 主方案：[Agent 模式 opencode Runtime 接入开发方案](./2026-05-27-agent-opencode-runtime-integration-plan.md)
 适用范围：CodeInsights Electron Agent 模式新增 `opencode` Coding Agent Runtime
 
@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-27，Phase 6 完成
+更新时间：2026-05-28，Phase 6 完成，已做最新状态同步
 
 当前结论：
 
@@ -67,14 +67,15 @@
 - [x] Phase 6 权限交互已完成：opencode permission events 复用现有 `PermissionBanner`，展示 tool preview、cwd、risk label，支持 reject / once / session allow，并在缺少 preview 时隐藏 session allow。
 - [x] Phase 6 历史回放已完成：Codex / opencode 统一使用 runtime transcript；live runtime envelope 推送并去重；兼容 SDKMessage 加 `_runtimeEnvelope` 标记避免重复；回放只依赖 CodeInsights runtime event log，不依赖 opencode server 存活。
 - [x] Phase 6 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.48`，提升 `@codeinsights/electron` patch 版本到 `0.0.118`。
+- [x] Phase 6 后状态同步已单独提交：`077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`。
 - [ ] Phase 7 MCP / packaged / release readiness 未开始。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
 
 当前仓库状态要求：
 
-- 下次启动先运行 `git status --short` 和 `git log -3 --oneline`。
+- 下次启动先运行 `git status --short` 和 `git log -5 --oneline`。
 - 预期最新开发基线为 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入`。
-- 若后续补充状态同步提交，support 文档仍以真实 Phase 6 开发基线 `bb361a34` 为准，最终回复再补充实际 HEAD。
+- 当前最新状态同步提交为 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`；若后续补充状态同步提交，support 文档仍以真实 Phase 6 开发基线 `bb361a34` 为准，最终回复再补充实际 HEAD。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -82,7 +83,7 @@
 
 下一步入口：
 
-1. 确认 Phase 6 阶段提交 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入` 已经存在，历史包含 `786b6485`、`3b8a1286`、`b3e99265` 和 `647d3046`。
+1. 确认 Phase 6 阶段提交 `bb361a34 feat(agent): 完成 opencode Runtime Phase 6 Renderer 接入` 和 Phase 6 后状态同步提交 `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态` 已经存在，历史包含 `786b6485`、`3b8a1286`、`b3e99265` 和 `647d3046`。
 2. 进入 Phase 7，开始 MCP、packaged binary 和 release readiness。
 3. 不要直接跳到真实模型验收或公开文档同步；真实使用验收、故障排查和 release notes 留到 Phase 8。
 
