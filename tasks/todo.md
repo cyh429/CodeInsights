@@ -1,5 +1,26 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-28 Agent opencode Runtime Phase 7 最新开发状态同步计划
+
+范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-7 已完成、Phase 8 未开始、Phase 7 残余验证项仍未完成；不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不进入真实模型验收、故障排查实战或 release notes。
+
+- [x] 运行 `git status --short` 和 `git log -5 --oneline`，确认当前工作树干净，最新提交为 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态`，历史包含 `3ec2ebec`、`0c84b37a`、`077fbc49`、`bb361a34`。
+- [x] 复查 `docs/opencode-support/README.md`、development checklist、integration plan、`next-session-prompt.md` 和 `tasks/lessons.md`，定位仍写着“等待本轮状态同步提交”的占位状态。
+- [x] 更新 opencode support README：写入最新状态同步提交 `bcec66d6`，明确 Phase 7 已完成、Phase 8 未开始、Phase 7 残余验证项保留。
+- [x] 更新 opencode development checklist：把最新状态快照、仓库状态要求和下一步入口对齐到 `bcec66d6`。
+- [x] 更新 `docs/opencode-support/next-session-prompt.md`：下次启动提示词要求确认 `bcec66d6` 或其后的文档同步提交，并从 Phase 8 继续。
+- [x] 更新 `tasks/lessons.md`：固化“最新状态文档 + 下次启动提示词”是默认收尾习惯，不需要用户每次提醒。
+- [x] 运行 `git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`。
+- [x] 在本节追加 Review，并按状态同步纪律单独提交本轮文档更新。
+
+## 2026-05-28 Agent opencode Runtime Phase 7 最新开发状态同步 Review
+
+- 已确认当前最新提交为 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态`，Phase 7 开发基线为 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`，历史包含 `0c84b37a`、`077fbc49`、`bb361a34`、`786b6485`、`b3e99265`、`647d3046`。
+- 已更新 `docs/opencode-support/README.md`、development checklist 和 `next-session-prompt.md`：明确 Phase 0-7 已完成，Phase 8 未开始；Phase 7 残余仍包括 macOS x64 / Windows x64 / Linux packaged smoke 未本机验证、DMG `hdiutil create` 失败、MCP tool-call 真实模型 smoke 未执行。
+- 已更新 `tasks/lessons.md`：将“最新状态文档 + 下次启动提示词”固化为默认收尾习惯；以后阶段完成或用户询问进度时主动同步，不需要再次提醒。
+- 保持边界：本次只修改 opencode support 文档、任务记录和 lessons；不修改业务代码，不修改根 `README.md` / `AGENTS.md`，不进入真实模型验收、故障排查实战或 release notes。
+- 验证通过：`git diff --check -- docs/opencode-support tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-28 Agent opencode Runtime Phase 6 最新状态同步计划
 
 范围确认：本轮只同步 opencode support 文档、下次启动提示词、任务记录和 lessons，明确 Phase 0-6 已完成、Phase 7-8 未完成，并将下次继续开发入口固定到 Phase 7；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖。

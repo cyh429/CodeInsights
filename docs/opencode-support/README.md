@@ -10,11 +10,11 @@
 
 ## 最新状态
 
-更新时间：2026-05-28，Phase 7 完成，等待本轮状态同步提交
+更新时间：2026-05-28，Phase 7 完成，最新状态同步已提交
 
 当前开发基线：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。Phase 7 已完成 workspace MCP config/status、packaged binary inclusion、macOS arm64 packaged app server smoke、packaged history replay smoke 和 secretless 加固；下一步从 Phase 8 真实使用验收、故障排查材料和公开文档同步准备开始。
 
-上一状态同步提交：`0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`。下次启动时以 Phase 7 后状态为入口，历史中应包含 Phase 7 开发基线 `3ec2ebec`、Phase 6 最新状态同步提交 `0c84b37a`、Phase 6 开发基线 `bb361a34`、Phase 6 后状态同步提交 `077fbc49`、Phase 5 开发基线 `b3e99265` 和 Phase 4 开发基线 `647d3046`。
+Phase 7 后恢复入口：`bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 或其后的文档同步提交。上一状态同步提交：`0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`。下次启动时历史中应包含 Phase 7 开发基线 `3ec2ebec`、Phase 6 最新状态同步提交 `0c84b37a`、Phase 6 开发基线 `bb361a34`、Phase 6 后状态同步提交 `077fbc49`、Phase 5 开发基线 `b3e99265` 和 Phase 4 开发基线 `647d3046`。
 
 - 已完成：
   - 需求理解：CodeInsights 的目标是成为多 Coding Agent runtime 代理层，不重新实现 Agent 能力。
@@ -51,6 +51,7 @@
   - Phase 7 history replay：packaged app reload smoke 已支持 `--runtime opencode`，可种子化 opencode runtime event log 并验证首次打开/重开回放。
   - Phase 7 `OPENCODE_CONFIG_DIR` 结论：默认继续关闭；默认 MCP smoke 通过且 `configDirEnabled=false`，显式 `OPENCODE_SMOKE_ENABLE_CONFIG_DIR=1` 仍以 `The operation was aborted.` 失败。
   - Phase 7 审查修复：MCP timeout 从秒转换为 opencode config 毫秒；platform optional package binary 缺失或不可执行时不返回坏路径；`@codeinsights/shared` 升级到 `0.1.49`，`@codeinsights/electron` 升级到 `0.0.119`。
+  - Phase 7 状态同步：已将最新开发状态、完成/未完成清单和下次启动入口同步到 `bcec66d6` 后状态。
 - 已提交：
   - `094d911d docs(agent): 完成 opencode Runtime 接入方案`
   - `06c62406 docs(agent): 深化 opencode Runtime 接入方案`
@@ -76,6 +77,7 @@
   - `077fbc49 docs(agent): 同步 opencode Phase 6 后续开发状态`
   - `0c84b37a docs(agent): 同步 opencode Phase 6 最新开发状态`
   - `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`
+  - `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态`
 - 已确认的关键设计：
   - opencode 是完整 Coding Agent Runtime，不是普通模型 Provider。
   - CodeInsights 不重写 opencode 的工具循环、MCP、权限、provider adapter 或 session 管理。
@@ -108,7 +110,7 @@
 启动后先做四件事：
 
 1. 读取项目指令和 `tasks/lessons.md`。
-2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 Phase 7 后状态同步提交或其后的文档同步提交，历史包含 Phase 7 开发基线 `3ec2ebec`、Phase 6 最新状态同步 `0c84b37a`、Phase 6 开发基线 `bb361a34`、Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
+2. 运行 `git status --short` 和 `git log -5 --oneline`，确认最新提交为 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 或其后的文档同步提交，历史包含 Phase 7 开发基线 `3ec2ebec`、Phase 6 最新状态同步 `0c84b37a`、Phase 6 开发基线 `bb361a34`、Phase 5 开发基线 `b3e99265` 与 Phase 4 基线 `647d3046 feat(agent): 完成 opencode Runtime Phase 4 Mock 路由`。
 3. 读取开发清单的“最新开发状态快照”和 Phase 8。
 4. 在 `tasks/todo.md` 写入 Phase 8 计划，然后开始真实使用验收和发布准备材料。
 

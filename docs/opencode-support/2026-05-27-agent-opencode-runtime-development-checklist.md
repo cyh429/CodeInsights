@@ -27,7 +27,7 @@
 
 ## 0.1 最新开发状态快照
 
-更新时间：2026-05-28，Phase 7 完成，等待本轮状态同步提交
+更新时间：2026-05-28，Phase 7 完成，Phase 7 后恢复入口已固定到 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 或其后的文档同步提交
 
 当前结论：
 
@@ -72,6 +72,7 @@
 - [x] Phase 7 MCP / packaged / release readiness 已完成本轮范围：workspace MCP config/status、secretless summary、packaged binary/server smoke、packaged history reload smoke 和 `OPENCODE_CONFIG_DIR` 暂缓验证。
 - [x] Phase 7 按受影响包规则提升 `@codeinsights/shared` patch 版本到 `0.1.49`，提升 `@codeinsights/electron` patch 版本到 `0.0.119`。
 - [x] Phase 7 已单独提交：`3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
+- [x] Phase 7 后状态同步已单独提交：`bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态`。
 - [!] Phase 7 多平台 packaged smoke 未在本机完成：macOS x64、Windows x64、Linux 留后续 CI / 对应平台验证；DMG artifact 生成仍在 `hdiutil create` 阶段失败。
 - [ ] Phase 8 真实使用验收与长期文档未开始。
 
@@ -79,7 +80,7 @@
 
 - 下次启动先运行 `git status --short` 和 `git log -5 --oneline`。
 - 预期最新开发基线为 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证`。
-- 当前最新状态同步提交为本轮 Phase 7 后状态同步提交；support 文档以真实 Phase 7 开发基线 `3ec2ebec` 为准，最终回复再补充实际 HEAD。
+- 当前恢复入口要求历史中包含 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 和 Phase 7 开发基线 `3ec2ebec`；如果 HEAD 是其后的文档同步提交，以最新 HEAD 作为实际启动入口。
 - 若有无关用户改动，不要回滚；先辨认是否影响当前 Phase。
 - 如果看到 `apps/electron/out/` 或其他打包产物，不默认 stage / commit。
 - 每完成一个 Phase，必须先运行该 Phase 的验证，再单独提交。
@@ -87,7 +88,7 @@
 
 下一步入口：
 
-1. 确认 Phase 7 阶段提交 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证` 已经存在，历史包含 `0c84b37a`、`077fbc49`、`bb361a34`、`786b6485`、`b3e99265` 和 `647d3046`。
+1. 确认 Phase 7 状态同步提交 `bcec66d6 docs(agent): 同步 opencode Phase 7 开发状态` 和 Phase 7 阶段提交 `3ec2ebec feat(agent): 完成 opencode Runtime Phase 7 MCP 与打包验证` 已经存在，历史包含 `0c84b37a`、`077fbc49`、`bb361a34`、`786b6485`、`b3e99265` 和 `647d3046`。
 2. 进入 Phase 8，开始真实使用验收、故障排查材料和发布准备。
 3. 不要在未经用户明确允许时修改根 `README.md` / `AGENTS.md`。
 
