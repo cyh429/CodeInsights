@@ -1,5 +1,35 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 Phase 6 状态回填与下次启动提示词计划
+
+范围确认：本轮只做状态文档同步和长期习惯加固，不改业务代码。目标是把 `d71e13af docs(pipeline): 同步 Phase 6 后续开发状态` 回填为最新已确认恢复入口，标清 Phase 0-6 已完成、未完成项和下一轮入口，并给用户一份可直接复制的下次启动提示词。
+
+执行计划：
+
+- [x] 读取 `tasks/lessons.md`、Pipeline v1 development checklist 和 `next-session-prompt.md`。
+- [x] 运行 `git status --short --branch` 和 `git log --oneline -8`，确认当前分支、最新提交和未提交状态。
+- [x] 更新 `tasks/lessons.md`，把“阶段完成后自动同步状态文档和最终提示词”作为更明确的默认收尾动作记录下来。
+- [x] 更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，回填 `d71e13af`，标明完成 / 未完成 / 下一轮入口。
+- [x] 更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下次启动能从当前 Phase 0-6 已完成状态继续。
+- [x] 在本节追加 Review，并运行陈旧入口搜索与 `git diff --check`。
+- [x] 单独提交本轮状态同步文档。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 完成状态：Phase 0-6 已完成；最新开发基线为 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`；最新已确认恢复入口为 `d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 本轮同步：已更新 lessons、development checklist、next-session prompt 和本节任务记录；未改业务代码。
+- 验证：陈旧入口搜索通过；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md` 通过。
+- 阶段提交：本节由当前状态同步提交承载；实际最新 HEAD 在最终回复中给出。
+
 ## 2026-05-29 Pipeline v1 Phase 6 真实端到端验收与交付准备计划
 
 范围确认：本轮从 Phase 6 开始。目标是在不伪装未验证能力的前提下，补齐可重复的 fixture / fake-runner smoke、packaged smoke 和交付准备记录。默认不 push、不创建真实 PR、不执行真实远端写；真实 remote smoke 必须先获得用户明确授权和凭证条件。根 `README.md` / 根 `AGENTS.md` 只准备同步草案，不直接修改，除非用户明确允许。
@@ -149,7 +179,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 审计与边界：远端副作用前会写入 `remote_write_confirmed` ContributionTask event；如果远端 PR 已创建但 graph resume 失败，Service 会保留已完成的 `remote_pr_created` 状态，不丢失成功副作用。
 - Review 修复：修复了 `draft_only` 无法进入 remote PR、existing PR 必须在 push 前检测、UI gate kind 不应污染响应、恢复路径补齐 remoteWritePlan、GitHub API runner 接入 production service、remote URL / token / Authorization 脱敏、CLI existing PR base/head 校验、`skipPush` 远端 ref SHA 复验、GitHub API push 成功但 PR 创建和 existing PR lookup 都失败时仍保留 `pushed` 状态、远端成功后 graph resume 失败状态保留等问题。
 - 未完成项：Phase 6 真实端到端验收、packaged smoke 和公开文档准备尚未开始。
-- 阶段提交：`feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
+- 阶段提交：`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
 
 ## 2026-05-29 Pipeline v1 Phase 4 后状态同步计划
 
