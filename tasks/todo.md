@@ -4625,3 +4625,20 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已补充横向工程纪律：安全审查、可用性检查、测试纪律、版本与提交清单、后续积压池和下一轮启动入口。
 - 本轮仅新增开发清单并更新 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未执行真实模型 smoke。
 - 验证通过：`test -f docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 无命中；Markdown 代码块 fence 成对；`git diff --check -- tasks/todo.md`；`git diff --check --no-index /dev/null docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 无空白错误。
+
+## 2026-05-29 阶段提交习惯同步计划
+
+范围确认：响应用户要求“提交当前代码变更，并在后续 Codex 会话中自动保持阶段完成即提交的习惯”。本轮先确认当前工作树状态，再同步 `tasks/lessons.md` 长期规则和本任务记录；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不 push。
+
+- [x] 核对当前工作树和最近提交，确认 Pipeline v1 方案与开发清单已经完成阶段提交。
+- [x] 更新 `tasks/lessons.md`，强化“新会话启动也要主动检查已完成未提交阶段”的长期习惯。
+- [x] 验证任务记录和 lessons 空白检查。
+- [x] 提交本轮习惯同步改动，提交信息使用详细中文。
+
+## 2026-05-29 阶段提交习惯同步 Review
+
+- 当前工作树在本轮开始时没有未提交业务代码变更；分支已有两个文档阶段提交：`ae5c85ba docs(pipeline): 完善 Pipeline v1 优化方案` 和 `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`。
+- 已在 `tasks/lessons.md` 新增“2026-05-29 阶段提交习惯再确认”，明确重新启动 Codex 会话后也要主动检查已完成但未提交阶段成果。
+- 已记录：如果用户要求提交但工作树干净，应报告最近提交和 ahead 状态；如有 lessons / 习惯同步，只提交同步改动，不制造无关业务修改。
+- 本轮仅修改 `tasks/lessons.md` 和 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push。
+- 验证通过：`git diff --check -- tasks/todo.md tasks/lessons.md`。
