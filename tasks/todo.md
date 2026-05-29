@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 4 后状态同步计划
+
+范围确认：本轮只做 Phase 4 完成后的状态文档同步和习惯固化；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不进入 Phase 5 实现，不 push、不创建 PR、不执行真实远端写。
+
+- [x] 复核当前分支、工作树和最近提交，确认 Phase 4 实现提交为 `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+- [x] 更新 Pipeline v1 development checklist：回填真实 Phase 4 提交号，明确 Phase 0-4 已完成，Phase 5-6 尚未完成，下一步从 Phase 5 继续。
+- [x] 更新 Pipeline v1 `next-session-prompt.md`：启动检查最近历史补齐 `1ff8416a`，当前真实进度写清 Phase 4 已完成、Phase 5-6 未完成。
+- [x] 更新 `tasks/lessons.md`：把阶段完成后自动同步状态文档、回填真实提交号、给可复制启动提示词固化为默认动作。
+- [x] 在本节追加 Review，运行文档 diff check，单独提交本轮状态同步改动。
+
+## 2026-05-29 Pipeline v1 Phase 4 后状态同步 Review
+
+- 已确认当前分支 `pipeline-improve` 工作基线：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+- 已更新 Pipeline v1 development checklist：最新开发基线回填为 `1ff8416a`，已完成项明确为 Phase 0 / Phase 1 / Phase 2 / Phase 3 / Phase 4，未完成项明确为 Phase 5-6，下一步从 Phase 5 远端写确认与 GitHub 增强继续。
+- 已更新 `docs/improve/pipeline/v1/next-session-prompt.md`：启动检查最近历史补齐 `1ff8416a`，当前真实进度写清 Phase 4 已完成、Phase 5-6 尚未完成。
+- 已更新 `tasks/lessons.md`：阶段完成后必须自动同步 development checklist、next-session prompt、`tasks/todo.md` Review，并回填真实阶段提交号；最终回复继续给可直接复制的下次启动提示词。
+- 本轮只修改状态文档、任务记录和 lessons；未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push / PR / 远端写。
+- 验证：`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-29 Pipeline v1 Phase 4 Contribution Dashboard 与 Submission Plan 计划
 
 范围确认：本轮只做 Phase 4。目标是把 ContributionTask 暴露为一等只读 Dashboard，并新增 `PipelineSubmissionPlan` read model，让 `CommitterPanel` 从服务端 read model 展示提交计划，而不是在 UI 中零散拼 tester / committer output。保持本地 commit / remote PR 现有执行服务不变；不修改 Graph、runner、Git submission 真实写逻辑，不新增真实 Git 写路径，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`。
@@ -62,7 +81,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - Code review 处理：已修复 reviewer 指出的 read model 非严格只读问题，并新增“缺失 patch-work 不创建目录”回归测试；已收紧新 read model 返回面的 URL / error 脱敏。
 - 未完成项：Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备仍未开始。
-- 阶段提交：本次提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+- 阶段提交：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
 
 ## 2026-05-29 Pipeline v1 Phase 3 状态同步再确认计划
 

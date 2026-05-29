@@ -3,6 +3,7 @@
 ## 2026-05-29 Pipeline v1 状态同步默认动作
 
 - Pipeline v1 每个 Phase 完成并提交后，必须立即同步 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`、`docs/improve/pipeline/v1/next-session-prompt.md` 和 `tasks/todo.md` Review，写清真实开发基线提交、已完成项、未完成项、下一阶段入口和验证结果。
+- 阶段实现提交完成后，持久文档里不能继续留下“本次提交”“本轮提交”“feat(...)”这类占位；必须用 `git log` / `git rev-parse --short HEAD` 回填真实提交号，例如 `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
 - 用户要求“更新文档最新开发状态 / 标清完成未完成 / 给下次启动提示词”时，直接执行上述同步并提交文档状态更新；最终回复必须给一份可直接复制的下一次启动提示词。
 - 每个阶段性任务完成后，不需要用户再次提醒，默认执行“development checklist + next-session prompt + `tasks/todo.md` Review + 最终可复制提示词”的状态同步；如用户再次强调“记住这个习惯”，要在本文件更新更具体的执行规则。
 - 用户再次强调“我希望你能记住这个习惯，在每个阶段性任务完成后自动去做”时，立即复核当前文档是否包含最新状态同步提交、完成/未完成清单和下一阶段启动提示词；若缺少最新恢复入口，即使代码阶段已提交，也要补一次文档状态同步提交，并在最终回复给可直接复制的提示词。

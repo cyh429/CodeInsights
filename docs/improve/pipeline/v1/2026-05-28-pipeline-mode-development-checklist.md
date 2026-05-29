@@ -9,8 +9,8 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：本次 Phase 4 提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`；上一稳定基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
-> 最新恢复入口：本次 Phase 4 提交内已同步；上一恢复入口：`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`。
+> 最新开发基线：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`；上一稳定基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
+> 最新恢复入口：包含本段状态同步内容的 `docs(pipeline): 同步 Phase 4 后续开发状态` 提交；提交 hash 以本次任务最终回复为准。上一恢复入口：`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`。
 > 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan 已完成并通过聚焦验证；Phase 5-6 尚未开始。下次正式开发应从 **Phase 5：远端写确认与 GitHub 增强** 开始。
 
 ### 已完成
@@ -31,7 +31,7 @@
   - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
   - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
   - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
-  - 本次 Phase 4 提交：`feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
+  - `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -78,7 +78,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4 已完成，Phase 5 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -8 --oneline`，确认没有未提交改动，并确认最近历史包含本次 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 4. 在 `tasks/todo.md` 写入 Phase 5 计划。
 5. 从 Phase 5 开始开发，先补测试，再实现远端写确认与 GitHub 增强。
 6. Phase 5 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
@@ -667,7 +667,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 版本同步：`@codeinsights/shared` 提升到 `0.1.53`，`@codeinsights/electron` 提升到 `0.0.126`，`bun.lock` 已同步。
 - 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 未完成项：Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备仍未开始。
-- 阶段提交：本次提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+- 阶段提交：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
 
 ## Phase 5：远端写确认与 GitHub 增强
 
@@ -686,7 +686,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 
 ### 入口条件
 
-- [ ] Phase 4 已完成并提交。
+- [x] Phase 4 已完成并提交。
 - [ ] 已完成安全评审：远端写必须显式二次确认。
 - [ ] 已确认真实 remote PR smoke 需要用户凭证或 CI secret。
 

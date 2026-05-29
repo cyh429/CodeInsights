@@ -15,8 +15,8 @@ pipeline-improve
 1. 读取 `tasks/lessons.md`，重点关注阶段完成即提交、状态文档同步、Pipeline patch-work 路径安全、stop 后副作用、Tester Git 防护和 Codex secret 注入。
 2. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
-4. 运行 `git status --short --branch` 和 `git log -8 --oneline`，确认当前分支状态；最近历史应包含：
-   - `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
+4. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支状态；最近历史应包含：
+   - `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
    - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
    - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
    - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
