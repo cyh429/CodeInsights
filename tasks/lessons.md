@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-30 Pipeline Report Export 只读与脱敏边界
+
+- Pipeline 报告导出不能复用会触发 live Git 检查的 submission plan；导出类 IPC 必须只从已持久化的 records、stage artifacts、ContributionTask events 和 patch-work manifest 组装事实，避免 `git status` / `git diff` 刷新 index 或把当前工作树误当成已验收结果。
+- 报告脱敏不能只覆盖 Markdown 正文；IPC 返回的顶层 `title`、`fileName`、preview 入口和错误信息也必须复用同一套 secret / credentialed URL / Authorization / Bearer 脱敏策略。
+- 为“只读导出”写测试时，要用 fake `git` marker 或持久化 artifact 与当前工作树不一致的场景锁住边界，防止以后无意中重新调用 Git read model。
+
 ## 2026-05-29 Pipeline v1 状态同步默认动作
 
 - Pipeline v1 每个 Phase 完成并提交后，必须立即同步 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`、`docs/improve/pipeline/v1/next-session-prompt.md` 和 `tasks/todo.md` Review，写清真实开发基线提交、已完成项、未完成项、下一阶段入口和验证结果。

@@ -1,5 +1,81 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 Phase 7 Report Export MVP 计划
+
+范围确认：本轮只做 Phase 7。目标是新增 Pipeline 贡献报告 Markdown 导出 MVP，把已有 ContributionTask、stage artifacts、patch-work 文档摘要和 records / events 审计信息汇总成可复制 / 可保存的本地报告。不运行真实模型验收，不执行真实远端写，不读取 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。
+
+启动检查：
+
+- [x] 已读取 `tasks/lessons.md`，重点复核阶段提交、状态同步、patch-work 路径安全、Git 防护、stop 后副作用和 secret 注入规则。
+- [x] 已读取 Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`。
+- [x] 已运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支 `pipeline-improve` 工作树干净，最近历史包含 `d007eb84`、`d71e13af`、`07243a01`、`a6c558b1`。
+- [x] 用户已确认按建议进入 Report Export MVP。
+
+BDD 验收场景：
+
+- [x] Given 一个已完成 draft-only Pipeline 会话，When 用户导出报告，Then 报告包含任务、仓库、分支、贡献模式、patch-set 摘要、测试证据和 draft-only 边界说明，且不声称产生 commit 或 PR。
+- [x] Given 一个已完成 local commit Pipeline 会话，When 用户导出报告，Then 报告包含 local commit hash、候选文件、excluded `patch-work/**` 和测试证据。
+- [x] Given 一个 mock remote confirmation 会话，When 用户导出报告，Then 报告包含远端写确认审计、remote / base / head / operation id、PR 状态，并明确这是记录中的远端结果，不读取 token。
+- [x] Given records 或 error 中出现 token、Authorization header、credentialed URL，When 报告生成，Then 报告内容脱敏，不输出 secret。
+- [x] Given 会话缺少 ContributionTask 或 patch-work 文档，When 用户导出报告，Then 报告生成可解释的缺失状态，不抛出不可恢复错误。
+- [x] Given Renderer 点击导出报告，When main 端生成 Markdown，Then UI 提供复制 / 保存入口，且 Renderer 只传 `sessionId`。
+
+TDD 执行计划：
+
+- [x] 先补 shared 类型和服务测试：新增 `PipelineReportExport` / `PipelineReportExportInput` 契约测试或类型编译路径，`pipeline-read-model-service.test.ts` 覆盖 draft-only、local commit、mock remote、缺失 task 和脱敏。
+- [x] 先补 IPC / service 测试：`pipeline-service.test.ts` 覆盖 `exportPipelineReport({ sessionId })` 只读生成，不创建 patch-work、不执行 Git 写、不读取远端凭证。
+- [x] 先补 Renderer 测试：新增 `PipelineReportExportPanel.test.tsx` 或接入现有 Dashboard 测试，覆盖 loading、error、复制、保存按钮 disabled 和报告预览。
+- [x] 运行新增测试，确认失败点来自缺少 Phase 7 报告导出能力。
+- [x] 实现 shared 契约：新增 `EXPORT_REPORT` IPC 常量、报告 input/result 类型，保持旧记录兼容。
+- [x] 实现 main read model：从 ContributionTask summary、events、stage artifacts、patch-work manifest 和 records 生成 Markdown；只读、脱敏、不中断缺失项，且不复用 live Git submission plan。
+- [x] 实现 `PipelineService.exportPipelineReport(input)`、main handler 和 preload API；main 端只接受 `sessionId` 并重新解析事实源。
+- [x] 实现 Renderer 入口：新增报告导出面板或按钮，优先放在 Contribution Dashboard / PipelineView 右侧区域；支持复制 Markdown 和可选保存 `.md` 文件。
+- [x] 递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 运行聚焦测试、Electron typecheck、`bun install --frozen-lockfile --dry-run`、`git diff --check`。
+- [x] Phase 7 完成后同步 development checklist、next-session prompt、本节 Review 和 lessons，并单独提交状态更新。
+
+触达边界：
+
+- [x] 允许触达：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、`apps/electron/src/main/lib/pipeline-read-model-service.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、Pipeline renderer 报告导出组件 / hooks / tests、`docs/improve/pipeline/v1`、`tasks/todo.md`、`tasks/lessons.md`。
+- [x] 谨慎触达：`PipelineView.tsx`、`ContributionTaskDashboard.tsx`、`PipelineRecords.tsx`，只接入口，不做大 UI 重构。
+- [x] 不触达：根 `README.md`、根 `AGENTS.md`、Claude / Codex runner、Graph 流程、Git submission 真实写逻辑、真实远端仓库、`patch-work/**`。
+
+验证命令计划：
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PipelineReportExportPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+阶段边界：
+
+- [x] 不把 fake runner smoke 说成真实模型验收。
+- [x] 不把 unpacked smoke 说成 DMG / installer 或多平台验收。
+- [x] 不读取 token，不输出 token，不检查 GitHub 凭证。
+- [x] 不 push，不创建真实 PR。
+- [x] 根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后才修改。
+
+## 2026-05-30 Pipeline v1 Phase 7 Report Export MVP Review
+
+- 阶段范围：本轮只完成 Report Export Markdown MVP；未执行真实模型验收、真实 GitHub remote smoke、DMG / installer 或多平台 packaged smoke，未 push，未创建真实 PR，未读取或输出 token，未修改根 `README.md` / 根 `AGENTS.md`。
+- 主要变更：新增 `PipelineReportExport` / `PipelineReportExportInput` shared 契约、`EXPORT_REPORT` IPC、preload API、`PipelineService.exportPipelineReport()` 和 `PipelineReportExportPanel`；Renderer 可在 Pipeline v2 Dashboard 区域生成报告、复制 Markdown、保存 `.md`。
+- Read model 边界：报告导出只读取 ContributionTask、ContributionTask events、Pipeline records、stage artifacts 和 patch-work manifest；已修复 code review 指出的风险，不再复用会执行 `validateCommitPreconditions()` 的 live submission plan，不触发 Git precondition、graph、远端写或凭证读取。
+- 安全确认：Markdown、顶层 `title` 和 `fileName` 均做脱敏；已补测试覆盖 credentialed URL、token、Authorization / Bearer 片段、fake `git` 不被调用、当前工作树未持久化文件不进入报告。
+- 触达文件：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、`apps/electron/src/main/lib/pipeline-read-model-service.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、`apps/electron/src/renderer/components/pipeline/PipelineView.tsx`、`PipelineReportExportPanel.tsx` 和对应测试。
+- 验证通过：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`，61 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineReportExportPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx`，6 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`；`bun run --filter='@codeinsights/electron' build:renderer`。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.55`，`@codeinsights/electron` 提升到 `0.0.129`，`bun.lock` 已同步。
+- 未完成项 / [!]：Report Export HTML / PDF 仍为后续增强；真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证。
+- 阶段提交：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`。
+
 ## 2026-05-30 Pipeline v1 Phase 6 状态回填与下次启动提示词计划
 
 范围确认：本轮只做状态文档同步和长期习惯加固，不改业务代码。目标是把 `d71e13af docs(pipeline): 同步 Phase 6 后续开发状态` 回填为最新已确认恢复入口，标清 Phase 0-6 已完成、未完成项和下一轮入口，并给用户一份可直接复制的下次启动提示词。
