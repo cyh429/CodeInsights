@@ -10,7 +10,7 @@
 - [x] 已读取 Pipeline v1 optimization plan、development checklist 和 `docs/improve/pipeline/v1/next-session-prompt.md`。
 - [x] 已确认当前分支为 `pipeline-improve`。
 - [x] 已确认最近历史包含 `a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
-- [x] 已确认 Phase 0-5 已完成，Phase 6 尚未开始。
+- [x] 启动时已确认 Phase 0-5 已完成，本轮从 Phase 6 开始；当前 Phase 6 已完成本地验收准备。
 - [x] 用户已确认本计划，已进入实现 / 验证。
 
 BDD 验收场景：
@@ -35,14 +35,14 @@ TDD 执行计划：
 - [x] 先补 packaged smoke 脚本或文档化命令：新增 `smoke:pipeline-fixture`，验证 unpacked app 的 draft-only / local commit 主路径；明确它不是 DMG / installer 多平台验收。
 - [x] 运行新增测试并确认失败点来自缺少 Phase 6 smoke / fixture 能力，再实现最小代码。
 - [x] 如实现触达 shared 契约或 Electron 业务代码，递增受影响 package patch version 并同步 `bun.lock`；本轮仅递增 `@codeinsights/electron` 到 `0.0.128`。
-- [ ] Phase 6 完成后更新 development checklist、next-session prompt 和本节 Review；运行验证后单独提交阶段成果。
+- [x] Phase 6 完成后更新 development checklist、next-session prompt 和本节 Review；运行验证后单独提交阶段成果。
 
 触达边界：
 
 - [x] 允许触达：Pipeline smoke / fixture helper、main service / preflight / git submission / read model 相关测试、renderer Pipeline 面板测试、必要的 smoke 脚本或测试入口、`packages/shared` / `apps/electron` 版本文件、`bun.lock`、`docs/improve/pipeline/v1`、`tasks/todo.md`。
-- [ ] 谨慎触达：`pipeline-service.ts`、`pipeline-git-submission-service.ts`、`pipeline-preflight-service.ts`、`PipelineView` / `CommitterPanel` / `RemoteWriteConfirmationPanel`。只有测试证明需要 Phase 6 补强时才改。
-- [ ] 不触达：根 `README.md`、根 `AGENTS.md`、`patch-work/**`、无关 UI 重构、真实远端仓库、真实 GitHub PR。
-- [ ] 不做事项：不 push、不创建真实 PR、不运行未授权 remote smoke、不把 fake runner smoke 说成真实模型验收、不把 app bundle smoke 说成 DMG / installer smoke。
+- [x] 谨慎触达：`pipeline-service.ts`、`pipeline-git-submission-service.ts`、`pipeline-preflight-service.ts`、`PipelineView` / `CommitterPanel` / `RemoteWriteConfirmationPanel`。本轮仅在测试证明需要 Phase 6 smoke / fixture 补强时触达。
+- [x] 不触达：根 `README.md`、根 `AGENTS.md`、`patch-work/**`、无关 UI 重构、真实远端仓库、真实 GitHub PR。
+- [x] 不做事项：不 push、不创建真实 PR、不运行未授权 remote smoke、不把 fake runner smoke 说成真实模型验收、不把 app bundle smoke 说成 DMG / installer smoke。
 
 验证命令计划：
 
@@ -77,7 +77,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 文档准备：根 `README.md` / 根 `AGENTS.md` 建议后续获授权后再同步“Pipeline 已有 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 installer 多平台验收”等边界；本轮不直接修改根文档。
 - 版本同步：`@codeinsights/electron` 提升到 `0.0.128`，`bun.lock` 已同步；`packages/shared` 未改动，shared 版本不变。
 - 验证通过：`bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-smoke.test.ts`，162 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx`，32 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build`；`bun run --filter='@codeinsights/electron' pack`；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture`。
-- 阶段提交：待本轮提交完成后由状态同步文档回填实际提交号。
+- 阶段提交：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
 
 ## 2026-05-29 Pipeline v1 Phase 5 远端写确认与 GitHub 增强计划
 

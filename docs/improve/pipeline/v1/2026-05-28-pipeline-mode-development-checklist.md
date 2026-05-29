@@ -9,11 +9,11 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：Phase 5 阶段提交 `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`；上一稳定基线：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
-> 最新恢复入口：本文所在的 Phase 5 阶段提交；实际提交 hash 以完成本轮提交后的 `git log -1 --oneline` 为准。上一恢复入口：`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强已完成并通过聚焦验证；Phase 6 尚未开始。下次正式开发应从 **Phase 6：真实端到端验收与交付准备** 开始。
+> 最新开发基线：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`；上一稳定基线：`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`
+> 最新恢复入口：本文所在的 Phase 6 后状态同步提交（`docs(pipeline): 同步 Phase 6 后续开发状态`）；Phase 6 开发基线为 `07243a01`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备已完成并通过本地验收。真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
 
-### 已完成
+### 当前阶段完成状态
 
 - [x] 完成 Pipeline v1 优化方案文档：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 - [x] 完成 Pipeline v1 开发跟踪清单：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
@@ -33,7 +33,8 @@
   - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
   - `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
   - `9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`
-  - `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`
+  - `a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`
+  - `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -71,25 +72,30 @@
   - existing PR 检测在 push 前执行，按 repo、head owner/head branch、base branch 校验；命中时不静默覆盖、不执行 push，并返回脱敏可恢复状态。
   - `RemoteWriteConfirmationPanel` 已接入独立风险确认 UI；`CommitterPanel` Draft PR 动作只进入确认态，恢复路径展示 pushed / existing PR 状态。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.54`、`@codeinsights/electron` 到 `0.0.127`，并同步 `bun.lock`。
+- [x] Phase 6：真实端到端验收与交付准备。
+  - 新增 deterministic fixture runner 和显式 `CODEINSIGHTS_PIPELINE_FIXTURE_RUNNER=1` 门禁，fixture 模式跳过真实 Claude / Codex CLI preflight，但继续复用真实 Pipeline service / graph / checkpointer / patch-work / Git submission 路径。
+  - 新增 `pipeline-smoke.test.ts`，覆盖 draft-only、local commit 和 mock remote confirmation；draft-only 不产生 commit，local commit 只提交候选源码并排除 `patch-work/**`，mock remote path 必须经过独立 `remote_write_confirmation`。
+  - 新增 `smoke:pipeline-fixture` packaged smoke，通过 CDP + preload IPC 验证当前平台 unpacked app 的 draft-only / local commit 主路径。
+  - 已按规则递增 `@codeinsights/electron` 到 `0.0.128`，并同步 `bun.lock`；`packages/shared` 未改动。
 
-### 尚未开始
+### 已完成
 
-- [ ] Phase 6：真实端到端验收与交付准备。
+- [x] Phase 6：真实端到端验收与交付准备。
 
 ### 当前未完成的关键能力
 
-- [ ] Phase 6 真实 smoke、packaged smoke 和公开文档同步尚未开始。
+- [ ] [!] 真实 GitHub remote PR smoke 未授权未验证；DMG / installer 和非 macOS arm64 平台 packaged smoke 未在本机验证。
+- [ ] 根 `README.md` / 根 `AGENTS.md` 公开文档同步需用户明确允许后再修改。
 
 ### 下次启动入口
 
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5 已完成，Phase 6 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
-4. 在 `tasks/todo.md` 写入 Phase 6 计划。
-5. 从 Phase 6 开始开发，先补 smoke / fixture 验证，再做真实端到端验收与交付准备。
-6. Phase 6 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6 已完成；真实 GitHub remote PR smoke gated 且未授权未验证”。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`、`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+4. 如果用户明确授权真实 GitHub remote smoke，先确认授权范围和凭证条件，再运行；授权前不读取 token、不 push、不创建真实 PR。
+5. 如果用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；否则只在 docs/improve 和任务记录中维护状态。
 
 ## 使用规则
 
@@ -141,7 +147,7 @@
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [x] |
 | M4 | Phase 4 | Contribution Dashboard + Submission Plan | [x] |
 | M5 | Phase 5 | 远端写确认 + GitHub 增强 | [x] |
-| M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [ ] |
+| M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [x] |
 
 ## Phase 0：清理与对齐
 
@@ -783,12 +789,12 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] fixture repo 完成
-- [ ] smoke 完成
-- [ ] 打包验证完成
-- [ ] 文档同步准备完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] fixture repo 完成
+- [x] smoke 完成
+- [x] 打包验证完成
+- [x] 文档同步准备完成
+- [x] 阶段提交完成：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
 
 ### 目标
 
@@ -796,69 +802,85 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 
 ### 入口条件
 
-- [ ] Phase 5 已完成并提交。
-- [ ] 已确认哪些 smoke 不需要真实模型，哪些需要真实凭证。
-- [ ] 已确认 README / AGENTS 仍需用户允许后再修改。
+- [x] Phase 5 已完成并提交：`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
+- [x] 已确认哪些 smoke 不需要真实模型，哪些需要真实凭证。
+- [x] 已确认 README / AGENTS 仍需用户允许后再修改。
 
 ### Fixture repo 任务
 
-- [ ] clean repo fixture：可完成 happy path。
-- [ ] dirty repo fixture：验证 warning acknowledgement。
-- [ ] conflict repo fixture：验证 blocker。
-- [ ] local bare remote fixture：验证 push 前置逻辑。
-- [ ] Git author、default branch、remote URL 在测试内显式设置。
-- [ ] fixture 不依赖开发机全局 Git 配置。
+- [x] clean repo fixture：可完成 happy path。
+- [x] dirty repo fixture：验证 warning acknowledgement。
+- [x] conflict repo fixture：验证 blocker。
+- [x] local bare remote fixture：验证 push 前置逻辑。
+- [x] Git author、default branch、remote URL 在测试内显式设置。
+- [x] fixture 不依赖开发机全局 Git 配置。
 
 ### Smoke 任务
 
-- [ ] preflight IPC smoke，不需要真实模型。
-- [ ] draft-only fake runner smoke。
-- [ ] local commit fake runner smoke。
-- [ ] packaged app draft-only smoke。
-- [ ] packaged app local commit smoke。
-- [ ] remote PR smoke gated：只在用户提供 GitHub / gh / API token 条件下运行。
-- [ ] 记录未覆盖平台：macOS x64、Windows x64、Linux 等不在本机验证的项必须标 `[!]`。
+- [x] preflight IPC smoke，不需要真实模型。
+- [x] draft-only fake runner smoke。
+- [x] local commit fake runner smoke。
+- [x] packaged app draft-only smoke。
+- [x] packaged app local commit smoke。
+- [x] remote PR smoke gated：未获授权时未运行真实 GitHub remote smoke；mock remote path 已覆盖独立远端确认与审计。
+- [x] 记录未覆盖平台：macOS x64、Windows x64、Linux 等不在本机验证的项已标 `[!]`。
 
 ### 文档准备任务
 
-- [ ] 整理实际已落地功能和未落地功能。
-- [ ] 准备 README 更新草案，但不直接修改根 README，除非用户确认。
-- [ ] 准备 AGENTS 更新草案，但不直接修改根 AGENTS，除非用户确认。
-- [ ] 更新 v1 方案和 checklist 的最终状态。
-- [ ] 准备下一轮真实使用验收 prompt。
+- [x] 整理实际已落地功能和未落地功能。
+- [x] 准备 README 更新草案，但不直接修改根 README，除非用户确认。
+- [x] 准备 AGENTS 更新草案，但不直接修改根 AGENTS，除非用户确认。
+- [x] 更新 v1 方案和 checklist 的最终状态。
+- [x] 准备下一轮真实使用验收 prompt。
 
 ### 验证命令
 
 ```bash
-bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts
+bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-smoke.test.ts
 ```
 
 ```bash
-bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx
+bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx
 ```
 
 ```bash
 bun run --filter='@codeinsights/electron' typecheck
-git diff --check -- packages/shared apps/electron docs/improve/pipeline/v1 tasks/todo.md
+bun install --frozen-lockfile --dry-run
+bun run --filter='@codeinsights/electron' build
+bun run --filter='@codeinsights/electron' pack
+bun run --filter='@codeinsights/electron' smoke:pipeline-fixture
+git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline/v1 tasks/todo.md
 ```
 
 ### 完成定义
 
-- [ ] draft-only 不产生 commit。
-- [ ] local commit 只提交候选文件且不包含 `patch-work/**`。
-- [ ] remote PR 只在显式确认和凭证可用时创建 Draft PR。
-- [ ] packaged app 至少通过 draft-only 和 local commit smoke。
-- [ ] 所有未验证平台和未验证真实远端能力明确标 `[!]`。
-- [ ] 根 README / AGENTS 是否同步已得到用户决定。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] draft-only 不产生 commit。
+- [x] local commit 只提交候选文件且不包含 `patch-work/**`。
+- [x] remote PR 只在显式确认和凭证可用时创建 Draft PR；真实 GitHub remote PR smoke 未获授权未执行，mock path 已验证独立确认。
+- [x] packaged app 至少通过 draft-only 和 local commit smoke。
+- [x] 所有未验证平台和未验证真实远端能力明确标 `[!]`。
+- [x] 根 README / AGENTS 是否同步已得到用户决定：本轮未获直接修改授权，因此不改根文档。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不把 fake runner smoke 伪装成真实模型验收。
-- [ ] 不把 app bundle 通过伪装成 DMG / installer 通过。
-- [ ] 不在无用户确认情况下运行真实远端 PR smoke。
-- [ ] 不修改根 README / AGENTS，除非用户明确允许。
+- [x] 不把 fake runner smoke 伪装成真实模型验收。
+- [x] 不把 app bundle 通过伪装成 DMG / installer 通过。
+- [x] 不在无用户确认情况下运行真实远端 PR smoke。
+- [x] 不修改根 README / AGENTS，除非用户明确允许。
+
+## 2026-05-29 Pipeline v1 Phase 6 Review
+
+- 阶段范围：完成 Phase 6 本地 deterministic E2E、mock remote path、当前平台 unpacked packaged smoke 和交付准备记录；未修改根 `README.md` / 根 `AGENTS.md`，未 push，未创建真实 PR，未执行真实 GitHub remote smoke。
+- 主要变更：新增 `PipelineFixtureNodeRunner`、`CODEINSIGHTS_PIPELINE_FIXTURE_RUNNER=1` 显式门禁、`pipeline-smoke.test.ts` 和 `smoke:pipeline-fixture`；fixture 模式复用真实 `PipelineService`、LangGraph checkpoint、ContributionTask、patch-work、preload IPC 和 Git submission 路径。
+- 验收结果：draft-only 不产生 Git commit；local commit 只提交 `src/index.ts` 且排除 `patch-work/**`；mock remote path 先走受控本地 commit，再进入独立 `remote_write_confirmation`，并记录 `remote_write_confirmed` / `remote_submission_created` 审计事件。
+- Packaged smoke：`bun run --filter='@codeinsights/electron' pack` 生成 macOS arm64 unpacked app；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture` 通过 CDP + preload IPC 验证 draft-only 与 local-commit 主路径。此结果不代表 DMG / installer 或多平台通过。
+- [!] 未验证项：真实 GitHub remote PR smoke 未执行，因为用户未明确授权；macOS x64、Windows x64、Linux packaged smoke 和 installer smoke 未在本机验证。
+- 根文档草案：后续若用户授权修改根 `README.md` / 根 `AGENTS.md`，建议同步说明 Pipeline 已具备 deterministic fixture smoke、真实 remote smoke 需要显式授权、unpacked app smoke 不等于 installer / 多平台验收。
+- 版本同步：`@codeinsights/electron` 提升到 `0.0.128`，`bun.lock` 已同步；`packages/shared` 未改动。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-smoke.test.ts`，162 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx`，32 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build`；`bun run --filter='@codeinsights/electron' pack`；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture`。
+- 阶段提交：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
 
 ## 横向工作流
 
@@ -933,11 +955,9 @@ git diff --check -- packages/shared apps/electron docs/improve/pipeline/v1 tasks
 
 ## 下一轮启动入口
 
-下一轮正式开发从 Phase 6 开始，推荐最小切片：
+下一轮不再从 Phase 6 功能开发开始；Phase 0-6 已完成。推荐入口按用户目标选择：
 
-1. 先在 `tasks/todo.md` 写 Phase 6 计划，明确 fixture repo、smoke、packaged smoke 和公开文档准备的测试边界。
-2. 先补不依赖真实模型 / 真实远端的 smoke fixture：preflight IPC、draft-only fake runner、本地 commit dry path、remote write mocked path。
-3. 对需要真实 GitHub token 或真实远端写的 smoke，必须先得到用户明确授权；默认不 push、不创建真实 PR。
-4. 复核 Phase 5 远端写确认、existing PR 和脱敏行为在端到端路径中可审计，不绕过 `remote_write_confirmation`。
-5. 不修改根 `README.md` / 根 `AGENTS.md`，除非用户明确允许公开文档同步。
-6. 跑 Phase 6 聚焦测试、typecheck、diff check；阶段完成后更新本文、next-session prompt、`tasks/todo.md` Review，并单独提交。
+1. 若用户明确授权真实 GitHub remote smoke，先确认授权范围、测试仓库、token / `gh` / API 条件和允许的远端副作用，再运行；授权前不读取 token、不 push、不创建真实 PR。
+2. 若用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；建议同步 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 DMG / installer / 多平台验收。
+3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD。
+4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
