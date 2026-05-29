@@ -2,7 +2,9 @@ import { describe, expect, test } from 'bun:test'
 import type { AgentWorkspace, Channel } from '@codeinsights/shared'
 import type { PipelinePreflightResult } from '@codeinsights/shared'
 import {
+  PIPELINE_PREFLIGHT_RESULT_TTL_MS,
   createPipelinePreflightAcknowledgement,
+  getPipelinePreflightRefreshState,
   isPipelinePreflightAcknowledged,
   resolvePipelineRunConfig,
   shouldBlockPipelineStartForPreflight,
@@ -236,5 +238,66 @@ describe('repository preflight acknowledgement', () => {
       acceptedWarningCodes: ['git_uncommitted_changes'],
       acknowledgedAt: 10,
     })).toBe(false)
+  })
+})
+
+describe('repository preflight freshness', () => {
+  test('超过 60 秒的 preflight result 需要刷新', () => {
+    const result = makeRepositoryPreflightResult({
+      checkedAt: 1000,
+      warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 1100)
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-1',
+      now: 1000 + PIPELINE_PREFLIGHT_RESULT_TTL_MS + 1,
+    })).toEqual({
+      refreshRequired: true,
+      reason: 'stale',
+      acknowledgement: null,
+      message: '启动前检查已超过 60 秒，请重新检查。',
+    })
+  })
+
+  test('workspace 变化后的 preflight result 需要刷新', () => {
+    const result = makeRepositoryPreflightResult({ checkedAt: 1000 })
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement: null,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-2',
+      now: 1001,
+    })).toEqual({
+      refreshRequired: true,
+      reason: 'workspace_changed',
+      acknowledgement: null,
+      message: '当前工作区已变化，请重新执行启动前检查。',
+    })
+  })
+
+  test('fresh result 保留匹配的 acknowledgement', () => {
+    const result = makeRepositoryPreflightResult({
+      checkedAt: 1000,
+      warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 1100)
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-1',
+      now: 1000 + PIPELINE_PREFLIGHT_RESULT_TTL_MS,
+    })).toEqual({
+      refreshRequired: false,
+      reason: null,
+      acknowledgement,
+      message: null,
+    })
   })
 })

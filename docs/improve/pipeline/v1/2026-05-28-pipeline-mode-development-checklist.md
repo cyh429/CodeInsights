@@ -9,8 +9,8 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`；上一稳定基线：`30399335 docs(pipeline): 同步 Phase 0 后续开发状态` / `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径已完成并通过聚焦验证；Phase 2-6 尚未开始。下次正式开发应从 **Phase 2：PipelineView 拆分** 开始。
+> 最新开发基线：本轮 Phase 2 提交 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`（提交号在提交后由 `git log -5 --oneline` 确认）；上一稳定基线：`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` / `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分已完成并通过聚焦验证；Phase 3-6 尚未开始。下次正式开发应从 **Phase 3：Patch-work Document Workbench** 开始。
 
 ### 已完成
 
@@ -23,6 +23,8 @@
   - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
   - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
   - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
+  - `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`
+  - 本轮 Phase 2 提交：`feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`（提交号以 `git log` 为准）
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -36,10 +38,13 @@
   - Renderer 启动前展示 `PipelinePreflightPanel`，blocker 禁止启动但可重新检查，warning 需用户明确点击“记录风险继续”。
   - warning acknowledgement 匹配服务端最新 fingerprint / warning code 后，会由服务端重写审计时间并写入 `preflight_completed` ContributionTask event。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.51`、`@codeinsights/electron` 到 `0.0.123`，并同步 `bun.lock`。
+- [x] Phase 2：PipelineView 拆分。
+  - 已新增 `pipeline-gate-panel-model.ts`、`PipelineGateSidePanel.tsx`、`usePipelineRecordsTail.ts`、`usePipelineSessionSnapshot.ts`、`usePipelinePatchWorkDocuments.ts`、`usePipelineExplorerReports.ts`、`usePipelineGateActions.ts`，将 records tail、session snapshot、patch-work 文档读取、explorer reports、gate action 和 gate 面板选择从 `PipelineView` 拆出。
+  - 已收敛 Phase 1 遗留项：preflight result 超过 60 秒或 workspace 变化后显示“启动前检查需要刷新”，清空旧 acknowledgement 复用路径，并禁用 Composer 直接启动。
+  - 已按规则递增 `@codeinsights/electron` 到 `0.0.124`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 2：PipelineView 拆分。
 - [ ] Phase 3：Patch-work Document Workbench。
 - [ ] Phase 4：Contribution Dashboard 与 Submission Plan。
 - [ ] Phase 5：远端写确认与 GitHub 增强。
@@ -47,23 +52,21 @@
 
 ### 当前未完成的关键能力
 
-- [ ] `PipelineView` 仍未拆分为 hooks / view models。
 - [ ] Patch-work 文档 Workbench、revision diff、accepted badge 仍未实现。
 - [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
 - [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
 - [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
-- [ ] preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记仍未实现，计划在 Phase 2 hook 化时收敛。
 
 ### 下次启动入口
 
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1 已完成，Phase 2 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 或其后的状态同步提交。
-4. 在 `tasks/todo.md` 写入 Phase 2 计划。
-5. 从 Phase 2 开始开发，先补测试，再拆分 `PipelineView` 为 hooks / view models，保持行为不变。
-6. Phase 2 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2 已完成，Phase 3 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`、`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 和本轮 Phase 2 提交。
+4. 在 `tasks/todo.md` 写入 Phase 3 计划。
+5. 从 Phase 3 开始开发，先补测试，再实现 Patch-work Document Workbench MVP。
+6. Phase 3 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -111,7 +114,7 @@
 |--------|------|------|----------|
 | M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [x] |
 | M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [x] |
-| M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [ ] |
+| M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [x] |
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [ ] |
 | M4 | Phase 4 | Contribution Dashboard + Submission Plan | [ ] |
 | M5 | Phase 5 | 远端写确认 + GitHub 增强 | [ ] |
@@ -357,19 +360,19 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 - 审计与安全：warning acknowledgement 只对最新 fingerprint 和 warning code 有效；匹配后由服务端重写 `acknowledgedAt` 并写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 路径 / require override；credentialed remote URL、query/hash token、Authorization / token / api key 形态诊断已脱敏。
 - 兼容性确认：渠道 / 工作区配置错误仍走原 `resolvePipelineRunConfig()` 和设置跳转；旧 v1 会话不强制 repository preflight；未修改 Graph、runner、Git submission 或真实远端写路径。
 - 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
-- 未完成项 / [!]：preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记未做，留给 Phase 2 hook 化时收敛；Phase 2-6 仍未开始。
+- 未完成项 / [!]：Phase 1 当时遗留的 preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记已在 Phase 2 收敛；Phase 3-6 仍未开始。
 - 阶段提交：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 
 ## Phase 2：PipelineView 拆分
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] 测试先行完成
-- [ ] hooks 拆分完成
-- [ ] UI 行为回归完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] hooks 拆分完成
+- [x] UI 行为回归完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -377,68 +380,79 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 入口条件
 
-- [ ] Phase 1 已完成并提交。
-- [ ] 已列出现有 `PipelineView` 行为快照：records loading、document loading、gate respond、stop/restart、settings jump。
-- [ ] 明确本阶段不引入 Document Workbench 主体验。
+- [x] Phase 1 已完成并提交。
+- [x] 已列出现有 `PipelineView` 行为快照：records loading、document loading、gate respond、stop/restart、settings jump。
+- [x] 明确本阶段不引入 Document Workbench 主体验。
 
 ### 拆分任务
 
-- [ ] 新增 `usePipelineSessionState(sessionId)`。
-- [ ] 新增 `usePipelineRecords(sessionId)`。
-- [ ] 新增 `usePatchWorkDocuments(sessionId, refs)`。
-- [ ] 新增 `usePipelineGateActions(sessionId, pendingGate)`。
-- [ ] 新增 `usePipelinePreflight(sessionId, workspaceId)` 或迁移 Phase 1 临时逻辑。
-- [ ] 新增 `PipelineGateSidePanel.tsx`。
-- [ ] `PipelineView.tsx` 只保留布局组合、状态传递和少量事件 wiring。
-- [ ] 保留现有 error display、failure card、live output、settings jump 行为。
-- [ ] 保留 stop 乐观状态和失败回滚行为。
+- [x] 新增 `usePipelineSessionState(sessionId)` 的等价实现：`usePipelineSessionSnapshot.ts`。
+- [x] 新增 `usePipelineRecords(sessionId)` 的等价实现：`usePipelineRecordsTail.ts`。
+- [x] 新增 `usePatchWorkDocuments(sessionId, refs)` 的等价实现：`usePipelinePatchWorkDocuments.ts`。
+- [x] 新增 `usePipelineGateActions(sessionId, pendingGate)` 的等价实现：`usePipelineGateActions.ts`。
+- [x] 新增 `usePipelinePreflight(sessionId, workspaceId)` 的等价 freshness helper：`getPipelinePreflightRefreshState()` + `PipelinePreflightPanel`。
+- [x] 新增 `PipelineGateSidePanel.tsx`。
+- [x] `PipelineView.tsx` 只保留布局组合、状态传递和少量事件 wiring。
+- [x] 保留现有 error display、failure card、live output、settings jump 行为。
+- [x] 保留 stop 乐观状态和失败回滚行为。
 
 ### 测试任务
 
-- [ ] `usePipelineRecords`：session 切换不串数据。
-- [ ] `usePipelineRecords`：refresh 后按 cursor 追赶 records。
-- [ ] `usePatchWorkDocuments`：同 checksum 缓存、不重复读取。
-- [ ] `usePatchWorkDocuments`：session 切换清空旧 loading / error。
-- [ ] `usePipelineGateActions`：approve / reject / rerun / select task 参数正确。
-- [ ] `PipelineGateSidePanel`：按 gate kind 选择正确面板。
-- [ ] 现有 panel 测试全部通过。
+- [x] `usePipelineRecords`：session 切换不串数据。
+- [x] `usePipelineRecords`：refresh 后按 cursor 追赶 records。
+- [x] `usePatchWorkDocuments`：同 checksum 缓存、不重复读取。
+- [x] `usePatchWorkDocuments`：session 切换清空旧 loading / error。
+- [x] `usePipelineGateActions`：approve / reject / rerun / select task 参数正确。
+- [x] `PipelineGateSidePanel`：按 gate kind 选择正确面板。
+- [x] 现有 panel 测试全部通过。
 
 ### 触达文件
 
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
-- [ ] `apps/electron/src/renderer/components/pipeline/hooks/usePipelineSessionState.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/hooks/usePipelineRecords.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/hooks/usePatchWorkDocuments.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/hooks/usePipelineGateActions.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/hooks/usePipelinePreflight.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelineGateSidePanel.tsx`
-- [ ] 相关测试文件
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineSessionSnapshot.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineRecordsTail.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelinePatchWorkDocuments.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineGateActions.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineGateSidePanel.tsx`
+- [x] 相关测试文件
 
 ### 验证命令
 
 ```bash
-bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/ExplorerTaskBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
 ```
 
 ```bash
 bun run --filter='@codeinsights/electron' typecheck
-git diff --check -- apps/electron tasks/todo.md docs/improve/pipeline/v1
+bun install --frozen-lockfile --dry-run
+git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
 ```
 
 ### 完成定义
 
-- [ ] `PipelineView.tsx` 不再直接包含 records tail loading 主体逻辑。
-- [ ] `PipelineView.tsx` 不再直接管理 patch-work document loading maps。
-- [ ] 所有现有 gate 面板行为保持。
-- [ ] stop/restart/gate respond 关键路径无回归。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] `PipelineView.tsx` 不再直接包含 records tail loading 主体逻辑。
+- [x] `PipelineView.tsx` 不再直接管理 patch-work document loading maps。
+- [x] 所有现有 gate 面板行为保持。
+- [x] stop/restart/gate respond 关键路径无回归。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不重做视觉设计。
-- [ ] 不改变 Graph / service / runner 行为。
-- [ ] 不把局部 textarea feedback 放入全局 atom，除非明确要跨页面恢复草稿。
+- [x] 不重做视觉设计。
+- [x] 不改变 Graph / service / runner 行为。
+- [x] 不把局部 textarea feedback 放入全局 atom，除非明确要跨页面恢复草稿。
+
+## 2026-05-29 Pipeline v1 Phase 2 Review
+
+- 阶段范围：PipelineView 拆分与 Phase 1 preflight freshness 收敛；未修改 Graph、runner、Git submission、main IPC / preload、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：`PipelineView` 迁出 records tail、session snapshot、patch-work 文档读取、explorer reports、gate actions 和 gate 面板选择；新增 `PipelineGateSidePanel` 作为右侧 gate / composer 组合层。
+- Preflight 收敛：preflight result 超过 60 秒或 workspace 变化后会显示“启动前检查需要刷新”，隐藏风险确认入口，并阻止直接复用旧 acknowledgement。
+- 版本同步：`@codeinsights/electron` 从 `0.0.123` 提升到 `0.0.124`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Patch-work Document Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
+- 阶段提交：本轮提交信息为 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，具体提交号在提交后通过 `git log -5 --oneline` 确认。
 
 ## Phase 3：Patch-work Document Workbench
 

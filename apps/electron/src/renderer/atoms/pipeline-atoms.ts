@@ -33,6 +33,7 @@ export interface PipelinePreflightState {
   acknowledgement: PipelinePreflightAcknowledgement | null
   loading: boolean
   error: string | null
+  workspaceId?: string
   updatedAt?: number
 }
 

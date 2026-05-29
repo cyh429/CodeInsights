@@ -7,7 +7,11 @@ import type {
   PipelinePreflightRuntimeKind,
 } from '@codeinsights/shared'
 import { Button } from '@/components/ui/button'
-import { isPipelinePreflightAcknowledged, shouldBlockPipelineStartForPreflight } from './pipeline-preflight'
+import {
+  isPipelinePreflightAcknowledged,
+  shouldBlockPipelineStartForPreflight,
+  type PipelinePreflightRefreshState,
+} from './pipeline-preflight'
 
 export interface PipelinePreflightRuntimeItem {
   label: string
@@ -34,6 +38,7 @@ interface PipelinePreflightPanelInput {
   acknowledgement: PipelinePreflightAcknowledgement | null
   loading: boolean
   error: string | null
+  refreshState?: PipelinePreflightRefreshState
 }
 
 const RUNTIME_LABELS: Record<PipelinePreflightRuntimeKind, string> = {
@@ -60,6 +65,7 @@ export function buildPipelinePreflightPanelViewModel({
   acknowledgement,
   loading,
   error,
+  refreshState,
 }: PipelinePreflightPanelInput): PipelinePreflightPanelViewModel {
   if (loading) {
     return {
@@ -106,6 +112,34 @@ export function buildPipelinePreflightPanelViewModel({
       showAcknowledgeButton: false,
       showRefreshButton: false,
       startBlocked: false,
+    }
+  }
+
+  if (refreshState?.refreshRequired) {
+    const message = refreshState.message ?? '启动前检查需要重新执行。'
+    return {
+      title: '启动前检查需要刷新',
+      subtitle: message,
+      tone: 'warning',
+      repositorySummary: joinKnownParts([
+        result.repository.root,
+        result.repository.currentBranch,
+        result.repository.baseBranch,
+        result.repository.remoteUrl,
+      ]) || result.repository.root,
+      packageManagerLabel: PACKAGE_MANAGER_LABELS[result.packageManager],
+      blockers: [],
+      warnings: [message],
+      runtimeItems: result.runtimes.map((runtime) => ({
+        label: RUNTIME_LABELS[runtime.kind],
+        status: runtime.available
+          ? runtime.version ?? '可用'
+          : runtime.error ?? '不可用',
+        available: runtime.available,
+      })),
+      showAcknowledgeButton: false,
+      showRefreshButton: true,
+      startBlocked: true,
     }
   }
 
@@ -173,6 +207,7 @@ export function PipelinePreflightPanel({
   acknowledgement,
   loading,
   error,
+  refreshState,
   onAcknowledgeWarnings,
   onRefreshPreflight,
 }: PipelinePreflightPanelInput & {
@@ -184,6 +219,7 @@ export function PipelinePreflightPanel({
     acknowledgement,
     loading,
     error,
+    refreshState,
   })
 
   return (

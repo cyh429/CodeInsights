@@ -1,5 +1,66 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 2 PipelineView 拆分计划
+
+范围确认：本轮只做 Phase 2。目标是在保持行为不变的前提下，把 `PipelineView` 中的记录加载、状态回填、patch-work 文档读取、gate 面板选择、preflight 启动状态迁出为 hooks / view models；同时收敛 Phase 1 遗留的 preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记。不修改 Graph、runner、Git submission 真实写逻辑，不新增真实 Git 写操作，不执行远端写，不修改根 `README.md` / 根 `AGENTS.md`。
+
+BDD 验收场景：
+
+- [x] Given 用户切换 Pipeline session，When `PipelineView` 挂载新 session，Then records cursor 会重置并只应用当前 session 的 tail load。
+- [x] Given records refresh version 增加，When tail records 加载完成，Then 合并逻辑保持去重和顺序，过期 load 不覆盖新结果。
+- [x] Given pending gate 需要读取 patch-work 文档，When 文档 refs 变化，Then 只读取缺失文档，保留成功内容，并为失败路径展示对应中文错误。
+- [x] Given preflight result 已超过 60 秒或当前 workspace 与结果 workspace 不一致，When 用户准备启动 Pipeline，Then UI 明确标记“需要刷新”，并阻止直接复用旧 acknowledgement。
+- [x] Given 当前 gate 是 explorer / planner / developer / reviewer / tester / committer，When 构建主面板，Then `PipelineView` 渲染与拆分前一致的专用面板和 fallback gate card。
+
+TDD 执行计划：
+
+- [x] 先补 view model / hook 聚焦测试：新增 `pipeline-gate-panel-model.test.ts` 覆盖 gate 面板选择、review document refs、operation id 和 fallback gate 行为。
+- [x] 先补 preflight freshness 测试：在 `pipeline-preflight.test.ts` 覆盖超过 60 秒、workspaceId 变化、fresh result 三类“需要刷新”判断。
+- [x] 先补 records hook 可测试模型：扩展 `pipeline-record-tail-model.test.ts` 或新增轻量 helper 测试，覆盖 session 切换后旧 tail load 不应用。
+- [x] 运行新增测试并确认失败点来自未实现 Phase 2 行为。
+- [x] 新增 `pipeline-gate-panel-model.ts`：集中计算当前 gate 面板、阶段输出、review document refs、reviewer content 和提交 operation id。
+- [x] 新增 `usePipelineRecordsTail.ts`：封装 records state、cursor、load seq、refresh version 拉取与合并。
+- [x] 新增 `usePipelineSessionSnapshot.ts`：封装 `getPipelineSessionState()` 回填 session / state / pending gate 的副作用。
+- [x] 新增 `usePipelinePatchWorkDocuments.ts`：封装 patch-work 文档内容、loading、error map 和 refs 变化读取。
+- [x] 收敛 `pipeline-preflight.ts` 或新增小 helper：判断 preflight stale / workspace mismatch，并让 `PipelineView` 和 `PipelinePreflightPanel` 使用显式“需要刷新”状态。
+- [x] 精简 `PipelineView.tsx` 为布局编排层，保持现有 props、按钮文案、面板渲染和错误处理行为不变。
+- [x] 如修改功能代码，递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 更新 development checklist、next-session prompt 和本节 Review。
+- [x] 运行 Phase 2 聚焦测试、Electron typecheck、`bun install --frozen-lockfile --dry-run`、`git diff --check`，核对 staged 范围后单独提交 Phase 2 成果。
+
+触达边界：
+
+- [x] 允许触达：`apps/electron/src/renderer/components/pipeline/PipelineView.tsx`、Pipeline renderer hooks / view model / tests、`apps/electron/package.json`、`bun.lock`、Phase 2 文档状态、`tasks/todo.md`。
+- [x] 如 preflight helper 类型需要补充，允许触达 `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts` 和 `PipelinePreflightPanel.tsx`。
+- [x] 不触达：`pipeline-graph.ts`、Claude / Codex runner、Git submission 真实写逻辑、main process service / IPC / preload（除非测试证明 Phase 2 必需）、根 `README.md`、根 `AGENTS.md`、`patch-work/**`、远端 push / PR 行为。
+
+验证命令：
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+## 2026-05-29 Pipeline v1 Phase 2 PipelineView 拆分 Review
+
+- 阶段范围：只完成 Phase 2；未修改 Graph、Claude / Codex runner、Git submission 真实写逻辑、main IPC / preload、根 `README.md` 或根 `AGENTS.md`，未执行真实远端写。
+- 主要变更：新增 `pipeline-gate-panel-model.ts` 和 `PipelineGateSidePanel.tsx`，把 gate 面板选择、review document refs、reviewer 正文和 committer operation id 从 `PipelineView` 中抽离；新增 `usePipelineRecordsTail`、`usePipelineSessionSnapshot`、`usePipelinePatchWorkDocuments`、`usePipelineExplorerReports`、`usePipelineGateActions`，迁出 records tail、session snapshot、patch-work 文档读取、explorer reports 和 gate action 副作用。
+- Preflight 收敛：新增 60 秒 TTL / workspace mismatch freshness helper；`PipelinePreflightPanel` 在 result 过期或 workspace 变化时明确显示“启动前检查需要刷新”，隐藏风险确认入口，并让 Composer 禁止复用旧 acknowledgement 直接启动。
+- 行为确认：records session 切换会重置 cursor 并让旧 tail load 失效；patch-work 文档读取按 relativePath/checksum/revision 签名缓存，refs 变化时只读取缺失或变化文档；右侧 explorer / planner / developer / reviewer / tester / committer / fallback gate 面板保持原交互。
+- 版本同步：`@codeinsights/electron` 提升到 `0.0.124`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
+- 阶段提交：本轮提交信息为 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，具体提交号在提交后通过 `git log -5 --oneline` 确认。
+
 ## 2026-05-29 Pipeline v1 Phase 1 后状态同步计划
 
 范围确认：本轮只同步 Pipeline v1 Phase 1 完成后的最新开发状态、下次启动提示词、任务记录和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。

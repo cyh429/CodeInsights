@@ -101,4 +101,27 @@ describe('PipelinePreflightPanel', () => {
     ])
     expect(viewModel.showRefreshButton).toBe(true)
   })
+
+  test('需要刷新时阻止启动并隐藏风险确认入口', () => {
+    const viewModel = buildPipelinePreflightPanelViewModel({
+      result: makeResult(),
+      acknowledgement: null,
+      loading: false,
+      error: null,
+      refreshState: {
+        refreshRequired: true,
+        reason: 'stale',
+        acknowledgement: null,
+        message: '启动前检查已超过 60 秒，请重新检查。',
+      },
+    })
+
+    expect(viewModel.title).toBe('启动前检查需要刷新')
+    expect(viewModel.subtitle).toBe('启动前检查已超过 60 秒，请重新检查。')
+    expect(viewModel.tone).toBe('warning')
+    expect(viewModel.startBlocked).toBe(true)
+    expect(viewModel.warnings).toEqual(['启动前检查已超过 60 秒，请重新检查。'])
+    expect(viewModel.showAcknowledgeButton).toBe(false)
+    expect(viewModel.showRefreshButton).toBe(true)
+  })
 })
