@@ -1,5 +1,63 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 3 Patch-work Document Workbench 计划
+
+范围确认：本轮只做 Phase 3。目标是实现只读 Patch-work Document Workbench MVP，统一展示 `plan.md`、`dev.md`、`review.md`、`result.md`、`patch-set/*`、`commit.md`、`pr.md` 等 patch-work 产物，支持 markdown、patch/diff、json/text 渲染、revision selector、current / accepted badge、checksum mismatch / read error，并接入 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel`。不修改 Graph、runner、Git submission，不新增真实 Git 写操作，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`。
+
+BDD 验收场景：
+
+- [x] Given patch-work 中 `dev.md` 已生成第 1 版并被接受，第 2 版为当前版本，When 用户打开 Workbench，Then revision selector 显示两个版本，并可对比 current 与 accepted。
+- [x] Given `patch-set/changes.patch` 存在，When Workbench 打开该文件，Then 以 diff 视图展示文件头、hunk、增加行和删除行。
+- [x] Given JSON 产物内容合法或非法，When Workbench 打开 `.json` 文件，Then 合法 JSON 格式化展示，非法 JSON 显示原文和解析错误。
+- [x] Given 当前磁盘文件 checksum 与 manifest 不一致，When Workbench 读取当前文档，Then 显示 checksum mismatch，并保持审核 approve 阻止状态。
+- [x] Given revision 读取失败或 relativePath 不安全，When Renderer 通过 IPC 请求读取，Then main 端拒绝并返回中文错误，Renderer 不直接读取本地路径。
+
+TDD 执行计划：
+
+- [x] 先补 `pipeline-patch-work-service.test.ts`：覆盖 list revisions、read revision checksum、current checksum mismatch、unsafe relativePath 拒绝。
+- [x] 先补 shared / service / IPC 相关类型编译路径：新增 `PatchWorkDocumentRevision`、revision read input，并在 main service 测试中覆盖只通过 `sessionId + relativePath + revision` 读取。
+- [x] 先补 `PatchWorkDocumentWorkbench.test.tsx`：覆盖 markdown / patch / json / text view model、revision selector、current / accepted badge、checksum mismatch / read error。
+- [x] 先更新 `ReviewDocumentBoard.test.tsx`、`TesterResultBoard.test.tsx`、`CommitterPanel.test.tsx`：确认三个面板都输出统一 Workbench 所需文档列表，缺 checksum / read error 仍阻止 approve。
+- [x] 运行新增测试并确认失败点来自未实现 Phase 3 行为。
+- [x] 实现 `pipeline-patch-work-service.ts` list/read revision：复用现有 realpath / lstat / symlink 路径安全，不改变 manifest 结构，读取 current 时校验 manifest checksum 并返回 `checksumMatches`。
+- [x] 实现 shared IPC / preload / main handler：新增 `LIST_PATCH_WORK_REVISIONS`、`READ_PATCH_WORK_REVISION`，必要时新增受控 `OPEN_PATCH_WORK_FILE`；Renderer 只传 `sessionId`、`relativePath`、`revision`。
+- [x] 新增 `PatchWorkDocumentWorkbench.tsx` 和轻量 view model：文件分组、渲染语言推断、badge、revision selector、current vs accepted compare。
+- [x] 将 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel` 内联 `<pre>` 替换为统一 Workbench，保留既有审核按钮、警告和提交动作语义。
+- [x] 递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 更新 development checklist、next-session prompt 和本节 Review。
+- [x] 运行 Phase 3 聚焦测试、Electron typecheck、`bun install --frozen-lockfile --dry-run`、`git diff --check`，核对 staged 范围后单独提交 Phase 3 成果。
+
+触达边界：
+
+- [x] 允许触达：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、Pipeline patch-work service / IPC / preload、Pipeline Workbench / gate 面板 / hook / tests、Phase 3 文档状态、`tasks/todo.md`。
+- [x] 不触达：`pipeline-graph.ts`、Claude / Codex runner、Git submission 真实写逻辑、Contribution Dashboard / SubmissionPlan、远端写确认增强、根 `README.md`、根 `AGENTS.md`、`patch-work/**`、远端 push / PR 行为。
+
+验证命令：
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+## 2026-05-29 Pipeline v1 Phase 3 Patch-work Document Workbench Review
+
+- 阶段范围：只完成 Phase 3 只读 Patch-work Document Workbench MVP；未修改 Graph、Claude / Codex runner、Git submission 真实写逻辑、远端写确认语义、根 `README.md` 或根 `AGENTS.md`，未执行真实远端写。
+- 主要变更：新增 `PatchWorkDocumentRevision`、`LIST_PATCH_WORK_REVISIONS`、`READ_PATCH_WORK_REVISION` 和受控 `OPEN_PATCH_WORK_FILE`；main 端通过 `sessionId + relativePath + revision` 读取 patch-work revision，复用 realpath / lstat / symlink 路径安全，current 读取会返回 checksum 匹配状态。
+- Workbench 与面板：新增 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text、revision selector、current / accepted / checksum mismatch / read error badge、current vs accepted 对比；`ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel` 已接入统一 Workbench。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.52`，`@codeinsights/electron` 提升到 `0.0.125`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
+- 阶段提交：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`。
+
 ## 2026-05-29 Pipeline v1 Phase 2 后状态再同步计划
 
 范围确认：本轮只响应用户要求，同步 Pipeline v1 Phase 2 完成后的最新开发状态、完成/未完成清单、下次启动提示词和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。

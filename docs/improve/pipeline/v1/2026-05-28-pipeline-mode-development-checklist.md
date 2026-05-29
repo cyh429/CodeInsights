@@ -9,9 +9,9 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`；上一稳定基线：`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` / `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
-> 最新恢复入口：`6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`；本轮状态再同步提交会位于其后。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分已完成并通过聚焦验证；Phase 3-6 尚未开始。下次正式开发应从 **Phase 3：Patch-work Document Workbench** 开始。
+> 最新开发基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`；上一稳定基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
+> 最新恢复入口：本轮 `docs(pipeline): 同步 Phase 3 后续开发状态` 提交；上一恢复入口：`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench 已完成并通过聚焦验证；Phase 4-6 尚未开始。下次正式开发应从 **Phase 4：Contribution Dashboard 与 Submission Plan** 开始。
 
 ### 已完成
 
@@ -27,6 +27,8 @@
   - `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`
   - `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
   - `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`
+  - `24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`
+  - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -44,17 +46,20 @@
   - 已新增 `pipeline-gate-panel-model.ts`、`PipelineGateSidePanel.tsx`、`usePipelineRecordsTail.ts`、`usePipelineSessionSnapshot.ts`、`usePipelinePatchWorkDocuments.ts`、`usePipelineExplorerReports.ts`、`usePipelineGateActions.ts`，将 records tail、session snapshot、patch-work 文档读取、explorer reports、gate action 和 gate 面板选择从 `PipelineView` 拆出。
   - 已收敛 Phase 1 遗留项：preflight result 超过 60 秒或 workspace 变化后显示“启动前检查需要刷新”，清空旧 acknowledgement 复用路径，并禁用 Composer 直接启动。
   - 已按规则递增 `@codeinsights/electron` 到 `0.0.124`，并同步 `bun.lock`。
+- [x] Phase 3：Patch-work Document Workbench。
+  - 已新增 patch-work revision read model、`LIST_PATCH_WORK_REVISIONS` / `READ_PATCH_WORK_REVISION` IPC 和受控 `OPEN_PATCH_WORK_FILE` 入口，Renderer 只传 `sessionId`、`relativePath`、`revision`。
+  - 已新增统一只读 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text、revision selector、current / accepted badge、checksum mismatch / read error、current vs accepted 对比。
+  - 已接入 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel`，并保留既有审核 / 提交流程的保守阻断条件。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.52`、`@codeinsights/electron` 到 `0.0.125`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 3：Patch-work Document Workbench。
 - [ ] Phase 4：Contribution Dashboard 与 Submission Plan。
 - [ ] Phase 5：远端写确认与 GitHub 增强。
 - [ ] Phase 6：真实端到端验收与交付准备。
 
 ### 当前未完成的关键能力
 
-- [ ] Patch-work 文档 Workbench、revision diff、accepted badge 仍未实现。
 - [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
 - [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
 - [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
@@ -63,12 +68,12 @@
 
 下次启动 Codex 后先执行以下动作：
 
-1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2 已完成，Phase 3 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`、`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
-4. 在 `tasks/todo.md` 写入 Phase 3 计划。
-5. 从 Phase 3 开始开发，先补测试，再实现 Patch-work Document Workbench MVP。
-6. Phase 3 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3 已完成，Phase 4 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -6 --oneline`，确认没有未提交改动，并确认最近历史包含 `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+4. 在 `tasks/todo.md` 写入 Phase 4 计划。
+5. 从 Phase 4 开始开发，先补测试，再实现 Contribution Dashboard 与 Submission Plan read model / UI。
+6. Phase 4 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -117,7 +122,7 @@
 | M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [x] |
 | M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [x] |
 | M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [x] |
-| M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [ ] |
+| M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [x] |
 | M4 | Phase 4 | Contribution Dashboard + Submission Plan | [ ] |
 | M5 | Phase 5 | 远端写确认 + GitHub 增强 | [ ] |
 | M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [ ] |
@@ -460,12 +465,12 @@ git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] read model 完成
-- [ ] Workbench MVP 完成
-- [ ] 面板接入完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] read model 完成
+- [x] Workbench MVP 完成
+- [x] 面板接入完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -473,76 +478,90 @@ git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v
 
 ### 入口条件
 
-- [ ] Phase 2 已完成并提交。
-- [ ] 已确认本阶段 MVP 只读，不做用户编辑。
-- [ ] 已确认 revision 数据从现有 manifest / revision 存储读取，不破坏旧 manifest。
+- [x] Phase 2 已完成并提交。
+- [x] 已确认本阶段 MVP 只读，不做用户编辑。
+- [x] 已确认 revision 数据从现有 manifest / revision 存储读取，不破坏旧 manifest。
 
 ### 契约与后端任务
 
-- [ ] 新增 `PatchWorkDocumentRevision` 类型。
-- [ ] 新增 `LIST_PATCH_WORK_REVISIONS` IPC。
-- [ ] 新增 `READ_PATCH_WORK_REVISION` IPC。
-- [ ] `pipeline-patch-work-service.ts`：提供 list/read revision API。
-- [ ] 路径校验复用现有 patch-work 安全规则。
-- [ ] 读取 revision 时校验 checksum。
-- [ ] 读取当前文件时能标记是否与 manifest checksum 匹配。
+- [x] 新增 `PatchWorkDocumentRevision` 类型。
+- [x] 新增 `LIST_PATCH_WORK_REVISIONS` IPC。
+- [x] 新增 `READ_PATCH_WORK_REVISION` IPC。
+- [x] `pipeline-patch-work-service.ts`：提供 list/read revision API。
+- [x] 路径校验复用现有 patch-work 安全规则。
+- [x] 读取 revision 时校验 checksum。
+- [x] 读取当前文件时能标记是否与 manifest checksum 匹配。
 
 ### 前端任务
 
-- [ ] 新增 `PatchWorkDocumentWorkbench.tsx`。
-- [ ] 新增 `PatchWorkDocumentTree.tsx` 或等价文件分组 view model。
-- [ ] `.md` 使用 Markdown 渲染。
-- [ ] `.patch` 使用 diff 渲染。
-- [ ] `.json` 格式化展示，解析失败时显示原文和错误。
-- [ ] 展示 revision selector。
-- [ ] 展示 current / accepted badge。
-- [ ] 支持 compare current vs accepted。
-- [ ] 支持打开 patch-work 目录和打开当前文件。
-- [ ] `ReviewDocumentBoard` 接入 Workbench。
-- [ ] `TesterResultBoard` 接入 Workbench。
-- [ ] `CommitterPanel` 接入 Workbench。
+- [x] 新增 `PatchWorkDocumentWorkbench.tsx`。
+- [x] 新增 `PatchWorkDocumentTree.tsx` 或等价文件分组 view model。
+- [x] `.md` 使用 Markdown 渲染。
+- [x] `.patch` 使用 diff 渲染。
+- [x] `.json` 格式化展示，解析失败时显示原文和错误。
+- [x] 展示 revision selector。
+- [x] 展示 current / accepted badge。
+- [x] 支持 compare current vs accepted。
+- [x] 支持打开 patch-work 目录和打开当前文件。
+- [x] `ReviewDocumentBoard` 接入 Workbench。
+- [x] `TesterResultBoard` 接入 Workbench。
+- [x] `CommitterPanel` 接入 Workbench。
 
 ### 测试任务
 
-- [ ] `pipeline-patch-work-service.test.ts`：list revisions。
-- [ ] `pipeline-patch-work-service.test.ts`：read revision checksum。
-- [ ] `pipeline-patch-work-service.test.ts`：拒绝 unsafe relativePath。
-- [ ] Workbench 测试：Markdown / patch / JSON 渲染分支。
-- [ ] Workbench 测试：revision selector 和 accepted badge。
-- [ ] 面板测试：缺 checksum / 读取失败仍阻止 approve。
+- [x] `pipeline-patch-work-service.test.ts`：list revisions。
+- [x] `pipeline-patch-work-service.test.ts`：read revision checksum。
+- [x] `pipeline-patch-work-service.test.ts`：拒绝 unsafe relativePath。
+- [x] Workbench 测试：Markdown / patch / JSON 渲染分支。
+- [x] Workbench 测试：revision selector 和 accepted badge。
+- [x] 面板测试：缺 checksum / 读取失败仍阻止 approve。
 
 ### 验证命令
 
 ```bash
-bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts
+bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
 ```
 
 ```bash
-bun test apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
 ```
 
 ```bash
 bun run --filter='@codeinsights/electron' typecheck
-git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pipeline/v1
+bun run --filter='@codeinsights/electron' build:renderer
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
 ```
 
 ### 完成定义
 
-- [ ] 所有 patch-work 文档读取通过统一 Workbench。
-- [ ] 用户能查看 revision 列表。
-- [ ] 用户能对比 current 和 accepted revision。
-- [ ] `changes.patch` 有可读 diff 视图。
-- [ ] checksum mismatch 有明确提示。
-- [ ] 旧 manifest 仍可读。
-- [ ] 受影响 package patch version 已递增。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] 所有 patch-work 文档读取通过统一 Workbench。
+- [x] 用户能查看 revision 列表。
+- [x] 用户能对比 current 和 accepted revision。
+- [x] `changes.patch` 有可读 diff 视图。
+- [x] checksum mismatch 有明确提示。
+- [x] 旧 manifest 仍可读。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不在 Renderer 直接读取本地文件。
-- [ ] 不提供编辑保存。
-- [ ] 不改变 patch-work manifest 结构，除非有迁移测试。
+- [x] 不在 Renderer 直接读取本地文件。
+- [x] 不提供编辑保存。
+- [x] 不改变 patch-work manifest 结构，除非有迁移测试。
+
+## 2026-05-29 Pipeline v1 Phase 3 Review
+
+- 阶段范围：只完成 Phase 3，只读 Patch-work Document Workbench MVP；未修改 Graph、Claude / Codex runner、Git submission 真实写逻辑、远端写确认语义、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增 `PatchWorkDocumentRevision`、`LIST_PATCH_WORK_REVISIONS`、`READ_PATCH_WORK_REVISION` 和受控 `OPEN_PATCH_WORK_FILE`；main 端通过 `sessionId + relativePath + revision` 读取 patch-work revision，复用 realpath / lstat / symlink 路径安全；当前文件 checksum 与 manifest 不一致时返回 `checksumMatches=false`。
+- Workbench：新增 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text 展示、revision selector、current / accepted / checksum mismatch / read error badge、current vs accepted 对比、打开 patch-work 目录和打开当前文件。
+- 面板接入：`ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel` 已用统一 Workbench 替换重复内联 `<pre>` 文档展示；既有 approve 阻断逻辑仍使用 checksum、loading、read error、空正文等保守条件。
+- 兼容性确认：不改变 `PatchWorkManifest.version` 和 manifest 结构；写新 revision 时保留已有 accepted revision 元数据，便于 Workbench 对比旧 accepted 与当前 revision。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.52`，`@codeinsights/electron` 提升到 `0.0.125`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
+- 阶段提交：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`。
 
 ## Phase 4：Contribution Dashboard 与 Submission Plan
 
@@ -561,7 +580,7 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 入口条件
 
-- [ ] Phase 3 已完成并提交。
+- [x] Phase 3 已完成并提交。
 - [ ] 已确认本阶段不改变真实 commit / remote PR 执行服务。
 - [ ] 已确认 Dashboard 使用 read model，不从 records 文本反推状态。
 
