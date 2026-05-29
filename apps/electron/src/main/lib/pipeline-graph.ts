@@ -129,21 +129,26 @@ function extractPendingGateFromSnapshot(snapshot: PipelineGraphCheckpointSnapsho
 function createGateRequest(
   state: PipelineGraphState,
   node: PipelineNodeKind,
+  kindOverride?: PipelineGateKind,
 ): PipelineGateRequest {
-  const kind: PipelineGateKind | undefined = state.version === 2
+  const kind: PipelineGateKind | undefined = kindOverride ?? (state.version === 2
     ? gateKindForV2Node(node, state)
-    : undefined
+    : undefined)
 
   return {
     gateId: randomUUID(),
     sessionId: state.sessionId,
     node,
     ...(kind ? { kind } : {}),
-    title: kind === 'review_iteration_limit'
+    title: kind === 'remote_write_confirmation'
+      ? '确认远端写'
+      : kind === 'review_iteration_limit'
       ? 'Reviewer 多轮未通过，等待人工接管'
       : `${node} 节点待审核`,
     summary: state.latestSummary,
-    feedbackHint: kind === 'review_iteration_limit'
+    feedbackHint: kind === 'remote_write_confirmation'
+      ? '确认后会执行 git push 并创建 Draft PR；取消会回到提交材料审核。'
+      : kind === 'review_iteration_limit'
       ? '接受风险会进入 tester；填写反馈会回到 developer；也可重跑 reviewer。'
       : node === 'reviewer'
         ? '可填写 reviewer 反馈后回到 developer'
@@ -302,13 +307,31 @@ function createWorkerNode(
 function createGateNode(
   node: PipelineNodeKind,
   nextNode: PipelineNodeKind | typeof END,
+  options: { kindOverride?: PipelineGateKind } = {},
 ): (state: PipelineGraphState) => Command {
   return (state) => {
-    const request = createGateRequest(state, node)
+    const request = createGateRequest(state, node, options.kindOverride)
     const response = interrupt<PipelineGateRequest, PipelineGateResponse>(request)
     const timestamp = now()
 
     if (response.action === 'approve') {
+      if (
+        state.version === 2
+        && node === 'committer'
+        && request.kind === 'submission_review'
+        && response.submissionMode === 'remote_pr'
+      ) {
+        return new Command({
+          goto: 'gate_remote_write',
+          update: {
+            currentNode: 'committer',
+            feedback: undefined,
+            status: 'waiting_human',
+            updatedAt: timestamp,
+          },
+        })
+      }
+
       const nextStageOutputs = request.kind === 'test_blocked' && node === 'tester'
         ? {
             ...(state.stageOutputs ?? {}),
@@ -430,6 +453,11 @@ function createPipelineGraphForVersion(options: CreatePipelineGraphInternalOptio
       .addEdge('developer', 'gate_developer')
       .addNode('committer', createWorkerNode('committer', options.runNode, options.getSignal))
       .addNode('gate_committer', createGateNode('committer', END), {
+        ends: ['committer', 'gate_remote_write', END],
+      })
+      .addNode('gate_remote_write', createGateNode('committer', END, {
+        kindOverride: 'remote_write_confirmation',
+      }), {
         ends: ['committer', END],
       })
       .addEdge('committer', 'gate_committer')

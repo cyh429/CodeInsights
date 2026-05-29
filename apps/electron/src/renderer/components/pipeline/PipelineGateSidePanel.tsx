@@ -13,6 +13,7 @@ import { ReviewDocumentBoard } from './ReviewDocumentBoard'
 import { ReviewerIssueBoard } from './ReviewerIssueBoard'
 import { TesterResultBoard } from './TesterResultBoard'
 import { CommitterPanel } from './CommitterPanel'
+import { RemoteWriteConfirmationPanel } from './RemoteWriteConfirmationPanel'
 import type { PipelineGatePanelModel } from './pipeline-gate-panel-model'
 import type { PipelineGateRespondHandler } from './usePipelineGateActions'
 
@@ -88,14 +89,31 @@ export function PipelineGateSidePanel({
             localCommitOperationId: gatePanel.committerOperationIds.localCommitOperationId,
           })}
           onRemoteSubmit={() => onRespond('approve', undefined, {
+            submissionMode: 'remote_pr',
+            remoteSubmissionOperationId: gatePanel.committerOperationIds.remoteSubmissionOperationId,
+          })}
+          onReject={(feedback) => onRespond('reject_with_feedback', feedback)}
+          onRerun={() => onRespond('rerun_node')}
+          onOpenPatchWorkDir={onOpenPatchWorkDir}
+        />
+      ) : null}
+      {gatePanel.panelKind === 'remote_write_confirmation' ? (
+        <RemoteWriteConfirmationPanel
+          output={gatePanel.stageOutputs.committer}
+          submissionPlan={submissionPlan}
+          operationId={gatePanel.committerOperationIds.remoteSubmissionOperationId}
+          onConfirm={() => onRespond('approve', undefined, {
             kind: 'remote_write_confirmation',
             submissionMode: 'remote_pr',
             remoteSubmissionOperationId: gatePanel.committerOperationIds.remoteSubmissionOperationId,
             remoteWriteConfirmed: true,
           })}
-          onReject={(feedback) => onRespond('reject_with_feedback', feedback)}
-          onRerun={() => onRespond('rerun_node')}
-          onOpenPatchWorkDir={onOpenPatchWorkDir}
+          onCancel={(feedback) => onRespond('reject_with_feedback', feedback, {
+            kind: 'remote_write_confirmation',
+            submissionMode: 'remote_pr',
+            remoteSubmissionOperationId: gatePanel.committerOperationIds.remoteSubmissionOperationId,
+            remoteWriteConfirmed: false,
+          })}
         />
       ) : null}
       {gatePanel.panelKind === 'tester_result' ? (

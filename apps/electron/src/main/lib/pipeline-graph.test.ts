@@ -229,6 +229,96 @@ describe('pipeline-graph', () => {
     expect(nodes).toEqual(['explorer', 'planner', 'developer', 'reviewer', 'tester', 'committer'])
   })
 
+  test('v2 committer 选择 remote_pr 后先进入独立远端写确认 gate', async () => {
+    const graph = createPipelineGraphV2({
+      checkpointer: new MemorySaver(),
+      runNode: async (node) => ({
+        output: `${node}-ok`,
+        summary: `${node}-ok`,
+        approved: true,
+      }),
+    })
+
+    const explorerPause = await graph.invoke({
+      sessionId: 'session-v2-remote-confirm',
+      userInput: '请完成 v2 remote PR',
+    })
+    const plannerPause = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: explorerPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        action: 'approve',
+        selectedReportId: 'report-remote',
+        createdAt: Date.now(),
+      },
+    })
+    const developerPause = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: plannerPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        action: 'approve',
+        createdAt: Date.now(),
+      },
+    })
+    const testerPause = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: developerPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        action: 'approve',
+        createdAt: Date.now(),
+      },
+    })
+    const committerPause = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: testerPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        action: 'approve',
+        createdAt: Date.now(),
+      },
+    })
+
+    expect(committerPause.interrupted?.kind).toBe('submission_review')
+
+    const remoteConfirmationPause = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: committerPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-confirm',
+        createdAt: Date.now(),
+      },
+    })
+
+    expect(remoteConfirmationPause.interrupted?.node).toBe('committer')
+    expect(remoteConfirmationPause.interrupted?.kind).toBe('remote_write_confirmation')
+    expect(remoteConfirmationPause.state.status).toBe('waiting_human')
+    expect(remoteConfirmationPause.state.currentNode).toBe('committer')
+
+    const completed = await graph.resume({
+      sessionId: 'session-v2-remote-confirm',
+      response: {
+        gateId: remoteConfirmationPause.interrupted!.gateId,
+        sessionId: 'session-v2-remote-confirm',
+        kind: 'remote_write_confirmation',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-confirm',
+        remoteWriteConfirmed: true,
+        createdAt: Date.now(),
+      },
+    })
+
+    expect(completed.interrupted).toBeUndefined()
+    expect(completed.state.status).toBe('completed')
+    expect(completed.state.lastApprovedNode).toBe('committer')
+  })
+
   test('v2 tester 遇到环境阻塞时进入 test_blocked gate，接受风险后进入 committer', async () => {
     const nodes: string[] = []
     const graph = createPipelineGraphV2({

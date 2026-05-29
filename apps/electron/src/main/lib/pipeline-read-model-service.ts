@@ -132,6 +132,7 @@ function toRemoteSubmissionSummary(value: unknown): PipelineRemoteSubmissionSumm
     commitHash: typeof value.commitHash === 'string' ? value.commitHash : undefined,
     status,
     type: value.type === 'push' || value.type === 'pull_request' ? value.type : undefined,
+    provider: value.provider === 'gh_cli' || value.provider === 'github_api' ? value.provider : undefined,
     remoteName: typeof value.remoteName === 'string' ? value.remoteName : undefined,
     sanitizedRemoteUrl: typeof value.sanitizedRemoteUrl === 'string'
       ? redactReadModelUrl(value.sanitizedRemoteUrl)
@@ -144,6 +145,7 @@ function toRemoteSubmissionSummary(value: unknown): PipelineRemoteSubmissionSumm
     prBody: typeof value.prBody === 'string' ? redactReadModelText(value.prBody) : undefined,
     prUrl: typeof value.prUrl === 'string' ? redactReadModelUrl(value.prUrl) : undefined,
     prNumber: typeof value.prNumber === 'number' ? value.prNumber : undefined,
+    existingPr: value.existingPr === true ? true : undefined,
     draft: typeof value.draft === 'boolean' ? value.draft : undefined,
     error: typeof value.error === 'string' ? redactReadModelText(value.error) : undefined,
     pushedAt: typeof value.pushedAt === 'number' ? value.pushedAt : undefined,
@@ -201,6 +203,8 @@ function eventTitle(event: ContributionTaskEvent): string {
       return '本地 commit 已创建'
     case 'local_commit_failed':
       return '本地 commit 失败'
+    case 'remote_write_confirmed':
+      return '远端写已确认'
     case 'remote_submission_created':
       return '远端 PR 已创建'
     case 'remote_submission_failed':
@@ -388,7 +392,7 @@ export function getPipelineSubmissionPlan(input: SessionReadModelInput): Pipelin
 
   if (!committerOutput) {
     blockers.push('Committer 尚未生成提交材料')
-  } else {
+  } else if (localCommit?.status !== 'created') {
     try {
       const commitPlan = validateCommitPreconditions({
         repositoryRoot: task.repositoryRoot,

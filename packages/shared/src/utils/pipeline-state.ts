@@ -91,6 +91,18 @@ function applyGateDecision(
 ): PipelineStateSnapshot {
   if (record.action === 'approve') {
     const version = resolvePipelineVersion(state.version)
+    if (
+      version === 2
+      && record.node === 'committer'
+      && record.kind === 'submission_review'
+      && record.submissionMode === 'remote_pr'
+    ) {
+      return updateBase(state, record.createdAt, {
+        currentNode: 'committer',
+        pendingGate: null,
+        status: 'running',
+      })
+    }
     const terminal = isTerminalApproval(record.node, version)
     return updateBase(state, record.createdAt, {
       currentNode: terminal ? record.node : nextNodeAfterApproval(record.node, version),
@@ -191,6 +203,7 @@ export function applyPipelineRecord(
           title: record.title,
           summary: record.summary,
           feedbackHint: record.feedbackHint,
+          remoteWritePlan: record.remoteWritePlan,
           iteration: record.iteration ?? state.reviewIteration,
           createdAt: record.createdAt,
         },

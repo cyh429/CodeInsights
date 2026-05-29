@@ -144,6 +144,56 @@ describe('pipeline gate panel model', () => {
     expect(model.stageOutputs.committer).toBe(committer)
   })
 
+  test('remote_write_confirmation gate 使用独立面板和当前 gate operation id', () => {
+    const committer: PipelineCommitterStageOutput = {
+      node: 'committer',
+      summary: '提交',
+      commitMessage: 'feat: test',
+      prTitle: 'Test PR',
+      prBody: 'Body',
+      submissionStatus: 'local_commit_created',
+      blockers: [],
+      risks: [],
+      commitDocRef: documentRef('patch-work/commit.md'),
+      prDocRef: documentRef('patch-work/pr.md'),
+      localCommit: {
+        attempted: true,
+        status: 'created',
+        operationId: 'op-local',
+        commitHash: 'abc123',
+        workingBranch: 'feature/remote',
+        baseBranch: 'main',
+      },
+      content: '',
+    }
+
+    const model = buildPipelineGatePanelModel({
+      sessionId: 'session-1',
+      pendingGate: {
+        ...gate('committer', 'remote_write_confirmation'),
+        remoteWritePlan: {
+          operationId: 'op-remote-from-plan',
+          remoteName: 'origin',
+          baseBranch: 'main',
+          headBranch: 'feature/remote',
+          commitHash: 'abc123',
+          prTitle: 'Test PR',
+          prBody: 'Body',
+          warnings: ['需要确认远端写'],
+        },
+      },
+      state: state({ committer }),
+      documentContents: new Map(),
+    })
+
+    expect(model.panelKind).toBe('remote_write_confirmation')
+    expect(model.committerOperationIds.remoteSubmissionOperationId).toBe('op-remote-from-plan')
+    expect(model.reviewDocuments.map((document) => document.relativePath)).toEqual([
+      'patch-work/commit.md',
+      'patch-work/pr.md',
+    ])
+  })
+
   test('非专用 gate 保持 fallback card 行为', () => {
     const developer: PipelineDeveloperStageOutput = {
       node: 'developer',

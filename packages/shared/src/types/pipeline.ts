@@ -69,8 +69,23 @@ export interface PipelineGateRequest {
   title?: string
   summary?: string
   feedbackHint?: string
+  remoteWritePlan?: PipelineRemoteWriteConfirmationPlan
   iteration: number
   createdAt: number
+}
+
+export interface PipelineRemoteWriteConfirmationPlan {
+  operationId: string
+  remoteName: string
+  baseBranch: string
+  headBranch: string
+  commitHash: string
+  prTitle: string
+  prBody: string
+  sanitizedRemoteUrl?: string
+  githubRepo?: string
+  pushedRef?: string
+  warnings: string[]
 }
 
 /** 人工审核响应 */
@@ -285,6 +300,7 @@ export interface PipelineRemoteSubmissionSummary {
   commitHash?: string
   status: PipelineRemoteSubmissionStatus
   type?: PipelineRemoteSubmissionType
+  provider?: 'gh_cli' | 'github_api'
   remoteName?: string
   sanitizedRemoteUrl?: string
   githubRepo?: string
@@ -295,6 +311,7 @@ export interface PipelineRemoteSubmissionSummary {
   prBody?: string
   prUrl?: string
   prNumber?: number
+  existingPr?: boolean
   draft?: boolean
   error?: string
   pushedAt?: number
@@ -405,6 +422,7 @@ export type ContributionTaskEventType =
   | 'document_revision_created'
   | 'local_commit_created'
   | 'local_commit_failed'
+  | 'remote_write_confirmed'
   | 'remote_submission_created'
   | 'remote_submission_failed'
   | 'task_failed'
@@ -771,6 +789,7 @@ export interface PipelineGateRequestedRecord {
   title?: string
   summary?: string
   feedbackHint?: string
+  remoteWritePlan?: PipelineRemoteWriteConfirmationPlan
   iteration?: number
   createdAt: number
 }

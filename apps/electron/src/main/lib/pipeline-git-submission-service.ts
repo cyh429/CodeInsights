@@ -7,6 +7,8 @@ import type {
   PipelineTestEvidence,
 } from '@codeinsights/shared'
 
+type MaybePromise<T> = T | Promise<T>
+
 export interface BuildPipelinePatchSetDraftInput {
   repositoryRoot: string
   testEvidence: PipelineTestEvidence[]
@@ -83,6 +85,35 @@ export type PipelineRemoteCommandRunner = (
   options: PipelineRemoteCommandOptions,
 ) => string
 
+export interface PipelineExistingPullRequest {
+  url: string
+  number?: number
+  baseBranch: string
+  headBranch: string
+}
+
+export interface PipelineCreatedPullRequest {
+  url: string
+  number?: number
+}
+
+export interface PipelineGitHubPullRequestClient {
+  checkAuth(input: { repo: string }): MaybePromise<void>
+  findOpenPullRequest(input: {
+    repo: string
+    headBranch: string
+    baseBranch: string
+  }): MaybePromise<PipelineExistingPullRequest | null>
+  createDraftPullRequest(input: {
+    repo: string
+    title: string
+    body: string
+    baseBranch: string
+    headBranch: string
+    draft: boolean
+  }): MaybePromise<PipelineCreatedPullRequest>
+}
+
 export interface ValidateRemoteSubmissionPreconditionsInput {
   repositoryRoot: string
   operationId: string
@@ -95,7 +126,9 @@ export interface ValidateRemoteSubmissionPreconditionsInput {
   baseBranch?: string
   draft?: boolean
   commandRunner?: PipelineRemoteCommandRunner
+  githubClient?: PipelineGitHubPullRequestClient
   skipPush?: boolean
+  skipGitHubAuthCheck?: boolean
 }
 
 export interface PipelineRemoteSubmissionPlan {
@@ -116,6 +149,124 @@ export interface PipelineRemoteSubmissionPlan {
 
 export interface CreateRemotePipelineSubmissionInput extends ValidateRemoteSubmissionPreconditionsInput {
   confirmed: boolean
+}
+
+function resolveGitHubToken(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.CODEINSIGHTS_GITHUB_TOKEN?.trim()
+    || env.GH_TOKEN?.trim()
+    || env.GITHUB_TOKEN?.trim()
+    || undefined
+}
+
+function parseGitHubPullRequest(value: unknown): PipelineExistingPullRequest | null {
+  if (!value || typeof value !== 'object') return null
+  const item = value as {
+    html_url?: unknown
+    number?: unknown
+    base?: { ref?: unknown }
+    head?: { ref?: unknown }
+  }
+  if (
+    typeof item.html_url !== 'string'
+    || !item.base
+    || !item.head
+    || typeof item.base.ref !== 'string'
+    || typeof item.head.ref !== 'string'
+  ) {
+    return null
+  }
+  return {
+    url: item.html_url,
+    number: typeof item.number === 'number' ? item.number : undefined,
+    baseBranch: item.base.ref,
+    headBranch: item.head.ref,
+  }
+}
+
+function parseCreatedPullRequest(value: unknown): PipelineCreatedPullRequest {
+  if (!value || typeof value !== 'object') {
+    throw new Error('GitHub API 返回了非法 PR 响应')
+  }
+  const item = value as { html_url?: unknown; number?: unknown }
+  if (typeof item.html_url !== 'string') {
+    throw new Error('GitHub API 返回缺少 PR URL')
+  }
+  return {
+    url: item.html_url,
+    number: typeof item.number === 'number' ? item.number : undefined,
+  }
+}
+
+async function requestGitHubJson(
+  token: string,
+  path: string,
+  init: RequestInit = {},
+): Promise<unknown> {
+  const response = await fetch(`https://api.github.com${path}`, {
+    ...init,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'User-Agent': 'CodeInsights Pipeline',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(init.headers ?? {}),
+    },
+  })
+  const text = await response.text()
+  if (!response.ok) {
+    throw new Error(redactSecretText(`GitHub API ${response.status}: ${text}`))
+  }
+  return text ? JSON.parse(text) : null
+}
+
+export function createGitHubPullRequestClientFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): PipelineGitHubPullRequestClient | undefined {
+  const token = resolveGitHubToken(env)
+  if (!token) return undefined
+
+  return {
+    async checkAuth({ repo }) {
+      await requestGitHubJson(token, `/repos/${encodeURIComponent(repo).replace(/%2F/g, '/')}`)
+    },
+    async findOpenPullRequest({ repo, headBranch, baseBranch }) {
+      const [owner] = repo.split('/')
+      const params = new URLSearchParams({
+        state: 'open',
+        head: `${owner}:${headBranch}`,
+        base: baseBranch,
+      })
+      const response = await requestGitHubJson(
+        token,
+        `/repos/${encodeURIComponent(repo).replace(/%2F/g, '/')}/pulls?${params.toString()}`,
+      )
+      if (!Array.isArray(response)) return null
+      for (const item of response) {
+        const pullRequest = parseGitHubPullRequest(item)
+        if (pullRequest?.baseBranch === baseBranch && pullRequest.headBranch === headBranch) {
+          return pullRequest
+        }
+      }
+      return null
+    },
+    async createDraftPullRequest({ repo, title, body, baseBranch, headBranch, draft }) {
+      const response = await requestGitHubJson(
+        token,
+        `/repos/${encodeURIComponent(repo).replace(/%2F/g, '/')}/pulls`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            title,
+            body,
+            base: baseBranch,
+            head: headBranch,
+            draft,
+          }),
+        },
+      )
+      return parseCreatedPullRequest(response)
+    },
+  }
 }
 
 interface GitStatusEntry {
@@ -205,21 +356,32 @@ export function sanitizeRemoteUrl(remoteUrl: string): string {
     const url = new URL(trimmed)
     url.username = ''
     url.password = ''
+    for (const key of [...url.searchParams.keys()]) {
+      if (/(token|key|secret|password|auth|signature|credential)/i.test(key)) {
+        url.searchParams.set(key, '[REDACTED]')
+      }
+    }
+    url.hash = ''
     return url.toString().replace(/\/$/, '')
   } catch {
-    return trimmed.replace(/\/\/[^/@]+@/, '//')
+    return trimmed
+      .replace(/\/\/[^/@]+@/, '//')
+      .replace(/([?&](?:[^=\s&#]*(?:token|key|secret|password|auth|signature|credential)[^=\s&#]*)=)[^&#\s]+/gi, '$1[REDACTED]')
+      .replace(/#[^\s]*/g, '')
   }
 }
 
 export function redactSecretText(value: string): string {
   return value
     .replace(/(https?:\/\/)(?:[^/\s:@]+(?::[^/\s@]*)?@)([^\s]+)/gi, (_match, protocol: string, rest: string) =>
-      `${protocol}${rest}`)
-    .replace(/\bAuthorization:\s*Bearer\s+[^\s]+/gi, 'Authorization: Bearer [REDACTED]')
+      sanitizeRemoteUrl(`${protocol}${rest}`))
+    .replace(/\bAuthorization:\s*([A-Za-z][A-Za-z0-9_-]*)\s+[^\s]+/gi, 'Authorization: $1 [REDACTED]')
     .replace(/\bBearer\s+(?:gh[pousr]_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)/gi, 'Bearer [REDACTED]')
+    .replace(/([?&](?:[^=\s&#]*(?:token|key|secret|password|auth|signature|credential)[^=\s&#]*)=)[^&#\s]+/gi, '$1[REDACTED]')
+    .replace(/\b((?:access_)?token|api[_-]?key|secret|password)(\s*[=:]\s*)[^\s&]+/gi, '$1$2[REDACTED]')
     .replace(/\bgh[pousr]_[A-Za-z0-9_]{10,}\b/g, '[REDACTED]')
     .replace(/\bgithub_pat_[A-Za-z0-9_]{10,}\b/g, '[REDACTED]')
-    .replace(/\b(GH_TOKEN|GITHUB_TOKEN)(\s*[=:]\s*)[^\s]+/gi, '$1$2[REDACTED]')
+    .replace(/\b(CODEINSIGHTS_GITHUB_TOKEN|GH_TOKEN|GITHUB_TOKEN|GITHUB_PAT)(\s*[=:]\s*)[^\s]+/gi, '$1$2[REDACTED]')
 }
 
 function formatCommandError(error: unknown): string {
@@ -887,30 +1049,242 @@ function remoteBaseBranchExists(
   }
 }
 
-function readExistingPullRequestUrl(
+function parseExistingPullRequestJson(
+  output: string,
+  plan: PipelineRemoteSubmissionPlan,
+): PipelineExistingPullRequest | undefined {
+  try {
+    const parsedValue = JSON.parse(output) as unknown
+    const parsedItems = Array.isArray(parsedValue) ? parsedValue : [parsedValue]
+    const parsed = parsedItems.find((item): item is {
+      url?: unknown
+      number?: unknown
+      baseRefName?: unknown
+      headRefName?: unknown
+    } => Boolean(item && typeof item === 'object'))
+    if (
+      !parsed
+      || typeof parsed.url !== 'string'
+      || typeof parsed.baseRefName !== 'string'
+      || typeof parsed.headRefName !== 'string'
+      || parsed.baseRefName !== plan.baseBranch
+      || parsed.headRefName !== plan.headBranch
+    ) {
+      return undefined
+    }
+    return {
+      url: parsed.url,
+      number: typeof parsed.number === 'number' ? parsed.number : undefined,
+      baseBranch: parsed.baseRefName,
+      headBranch: parsed.headRefName,
+    }
+  } catch {
+    return undefined
+  }
+}
+
+function readRemoteHeadCommit(
   repositoryRoot: string,
   plan: PipelineRemoteSubmissionPlan,
   runner?: PipelineRemoteCommandRunner,
 ): string | undefined {
+  try {
+    const output = runRemoteCommand(repositoryRoot, 'git', [
+      'ls-remote',
+      '--exit-code',
+      '--heads',
+      plan.remoteName,
+      plan.pushedRef ?? `refs/heads/${plan.headBranch}`,
+    ], runner)
+    const commit = output.trim().split(/\s+/)[0]
+    return commit && /^[0-9a-f]{40}$/i.test(commit) ? commit : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function assertSkipPushRemoteHeadMatches(
+  repositoryRoot: string,
+  plan: PipelineRemoteSubmissionPlan,
+  runner?: PipelineRemoteCommandRunner,
+): void {
+  const remoteCommit = readRemoteHeadCommit(repositoryRoot, plan, runner)
+  if (!remoteCommit) {
+    throw new Error(`无法验证远端分支 ${plan.remoteName}/${plan.headBranch} 已指向目标 commit，禁止跳过 push`)
+  }
+  if (remoteCommit.toLowerCase() !== plan.commitHash.toLowerCase()) {
+    throw new Error(`远端分支 ${plan.remoteName}/${plan.headBranch} 指向 ${remoteCommit}，不匹配本地 commit ${plan.commitHash}，禁止跳过 push`)
+  }
+}
+
+function readExistingPullRequest(
+  repositoryRoot: string,
+  plan: PipelineRemoteSubmissionPlan,
+  runner?: PipelineRemoteCommandRunner,
+): PipelineExistingPullRequest | undefined {
   if (!plan.githubRepo) return undefined
 
   try {
     const output = runRemoteCommand(repositoryRoot, 'gh', [
       'pr',
-      'view',
+      'list',
       '--repo',
       plan.githubRepo,
+      '--state',
+      'open',
       '--head',
       plan.headBranch,
+      '--base',
+      plan.baseBranch,
       '--json',
-      'url,number',
-      '--jq',
-      '.url',
+      'url,number,baseRefName,headRefName',
+      '--limit',
+      '1',
     ], runner)
-    return extractPullRequestUrl(output) ?? (output.trim() || undefined)
+    return parseExistingPullRequestJson(output, plan)
   } catch {
     return undefined
   }
+}
+
+function findExistingPullRequestWithClient(
+  client: PipelineGitHubPullRequestClient | undefined,
+  plan: PipelineRemoteSubmissionPlan,
+): PipelineExistingPullRequest | undefined {
+  if (!client || !plan.githubRepo) return undefined
+  try {
+    const existingResult = client.findOpenPullRequest({
+      repo: plan.githubRepo,
+      headBranch: plan.headBranch,
+      baseBranch: plan.baseBranch,
+    })
+    if (existingResult && typeof (existingResult as Promise<PipelineExistingPullRequest | null>).then === 'function') {
+      throw new Error('GitHub API client existing PR 检查需要异步执行')
+    }
+    const existing = existingResult as PipelineExistingPullRequest | null
+    if (!existing) return undefined
+    if (existing.baseBranch !== plan.baseBranch || existing.headBranch !== plan.headBranch) {
+      return undefined
+    }
+    return existing
+  } catch (error) {
+    throw new Error(redactSecretText(error instanceof Error ? error.message : String(error)))
+  }
+}
+
+function createPullRequestWithClient(
+  client: PipelineGitHubPullRequestClient | undefined,
+  plan: PipelineRemoteSubmissionPlan,
+): PipelineCreatedPullRequest | undefined {
+  if (!client || !plan.githubRepo) return undefined
+  try {
+    const createdResult = client.createDraftPullRequest({
+      repo: plan.githubRepo,
+      title: plan.prTitle,
+      body: plan.prBody,
+      baseBranch: plan.baseBranch,
+      headBranch: plan.headBranch,
+      draft: plan.draft,
+    })
+    if (createdResult && typeof (createdResult as Promise<PipelineCreatedPullRequest>).then === 'function') {
+      throw new Error('GitHub API client PR 创建需要异步执行')
+    }
+    const created = createdResult as PipelineCreatedPullRequest
+    return created
+  } catch (error) {
+    throw new Error(redactSecretText(error instanceof Error ? error.message : String(error)))
+  }
+}
+
+async function findExistingPullRequestWithClientAsync(
+  client: PipelineGitHubPullRequestClient,
+  plan: PipelineRemoteSubmissionPlan,
+): Promise<PipelineExistingPullRequest | undefined> {
+  if (!plan.githubRepo) return undefined
+  try {
+    const existing = await client.findOpenPullRequest({
+      repo: plan.githubRepo,
+      headBranch: plan.headBranch,
+      baseBranch: plan.baseBranch,
+    })
+    if (!existing) return undefined
+    if (existing.baseBranch !== plan.baseBranch || existing.headBranch !== plan.headBranch) {
+      return undefined
+    }
+    return existing
+  } catch (error) {
+    throw new Error(redactSecretText(error instanceof Error ? error.message : String(error)))
+  }
+}
+
+async function createPullRequestWithClientAsync(
+  client: PipelineGitHubPullRequestClient,
+  plan: PipelineRemoteSubmissionPlan,
+): Promise<PipelineCreatedPullRequest> {
+  if (!plan.githubRepo) {
+    throw new Error('缺少 GitHub repo，无法通过 GitHub API 创建 PR')
+  }
+  try {
+    return await client.createDraftPullRequest({
+      repo: plan.githubRepo,
+      title: plan.prTitle,
+      body: plan.prBody,
+      baseBranch: plan.baseBranch,
+      headBranch: plan.headBranch,
+      draft: plan.draft,
+    })
+  } catch (error) {
+    throw new Error(redactSecretText(error instanceof Error ? error.message : String(error)))
+  }
+}
+
+function buildExistingPullRequestSummary(
+  plan: PipelineRemoteSubmissionPlan,
+  existingPullRequest: PipelineExistingPullRequest,
+  provider: 'gh_cli' | 'github_api',
+): PipelineRemoteSubmissionSummary {
+  return {
+    attempted: true,
+    operationId: plan.operationId,
+    status: 'failed',
+    type: 'pull_request',
+    provider,
+    commitHash: plan.commitHash,
+    remoteName: plan.remoteName,
+    sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
+    githubRepo: plan.githubRepo,
+    baseBranch: plan.baseBranch,
+    headBranch: plan.headBranch,
+    pushedRef: plan.pushedRef,
+    prTitle: plan.prTitle,
+    prBody: plan.prBody,
+    prUrl: existingPullRequest.url,
+    prNumber: existingPullRequest.number,
+    existingPr: true,
+    draft: plan.draft,
+    error: '检测到同一 head/base 的已有 PR，未执行 push；请先打开已有 PR 或显式选择更新。',
+    createdAt: Date.now(),
+  }
+}
+
+function readExistingPullRequestBeforePush(
+  repositoryRoot: string,
+  plan: PipelineRemoteSubmissionPlan,
+  input: CreateRemotePipelineSubmissionInput,
+): PipelineRemoteSubmissionSummary | undefined {
+  const existingPullRequest = findExistingPullRequestWithClient(input.githubClient, plan)
+  if (existingPullRequest) {
+    return buildExistingPullRequestSummary(plan, existingPullRequest, 'github_api')
+  }
+
+  if (!input.githubClient) {
+    const existingPullRequest = readExistingPullRequest(repositoryRoot, plan, input.commandRunner)
+    if (existingPullRequest) {
+      return buildExistingPullRequestSummary(plan, existingPullRequest, 'gh_cli')
+    }
+  }
+
+  return undefined
 }
 
 export function validateRemoteSubmissionPreconditions(
@@ -996,11 +1370,19 @@ export function validateRemoteSubmissionPreconditions(
     blockers.push(`目标 remote base branch 不存在或不可访问: ${remoteName}/${baseBranch}`)
   }
 
-  if (blockers.length === 0) {
+  if (blockers.length === 0 && input.skipGitHubAuthCheck !== true) {
     try {
-      runRemoteCommand(repositoryRoot, 'gh', ['auth', 'status'], input.commandRunner)
-    } catch {
-      blockers.push('GitHub auth 不可用，请先完成 gh 登录或配置 git credential')
+      if (input.githubClient && githubRepo) {
+        const authResult = input.githubClient.checkAuth({ repo: githubRepo })
+        if (authResult && typeof (authResult as Promise<void>).then === 'function') {
+          throw new Error('GitHub API client auth 需要异步验证')
+        }
+      } else {
+        runRemoteCommand(repositoryRoot, 'gh', ['auth', 'status'], input.commandRunner)
+      }
+    } catch (error) {
+      const detail = redactSecretText(error instanceof Error ? error.message : String(error))
+      blockers.push(`GitHub auth 不可用，请先完成 gh 登录或配置 git credential: ${detail}`)
     }
   }
 
@@ -1037,13 +1419,72 @@ export function createRemotePipelineSubmission(
     throw new Error(`远端提交前置条件未满足: ${plan.blockers.join('；')}`)
   }
 
+  const existingBeforePush = readExistingPullRequestBeforePush(repositoryRoot, plan, input)
+  if (existingBeforePush) {
+    return existingBeforePush
+  }
+
   const pushedAt = Date.now()
-  if (!input.skipPush) {
+  if (input.skipPush) {
+    assertSkipPushRemoteHeadMatches(repositoryRoot, plan, input.commandRunner)
+  } else {
     runRemoteCommand(repositoryRoot, 'git', [
       'push',
       plan.remoteName,
       `${plan.commitHash}:${plan.pushedRef}`,
     ], input.commandRunner)
+  }
+
+  const apiCreatedPullRequest = (() => {
+    try {
+      return createPullRequestWithClient(input.githubClient, plan)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      const remoteSubmission: PipelineRemoteSubmissionSummary = {
+        attempted: true,
+        operationId: plan.operationId,
+        status: 'pushed',
+        type: 'pull_request',
+        provider: 'github_api',
+        commitHash: plan.commitHash,
+        remoteName: plan.remoteName,
+        sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
+        githubRepo: plan.githubRepo,
+        baseBranch: plan.baseBranch,
+        headBranch: plan.headBranch,
+        pushedRef: plan.pushedRef,
+        prTitle: plan.prTitle,
+        prBody: plan.prBody,
+        draft: plan.draft,
+        error: redactSecretText(message),
+        pushedAt,
+        createdAt: Date.now(),
+      }
+      throw new PipelineRemoteSubmissionError(message, remoteSubmission)
+    }
+  })()
+  if (apiCreatedPullRequest) {
+    return {
+      attempted: true,
+      operationId: plan.operationId,
+      status: 'created',
+      type: 'pull_request',
+      provider: 'github_api',
+      commitHash: plan.commitHash,
+      remoteName: plan.remoteName,
+      sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
+      githubRepo: plan.githubRepo,
+      baseBranch: plan.baseBranch,
+      headBranch: plan.headBranch,
+      pushedRef: plan.pushedRef,
+      prTitle: plan.prTitle,
+      prBody: plan.prBody,
+      prUrl: apiCreatedPullRequest.url,
+      prNumber: apiCreatedPullRequest.number,
+      draft: plan.draft,
+      pushedAt,
+      createdAt: Date.now(),
+    }
   }
 
   const prArgs = [
@@ -1067,17 +1508,14 @@ export function createRemotePipelineSubmission(
     try {
       return runRemoteCommand(repositoryRoot, 'gh', prArgs, input.commandRunner)
     } catch (error) {
-      const existingPrUrl = readExistingPullRequestUrl(repositoryRoot, plan, input.commandRunner)
-      if (existingPrUrl) {
-        return existingPrUrl
-      }
-
       const message = error instanceof Error ? error.message : String(error)
+      const existingPullRequest = readExistingPullRequest(repositoryRoot, plan, input.commandRunner)
       const remoteSubmission: PipelineRemoteSubmissionSummary = {
         attempted: true,
         operationId: plan.operationId,
         status: 'pushed',
         type: 'pull_request',
+        provider: input.githubClient ? 'github_api' : 'gh_cli',
         commitHash: plan.commitHash,
         remoteName: plan.remoteName,
         sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
@@ -1087,12 +1525,17 @@ export function createRemotePipelineSubmission(
         pushedRef: plan.pushedRef,
         prTitle: plan.prTitle,
         prBody: plan.prBody,
+        prUrl: existingPullRequest?.url,
+        prNumber: existingPullRequest?.number,
+        existingPr: existingPullRequest ? true : undefined,
         draft: plan.draft,
-        error: redactSecretText(message),
+        error: existingPullRequest
+          ? '远端分支已推送，但检测到同一 head/base 的已有 PR；请人工确认后再继续。'
+          : redactSecretText(message),
         pushedAt,
         createdAt: Date.now(),
       }
-      throw new PipelineRemoteSubmissionError(message, remoteSubmission)
+      throw new PipelineRemoteSubmissionError(remoteSubmission.error ?? message, remoteSubmission)
     }
   })()
   const prUrl = extractPullRequestUrl(prOutput)
@@ -1102,6 +1545,7 @@ export function createRemotePipelineSubmission(
     operationId: plan.operationId,
     status: 'created',
     type: 'pull_request',
+    provider: 'gh_cli',
     commitHash: plan.commitHash,
     remoteName: plan.remoteName,
     sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
@@ -1116,5 +1560,116 @@ export function createRemotePipelineSubmission(
     draft: plan.draft,
     pushedAt,
     createdAt: Date.now(),
+  }
+}
+
+export async function createRemotePipelineSubmissionWithGitHubApi(
+  input: CreateRemotePipelineSubmissionInput,
+): Promise<PipelineRemoteSubmissionSummary> {
+  const githubClient = input.githubClient ?? createGitHubPullRequestClientFromEnv()
+  if (!githubClient) {
+    return createRemotePipelineSubmission(input)
+  }
+  if (!input.confirmed) {
+    throw new Error('用户未确认远端写，禁止执行 push 或创建 PR')
+  }
+
+  const repositoryRoot = ensureGitRepository(input.repositoryRoot)
+  const plan = validateRemoteSubmissionPreconditions({
+    ...input,
+    repositoryRoot,
+    githubClient: undefined,
+    skipGitHubAuthCheck: true,
+  })
+  if (!plan.canSubmit) {
+    throw new Error(`远端提交前置条件未满足: ${plan.blockers.join('；')}`)
+  }
+  if (!plan.githubRepo) {
+    throw new Error('远端写首版仅支持 GitHub remote URL')
+  }
+
+  try {
+    await githubClient.checkAuth({ repo: plan.githubRepo })
+  } catch (error) {
+    const detail = redactSecretText(error instanceof Error ? error.message : String(error))
+    throw new Error(`GitHub auth 不可用，请先配置 GitHub token: ${detail}`)
+  }
+
+  const existingPullRequest = await findExistingPullRequestWithClientAsync(githubClient, plan)
+  if (existingPullRequest) {
+    return buildExistingPullRequestSummary(plan, existingPullRequest, 'github_api')
+  }
+
+  const pushedAt = Date.now()
+  if (input.skipPush) {
+    assertSkipPushRemoteHeadMatches(repositoryRoot, plan, input.commandRunner)
+  } else {
+    runRemoteCommand(repositoryRoot, 'git', [
+      'push',
+      plan.remoteName,
+      `${plan.commitHash}:${plan.pushedRef}`,
+    ], input.commandRunner)
+  }
+
+  try {
+    const createdPullRequest = await createPullRequestWithClientAsync(githubClient, plan)
+    return {
+      attempted: true,
+      operationId: plan.operationId,
+      status: 'created',
+      type: 'pull_request',
+      provider: 'github_api',
+      commitHash: plan.commitHash,
+      remoteName: plan.remoteName,
+      sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
+      githubRepo: plan.githubRepo,
+      baseBranch: plan.baseBranch,
+      headBranch: plan.headBranch,
+      pushedRef: plan.pushedRef,
+      prTitle: plan.prTitle,
+      prBody: plan.prBody,
+      prUrl: createdPullRequest.url,
+      prNumber: createdPullRequest.number,
+      draft: plan.draft,
+      pushedAt,
+      createdAt: Date.now(),
+    }
+  } catch (error) {
+    const message = redactSecretText(error instanceof Error ? error.message : String(error))
+    let existingAfterPush: PipelineExistingPullRequest | undefined
+    let lookupError: string | undefined
+    try {
+      existingAfterPush = await findExistingPullRequestWithClientAsync(githubClient, plan)
+    } catch (lookupFailure) {
+      lookupError = redactSecretText(lookupFailure instanceof Error ? lookupFailure.message : String(lookupFailure))
+    }
+    const remoteSubmission: PipelineRemoteSubmissionSummary = {
+      attempted: true,
+      operationId: plan.operationId,
+      status: 'pushed',
+      type: 'pull_request',
+      provider: 'github_api',
+      commitHash: plan.commitHash,
+      remoteName: plan.remoteName,
+      sanitizedRemoteUrl: plan.sanitizedRemoteUrl,
+      githubRepo: plan.githubRepo,
+      baseBranch: plan.baseBranch,
+      headBranch: plan.headBranch,
+      pushedRef: plan.pushedRef,
+      prTitle: plan.prTitle,
+      prBody: plan.prBody,
+      prUrl: existingAfterPush?.url,
+      prNumber: existingAfterPush?.number,
+      existingPr: existingAfterPush ? true : undefined,
+      draft: plan.draft,
+      error: existingAfterPush
+        ? '远端分支已推送，但检测到同一 head/base 的已有 PR；请人工确认后再继续。'
+        : lookupError
+          ? `${message}；existing PR 二次查询失败：${lookupError}`
+          : message,
+      pushedAt,
+      createdAt: Date.now(),
+    }
+    throw new PipelineRemoteSubmissionError(remoteSubmission.error ?? message, remoteSubmission)
   }
 }

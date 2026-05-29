@@ -54,7 +54,6 @@ export interface CommitterPanelViewModel {
   localCommitLabel: string
   localCommitDisabled: boolean
   localCommitResult?: string
-  remoteConfirmLabel: string
   remoteSubmitLabel: string
   remoteSubmitDisabled: boolean
   remoteSubmitWarning?: string
@@ -116,7 +115,6 @@ export function buildCommitterPanelViewModel({
   loadingPaths,
   readErrors,
   submitting,
-  remoteConfirmed,
 }: {
   output: PipelineCommitterStageOutput | null | undefined
   testerOutput: PipelineTesterStageOutput | null | undefined
@@ -125,7 +123,6 @@ export function buildCommitterPanelViewModel({
   loadingPaths: Set<string>
   readErrors: Map<string, string>
   submitting: boolean
-  remoteConfirmed?: boolean
 }): CommitterPanelViewModel {
   const documents = collectCommitterPatchWorkRefs(output)
   const blockers = output?.blockers ?? []
@@ -205,7 +202,9 @@ export function buildCommitterPanelViewModel({
   const remoteTargetSummary = remoteCommitHash
     ? `${remoteName} ${remoteHeadBranch ?? branchSummary} (${remoteCommitHash})`
     : `${remoteName} ${remoteHeadBranch ?? branchSummary}（需要先创建本地 commit）`
-  const remoteSubmitResult = remoteSubmission?.status === 'created'
+  const remoteSubmitResult = remoteSubmission?.existingPr && remoteSubmission.prUrl
+    ? `已存在 PR，未执行远端推送：${remoteSubmission.prUrl}`
+    : remoteSubmission?.status === 'created'
     ? `已创建 ${remoteSubmission.prUrl ?? '远端 PR'}`
     : remoteSubmission?.status === 'pushed'
       ? `已推送远端分支，PR 创建失败：${remoteSubmission.error ?? '可重试创建 PR'}`
@@ -213,17 +212,13 @@ export function buildCommitterPanelViewModel({
       ? `远端提交失败：${remoteSubmission.error ?? '未知错误'}`
       : undefined
   const remoteSubmitWarning = !localCommitCreated
-    ? '需要先创建本地 commit，远端写不会直接基于草稿执行。'
-    : !remoteConfirmed
-      ? '需要单独二次确认后才会执行 push / PR。'
-      : undefined
+    ? '将先创建受控本地 commit，再进入独立远端写确认。'
+    : '将进入独立远端写确认，不会立即执行 push / PR。'
   const remoteSubmitDisabled = submitting
     || hasDocumentBlockingIssue
     || blockers.length > 0
     || planBlockers.length > 0
-    || !localCommitCreated
     || remoteCreated
-    || remoteConfirmed !== true
 
   return {
     title: '审核提交材料',
@@ -265,12 +260,11 @@ export function buildCommitterPanelViewModel({
         : '创建本地 commit',
     localCommitDisabled: submitting || Boolean(warning) || planBlockers.length > 0 || localCommitCreated || remoteCreated,
     localCommitResult,
-    remoteConfirmLabel: '我确认将本地 commit 推送到远端并创建 Draft PR',
     remoteSubmitLabel: remoteCreated
       ? '远端 PR 已创建'
       : submitting
-        ? '正在执行远端提交'
-        : '推送并创建 Draft PR',
+        ? '正在准备远端确认'
+        : '进入远端写确认',
     remoteSubmitDisabled,
     remoteSubmitWarning,
     remoteSubmitResult,
@@ -286,7 +280,7 @@ export function buildCommitterPanelViewModel({
       },
       {
         title: 'Draft PR',
-        description: '基于已创建的本地 commit 执行远端提交。',
+        description: '先确保本地 commit 已创建，再进入远端写确认。',
       },
     ],
     planWarnings,
@@ -349,7 +343,6 @@ export function CommitterPanel({
 }): React.ReactElement {
   const [feedback, setFeedback] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
-  const [remoteConfirmed, setRemoteConfirmed] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [openPatchWorkError, setOpenPatchWorkError] = React.useState<string | null>(null)
   const [feedbackError, setFeedbackError] = React.useState<string | null>(null)
@@ -361,7 +354,6 @@ export function CommitterPanel({
     loadingPaths,
     readErrors,
     submitting: submitting || submissionPlanLoading === true,
-    remoteConfirmed,
   })
 
   const runAction = async (action: () => Promise<void>): Promise<void> => {
@@ -571,15 +563,6 @@ export function CommitterPanel({
         <div className="rounded-card bg-background px-3 py-3 shadow-sm">
           <div className="text-sm font-semibold text-text-primary">{viewModel.sections[2]?.title}</div>
           <p className="mt-1 text-xs text-text-secondary">{viewModel.sections[2]?.description}</p>
-          <label className="mt-3 flex items-start gap-2 rounded-card bg-surface-muted px-3 py-2 text-xs text-text-secondary">
-            <input
-              type="checkbox"
-              checked={remoteConfirmed}
-              onChange={(event) => setRemoteConfirmed(event.target.checked)}
-              className="mt-0.5"
-            />
-            <span>{viewModel.remoteConfirmLabel}</span>
-          </label>
           {viewModel.remoteSubmitWarning ? (
             <div className="mt-2 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
               {viewModel.remoteSubmitWarning}

@@ -322,7 +322,6 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: true,
     })
 
     expect(viewModel.statusLabel).toBe('远端 PR 已创建')
@@ -331,7 +330,37 @@ describe('CommitterPanel', () => {
     expect(viewModel.remoteSubmitResult).toContain('https://github.com/example/repo/pull/42')
   })
 
-  test('远端提交必须单独二次确认且依赖已创建的本地 commit', () => {
+  test('远端提交可从草稿进入受控本地 commit 与独立确认态', () => {
+    const draftViewModel = buildCommitterPanelViewModel({
+      output: makeCommitterOutput({
+        submissionStatus: 'draft_only',
+        localCommit: undefined,
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+          operationId: 'op-remote-draft-ui',
+          type: 'pull_request',
+          remoteName: 'origin',
+          sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+          baseBranch: 'main',
+          prTitle: 'Add draft submission materials',
+          prBody: '## Summary\n- Add draft submission',
+          draft: true,
+        },
+      }),
+      testerOutput: makeTesterOutput(),
+      contents: new Map([
+        ['commit.md', '# Commit 准备'],
+        ['pr.md', '# PR 草稿'],
+      ]),
+      loadingPaths: new Set(),
+      readErrors: new Map(),
+      submitting: false,
+    })
+
+    expect(draftViewModel.remoteSubmitDisabled).toBe(false)
+    expect(draftViewModel.remoteSubmitWarning).toContain('先创建受控本地 commit')
+
     const baseOutput = makeCommitterOutput({
       submissionStatus: 'local_commit_created',
       localCommit: {
@@ -365,30 +394,14 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: false,
     })
 
-    expect(unconfirmed.remoteSubmitDisabled).toBe(true)
-    expect(unconfirmed.remoteSubmitWarning).toContain('二次确认')
+    expect(unconfirmed.remoteSubmitDisabled).toBe(false)
+    expect(unconfirmed.remoteSubmitWarning).toContain('独立远端写确认')
     expect(unconfirmed.remoteTargetSummary).toContain('origin')
     expect(unconfirmed.remoteTargetSummary).toContain('feature/pipeline-v2')
     expect(unconfirmed.remoteTargetSummary).toContain('abc123def456')
-
-    const confirmed = buildCommitterPanelViewModel({
-      output: baseOutput,
-      testerOutput: makeTesterOutput(),
-      contents: new Map([
-        ['commit.md', '# Commit 准备'],
-        ['pr.md', '# PR 草稿'],
-      ]),
-      loadingPaths: new Set(),
-      readErrors: new Map(),
-      submitting: false,
-      remoteConfirmed: true,
-    })
-
-    expect(confirmed.remoteSubmitDisabled).toBe(false)
-    expect(confirmed.remoteSubmitLabel).toBe('推送并创建 Draft PR')
+    expect(unconfirmed.remoteSubmitLabel).toBe('进入远端写确认')
   })
 
   test('push 已成功但 PR 失败时展示可恢复远端状态', () => {
@@ -428,7 +441,6 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: true,
     })
 
     expect(viewModel.statusLabel).toBe('远端提交失败')

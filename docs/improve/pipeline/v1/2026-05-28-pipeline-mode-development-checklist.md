@@ -9,9 +9,9 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`；上一稳定基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
-> 最新恢复入口：包含本段状态同步内容的 `docs(pipeline): 同步 Phase 4 后续开发状态` 提交；提交 hash 以本次任务最终回复为准。上一恢复入口：`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan 已完成并通过聚焦验证；Phase 5-6 尚未开始。下次正式开发应从 **Phase 5：远端写确认与 GitHub 增强** 开始。
+> 最新开发基线：Phase 5 阶段提交 `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`；上一稳定基线：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
+> 最新恢复入口：本文所在的 Phase 5 阶段提交；实际提交 hash 以完成本轮提交后的 `git log -1 --oneline` 为准。上一恢复入口：`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强已完成并通过聚焦验证；Phase 6 尚未开始。下次正式开发应从 **Phase 6：真实端到端验收与交付准备** 开始。
 
 ### 已完成
 
@@ -32,6 +32,8 @@
   - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
   - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
   - `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
+  - `9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`
+  - `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -61,27 +63,33 @@
   - 已新增 `ContributionTaskDashboard` 和 summary / submission plan hooks，并在 `PipelineView` 中展示 task、repo、branch、mode、patch-work、commit、PR 与最近事件。
   - `CommitterPanel` 已改为“保存提交材料 / 本地 commit / Draft PR”三段式展示，优先使用 `PipelineSubmissionPlan`，并明确展示 candidate files、excluded files、blockers、warnings 和远端恢复状态。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.53`、`@codeinsights/electron` 到 `0.0.126`，并同步 `bun.lock`。
+- [x] Phase 5：远端写确认与 GitHub 增强。
+  - 已将 remote PR 路径从 `submission_review` 内的 checkbox 提升为独立 `remote_write_confirmation` gate；`submission_review(remote_pr)` 只创建确认状态，不执行 `git push` 或创建 PR。
+  - Service 端按 pending gate kind 记录决策并拒绝 `response.kind` 不匹配；远端确认会复验 operation id、commit hash、remote/base/head、`patch-work/**` tree/range 防护和风险确认。
+  - 远端提交结果支持 created / pushed / failed 可回放；push 成功但 PR 创建失败后可用同一 operation id 走 `skipPush` 只重试 PR 创建，并在复用前重新校验 commit 与分支上下文。
+  - GitHub API 路径已接入 production service 默认 runner，token 只从 `CODEINSIGHTS_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN` 环境变量读取，不持久化。
+  - existing PR 检测在 push 前执行，按 repo、head owner/head branch、base branch 校验；命中时不静默覆盖、不执行 push，并返回脱敏可恢复状态。
+  - `RemoteWriteConfirmationPanel` 已接入独立风险确认 UI；`CommitterPanel` Draft PR 动作只进入确认态，恢复路径展示 pushed / existing PR 状态。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.54`、`@codeinsights/electron` 到 `0.0.127`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 5：远端写确认与 GitHub 增强。
 - [ ] Phase 6：真实端到端验收与交付准备。
 
 ### 当前未完成的关键能力
 
-- [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
-- [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
+- [ ] Phase 6 真实 smoke、packaged smoke 和公开文档同步尚未开始。
 
 ### 下次启动入口
 
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4 已完成，Phase 5 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
-4. 在 `tasks/todo.md` 写入 Phase 5 计划。
-5. 从 Phase 5 开始开发，先补测试，再实现远端写确认与 GitHub 增强。
-6. Phase 5 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5 已完成，Phase 6 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+4. 在 `tasks/todo.md` 写入 Phase 6 计划。
+5. 从 Phase 6 开始开发，先补 smoke / fixture 验证，再做真实端到端验收与交付准备。
+6. Phase 6 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -132,7 +140,7 @@
 | M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [x] |
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [x] |
 | M4 | Phase 4 | Contribution Dashboard + Submission Plan | [x] |
-| M5 | Phase 5 | 远端写确认 + GitHub 增强 | [ ] |
+| M5 | Phase 5 | 远端写确认 + GitHub 增强 | [x] |
 | M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [ ] |
 
 ## Phase 0：清理与对齐
@@ -673,12 +681,12 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] 独立远端确认模型完成
-- [ ] GitHub API / existing PR 策略完成
-- [ ] UI 恢复路径完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] 独立远端确认模型完成
+- [x] GitHub API / existing PR 策略完成
+- [x] UI 恢复路径完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -687,39 +695,42 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 ### 入口条件
 
 - [x] Phase 4 已完成并提交。
-- [ ] 已完成安全评审：远端写必须显式二次确认。
-- [ ] 已确认真实 remote PR smoke 需要用户凭证或 CI secret。
+- [x] 已完成安全评审：远端写必须显式二次确认。
+- [x] 已确认真实 remote PR smoke 需要用户凭证或 CI secret；本阶段未执行真实远端写。
 
 ### 契约与后端任务
 
-- [ ] 明确 `remote_write_confirmation` 是独立 gate 还是 persisted pending operation。
-- [ ] 如果采用独立 gate，更新 `pipeline-graph.ts` / `pipeline-state.ts` / tests。
-- [ ] 远端确认 payload 包含 operationId、remote、base/head、commitHash、PR title、sanitized URL、warnings。
-- [ ] Service 复验 operation id、commit hash、remote base、head branch safety。
-- [ ] Service 复验待推送 tree / range 不包含 `patch-work/**`。
-- [ ] 支持 push 成功 PR 失败后 `skipPush = true` 重试。
-- [ ] GitHub API path 不泄露 token。
-- [ ] existing PR 检测依据 head owner / head branch / base branch / repo。
-- [ ] existing PR update 必须有 preview，不静默覆盖。
+- [x] 明确 `remote_write_confirmation` 是独立 gate。
+- [x] 已更新 `pipeline-graph.ts` / `pipeline-state.ts` / tests。
+- [x] 远端确认 payload 包含 operationId、remote、base/head、commitHash、PR title、sanitized URL、warnings。
+- [x] Service 复验 operation id、commit hash、remote base、head branch safety。
+- [x] Service 复验待推送 tree / range 不包含 `patch-work/**`。
+- [x] 支持 push 成功 PR 失败后 `skipPush = true` 重试。
+- [x] `skipPush` 重试前通过 `git ls-remote --heads` 复验远端 head ref SHA 等于本地 commit。
+- [x] GitHub API path 不泄露 token。
+- [x] existing PR 检测依据 head owner / head branch / base branch / repo。
+- [x] CLI fallback 使用 `gh pr list --repo ... --head ... --base ...` 检测 existing PR，避免无效 `gh pr view --head`。
+- [x] existing PR update 保持未实现，不静默覆盖；命中 existing PR 时返回打开/显式处理入口。
 
 ### 前端任务
 
-- [ ] 新增 `RemoteWriteConfirmationPanel.tsx`。
-- [ ] CommitterPanel 的 Draft PR 按钮进入远端确认，不直接执行 push。
-- [ ] 展示 remote、base/head、commit hash、PR title/body、warnings。
-- [ ] 用户必须明确确认远端写风险。
-- [ ] push 成功 PR 失败时展示“重试创建 PR”和“打开远端分支”。
-- [ ] PR 已存在时展示“打开 PR”或“更新现有 PR”选择。
+- [x] 新增 `RemoteWriteConfirmationPanel.tsx`。
+- [x] CommitterPanel 的 Draft PR 按钮进入远端确认，不直接执行 push。
+- [x] 展示 remote、base/head、commit hash、PR title/body、warnings。
+- [x] 用户必须明确确认远端写风险。
+- [x] push 成功 PR 失败时展示“重试创建 PR”语义。
+- [x] PR 已存在时展示打开 PR / 显式处理提示；不提供静默更新。
 
 ### 测试任务
 
-- [ ] `pipeline-graph.test.ts`：remote confirmation gate 顺序。
-- [ ] `pipeline-state.test.ts`：remote gate replay。
-- [ ] `pipeline-service.test.ts`：remote confirmation 未确认不执行。
-- [ ] `pipeline-git-submission-service.test.ts`：push success / PR failure / retry skipPush。
-- [ ] `pipeline-git-submission-service.test.ts`：existing PR 分支检测。
-- [ ] `RemoteWriteConfirmationPanel.test.tsx`：风险确认和按钮状态。
-- [ ] 脱敏测试：token、credentialed URL、Authorization header 不出现在输出。
+- [x] `pipeline-graph.test.ts`：remote confirmation gate 顺序。
+- [x] `pipeline-state.test.ts`：remote gate replay。
+- [x] `pipeline-service.test.ts`：remote confirmation 未确认不执行。
+- [x] `pipeline-git-submission-service.test.ts`：push success / PR failure / retry skipPush。
+- [x] `pipeline-git-submission-service.test.ts`：existing PR 分支检测。
+- [x] `pipeline-git-submission-service.test.ts`：`skipPush` 远端 ref SHA 复验、GitHub API push 成功但 PR 失败状态保留、CLI existing PR fallback。
+- [x] `RemoteWriteConfirmationPanel.test.tsx`：风险确认和按钮状态。
+- [x] 脱敏测试：token、credentialed URL、Authorization header 不出现在输出。
 
 ### 验证命令
 
@@ -733,26 +744,40 @@ bun test apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx 
 
 ```bash
 bun run --filter='@codeinsights/electron' typecheck
-git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pipeline/v1
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
 ```
 
 ### 完成定义
 
-- [ ] 远端写有独立、可审计、可恢复的确认状态。
-- [ ] 未二次确认时不会执行 `git push` 或创建 PR。
-- [ ] push / PR 任一失败都能脱敏展示并判断是否可重试。
-- [ ] existing PR 不会被静默覆盖。
-- [ ] `patch-work/**` 不会进入待推送 commit tree 或 push range。
-- [ ] 受影响 package patch version 已递增。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] 远端写有独立、可审计、可恢复的确认状态。
+- [x] 未二次确认时不会执行 `git push` 或创建 PR。
+- [x] push / PR 任一失败都能脱敏展示并判断是否可重试。
+- [x] existing PR 不会被静默覆盖。
+- [x] `patch-work/**` 不会进入待推送 commit tree 或 push range。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不默认执行远端写。
-- [ ] 不把 GitHub token 写入 config、records、events、diagnostics。
-- [ ] 不把 `gh` CLI 失败包装成成功。
-- [ ] 不跳过 remote base/head 安全检查。
+- [x] 不默认执行远端写。
+- [x] 不把 GitHub token 写入 config、records、events、diagnostics。
+- [x] 不把 `gh` CLI 失败包装成成功。
+- [x] 不跳过 remote base/head 安全检查。
+
+## 2026-05-29 Pipeline v1 Phase 5 Review
+
+- 阶段范围：只完成远端写确认与 GitHub 增强；未执行真实远端写，未 push，未创建真实 PR，未修改根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增独立 `remote_write_confirmation` gate 与 replay / recovery 支持；`submission_review(remote_pr)` 只进入远端确认，不直接写远端；`draft_only` 远端 PR 路径会先执行受控本地 commit，再进入独立远端确认；Service 复验 pending gate kind、operation id、commit hash、remote/base/head、patch-work 防护和风险确认。
+- GitHub 与恢复：production service 默认使用 GitHub API runner；token 仅从环境变量读取且不持久化；existing PR 在 push 前检测并阻断静默覆盖，CLI fallback 改用 `gh pr list --repo ... --head ... --base ...`；push 成功但 PR 创建失败会持久化 `pushed` 状态，并支持同 operation id `skipPush` 重试，重试前复验远端 head ref SHA 等于本地 commit。
+- UI 接入：新增 `RemoteWriteConfirmationPanel`；`CommitterPanel` Draft PR 动作只请求确认态；side panel 对远端确认使用独立 payload，恢复路径展示 pushed / existing PR 状态。
+- 安全确认：remote URL query / fragment / Basic auth、Authorization header、token/key/password 形式错误已脱敏；远端结果幂等复用会复验 commit 与分支上下文；`patch-work/**` tree / range 防护保持在 git submission service。
+- 审计与边界：远端副作用前会写入 `remote_write_confirmed` ContributionTask event；GitHub API push 成功但 PR 创建和 existing PR lookup 都失败时仍保留 `pushed` 状态；远端 PR 已创建但 graph resume 失败时，Service 会保留已完成的 `remote_pr_created` 状态。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.54`，`@codeinsights/electron` 提升到 `0.0.127`，`bun.lock` 已同步。
+- 验证命令：`bun test packages/shared/src/utils/pipeline-state.test.ts apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：Phase 6 真实端到端验收、packaged smoke 和公开文档准备尚未开始。
+- 阶段提交：`feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
 
 ## Phase 6：真实端到端验收与交付准备
 
@@ -908,11 +933,11 @@ git diff --check -- packages/shared apps/electron docs/improve/pipeline/v1 tasks
 
 ## 下一轮启动入口
 
-下一轮正式开发从 Phase 5 开始，推荐最小切片：
+下一轮正式开发从 Phase 6 开始，推荐最小切片：
 
-1. 先在 `tasks/todo.md` 写 Phase 5 计划，明确远端写确认与 GitHub 增强的测试边界。
-2. 先补 remote confirmation / GitHub existing PR / push 成功 PR 失败恢复相关测试。
-3. 实现独立、可审计的远端写确认状态，确保未二次确认时不会执行 `git push` 或创建 PR。
-4. 补充 GitHub API / existing PR / skipPush 重试能力，并保持 token、credentialed URL、Authorization 全链路脱敏。
-5. 不修改根 `README.md` / 根 `AGENTS.md`，不执行真实远端写，除非用户明确提供凭证并要求 smoke。
-6. 跑 Phase 5 聚焦测试、typecheck、diff check；阶段完成后更新本文、next-session prompt、`tasks/todo.md` Review，并单独提交。
+1. 先在 `tasks/todo.md` 写 Phase 6 计划，明确 fixture repo、smoke、packaged smoke 和公开文档准备的测试边界。
+2. 先补不依赖真实模型 / 真实远端的 smoke fixture：preflight IPC、draft-only fake runner、本地 commit dry path、remote write mocked path。
+3. 对需要真实 GitHub token 或真实远端写的 smoke，必须先得到用户明确授权；默认不 push、不创建真实 PR。
+4. 复核 Phase 5 远端写确认、existing PR 和脱敏行为在端到端路径中可审计，不绕过 `remote_write_confirmation`。
+5. 不修改根 `README.md` / 根 `AGENTS.md`，除非用户明确允许公开文档同步。
+6. 跑 Phase 6 聚焦测试、typecheck、diff check；阶段完成后更新本文、next-session prompt、`tasks/todo.md` Review，并单独提交。

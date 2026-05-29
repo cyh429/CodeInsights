@@ -17,7 +17,7 @@ import {
   appendPipelineNodeCompleteRecords,
   createPipelineService,
 } from './pipeline-service'
-import { getPipelineRecords, updatePipelineSessionMeta } from './pipeline-session-manager'
+import { getPipelineRecords, getPipelineSessionMeta, updatePipelineSessionMeta } from './pipeline-session-manager'
 import { resolvePipelineSessionArtifactsDir } from './pipeline-artifact-service'
 import { getPipelineSessionCheckpointDir } from './config-paths'
 import {
@@ -32,7 +32,10 @@ import {
   writePatchWorkFile,
 } from './pipeline-patch-work-service'
 import { createAgentWorkspace } from './agent-workspace-manager'
-import { PipelineRemoteSubmissionError } from './pipeline-git-submission-service'
+import {
+  type CreateRemotePipelineSubmissionInput,
+  PipelineRemoteSubmissionError,
+} from './pipeline-git-submission-service'
 
 function runGit(repoRoot: string, args: string[]): string {
   return execFileSync('git', ['-C', repoRoot, ...args], {
@@ -1383,7 +1386,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-denied',
       sessionId: 'session-committer-remote-denied',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
@@ -1504,6 +1507,313 @@ describe('pipeline-service', () => {
     }
   })
 
+  test('committer submission_review 选择 remote_pr 只进入独立远端确认 gate', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-gate-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    runGit(repoRoot, ['checkout', '-b', 'feature/remote-gate'])
+    writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
+    const submissionGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-plan',
+      sessionId: 'session-committer-remote-plan',
+      node: 'committer',
+      kind: 'submission_review',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const remoteGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-confirm',
+      sessionId: 'session-committer-remote-plan',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      title: '确认远端写',
+      iteration: 0,
+      createdAt: Date.now() + 1,
+    }
+    let remoteCalls = 0
+    const service = createPipelineService({
+      createRemoteSubmission: () => {
+        remoteCalls += 1
+        throw new Error('远端确认 gate 创建前不应执行远端写')
+      },
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => ({
+          state: {
+            sessionId: 'session-committer-remote-plan',
+            version: 2,
+            currentNode: 'committer',
+            status: 'waiting_human',
+            reviewIteration: 0,
+            lastApprovedNode: 'tester',
+            pendingGate: remoteGate,
+            updatedAt: Date.now(),
+          },
+          interrupted: remoteGate,
+        }),
+        getState: async () => ({
+          sessionId: 'session-committer-remote-plan',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: submissionGate,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端确认 gate 测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...submissionGate,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: false,
+        status: 'committing',
+        workingBranch: 'feature/remote-gate',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitCountBefore = Number(runGit(repoRoot, ['rev-list', '--count', 'HEAD']))
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '提交草稿已生成',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '提交草稿已生成',
+          commitMessage: 'feat(pipeline): add remote gate',
+          prTitle: 'Add remote gate',
+          prBody: '## Summary\n- Add remote gate',
+          submissionStatus: 'draft_only',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await service.respondGate({
+        gateId: submissionGate.gateId,
+        sessionId: session.id,
+        kind: 'submission_review',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-plan',
+        createdAt: Date.now(),
+      })
+
+      expect(remoteCalls).toBe(0)
+      expect(Number(runGit(repoRoot, ['rev-list', '--count', 'HEAD']))).toBe(commitCountBefore + 1)
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      expect(getContributionTaskEvents('task-committer-remote-plan')
+        .filter((event) => event.type === 'local_commit_created')).toHaveLength(1)
+      expect(getPipelineRecords(session.id)
+        .filter((record) => record.type === 'gate_decision')
+        .at(-1)).toMatchObject({
+          type: 'gate_decision',
+          kind: 'submission_review',
+          submissionMode: 'remote_pr',
+          remoteSubmissionOperationId: 'op-remote-plan',
+        })
+      expect(getContributionTaskEvents('task-committer-remote-plan')
+        .filter((event) => event.type === 'remote_submission_created')).toHaveLength(0)
+      expect(getPipelineRecords(session.id)
+        .filter((record) => record.type === 'gate_requested')
+        .at(-1)).toMatchObject({
+          type: 'gate_requested',
+          kind: 'remote_write_confirmation',
+          gateId: 'gate-committer-remote-confirm',
+          remoteWritePlan: {
+            operationId: 'op-remote-plan',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-gate',
+            commitHash,
+            prTitle: 'Add remote gate',
+          },
+        })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
+  test('remote_write_confirmation 恢复路径会补齐远端确认计划', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-recover-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const remoteGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-recover',
+      sessionId: 'session-committer-remote-recover',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      title: '确认远端写',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    let activeSessionId = remoteGate.sessionId
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: activeSessionId,
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: {
+            ...remoteGate,
+            sessionId: activeSessionId,
+          },
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端确认恢复测试', 'channel-1', 'workspace-1')
+      activeSessionId = session.id
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...remoteGate,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: false,
+        status: 'committing',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '本地 commit 已创建',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '本地 commit 已创建',
+          commitMessage: 'feat(pipeline): add remote recover',
+          prTitle: 'Recover remote gate',
+          prBody: '## Summary\n- Recover remote gate',
+          submissionStatus: 'local_commit_created',
+          blockers: [],
+          risks: ['需要远端写确认'],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-before-recover',
+            commitHash,
+            workingBranch: 'feature/remote-recover',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+            operationId: 'op-remote-recover',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-recover',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      const sessionState = await service.getSessionState(session.id)
+      expect(sessionState.pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        remoteName: 'origin',
+        baseBranch: 'main',
+        headBranch: 'feature/remote-recover',
+        commitHash,
+        prTitle: 'Recover remote gate',
+      })
+
+      const pendingGate = service.getPendingGates().find((gate) => gate.gateId === remoteGate.gateId)
+      expect(pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        commitHash,
+      })
+
+      const reconciled = (await service.listSessions()).find((item) => item.id === session.id)
+      expect(reconciled?.pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        headBranch: 'feature/remote-recover',
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
   test('committer remote_pr 会回填远端结果并通过 operation id 保持幂等', async () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-repo-'))
     setupPipelineGitRepo(repoRoot)
@@ -1511,13 +1821,23 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote',
       sessionId: 'session-committer-remote',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
     let remoteCalls = 0
     const service = createPipelineService({
       createRemoteSubmission: (input) => {
+        const confirmationEvents = getContributionTaskEvents('task-committer-remote')
+          .filter((event) => event.type === 'remote_write_confirmed')
+        expect(confirmationEvents).toHaveLength(1)
+        expect(confirmationEvents[0]?.payload).toMatchObject({
+          operationId: input.operationId,
+          commitHash: input.commitHash,
+          remoteName: input.remoteName ?? 'origin',
+          headBranch: input.headBranch ?? 'feature/remote-gate',
+          baseBranch: input.baseBranch ?? 'main',
+        })
         remoteCalls += 1
         return {
           attempted: true,
@@ -1694,6 +2014,328 @@ describe('pipeline-service', () => {
     }
   })
 
+  test('committer remote_pr 创建成功后 graph resume 失败时保留远端完成状态', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-resume-fail-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const gateRequest: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-resume-fail',
+      sessionId: 'session-committer-remote-resume-fail',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const service = createPipelineService({
+      createRemoteSubmission: (input) => ({
+        attempted: true,
+        operationId: input.operationId,
+        status: 'created',
+        type: 'pull_request',
+        commitHash: input.commitHash,
+        remoteName: input.remoteName ?? 'origin',
+        sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+        headBranch: input.headBranch ?? 'feature/remote-gate',
+        baseBranch: input.baseBranch ?? 'main',
+        pushedRef: `refs/heads/${input.headBranch ?? 'feature/remote-gate'}`,
+        prTitle: input.prTitle,
+        prBody: input.prBody,
+        prUrl: 'https://github.com/example/repo/pull/99',
+        draft: input.draft ?? true,
+        createdAt: 123456,
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('checkpoint resume failed')
+        },
+        getState: async () => ({
+          sessionId: 'session-committer-remote-resume-fail',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: gateRequest,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端成功但 resume 失败测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...gateRequest,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: true,
+        status: 'committing',
+        workingBranch: 'feature/remote-gate',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '本地 commit 已创建',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '本地 commit 已创建',
+          commitMessage: 'feat(pipeline): add remote gate',
+          prTitle: 'Add remote gate',
+          prBody: '## Summary\n- Add remote gate',
+          submissionStatus: 'local_commit_created',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-before-remote',
+            commitHash,
+            workingBranch: 'feature/remote-gate',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await expect(service.respondGate({
+        gateId: gateRequest.gateId,
+        sessionId: session.id,
+        kind: 'remote_write_confirmation',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-resume-fail',
+        remoteWriteConfirmed: true,
+        createdAt: Date.now(),
+      })).resolves.toBeUndefined()
+
+      expect(getPipelineSessionMeta(session.id)).toMatchObject({
+        status: 'completed',
+        pendingGate: null,
+        currentNode: 'committer',
+      })
+      await expect(service.getSessionState(session.id)).resolves.toMatchObject({
+        status: 'completed',
+        stageOutputs: {
+          committer: {
+            submissionStatus: 'remote_pr_created',
+            remoteSubmission: {
+              status: 'created',
+              prUrl: 'https://github.com/example/repo/pull/99',
+            },
+          },
+        },
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
+  test('committer remote_pr 复用 pushed 结果前会复验 commit 和分支上下文', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-mismatch-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const gateRequest: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-mismatch',
+      sessionId: 'session-committer-remote-mismatch',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const runnerInputs: CreateRemotePipelineSubmissionInput[] = []
+    const service = createPipelineService({
+      createRemoteSubmission: (input) => {
+        runnerInputs.push(input)
+        return {
+          attempted: true,
+          operationId: input.operationId,
+          status: 'created',
+          type: 'pull_request',
+          commitHash: input.commitHash,
+          remoteName: input.remoteName ?? 'origin',
+          sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+          headBranch: input.headBranch ?? 'feature/remote-current',
+          baseBranch: input.baseBranch ?? 'main',
+          pushedRef: `refs/heads/${input.headBranch ?? 'feature/remote-current'}`,
+          prTitle: input.prTitle,
+          prBody: input.prBody,
+          prUrl: 'https://github.com/example/repo/pull/77',
+          draft: input.draft ?? true,
+          createdAt: 123456,
+        }
+      },
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async (input: { sessionId: string }) => ({
+          state: {
+            sessionId: input.sessionId,
+            version: 2,
+            currentNode: 'committer',
+            status: 'completed',
+            reviewIteration: 0,
+            lastApprovedNode: 'committer',
+            pendingGate: null,
+            updatedAt: Date.now(),
+          },
+        }),
+        getState: async () => ({
+          sessionId: 'session-committer-remote-mismatch',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: gateRequest,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端上下文复验测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...gateRequest,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: true,
+        status: 'committing',
+        workingBranch: 'feature/remote-current',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '远端提交可恢复',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '远端提交可恢复',
+          commitMessage: 'feat(pipeline): add current remote',
+          prTitle: 'Current remote',
+          prBody: '## Summary\n- Current remote',
+          submissionStatus: 'remote_pr_failed',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-current',
+            commitHash,
+            workingBranch: 'feature/remote-current',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: true,
+            operationId: 'op-remote-context',
+            status: 'pushed',
+            type: 'pull_request',
+            commitHash: 'old-commit',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-current',
+            pushedRef: 'refs/heads/feature/remote-current',
+            error: '旧提交 PR 创建失败',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await service.respondGate({
+        gateId: gateRequest.gateId,
+        sessionId: session.id,
+        kind: 'remote_write_confirmation',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-context',
+        remoteWriteConfirmed: true,
+        createdAt: Date.now(),
+      })
+
+      expect(runnerInputs).toHaveLength(1)
+      expect(runnerInputs[0]).toMatchObject({
+        operationId: 'op-remote-context',
+        commitHash,
+        headBranch: 'feature/remote-current',
+        baseBranch: 'main',
+        skipPush: false,
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  }, 10_000)
+
   test('committer remote_pr 必须使用 remote_write_confirmation gate kind', async () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-kind-repo-'))
     setupPipelineGitRepo(repoRoot)
@@ -1701,7 +2343,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-kind',
       sessionId: 'session-committer-remote-kind',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
@@ -1811,7 +2453,7 @@ describe('pipeline-service', () => {
         remoteSubmissionOperationId: 'op-remote-kind',
         remoteWriteConfirmed: true,
         createdAt: Date.now(),
-      })).rejects.toThrow('远端写必须使用独立高风险确认')
+      })).rejects.toThrow('Pipeline gate 类型不匹配')
 
       expect(remoteCalls).toBe(0)
       expect(getPipelineRecords(session.id).find((record) => record.type === 'gate_decision')).toBeUndefined()
@@ -1827,7 +2469,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-retry',
       sessionId: 'session-committer-remote-retry',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }

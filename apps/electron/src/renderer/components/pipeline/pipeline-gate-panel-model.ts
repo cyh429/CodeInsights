@@ -24,6 +24,7 @@ export type PipelineGatePanelKind =
   | 'reviewer_issue'
   | 'tester_result'
   | 'committer'
+  | 'remote_write_confirmation'
   | 'generic_gate'
 
 export interface PipelineGatePanelStageOutputs {
@@ -105,6 +106,9 @@ function getPanelKind(pendingGate: PipelineGateRequest | null | undefined): Pipe
     return 'tester_result'
   }
   if (pendingGate.kind === 'submission_review' && pendingGate.node === 'committer') return 'committer'
+  if (pendingGate.kind === 'remote_write_confirmation' && pendingGate.node === 'committer') {
+    return 'remote_write_confirmation'
+  }
   return 'generic_gate'
 }
 
@@ -121,7 +125,9 @@ function collectReviewDocuments(
     ].filter((document): document is PipelinePatchWorkDocumentRef => Boolean(document)))
   }
   if (panelKind === 'tester_result') return collectTesterPatchWorkRefs(stageOutputs.tester)
-  if (panelKind === 'committer') return collectCommitterPatchWorkRefs(stageOutputs.committer)
+  if (panelKind === 'committer' || panelKind === 'remote_write_confirmation') {
+    return collectCommitterPatchWorkRefs(stageOutputs.committer)
+  }
   return []
 }
 
@@ -136,6 +142,9 @@ export function buildPipelineGatePanelModel({
   const reviewDocuments = collectReviewDocuments(panelKind, stageOutputs)
   const reviewDoc = stageOutputs.reviewer?.reviewDocRef ?? stageOutputs.reviewer?.reviewDoc
   const gateId = pendingGate?.gateId ?? 'submission'
+  const remoteSubmissionOperationId = pendingGate?.remoteWritePlan?.operationId
+    ?? stageOutputs.committer?.remoteSubmission?.operationId
+    ?? `${sessionId}:${gateId}:remote_pr`
 
   return {
     panelKind,
@@ -146,7 +155,7 @@ export function buildPipelineGatePanelModel({
     fallbackGate: panelKind === 'generic_gate' ? pendingGate ?? null : null,
     committerOperationIds: {
       localCommitOperationId: `${sessionId}:${gateId}:local_commit`,
-      remoteSubmissionOperationId: `${sessionId}:${gateId}:remote_pr`,
+      remoteSubmissionOperationId,
     },
   }
 }

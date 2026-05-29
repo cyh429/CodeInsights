@@ -14,6 +14,8 @@ import {
   buildPipelinePatchSetDraft,
   createLocalPipelineCommit,
   createRemotePipelineSubmission,
+  createRemotePipelineSubmissionWithGitHubApi,
+  type PipelineGitHubPullRequestClient,
   PipelineRemoteSubmissionError,
   readPipelineSubmissionDraftContext,
   redactSecretText,
@@ -421,7 +423,10 @@ describe('pipeline-git-submission-service', () => {
         if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
         if (command === 'gh' && args[0] === 'auth') return 'Logged in\n'
         if (command === 'git' && args[0] === 'push') return ''
-        if (command === 'gh' && args[0] === 'pr') return 'https://github.com/example/repo/pull/42\n'
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]'
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+          return 'https://github.com/example/repo/pull/42\n'
+        }
         return ''
       },
     })
@@ -435,6 +440,7 @@ describe('pipeline-git-submission-service', () => {
     expect(calls).toEqual([
       'git ls-remote --exit-code --heads origin refs/heads/main',
       'gh auth status',
+      'gh pr list --repo example/repo --state open --head feature/remote-submit --base main --json url,number,baseRefName,headRefName --limit 1',
       `git push origin ${commitHash}:refs/heads/feature/remote-submit`,
       'gh pr create --repo example/repo --title Add remote submission --body ## Summary\n- Test remote submission --base main --head feature/remote-submit --draft',
     ])
@@ -468,7 +474,10 @@ describe('pipeline-git-submission-service', () => {
         if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
         if (command === 'gh' && args[0] === 'auth') return 'Logged in\n'
         if (command === 'git' && args[0] === 'push') return ''
-        if (command === 'gh' && args[0] === 'pr') return 'https://github.com/push/repo/pull/7\n'
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'view') return ''
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+          return 'https://github.com/push/repo/pull/7\n'
+        }
         return ''
       },
     })
@@ -517,7 +526,32 @@ describe('pipeline-git-submission-service', () => {
     expect(redacted).toContain('https://github.com/example/repo.git')
   })
 
-  test('PR 已存在时会从 gh pr view 恢复为成功结果', () => {
+  test('remote URL 和远端错误会清理 query token、fragment 与 Basic auth', () => {
+    const remoteUrl = 'https://user:secret@github.com/example/repo.git?access_token=abc&safe=1#token'
+    const sanitized = sanitizeRemoteUrl(remoteUrl)
+
+    expect(sanitized).toBe('https://github.com/example/repo.git?access_token=%5BREDACTED%5D&safe=1')
+
+    const redacted = redactSecretText([
+      remoteUrl,
+      'Authorization: Basic dXNlcjpzZWNyZXQ=',
+      'Authorization: token plain-secret-token',
+      'CODEINSIGHTS_GITHUB_TOKEN=plain-codeinsights-token',
+      'GITHUB_PAT=plain-github-pat',
+      'token=abc123',
+    ].join('\n'))
+    expect(redacted).not.toContain('user:secret')
+    expect(redacted).not.toContain('abc123')
+    expect(redacted).not.toContain('dXNlcjpzZWNyZXQ=')
+    expect(redacted).not.toContain('plain-secret-token')
+    expect(redacted).not.toContain('plain-codeinsights-token')
+    expect(redacted).not.toContain('plain-github-pat')
+    expect(redacted).not.toContain('#token')
+    expect(redacted).toContain('Authorization: Basic [REDACTED]')
+    expect(redacted).toContain('Authorization: token [REDACTED]')
+  })
+
+  test('PR 已存在时会在 push 前阻断，避免静默更新远端分支', () => {
     git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
     markRemoteBase(repoRoot)
     const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
@@ -539,22 +573,336 @@ describe('pipeline-git-submission-service', () => {
         calls.push([command, ...args].join(' '))
         if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
         if (command === 'gh' && args[0] === 'auth') return 'Logged in\n'
-        if (command === 'git' && args[0] === 'push') return ''
-        if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
-          throw new Error('a pull request for branch feature/remote-submit already exists')
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'list') {
+          return JSON.stringify([{
+            url: 'https://github.com/example/repo/pull/42',
+            number: 42,
+            baseRefName: 'main',
+            headRefName: 'feature/remote-submit',
+          }])
         }
-        if (command === 'gh' && args[0] === 'pr' && args[1] === 'view') {
-          return 'https://github.com/example/repo/pull/42\n'
+        if (command === 'git' && args[0] === 'push') {
+          throw new Error('已有 PR 命中时不应执行 push')
+        }
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+          throw new Error('已有 PR 命中时不应创建或更新 PR')
         }
         return ''
       },
     })
 
-    expect(result.status).toBe('created')
+    expect(result.status).toBe('failed')
+    expect(result.existingPr).toBe(true)
     expect(result.prUrl).toBe('https://github.com/example/repo/pull/42')
+    expect(result.error).toContain('未执行 push')
     expect(calls).toContain(
-      'gh pr view --repo example/repo --head feature/remote-submit --json url,number --jq .url',
+      'gh pr list --repo example/repo --state open --head feature/remote-submit --base main --json url,number,baseRefName,headRefName --limit 1',
     )
+    expect(calls.some((call) => call.startsWith('gh pr view '))).toBe(false)
+    expect(calls.some((call) => call.startsWith('git push '))).toBe(false)
+  })
+
+  test('skipPush 重试前必须确认远端 head ref 仍指向目标 commit', () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const calls: string[] = []
+
+    expect(() => createRemotePipelineSubmission({
+      repositoryRoot: repoRoot,
+      operationId: 'op-remote-skip-push-mismatch',
+      commitHash,
+      prTitle: 'Add remote submission',
+      prBody: '## Summary\n- Test remote submission',
+      allowRemoteWrites: true,
+      confirmed: true,
+      remoteName: 'origin',
+      headBranch: 'feature/remote-submit',
+      baseBranch: 'main',
+      draft: true,
+      skipPush: true,
+      commandRunner: (command, args) => {
+        calls.push([command, ...args].join(' '))
+        if (command === 'git' && args[0] === 'ls-remote' && args.at(-1) === 'refs/heads/main') {
+          return `${commitHash}\trefs/heads/main\n`
+        }
+        if (command === 'git' && args[0] === 'ls-remote' && args.at(-1) === 'refs/heads/feature/remote-submit') {
+          return '1111111111111111111111111111111111111111\trefs/heads/feature/remote-submit\n'
+        }
+        if (command === 'gh' && args[0] === 'auth') return 'Logged in\n'
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]'
+        if (command === 'gh' && args[0] === 'pr' && args[1] === 'create') {
+          throw new Error('远端分支不匹配时不应创建 PR')
+        }
+        return ''
+      },
+    })).toThrow('远端分支')
+
+    expect(calls).toContain(
+      'git ls-remote --exit-code --heads origin refs/heads/feature/remote-submit',
+    )
+    expect(calls.some((call) => call.startsWith('git push '))).toBe(false)
+    expect(calls.some((call) => call.startsWith('gh pr create '))).toBe(false)
+  })
+
+  test('GitHub API client 可创建 Draft PR 且不调用 gh pr create', () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const calls: string[] = []
+    const githubCalls: string[] = []
+    const githubClient: PipelineGitHubPullRequestClient = {
+      checkAuth: ({ repo }) => {
+        githubCalls.push(`auth:${repo}`)
+      },
+      findOpenPullRequest: ({ repo, headBranch, baseBranch }) => {
+        githubCalls.push(`find:${repo}:${baseBranch}:${headBranch}`)
+        return null
+      },
+      createDraftPullRequest: ({ repo, headBranch, baseBranch, title }) => {
+        githubCalls.push(`create:${repo}:${baseBranch}:${headBranch}:${title}`)
+        return {
+          url: 'https://github.com/example/repo/pull/88',
+          number: 88,
+        }
+      },
+    }
+
+    const result = createRemotePipelineSubmission({
+      repositoryRoot: repoRoot,
+      operationId: 'op-remote-api-created',
+      commitHash,
+      prTitle: 'Add remote submission',
+      prBody: '## Summary\n- Test remote submission',
+      allowRemoteWrites: true,
+      confirmed: true,
+      remoteName: 'origin',
+      headBranch: 'feature/remote-submit',
+      baseBranch: 'main',
+      draft: true,
+      githubClient,
+      commandRunner: (command, args) => {
+        calls.push([command, ...args].join(' '))
+        if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
+        if (command === 'git' && args[0] === 'push') return ''
+        throw new Error(`不应调用 ${command} ${args.join(' ')}`)
+      },
+    })
+
+    expect(result.provider).toBe('github_api')
+    expect(result.prUrl).toBe('https://github.com/example/repo/pull/88')
+    expect(result.prNumber).toBe(88)
+    expect(calls).toEqual([
+      'git ls-remote --exit-code --heads origin refs/heads/main',
+      `git push origin ${commitHash}:refs/heads/feature/remote-submit`,
+    ])
+    expect(githubCalls).toEqual([
+      'auth:example/repo',
+      'find:example/repo:main:feature/remote-submit',
+      'create:example/repo:main:feature/remote-submit:Add remote submission',
+    ])
+  })
+
+  test('异步 GitHub API client 可创建 Draft PR 且不调用 gh pr create', async () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const calls: string[] = []
+    const githubCalls: string[] = []
+    const githubClient: PipelineGitHubPullRequestClient = {
+      async checkAuth({ repo }) {
+        githubCalls.push(`auth:${repo}`)
+      },
+      async findOpenPullRequest({ repo, headBranch, baseBranch }) {
+        githubCalls.push(`find:${repo}:${baseBranch}:${headBranch}`)
+        return null
+      },
+      async createDraftPullRequest({ repo, headBranch, baseBranch, title }) {
+        githubCalls.push(`create:${repo}:${baseBranch}:${headBranch}:${title}`)
+        return {
+          url: 'https://github.com/example/repo/pull/89',
+          number: 89,
+        }
+      },
+    }
+
+    const result = await createRemotePipelineSubmissionWithGitHubApi({
+      repositoryRoot: repoRoot,
+      operationId: 'op-remote-api-async-created',
+      commitHash,
+      prTitle: 'Add async remote submission',
+      prBody: '## Summary\n- Test async remote submission',
+      allowRemoteWrites: true,
+      confirmed: true,
+      remoteName: 'origin',
+      headBranch: 'feature/remote-submit',
+      baseBranch: 'main',
+      draft: true,
+      githubClient,
+      commandRunner: (command, args) => {
+        calls.push([command, ...args].join(' '))
+        if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
+        if (command === 'git' && args[0] === 'push') return ''
+        throw new Error(`不应调用 ${command} ${args.join(' ')}`)
+      },
+    })
+
+    expect(result.provider).toBe('github_api')
+    expect(result.prUrl).toBe('https://github.com/example/repo/pull/89')
+    expect(calls).toEqual([
+      'git ls-remote --exit-code --heads origin refs/heads/main',
+      `git push origin ${commitHash}:refs/heads/feature/remote-submit`,
+    ])
+    expect(githubCalls).toEqual([
+      'auth:example/repo',
+      'find:example/repo:main:feature/remote-submit',
+      'create:example/repo:main:feature/remote-submit:Add async remote submission',
+    ])
+  })
+
+  test('异步 GitHub API push 后 PR 创建和 existing PR 查询都失败时仍返回 pushed 状态', async () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const calls: string[] = []
+    let findCalls = 0
+    const githubClient: PipelineGitHubPullRequestClient = {
+      async checkAuth() {},
+      async findOpenPullRequest() {
+        findCalls += 1
+        if (findCalls > 1) {
+          throw new Error('Authorization: token plain-existing-pr-token')
+        }
+        return null
+      },
+      async createDraftPullRequest() {
+        throw new Error('CODEINSIGHTS_GITHUB_TOKEN=plain-create-token')
+      },
+    }
+
+    try {
+      await createRemotePipelineSubmissionWithGitHubApi({
+        repositoryRoot: repoRoot,
+        operationId: 'op-remote-api-pushed-after-double-failure',
+        commitHash,
+        prTitle: 'Add async remote submission',
+        prBody: '## Summary\n- Test async remote submission',
+        allowRemoteWrites: true,
+        confirmed: true,
+        remoteName: 'origin',
+        headBranch: 'feature/remote-submit',
+        baseBranch: 'main',
+        draft: true,
+        githubClient,
+        commandRunner: (command, args) => {
+          calls.push([command, ...args].join(' '))
+          if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
+          if (command === 'git' && args[0] === 'push') return ''
+          throw new Error(`不应调用 ${command} ${args.join(' ')}`)
+        },
+      })
+      throw new Error('应抛出 PipelineRemoteSubmissionError')
+    } catch (error) {
+      const submissionError = error as PipelineRemoteSubmissionError
+      expect(submissionError.remoteSubmission).toMatchObject({
+        status: 'pushed',
+        operationId: 'op-remote-api-pushed-after-double-failure',
+        commitHash,
+        pushedRef: 'refs/heads/feature/remote-submit',
+      })
+      expect(submissionError.remoteSubmission?.error).not.toContain('plain-create-token')
+      expect(submissionError.remoteSubmission?.error).not.toContain('plain-existing-pr-token')
+    }
+    expect(calls).toContain(`git push origin ${commitHash}:refs/heads/feature/remote-submit`)
+  })
+
+  test('GitHub API client 命中同 head/base 的 existing PR 时会在 push 前阻断', () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const githubCalls: string[] = []
+    const githubClient: PipelineGitHubPullRequestClient = {
+      checkAuth: () => {
+        githubCalls.push('auth')
+      },
+      findOpenPullRequest: (input) => {
+        githubCalls.push(`find:${input.baseBranch}:${input.headBranch}`)
+        return {
+          url: 'https://github.com/example/repo/pull/42',
+          number: 42,
+          baseBranch: 'main',
+          headBranch: 'feature/remote-submit',
+        }
+      },
+      createDraftPullRequest: () => {
+        throw new Error('existing PR 命中时不应创建或更新 PR')
+      },
+    }
+
+    const result = createRemotePipelineSubmission({
+      repositoryRoot: repoRoot,
+      operationId: 'op-remote-api-existing',
+      commitHash,
+      prTitle: 'Add remote submission',
+      prBody: '## Summary\n- Test remote submission',
+      allowRemoteWrites: true,
+      confirmed: true,
+      remoteName: 'origin',
+      headBranch: 'feature/remote-submit',
+      baseBranch: 'main',
+      draft: true,
+      githubClient,
+      commandRunner: (command, args) => {
+        if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
+        if (command === 'git' && args[0] === 'push') {
+          throw new Error('existing PR 命中时不应执行 push')
+        }
+        throw new Error(`不应调用 ${command} ${args.join(' ')}`)
+      },
+    })
+
+    expect(result.provider).toBe('github_api')
+    expect(result.status).toBe('failed')
+    expect(result.existingPr).toBe(true)
+    expect(result.prUrl).toBe('https://github.com/example/repo/pull/42')
+    expect(result.error).toContain('未执行 push')
+    expect(githubCalls).toEqual(['auth', 'find:main:feature/remote-submit'])
+  })
+
+  test('GitHub API auth 错误会脱敏 token 并作为 blocker 返回', () => {
+    git(repoRoot, ['remote', 'add', 'origin', 'https://github.com/example/repo.git'])
+    markRemoteBase(repoRoot)
+    const commitHash = git(repoRoot, ['rev-parse', 'HEAD'])
+    const plan = validateRemoteSubmissionPreconditions({
+      repositoryRoot: repoRoot,
+      operationId: 'op-remote-api-auth',
+      commitHash,
+      prTitle: 'Add remote submission',
+      prBody: '## Summary\n- Test remote submission',
+      allowRemoteWrites: true,
+      remoteName: 'origin',
+      headBranch: 'feature/remote-submit',
+      baseBranch: 'main',
+      draft: true,
+      githubClient: {
+        checkAuth: () => {
+          throw new Error('Authorization: Bearer github_pat_abcdefghijklmnopqrstuvwxyz')
+        },
+        findOpenPullRequest: () => null,
+        createDraftPullRequest: () => {
+          throw new Error('不应创建 PR')
+        },
+      },
+      commandRunner: (command, args) => {
+        if (command === 'git' && args[0] === 'ls-remote') return `${commitHash}\trefs/heads/main\n`
+        return ''
+      },
+    })
+
+    expect(plan.canSubmit).toBe(false)
+    expect(plan.blockers.join('\n')).toContain('GitHub auth 不可用')
+    expect(plan.blockers.join('\n')).toContain('[REDACTED]')
+    expect(plan.blockers.join('\n')).not.toContain('github_pat_abcdefghijklmnopqrstuvwxyz')
   })
 
   test('push 成功但 PR 创建失败时返回可持久化的 pushed 状态', () => {
