@@ -16,6 +16,7 @@ pipeline-improve
 2. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
 4. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认当前分支状态；最近历史应包含：
+   - `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`
    - `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
    - `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`
    - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
@@ -29,6 +30,7 @@ pipeline-improve
 - Phase 0 清理与对齐已完成。
 - Phase 1 Preflight 主路径已完成。
 - Phase 2 PipelineView 拆分已提交为 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`：`PipelineView` 已拆出 records tail、session snapshot、patch-work 文档读取、explorer reports、gate actions、gate panel model 和 `PipelineGateSidePanel`；preflight result 超过 60 秒或 workspace 变化后会显式标记“需要刷新”，并阻止复用旧 acknowledgement 直接启动。
+- Phase 2 后续开发状态已同步为 `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`。
 - Phase 3-6 尚未完成。
 
 本次请从 Phase 3 开始：

@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 2 后状态再同步计划
+
+范围确认：本轮只响应用户要求，同步 Pipeline v1 Phase 2 完成后的最新开发状态、完成/未完成清单、下次启动提示词和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
+
+- [x] 复核当前分支、工作树和最近提交，确认 Phase 2 实现提交为 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，Phase 2 后状态同步提交为 `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`。
+- [x] 更新 Pipeline v1 development checklist：明确最新恢复入口为 `6c54f71b`，Phase 0-2 已完成，Phase 3-6 未完成，下一步从 Phase 3 Patch-work Document Workbench 继续。
+- [x] 更新 Pipeline v1 `next-session-prompt.md`：把启动检查里的最近历史补齐到 `6c54f71b`，并保持 Phase 3 启动入口。
+- [x] 更新 `tasks/lessons.md`：把用户再次强调的“每个阶段性任务完成后自动同步文档和给提示词”固化为更具体的默认动作。
+- [x] 在本节追加 Review，运行文档 diff check，单独提交本轮状态同步改动。
+
+## 2026-05-29 Pipeline v1 Phase 2 后状态再同步 Review
+
+- 已确认当前分支 `pipeline-improve` 工作基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，状态同步基线：`6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`。
+- 已更新 Pipeline v1 development checklist：新增最新恢复入口 `6c54f71b`，已完成项明确为 Phase 0 / Phase 1 / Phase 2，未完成项明确为 Phase 3-6，下一步从 Phase 3 Patch-work Document Workbench 继续。
+- 已更新 `docs/improve/pipeline/v1/next-session-prompt.md`：启动检查最近历史补齐 `6c54f71b`，当前真实进度写清 Phase 2 后续开发状态已同步。
+- 已更新 `tasks/lessons.md`：用户再次强调“每个阶段性任务完成后自动做文档状态同步和给提示词”时，默认复核并补齐最新恢复入口、完成/未完成清单和下一阶段启动提示词。
+- 本轮只修改状态文档、任务记录和 lessons；未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push / PR / 远端写。
+- 验证：`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-29 Pipeline v1 Phase 2 PipelineView 拆分计划
 
 范围确认：本轮只做 Phase 2。目标是在保持行为不变的前提下，把 `PipelineView` 中的记录加载、状态回填、patch-work 文档读取、gate 面板选择、preflight 启动状态迁出为 hooks / view models；同时收敛 Phase 1 遗留的 preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记。不修改 Graph、runner、Git submission 真实写逻辑，不新增真实 Git 写操作，不执行远端写，不修改根 `README.md` / 根 `AGENTS.md`。
