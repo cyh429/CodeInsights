@@ -9,7 +9,7 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：本轮 Phase 2 提交 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`（提交号在提交后由 `git log -5 --oneline` 确认）；上一稳定基线：`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` / `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
+> 最新开发基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`；上一稳定基线：`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` / `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
 > 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分已完成并通过聚焦验证；Phase 3-6 尚未开始。下次正式开发应从 **Phase 3：Patch-work Document Workbench** 开始。
 
 ### 已完成
@@ -24,7 +24,7 @@
   - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
   - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
   - `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`
-  - 本轮 Phase 2 提交：`feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`（提交号以 `git log` 为准）
+  - `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -63,7 +63,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2 已完成，Phase 3 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`、`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 和本轮 Phase 2 提交。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`、`0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 4. 在 `tasks/todo.md` 写入 Phase 3 计划。
 5. 从 Phase 3 开始开发，先补测试，再实现 Patch-work Document Workbench MVP。
 6. Phase 3 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
@@ -452,7 +452,7 @@ git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v
 - 版本同步：`@codeinsights/electron` 从 `0.0.123` 提升到 `0.0.124`，`bun.lock` 已同步。
 - 验证命令：`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 未完成项：Patch-work Document Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
-- 阶段提交：本轮提交信息为 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，具体提交号在提交后通过 `git log -5 --oneline` 确认。
+- 阶段提交：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
 
 ## Phase 3：Patch-work Document Workbench
 

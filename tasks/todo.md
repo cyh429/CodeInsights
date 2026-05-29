@@ -59,7 +59,7 @@ git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v
 - 版本同步：`@codeinsights/electron` 提升到 `0.0.124`，`bun.lock` 已同步。
 - 验证命令：`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 未完成项：Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
-- 阶段提交：本轮提交信息为 `feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`，具体提交号在提交后通过 `git log -5 --oneline` 确认。
+- 阶段提交：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
 
 ## 2026-05-29 Pipeline v1 Phase 1 后状态同步计划
 
