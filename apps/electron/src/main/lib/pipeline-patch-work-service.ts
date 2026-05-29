@@ -168,12 +168,16 @@ export function resolvePatchWorkDir(
     throw new Error('patch-work 目录越界')
   }
 
-  if (options.create !== false && !existsSync(patchWorkDir)) {
+  if (!existsSync(patchWorkDir)) {
+    if (options.create === false) {
+      throw new Error('patch-work 目录不存在')
+    }
     mkdirSync(patchWorkDir, { recursive: true })
   }
 
   if (existsSync(patchWorkDir)) {
-    if (lstatSync(patchWorkDir).isSymbolicLink()) {
+    const stat = lstatSync(patchWorkDir)
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
       throw new Error('patch-work 目录越界')
     }
     const rootRealPath = realpathSync(root)

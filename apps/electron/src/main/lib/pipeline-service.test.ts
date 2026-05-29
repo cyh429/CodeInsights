@@ -2268,6 +2268,47 @@ describe('pipeline-service', () => {
     }
   })
 
+  test('patch-work 目录打开入口只按 sessionId 解析仓库内固定目录', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-open-patch-work-'))
+    const repoWithoutPatchWork = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-missing-patch-work-'))
+    const outsideRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-outside-patch-work-'))
+    const service = createPipelineService()
+
+    try {
+      const session = service.createSession('patch-work 打开目录测试', 'channel-1', 'workspace-1')
+      const missingPatchWorkSession = service.createSession('patch-work 缺失测试', 'channel-1', 'workspace-1')
+      const expectedPatchWorkDir = join(repoRoot, 'patch-work')
+      mkdirSync(expectedPatchWorkDir, { recursive: true })
+      createContributionTask({
+        id: 'task-open-patch-work',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(outsideRoot, 'patch-work'),
+        contributionMode: 'local_patch',
+        allowRemoteWrites: false,
+        status: 'testing',
+      })
+      createContributionTask({
+        id: 'task-missing-patch-work',
+        pipelineSessionId: missingPatchWorkSession.id,
+        repositoryRoot: repoWithoutPatchWork,
+        patchWorkDir: join(repoWithoutPatchWork, 'patch-work'),
+        contributionMode: 'local_patch',
+        allowRemoteWrites: false,
+        status: 'testing',
+      })
+
+      expect(service.getPatchWorkDir(session.id)).toBe(expectedPatchWorkDir)
+      expect(service.getPatchWorkDir(session.id)).not.toContain(outsideRoot)
+      expect(() => service.getPatchWorkDir(missingPatchWorkSession.id)).toThrow('patch-work 目录不存在')
+      expect(() => service.getPatchWorkDir('missing-session')).toThrow('未找到 Pipeline 会话')
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+      rmSync(repoWithoutPatchWork, { recursive: true, force: true })
+      rmSync(outsideRoot, { recursive: true, force: true })
+    }
+  })
+
   test('内存 gate 已消费但 resume 未结束时，重复响应不应写入重复 gate decision', async () => {
     let sessionId = ''
     let gateRequest: PipelineGateRequest = {

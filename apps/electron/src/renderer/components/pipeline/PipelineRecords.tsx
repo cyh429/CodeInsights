@@ -5,6 +5,7 @@ import type {
   PipelineRecordsSearchMatch as SharedPipelineRecordsSearchMatch,
   PipelineRecordsSearchResult,
   PipelineStageArtifactRecord,
+  PipelineVersion,
 } from '@codeinsights/shared'
 import {
   Archive,
@@ -29,7 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import {
   getPipelineNodeLabel,
-  PIPELINE_NODE_ORDER,
+  getPipelineNodeOrder,
 } from './pipeline-display-model'
 import {
   buildPipelineExternalFocusFilter,
@@ -99,22 +100,33 @@ const RECORD_ACCENT_CLASS = {
   accent: 'bg-status-running',
 } as const
 
-const STAGE_FILTERS: Array<{ value: PipelineRecordStageFilter; label: string }> = [
-  { value: 'all', label: '全部' },
-  { value: 'task', label: '任务' },
-  ...PIPELINE_NODE_ORDER.map((node) => ({
-    value: node,
-    label: getPipelineNodeLabel(node),
-  })),
-]
+export interface PipelineStageFilterItem {
+  value: PipelineRecordStageFilter
+  label: string
+}
 
-const STAGE_FILTER_INDEX: Partial<Record<PipelineRecordStageFilter, string>> = STAGE_FILTERS.reduce(
-  (accumulator, item, index) => ({
-    ...accumulator,
-    [item.value]: String(index).padStart(2, '0'),
-  }),
-  {},
-)
+export function buildPipelineStageFilters(version?: PipelineVersion): PipelineStageFilterItem[] {
+  return [
+    { value: 'all', label: '全部' },
+    { value: 'task', label: '任务' },
+    ...getPipelineNodeOrder(version).map((node) => ({
+      value: node,
+      label: getPipelineNodeLabel(node),
+    })),
+  ]
+}
+
+function buildPipelineStageFilterIndex(
+  filters: PipelineStageFilterItem[],
+): Partial<Record<PipelineRecordStageFilter, string>> {
+  return filters.reduce(
+    (accumulator, item, index) => ({
+      ...accumulator,
+      [item.value]: String(index).padStart(2, '0'),
+    }),
+    {},
+  )
+}
 
 export interface PipelineLiveOutputViewModel {
   title: string
@@ -614,6 +626,7 @@ export function PipelineRecords({
   sessionId,
   sessionTitle,
   showLiveOutput,
+  version,
 }: {
   focusRequest?: PipelineRecordsFocusRequest | null
   records: PipelineRecord[]
@@ -622,6 +635,7 @@ export function PipelineRecords({
   sessionId: string
   sessionTitle?: string
   showLiveOutput?: boolean
+  version?: PipelineVersion
 }): React.ReactElement {
   const [activeTab, setActiveTab] = React.useState<PipelineRecordTab>('artifacts')
   const [stageFilter, setStageFilter] = React.useState<PipelineRecordStageFilter>('all')
@@ -642,7 +656,9 @@ export function PipelineRecords({
   const handledFocusNonceRef = React.useRef(0)
   const normalizedQuery = debouncedQuery.trim()
 
-  const groups = React.useMemo(() => buildPipelineRecordGroups(records), [records])
+  const stageFilters = React.useMemo(() => buildPipelineStageFilters(version), [version])
+  const stageFilterIndex = React.useMemo(() => buildPipelineStageFilterIndex(stageFilters), [stageFilters])
+  const groups = React.useMemo(() => buildPipelineRecordGroups(records, { version }), [records, version])
   const filter = React.useMemo(() => ({
     stage: stageFilter,
     query: debouncedQuery,
@@ -692,6 +708,11 @@ export function PipelineRecords({
     setSearchPageOffset(0)
     setActiveMatchIndex(0)
   }, [debouncedQuery, sessionId, stageFilter])
+
+  React.useEffect(() => {
+    if (stageFilters.some((item) => item.value === stageFilter)) return
+    setStageFilter('all')
+  }, [stageFilter, stageFilters])
 
   React.useEffect(() => {
     const searchId = searchLoadSeqRef.current + 1
@@ -799,8 +820,8 @@ export function PipelineRecords({
     if (handledFocusNonceRef.current === focusRequest.nonce) return
 
     const target = focusRequest.type === 'stage'
-      ? buildPipelineStageNavigationTarget(records, focusRequest.node)
-      : buildPipelineRecordFocusTarget(records, focusRequest.recordId)
+      ? buildPipelineStageNavigationTarget(records, focusRequest.node, { version })
+      : buildPipelineRecordFocusTarget(records, focusRequest.recordId, { version })
 
     if (target) {
       handledFocusNonceRef.current = focusRequest.nonce
@@ -823,7 +844,7 @@ export function PipelineRecords({
       setActiveMatchIndex(0)
       setFocusedRecordId(null)
     }
-  }, [focusNavigationTarget, focusRequest, query, records, sessionId, stageFilter])
+  }, [focusNavigationTarget, focusRequest, query, records, sessionId, stageFilter, version])
 
   const jumpToMatch = React.useCallback((nextIndex: number): void => {
     const match = searchMatches[nextIndex]
@@ -848,6 +869,7 @@ export function PipelineRecords({
         title: sessionTitle ? `${sessionTitle} - Pipeline 报告` : 'Pipeline 会话报告',
         records: reportRecords,
         generatedAt: Date.now(),
+        version,
       })
       await copyTextToClipboard(report)
       setCopyStatus('copied')
@@ -857,7 +879,7 @@ export function PipelineRecords({
       setCopyStatus('failed')
       window.setTimeout(() => setCopyStatus('idle'), 2200)
     }
-  }, [records, sessionTitle])
+  }, [records, sessionTitle, version])
 
   const handleTabChange = React.useCallback((value: string): void => {
     setActiveTab(value === 'logs' ? 'logs' : 'artifacts')
@@ -1009,7 +1031,7 @@ export function PipelineRecords({
         </div>
 
         <div className="pipeline-stage-segmented flex flex-wrap gap-1 rounded-panel border border-border-subtle/60 bg-background/35 p-1.5" role="group" aria-label="按阶段筛选记录">
-          {STAGE_FILTERS.map((item) => (
+          {stageFilters.map((item) => (
             <button
               key={item.value}
               type="button"
@@ -1022,7 +1044,7 @@ export function PipelineRecords({
                   : 'border-transparent text-text-secondary hover:bg-surface-muted hover:text-text-primary',
               )}
             >
-              <span className="font-mono text-[10px] opacity-70">{STAGE_FILTER_INDEX[item.value]}</span>
+              <span className="font-mono text-[10px] opacity-70">{stageFilterIndex[item.value]}</span>
               {item.label}
             </button>
           ))}

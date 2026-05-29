@@ -68,6 +68,7 @@ import {
   listPatchWorkExplorerReports,
   readPatchWorkManifestFile,
   readPatchWorkManifest,
+  resolvePatchWorkDir,
   selectPatchWorkTask,
 } from './pipeline-patch-work-service'
 import { getAgentWorkspace } from './agent-workspace-manager'
@@ -1594,6 +1595,15 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       }
 
       return resolvePipelineSessionArtifactsDir(meta.id)
+    },
+
+    getPatchWorkDir(sessionId: string): string {
+      const meta = getPipelineSessionMeta(sessionId)
+      if (!meta) {
+        throw new Error(`未找到 Pipeline 会话: ${sessionId}`)
+      }
+      const task = getContributionTaskForSession(meta.id, { required: true })
+      return resolvePatchWorkDir(task!.repositoryRoot, { create: false })
     },
 
     togglePin(sessionId: string): PipelineSessionMeta {

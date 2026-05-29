@@ -103,6 +103,7 @@ export function PipelineView({
   )
   const state = stateMap.get(sessionId) ?? (session ? {
     sessionId: session.id,
+    version: session.version,
     currentNode: session.currentNode,
     status: session.status,
     reviewIteration: session.reviewIteration,
@@ -610,6 +611,13 @@ export function PipelineView({
     }
   }, [sessionId])
 
+  const handleOpenPatchWorkDir = React.useCallback(async (): Promise<void> => {
+    const opened = await window.electronAPI.openPipelinePatchWorkDir(sessionId)
+    if (!opened) {
+      throw new Error('系统未能打开 patch-work 目录')
+    }
+  }, [sessionId])
+
   const handleOpenAgentSettings = React.useCallback((): void => {
     setSettingsTab('agent')
     setSettingsOpen(true)
@@ -668,6 +676,7 @@ export function PipelineView({
                 sessionId={sessionId}
                 sessionTitle={session?.title}
                 showLiveOutput={showLiveOutput}
+                version={session?.version ?? state?.version}
               />
             </div>
             <aside className="order-first space-y-4 xl:order-none xl:sticky xl:top-4 xl:self-start">
@@ -699,6 +708,7 @@ export function PipelineView({
                   })}
                   onReject={(feedback) => handleRespond('reject_with_feedback', feedback)}
                   onRerun={() => handleRespond('rerun_node')}
+                  onOpenPatchWorkDir={handleOpenPatchWorkDir}
                 />
               ) : null}
               {showTesterResultBoard ? (
@@ -711,6 +721,7 @@ export function PipelineView({
                   onApprove={() => handleRespond('approve')}
                   onReject={(feedback) => handleRespond('reject_with_feedback', feedback)}
                   onRerun={() => handleRespond('rerun_node')}
+                  onOpenPatchWorkDir={handleOpenPatchWorkDir}
                 />
               ) : showExplorerTaskBoard ? (
                 <ExplorerTaskBoard

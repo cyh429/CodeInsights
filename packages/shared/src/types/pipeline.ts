@@ -7,7 +7,7 @@
 /** Pipeline 工作流版本。缺省按 v1 处理，保证旧会话兼容。 */
 export type PipelineVersion = 1 | 2
 
-/** Pipeline 固定节点类型 */
+/** Pipeline 节点类型。v1 使用前五个节点，v2 额外启用 committer。 */
 export type PipelineNodeKind =
   | 'explorer'
   | 'planner'
@@ -813,6 +813,7 @@ export const PIPELINE_IPC_CHANNELS = {
   GET_PENDING_GATES: 'pipeline:get-pending-gates',
   GET_SESSION_STATE: 'pipeline:get-session-state',
   OPEN_ARTIFACTS_DIR: 'pipeline:open-artifacts-dir',
+  OPEN_PATCH_WORK_DIR: 'pipeline-v2:open-patch-work-dir',
   SUBSCRIBE_STREAM: 'pipeline:stream:subscribe',
   UNSUBSCRIBE_STREAM: 'pipeline:stream:unsubscribe',
   STREAM_EVENT: 'pipeline:stream:event',

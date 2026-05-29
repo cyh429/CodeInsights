@@ -9,7 +9,7 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 当前结论：方案与开发清单已完成，业务实现尚未开始；下次正式开发应从 **Phase 0：清理与对齐** 开始。
+> 当前结论：Phase 0 清理与对齐已完成并通过聚焦验证；下次正式开发应从 **Phase 1：Preflight 主路径** 开始。
 
 ### 已完成
 
@@ -21,10 +21,14 @@
   - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
   - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
+- [x] Phase 0：清理与对齐。
+  - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
+  - `pipeline-record-view-model` artifact group 排序已显式使用 `getPipelineNodeOrder(version)`，v2 `committer` 稳定排在 `tester` 后。
+  - 已新增 `openPipelinePatchWorkDir(sessionId)` shared IPC / preload / main handler / service / Tester / Committer UI 入口；Renderer 只传 `sessionId`，main 端重新解析 repo 内 `patch-work/`。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.50`、`@codeinsights/electron` 到 `0.0.122`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 0：清理与对齐。
 - [ ] Phase 1：Preflight 主路径。
 - [ ] Phase 2：PipelineView 拆分。
 - [ ] Phase 3：Patch-work Document Workbench。
@@ -34,8 +38,6 @@
 
 ### 当前未完成的关键能力
 
-- [ ] Records v2 `committer` filter / artifact group 仍需修复。
-- [ ] `openPipelinePatchWorkDir` IPC / preload / UI 入口仍未实现。
 - [ ] 主进程 `runPipelinePreflight()` 仍未接入 Pipeline IPC / Renderer / `PipelineService.start()` 主路径。
 - [ ] `PipelineView` 仍未拆分为 hooks / view models。
 - [ ] Patch-work 文档 Workbench、revision diff、accepted badge 仍未实现。
@@ -48,11 +50,11 @@
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态仍是“文档完成、Phase 0 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近提交包含 `3ce1402e`、`3c754ac6`、`ae5c85ba` 或其后的状态同步提交。
-4. 在 `tasks/todo.md` 写入 Phase 0 计划。
-5. 从 Phase 0 开始开发，先补测试，再实现 Records v2 `committer` 可见性和 `openPipelinePatchWorkDir`。
-6. Phase 0 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0 已完成，Phase 1 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近提交包含 `172eaf3c` 或其后的 Phase 0 提交。
+4. 在 `tasks/todo.md` 写入 Phase 1 计划。
+5. 从 Phase 1 开始开发，先补测试，再接入 repository preflight IPC / Renderer / `PipelineService.start()` 服务端守卫。
+6. Phase 1 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -98,7 +100,7 @@
 
 | 里程碑 | 阶段 | 目标 | 初始状态 |
 |--------|------|------|----------|
-| M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [ ] |
+| M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [x] |
 | M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [ ] |
 | M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [ ] |
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [ ] |
@@ -110,11 +112,11 @@
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] 测试先行完成
-- [ ] 实现完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] 实现完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -122,48 +124,52 @@
 
 ### 入口条件
 
-- [ ] 已阅读 v1 优化方案的“最小可交付切片”。
-- [ ] 当前工作树无无关未提交改动，或已确认只会 stage 本阶段文件。
-- [ ] 明确本阶段不接入完整 Preflight Center，不拆 PipelineView 主体。
+- [x] 已阅读 v1 优化方案的“最小可交付切片”。
+- [x] 当前工作树无无关未提交改动，或已确认只会 stage 本阶段文件。
+- [x] 明确本阶段不接入完整 Preflight Center，不拆 PipelineView 主体。
 
 ### 测试任务
 
-- [ ] 在 `PipelineRecords.test.ts` 增加 v2 阶段过滤包含 `committer` 的测试。
-- [ ] 在 `pipeline-record-view-model.test.ts` 增加 v2 artifact group 中 `committer` 排在 `tester` 后的测试。
-- [ ] 增加 v1 兼容测试：旧会话或 `version=1` 不显示 `committer` filter。
-- [ ] 为 `openPipelinePatchWorkDir` 增加 main IPC 或 service 聚焦测试。
+- [x] 在 `PipelineRecords.test.ts` 增加 v2 阶段过滤包含 `committer` 的测试。
+- [x] 在 `pipeline-record-view-model.test.ts` 增加 v2 artifact group 中 `committer` 排在 `tester` 后的测试。
+- [x] 增加 v1 兼容测试：旧会话或 `version=1` 不显示 `committer` filter。
+- [x] 为 `openPipelinePatchWorkDir` 增加 main IPC 或 service 聚焦测试。
 
 ### 实现任务
 
-- [ ] `PipelineRecords.tsx`：把 `STAGE_FILTERS` 改成 version-aware builder。
-- [ ] `PipelineRecords.tsx`：新增 `version?: PipelineVersion` prop。
-- [ ] `PipelineView.tsx`：向 `PipelineRecords` 传 `session?.version ?? state?.version`。
-- [ ] `pipeline-record-view-model.ts`：`buildPipelineRecordGroups(records, { version })` 使用 `getPipelineNodeOrder(version)`。
-- [ ] `pipeline-record-experience-model.ts`：检查 stage focus / external filter 对 `committer` 的支持。
-- [ ] `packages/shared/src/types/pipeline.ts`：检查 Pipeline 相关历史注释，清理明显过期说明；不改行为。
-- [ ] `PIPELINE_IPC_CHANNELS`：新增 `OPEN_PATCH_WORK_DIR`。
-- [ ] `pipeline-handlers.ts`：新增打开仓库内 `patch-work/` 的 handler，路径来自 `PipelineService`，不能由 Renderer 传任意路径。
-- [ ] `preload/index.ts`：暴露 `openPipelinePatchWorkDir(sessionId)`。
-- [ ] `TesterResultBoard.tsx` / `CommitterPanel.tsx`：增加“打开 patch-work 目录”入口。
+- [x] `PipelineRecords.tsx`：把 `STAGE_FILTERS` 改成 version-aware builder。
+- [x] `PipelineRecords.tsx`：新增 `version?: PipelineVersion` prop。
+- [x] `PipelineView.tsx`：向 `PipelineRecords` 传 `session?.version ?? state?.version`。
+- [x] `pipeline-record-view-model.ts`：`buildPipelineRecordGroups(records, { version })` 使用 `getPipelineNodeOrder(version)`。
+- [x] `pipeline-record-experience-model.ts`：检查 stage focus / external filter 对 `committer` 的支持。
+- [x] `packages/shared/src/types/pipeline.ts`：检查 Pipeline 相关历史注释，清理明显过期说明；不改行为。
+- [x] `PIPELINE_IPC_CHANNELS`：新增 `OPEN_PATCH_WORK_DIR`。
+- [x] `pipeline-handlers.ts`：新增打开仓库内 `patch-work/` 的 handler，路径来自 `PipelineService`，不能由 Renderer 传任意路径。
+- [x] `preload/index.ts`：暴露 `openPipelinePatchWorkDir(sessionId)`。
+- [x] `TesterResultBoard.tsx` / `CommitterPanel.tsx`：增加“打开 patch-work 目录”入口。
 
 ### 触达文件
 
-- [ ] `packages/shared/src/types/pipeline.ts`
-- [ ] `apps/electron/src/main/ipc/pipeline-handlers.ts`
-- [ ] `apps/electron/src/preload/index.ts`
-- [ ] `apps/electron/src/main/lib/pipeline-service.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelineRecords.tsx`
-- [ ] `apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/TesterResultBoard.tsx`
-- [ ] `apps/electron/src/renderer/components/pipeline/CommitterPanel.tsx`
-- [ ] 相关测试文件
+- [x] `packages/shared/src/types/pipeline.ts`
+- [x] `apps/electron/src/main/ipc/pipeline-handlers.ts`
+- [x] `apps/electron/src/preload/index.ts`
+- [x] `apps/electron/src/main/lib/pipeline-service.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineRecords.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/TesterResultBoard.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/CommitterPanel.tsx`
+- [x] 相关测试文件
 
 ### 验证命令
 
 ```bash
 bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts
+```
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
 ```
 
 ```bash
@@ -173,21 +179,21 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 完成定义
 
-- [ ] v2 Records filter 显示 explorer / planner / developer / reviewer / tester / committer。
-- [ ] v1 Records filter 不显示 committer。
-- [ ] committer artifact group 排序稳定在 tester 之后。
-- [ ] Tester / Committer 面板可以打开 repo 内 `patch-work/`。
-- [ ] 没有改动 Graph、runner、Git submission 行为。
-- [ ] 受影响 package patch version 已递增。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] v2 Records filter 显示 explorer / planner / developer / reviewer / tester / committer。
+- [x] v1 Records filter 不显示 committer。
+- [x] committer artifact group 排序稳定在 tester 之后。
+- [x] Tester / Committer 面板可以打开 repo 内 `patch-work/`。
+- [x] 没有改动 Graph、runner、Git submission 行为。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不引入新的 Preflight UI。
-- [ ] 不新增真实 Git 写操作。
-- [ ] 不改远端 PR 行为。
-- [ ] 不把 `patch-work/**` 纳入提交候选。
+- [x] 不引入新的 Preflight UI。
+- [x] 不新增真实 Git 写操作。
+- [x] 不改远端 PR 行为。
+- [x] 不把 `patch-work/**` 纳入提交候选。
 
 ### 阶段 Review 模板
 
@@ -200,6 +206,17 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 - 未完成项：
 - 提交：
 ```
+
+## 2026-05-29 Pipeline v1 Phase 0 Review
+
+- 阶段范围：清理与对齐；仅修复 Records v2 committer 可见性 / 排序、新增打开 repo 内 `patch-work/` 的受控入口、清理 shared 类型注释。
+- 主要变更：`PipelineRecords` 阶段过滤改为 version-aware；`PipelineView` 向 Records 传入版本；record group / stage focus / Markdown report 支持 version-aware 分组；新增 `OPEN_PATCH_WORK_DIR`、`openPipelinePatchWorkDir(sessionId)`、`PipelineService.getPatchWorkDir(sessionId)` 和 Tester / Committer 面板入口。
+- 触达文件：`packages/shared/src/types/pipeline.ts`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/lib/pipeline-patch-work-service.ts`、Pipeline Records / Tester / Committer 组件与测试、workspace package versions、`bun.lock`、本文和 next-session prompt。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`。
+- 兼容性确认：缺失 `version` 或 `version=1` 的旧会话仍只显示五阶段 filter；已存在的 committer 记录不被丢弃；Graph、runner、Git submission 和远端 PR 行为未修改。
+- 安全确认：Renderer 只传 `sessionId`；main 端通过 ContributionTask 的 `repositoryRoot` 重新解析 `repoRoot/patch-work`；`resolvePatchWorkDir` 继续做 realpath / lstat / symlink 检查，并拒绝非目录路径。
+- 未完成项 / [!]：Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
+- 阶段提交：本轮 Phase 0 提交，提交后以 `git log -1 --oneline` 为准。
 
 ## Phase 1：Preflight 主路径
 
@@ -804,10 +821,11 @@ git diff --check -- packages/shared apps/electron docs/improve/pipeline/v1 tasks
 
 ## 下一轮启动入口
 
-下一轮正式开发从 Phase 0 开始，推荐首个最小 PR：
+下一轮正式开发从 Phase 1 开始，推荐最小切片：
 
-1. 修复 Records v2 `committer` filter / group。
-2. 新增 `openPipelinePatchWorkDir` IPC / preload / UI 入口。
-3. 不改 Graph、runner、Git submission。
-4. 跑 Phase 0 聚焦测试、typecheck、diff check。
-5. 阶段完成后单独提交。
+1. 新增 repository preflight IPC / preload / renderer 调用入口。
+2. 接入 `PipelineView` 启动前 preflight 状态展示与 blocker 拦截。
+3. 在 `PipelineService.start()` 增加服务端 preflight 守卫。
+4. 不拆 `PipelineView`，不接入完整 Preflight Center，不改 runner / Graph。
+5. 跑 Phase 1 聚焦测试、typecheck、diff check。
+6. 阶段完成后单独提交。

@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { FolderOpen } from 'lucide-react'
 import type {
   PipelineGateKind,
   PipelinePatchWorkDocumentRef,
@@ -217,6 +218,7 @@ export function TesterResultBoard({
   onApprove,
   onReject,
   onRerun,
+  onOpenPatchWorkDir,
 }: {
   output: PipelineTesterStageOutput | null | undefined
   contents: Map<string, string>
@@ -226,10 +228,12 @@ export function TesterResultBoard({
   onApprove: () => Promise<void>
   onReject: (feedback: string) => Promise<void>
   onRerun: () => Promise<void>
+  onOpenPatchWorkDir: () => Promise<void>
 }): React.ReactElement {
   const [feedback, setFeedback] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [openPatchWorkError, setOpenPatchWorkError] = React.useState<string | null>(null)
   const [feedbackError, setFeedbackError] = React.useState<string | null>(null)
   const viewModel = buildTesterResultBoardViewModel({
     output,
@@ -250,6 +254,16 @@ export function TesterResultBoard({
       setError(submitError instanceof Error ? submitError.message : '提交审核失败，请稍后重试。')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleOpenPatchWorkDir = async (): Promise<void> => {
+    setOpenPatchWorkError(null)
+    try {
+      await onOpenPatchWorkDir()
+    } catch (openError) {
+      console.error('[TesterResultBoard] 打开 patch-work 目录失败:', openError)
+      setOpenPatchWorkError(openError instanceof Error ? openError.message : '打开 patch-work 目录失败，请稍后重试。')
     }
   }
 
@@ -277,8 +291,20 @@ export function TesterResultBoard({
 
       <p className="mt-3 text-sm leading-6 text-text-primary">{viewModel.summary}</p>
       <div className="mt-3 rounded-card bg-background/80 px-3 py-2 text-xs text-text-secondary">
-        Patch-set：{viewModel.patchSetSummary}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span>Patch-set：{viewModel.patchSetSummary}</span>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => void handleOpenPatchWorkDir()}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-background px-3 py-1.5 text-xs font-medium text-text-primary shadow-sm transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <FolderOpen size={14} aria-hidden="true" />
+            打开 patch-work
+          </button>
+        </div>
       </div>
+      {openPatchWorkError ? <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">{openPatchWorkError}</div> : null}
 
       {viewModel.warning ? (
         <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">

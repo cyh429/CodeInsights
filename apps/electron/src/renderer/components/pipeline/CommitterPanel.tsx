@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { FolderOpen } from 'lucide-react'
 import type {
   PipelineCommitterStageOutput,
   PipelinePatchWorkDocumentRef,
@@ -287,6 +288,7 @@ export function CommitterPanel({
   onRemoteSubmit,
   onReject,
   onRerun,
+  onOpenPatchWorkDir,
 }: {
   output: PipelineCommitterStageOutput | null | undefined
   testerOutput: PipelineTesterStageOutput | null | undefined
@@ -298,11 +300,13 @@ export function CommitterPanel({
   onRemoteSubmit: () => Promise<void>
   onReject: (feedback: string) => Promise<void>
   onRerun: () => Promise<void>
+  onOpenPatchWorkDir: () => Promise<void>
 }): React.ReactElement {
   const [feedback, setFeedback] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [remoteConfirmed, setRemoteConfirmed] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [openPatchWorkError, setOpenPatchWorkError] = React.useState<string | null>(null)
   const [feedbackError, setFeedbackError] = React.useState<string | null>(null)
   const viewModel = buildCommitterPanelViewModel({
     output,
@@ -324,6 +328,16 @@ export function CommitterPanel({
       setError(submitError instanceof Error ? submitError.message : '提交审核失败，请稍后重试。')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleOpenPatchWorkDir = async (): Promise<void> => {
+    setOpenPatchWorkError(null)
+    try {
+      await onOpenPatchWorkDir()
+    } catch (openError) {
+      console.error('[CommitterPanel] 打开 patch-work 目录失败:', openError)
+      setOpenPatchWorkError(openError instanceof Error ? openError.message : '打开 patch-work 目录失败，请稍后重试。')
     }
   }
 
@@ -358,7 +372,19 @@ export function CommitterPanel({
         {viewModel.localCommitResult ? <div>本地提交：{viewModel.localCommitResult}</div> : null}
         <div>远端目标：{viewModel.remoteTargetSummary}</div>
         {viewModel.remoteSubmitResult ? <div>远端提交：{viewModel.remoteSubmitResult}</div> : null}
+        <div>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => void handleOpenPatchWorkDir()}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-background px-3 py-1.5 text-xs font-medium text-text-primary shadow-sm transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <FolderOpen size={14} aria-hidden="true" />
+            打开 patch-work
+          </button>
+        </div>
       </div>
+      {openPatchWorkError ? <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">{openPatchWorkError}</div> : null}
 
       {viewModel.warning ? (
         <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">

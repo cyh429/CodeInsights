@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { buildPipelineLiveOutputViewModel } from './PipelineRecords'
+import {
+  buildPipelineLiveOutputViewModel,
+  buildPipelineStageFilters,
+} from './PipelineRecords'
 
 describe('PipelineRecords live output model', () => {
   test('节点已启动但暂未产生文本时展示明确的静默运行说明', () => {
@@ -29,5 +32,33 @@ describe('PipelineRecords live output model', () => {
     expect(viewModel.title).toBe('探索节点正在运行')
     expect(viewModel.hasOutput).toBe(false)
     expect(viewModel.body).toContain('探索节点已启动')
+  })
+})
+
+describe('PipelineRecords stage filters', () => {
+  test('v2 会话阶段过滤包含 committer', () => {
+    expect(buildPipelineStageFilters(2).map((item) => item.value)).toEqual([
+      'all',
+      'task',
+      'explorer',
+      'planner',
+      'developer',
+      'reviewer',
+      'tester',
+      'committer',
+    ])
+  })
+
+  test('v1 和历史旧会话阶段过滤不显示 committer', () => {
+    expect(buildPipelineStageFilters(1).map((item) => item.value)).toEqual([
+      'all',
+      'task',
+      'explorer',
+      'planner',
+      'developer',
+      'reviewer',
+      'tester',
+    ])
+    expect(buildPipelineStageFilters(undefined).map((item) => item.value)).not.toContain('committer')
   })
 })

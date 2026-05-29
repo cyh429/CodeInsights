@@ -389,6 +389,9 @@ export interface ElectronAPI {
   /** 打开 Pipeline 产物目录 */
   openPipelineArtifactsDir: (sessionId: string) => Promise<boolean>
 
+  /** 打开 Pipeline v2 仓库内 patch-work 目录 */
+  openPipelinePatchWorkDir: (sessionId: string) => Promise<boolean>
+
   /** 更新 Pipeline 标题 */
   updatePipelineTitle: (sessionId: string, title: string) => Promise<PipelineSessionMeta>
 
@@ -1201,6 +1204,10 @@ const electronAPI: ElectronAPI = {
 
   openPipelineArtifactsDir: (sessionId: string) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_ARTIFACTS_DIR, sessionId)
+  },
+
+  openPipelinePatchWorkDir: (sessionId: string) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_DIR, sessionId)
   },
 
   updatePipelineTitle: (sessionId: string, title: string) => {

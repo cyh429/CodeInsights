@@ -157,4 +157,90 @@ describe('buildPipelineRecordViewModel', () => {
       'status-1',
     ])
   })
+
+  test('v2 artifact group 会把 committer 排在 tester 后', () => {
+    const groups = buildPipelineRecordGroups([
+      {
+        id: 'committer-artifact',
+        sessionId: 'session-1',
+        type: 'stage_artifact',
+        node: 'committer',
+        artifact: {
+          node: 'committer',
+          summary: '提交材料已生成',
+          commitMessage: 'feat: update pipeline',
+          prTitle: 'Update pipeline',
+          prBody: 'PR body',
+          submissionStatus: 'draft_only',
+          blockers: [],
+          risks: [],
+          content: '{"summary":"提交材料已生成"}',
+        },
+        createdAt: 4,
+      },
+      {
+        id: 'tester-artifact',
+        sessionId: 'session-1',
+        type: 'stage_artifact',
+        node: 'tester',
+        artifact: {
+          node: 'tester',
+          summary: '测试通过',
+          commands: ['bun test'],
+          results: ['全部通过'],
+          blockers: [],
+          content: '{"summary":"测试通过"}',
+        },
+        createdAt: 3,
+      },
+    ], { version: 2 })
+
+    expect(groups.artifacts.map((group) => group.id)).toEqual([
+      'tester',
+      'committer',
+    ])
+  })
+
+  test('v1 artifact group 对旧 committer 记录保持兼容但不改变五阶段顺序', () => {
+    const groups = buildPipelineRecordGroups([
+      {
+        id: 'committer-artifact',
+        sessionId: 'session-1',
+        type: 'stage_artifact',
+        node: 'committer',
+        artifact: {
+          node: 'committer',
+          summary: '历史异常提交记录',
+          commitMessage: 'feat: update pipeline',
+          prTitle: 'Update pipeline',
+          prBody: 'PR body',
+          submissionStatus: 'draft_only',
+          blockers: [],
+          risks: [],
+          content: '{"summary":"历史异常提交记录"}',
+        },
+        createdAt: 4,
+      },
+      {
+        id: 'tester-artifact',
+        sessionId: 'session-1',
+        type: 'stage_artifact',
+        node: 'tester',
+        artifact: {
+          node: 'tester',
+          summary: '测试通过',
+          commands: ['bun test'],
+          results: ['全部通过'],
+          blockers: [],
+          content: '{"summary":"测试通过"}',
+        },
+        createdAt: 3,
+      },
+    ], { version: 1 })
+
+    expect(groups.artifacts.map((group) => group.id)).toEqual([
+      'tester',
+      'committer',
+    ])
+  })
 })

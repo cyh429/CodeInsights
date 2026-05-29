@@ -1,5 +1,61 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 0 清理与对齐计划
+
+范围确认：本轮只做 Phase 0。修复 v2 Records 中 `committer` 的可见性与排序，新增打开仓库内 `patch-work/` 的受控 IPC / preload / UI 入口，清理 shared Pipeline 类型中的明显过期注释；不改 Graph、不改 runner、不改 Git submission、不接入完整 Preflight Center，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
+
+BDD 验收场景：
+
+- [x] Given 当前会话 version 为 2，When 打开 Records 阶段过滤，Then 过滤项包含 `committer` / “提交”。
+- [x] Given 当前会话 version 为 1 或历史旧会话缺少 version，When 打开 Records 阶段过滤，Then 不显示 `committer` / “提交”。
+- [x] Given v2 records 中存在 `tester` 和 `committer` artifact，When 构建 artifact group，Then `committer` 稳定排在 `tester` 后。
+- [x] Given v2 Tester / Committer 面板展示 patch-work 产物，When 用户点击打开目录，Then main process 只基于 `sessionId` 打开该会话仓库内 `patch-work/`，Renderer 不能传任意路径。
+
+TDD 执行计划：
+
+- [x] 先补 renderer / view model 测试：`PipelineRecords.test.ts` 覆盖 v2 committer filter 与 v1 兼容；`pipeline-record-view-model.test.ts` 覆盖 v2 group 排序。
+- [x] 先补 main IPC / service 聚焦测试：覆盖 `openPipelinePatchWorkDir(sessionId)` 只从服务端解析 repo 内 patch-work 路径。
+- [x] 运行新增测试并确认失败点来自未实现行为。
+- [x] 实现 `PipelineRecords` version-aware filter，`PipelineView` 传入 session/state version，record group 排序改用 `getPipelineNodeOrder(version)`。
+- [x] 实现 `OPEN_PATCH_WORK_DIR` shared IPC 常量、main handler、preload API、`PipelineService` 受控目录解析 / 打开入口。
+- [x] 在 `TesterResultBoard.tsx` 和 `CommitterPanel.tsx` 增加打开 `patch-work/` 的 UI 入口，保持按钮状态与现有面板风格一致。
+- [x] 检查 `packages/shared/src/types/pipeline.ts` 的 Pipeline 注释，只清理明显过期说明，不改行为。
+- [x] 递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 更新开发清单 Phase 0 状态和 `docs/improve/pipeline/v1/next-session-prompt.md`。
+- [x] 运行 Phase 0 聚焦测试、Electron typecheck、`git diff --check`，追加本节 Review。
+- [x] 核对 `git status --short` / staged diff 范围后，单独提交 Phase 0 成果，提交信息使用详细中文。
+
+触达边界：
+
+- [x] 允许触达：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、Pipeline IPC / preload / service、Records / Tester / Committer 相关组件与测试、Phase 0 文档状态、`tasks/todo.md`。
+- [x] 不触达：`pipeline-graph.ts`、Claude / Codex runner、Git submission 行为、完整 Preflight Center、根 `README.md`、根 `AGENTS.md`。
+
+验证命令：
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts
+```
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+## 2026-05-29 Pipeline v1 Phase 0 清理与对齐 Review
+
+- 阶段范围：只完成 Phase 0；未接入 Preflight Center，未修改 Graph、runner、Git submission、远端 PR 行为、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：Records 阶段过滤按 `PipelineVersion` 生成，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五阶段；artifact group / stage focus / Markdown report 使用 version-aware 分组；新增 `openPipelinePatchWorkDir(sessionId)` shared IPC / preload / main handler / service / Tester / Committer UI 入口；shared 节点类型注释已对齐 v1/v2 事实。
+- 触达文件：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/lib/pipeline-patch-work-service.ts`、Pipeline Records / Tester / Committer 组件与测试、v1 checklist、next-session prompt。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`。
+- 兼容性确认：旧 v1 会话 filter 不显示 `committer`；已有 committer record 不被隐藏；新建 v2 路径可从 Records 与 Tester / Committer 面板看到提交阶段相关入口。
+- 安全确认：Renderer 不传本地路径，只传 `sessionId`；main 端通过 ContributionTask 的 `repositoryRoot` 重新解析固定 `repoRoot/patch-work`，并复用 realpath / lstat / symlink 检查，额外拒绝非目录路径。
+- 未完成项：Phase 1 Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强、真实端到端验收均未开始。
+- 阶段提交：本轮 Phase 0 提交，提交后以 `git log -1 --oneline` 为准。
+
 ## 2026-05-28 Agent Runtime 设置页补齐 Codex 可选计划
 
 范围确认：本轮只处理用户反馈的 Agent Runtime 设置页缺少 Codex 选项问题，让 Codex 和 opencode 一样在设置页默认可见并可由用户切换；不修改根 `README.md` / `AGENTS.md`，不执行真实 Codex / opencode 模型 smoke，不改变 `OPENCODE_CONFIG_DIR` 默认关闭策略。

@@ -142,6 +142,34 @@ describe('pipeline-record-experience-model', () => {
     })
   })
 
+  test('v2 StageRail 点击 committer 会映射到提交阶段记录', () => {
+    expect(buildPipelineStageNavigationTarget([
+      ...records,
+      {
+        id: 'committer-artifact',
+        sessionId: 'session-1',
+        type: 'stage_artifact',
+        node: 'committer',
+        artifact: {
+          node: 'committer',
+          summary: '提交材料已生成',
+          commitMessage: 'feat: update pipeline records',
+          prTitle: 'Update pipeline records',
+          prBody: 'PR body',
+          submissionStatus: 'draft_only',
+          blockers: [],
+          risks: [],
+          content: '提交材料全文',
+        },
+        createdAt: 6,
+      },
+    ], 'committer', { version: 2 })).toEqual({
+      recordId: 'committer-artifact',
+      stage: 'committer',
+      tab: 'artifacts',
+    })
+  })
+
   test('失败卡定位错误记录时会切到运行日志并保留阶段上下文', () => {
     const target = buildPipelineRecordFocusTarget([
       ...records,
