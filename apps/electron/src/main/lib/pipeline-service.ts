@@ -101,6 +101,10 @@ import {
   runPipelinePreflight,
 } from './pipeline-preflight-service'
 import {
+  isPipelineFixtureRunnerEnabled,
+  PipelineFixtureNodeRunner,
+} from './pipeline-fixture-runner'
+import {
   getContributionTaskSummary as buildContributionTaskSummary,
   getPipelineSubmissionPlan as buildPipelineSubmissionPlan,
 } from './pipeline-read-model-service'
@@ -578,12 +582,13 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       return null
     }
 
+    const fixtureRunnerEnabled = isPipelineFixtureRunnerEnabled()
     const preflight = await runSessionPreflight(meta, {
       sessionId: meta.id,
       workspaceId,
       requireGit: true,
-      requireClaudeCli: true,
-      requireCodexCli: true,
+      requireClaudeCli: !fixtureRunnerEnabled,
+      requireCodexCli: !fixtureRunnerEnabled,
     })
 
     if (preflight.blockers.length > 0) {
@@ -1841,32 +1846,37 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
     callbacks?: PipelineServiceCallbacks,
     mode: 'execute' | 'read' = 'read',
   ): Promise<PipelineGraphController> {
-    const { RoutedPipelineNodeRunner } = await import('./pipeline-node-router')
-    const codexChannelId = resolvePipelineCodexChannelId(getSettings())
-    const runner = new RoutedPipelineNodeRunner({
-      version: meta.version ?? 1,
-      claudeChannelId: meta.channelId,
-      codexChannelId,
-      workspaceId: meta.workspaceId,
-      codexBackend: process.env.CODEINSIGHTS_PIPELINE_CODEX_BACKEND === 'cli' ? 'cli' : 'sdk',
-      onEvent: (event) => {
-        if (event.type === 'node_start') {
-          appendPipelineRecord(meta.id, {
-            id: `${meta.id}-${event.node}-${event.createdAt}-start`,
-            sessionId: meta.id,
-            type: 'node_transition',
-            toNode: event.node,
-            createdAt: event.createdAt,
-          })
-        }
+    const onEvent = (event: PipelineStreamEvent): void => {
+      if (event.type === 'node_start') {
+        appendPipelineRecord(meta.id, {
+          id: `${meta.id}-${event.node}-${event.createdAt}-start`,
+          sessionId: meta.id,
+          type: 'node_transition',
+          toNode: event.node,
+          createdAt: event.createdAt,
+        })
+      }
 
-        if (event.type === 'node_complete') {
-          appendPipelineNodeCompleteRecords(meta.id, event)
-        }
+      if (event.type === 'node_complete') {
+        appendPipelineNodeCompleteRecords(meta.id, event)
+      }
 
-        emitEvent(meta.id, callbacks, event)
-      },
-    })
+      emitEvent(meta.id, callbacks, event)
+    }
+    let runner: PipelineNodeRunner
+    if (isPipelineFixtureRunnerEnabled()) {
+      runner = new PipelineFixtureNodeRunner({ onEvent })
+    } else {
+      const { RoutedPipelineNodeRunner } = await import('./pipeline-node-router')
+      runner = new RoutedPipelineNodeRunner({
+        version: meta.version ?? 1,
+        claudeChannelId: meta.channelId,
+        codexChannelId: resolvePipelineCodexChannelId(getSettings()),
+        workspaceId: meta.workspaceId,
+        codexBackend: process.env.CODEINSIGHTS_PIPELINE_CODEX_BACKEND === 'cli' ? 'cli' : 'sdk',
+        onEvent,
+      })
+    }
 
     if (mode === 'execute') {
       activeRunners.set(meta.id, runner)
@@ -2157,8 +2167,8 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
         sessionId: meta.id,
         workspaceId: input.workspaceId ?? meta.workspaceId,
         requireGit: true,
-        requireClaudeCli: true,
-        requireCodexCli: meta.version === 2,
+        requireClaudeCli: !isPipelineFixtureRunnerEnabled(),
+        requireCodexCli: meta.version === 2 && !isPipelineFixtureRunnerEnabled(),
       })
     },
 
