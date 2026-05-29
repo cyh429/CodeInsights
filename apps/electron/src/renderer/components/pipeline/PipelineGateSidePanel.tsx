@@ -16,6 +16,7 @@ import type { PipelineGatePanelModel } from './pipeline-gate-panel-model'
 import type { PipelineGateRespondHandler } from './usePipelineGateActions'
 
 interface PipelineGateSidePanelProps {
+  sessionId: string
   session: PipelineSessionMeta | null
   state: PipelineStateSnapshot | null
   pendingGate: PipelineGateRequest | null
@@ -35,6 +36,7 @@ interface PipelineGateSidePanelProps {
 }
 
 export function PipelineGateSidePanel({
+  sessionId,
   session,
   state,
   pendingGate,
@@ -64,6 +66,7 @@ export function PipelineGateSidePanel({
       ) : null}
       {gatePanel.panelKind === 'committer' ? (
         <CommitterPanel
+          sessionId={sessionId}
           output={gatePanel.stageOutputs.committer}
           testerOutput={gatePanel.stageOutputs.tester}
           contents={documentContents}
@@ -87,6 +90,7 @@ export function PipelineGateSidePanel({
       ) : null}
       {gatePanel.panelKind === 'tester_result' ? (
         <TesterResultBoard
+          sessionId={sessionId}
           output={gatePanel.stageOutputs.tester}
           contents={documentContents}
           loadingPaths={documentLoadingPaths}
@@ -106,6 +110,7 @@ export function PipelineGateSidePanel({
         />
       ) : gatePanel.panelKind === 'planner_document' || gatePanel.panelKind === 'developer_document' ? (
         <ReviewDocumentBoard
+          sessionId={sessionId}
           stage={gatePanel.panelKind === 'developer_document' ? 'developer' : 'planner'}
           documents={gatePanel.reviewDocuments}
           contents={documentContents}
@@ -114,6 +119,7 @@ export function PipelineGateSidePanel({
           onApprove={() => onRespond('approve')}
           onReject={(feedback) => onRespond('reject_with_feedback', feedback)}
           onRerun={() => onRespond('rerun_node')}
+          onOpenPatchWorkDir={onOpenPatchWorkDir}
         />
       ) : gatePanel.fallbackGate ? (
         <PipelineGateCard

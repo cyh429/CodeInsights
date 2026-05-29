@@ -629,6 +629,7 @@ export function PipelineView({
               />
             </div>
             <PipelineGateSidePanel
+              sessionId={sessionId}
               session={session}
               state={state}
               pendingGate={pendingGate}

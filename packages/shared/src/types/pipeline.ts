@@ -95,6 +95,21 @@ export interface PipelinePatchWorkDocumentRef {
   revision?: number
 }
 
+/** patch-work 文档单个 revision 的只读快照 */
+export interface PatchWorkDocumentRevision {
+  displayName: string
+  relativePath: string
+  revision: number
+  checksum: string
+  actualChecksum: string
+  content: string
+  createdByNode: PatchWorkNodeKind
+  updatedAt: number
+  accepted: boolean
+  current: boolean
+  checksumMatches: boolean
+}
+
 export interface PipelineExplorerReportRef extends PipelinePatchWorkDocumentRef {
   reportId: string
   title: string
@@ -600,6 +615,10 @@ export interface PipelinePatchWorkReadFileInput extends PipelinePatchWorkSession
   relativePath: string
 }
 
+export interface PipelinePatchWorkRevisionInput extends PipelinePatchWorkReadFileInput {
+  revision: number
+}
+
 export interface PipelineSelectTaskInput extends PipelinePatchWorkSessionInput {
   gateId: string
   selectedReportId: string
@@ -816,6 +835,8 @@ export const PIPELINE_IPC_CHANNELS = {
   READ_ARTIFACT_CONTENT: 'pipeline:read-artifact-content',
   GET_PATCH_WORK_MANIFEST: 'pipeline-v2:get-patch-work-manifest',
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
+  LIST_PATCH_WORK_REVISIONS: 'pipeline-v2:list-patch-work-revisions',
+  READ_PATCH_WORK_REVISION: 'pipeline-v2:read-patch-work-revision',
   LIST_EXPLORER_REPORTS: 'pipeline-v2:list-explorer-reports',
   SELECT_TASK: 'pipeline-v2:select-task',
   RUN_PREFLIGHT: 'pipeline:run-preflight',
@@ -831,6 +852,7 @@ export const PIPELINE_IPC_CHANNELS = {
   GET_SESSION_STATE: 'pipeline:get-session-state',
   OPEN_ARTIFACTS_DIR: 'pipeline:open-artifacts-dir',
   OPEN_PATCH_WORK_DIR: 'pipeline-v2:open-patch-work-dir',
+  OPEN_PATCH_WORK_FILE: 'pipeline-v2:open-patch-work-file',
   SUBSCRIBE_STREAM: 'pipeline:stream:subscribe',
   UNSUBSCRIBE_STREAM: 'pipeline:stream:unsubscribe',
   STREAM_EVENT: 'pipeline:stream:event',

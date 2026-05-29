@@ -119,6 +119,7 @@ import type {
   PipelineGateRequest,
   PipelineGateResponse,
   PipelinePatchWorkReadFileInput,
+  PipelinePatchWorkRevisionInput,
   PipelinePatchWorkSessionInput,
   PipelineSelectTaskInput,
   PipelineSelectTaskResult,
@@ -126,6 +127,7 @@ import type {
   PipelineStreamPayload,
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
+  PatchWorkDocumentRevision,
   PatchWorkManifest,
 } from '@codeinsights/shared'
 import type { UserProfile, AppSettings, QuickTaskSubmitInput, QuickTaskOpenSessionData } from '../types'
@@ -382,6 +384,12 @@ export interface ElectronAPI {
   /** 读取 Pipeline v2 patch-work 文件 */
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<string>
 
+  /** 列出 Pipeline v2 patch-work 文件 revision */
+  listPipelinePatchWorkRevisions: (input: PipelinePatchWorkReadFileInput) => Promise<PatchWorkDocumentRevision[]>
+
+  /** 读取 Pipeline v2 patch-work 文件指定 revision */
+  readPipelinePatchWorkRevision: (input: PipelinePatchWorkRevisionInput) => Promise<PatchWorkDocumentRevision>
+
   /** 列出 Pipeline v2 Explorer 报告 */
   listPipelineExplorerReports: (input: PipelinePatchWorkSessionInput) => Promise<PipelineExplorerReportRef[]>
 
@@ -396,6 +404,9 @@ export interface ElectronAPI {
 
   /** 打开 Pipeline v2 仓库内 patch-work 目录 */
   openPipelinePatchWorkDir: (sessionId: string) => Promise<boolean>
+
+  /** 打开 Pipeline v2 仓库内 patch-work 文件 */
+  openPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<boolean>
 
   /** 更新 Pipeline 标题 */
   updatePipelineTitle: (sessionId: string, title: string) => Promise<PipelineSessionMeta>
@@ -1199,6 +1210,14 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.READ_PATCH_WORK_FILE, input)
   },
 
+  listPipelinePatchWorkRevisions: (input: PipelinePatchWorkReadFileInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.LIST_PATCH_WORK_REVISIONS, input)
+  },
+
+  readPipelinePatchWorkRevision: (input: PipelinePatchWorkRevisionInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.READ_PATCH_WORK_REVISION, input)
+  },
+
   listPipelineExplorerReports: (input: PipelinePatchWorkSessionInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.LIST_EXPLORER_REPORTS, input)
   },
@@ -1217,6 +1236,10 @@ const electronAPI: ElectronAPI = {
 
   openPipelinePatchWorkDir: (sessionId: string) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_DIR, sessionId)
+  },
+
+  openPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_FILE, input)
   },
 
   updatePipelineTitle: (sessionId: string, title: string) => {

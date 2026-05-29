@@ -4,6 +4,7 @@ import type {
   PipelinePatchWorkDocumentRef,
   PipelinePlannerStageOutput,
 } from '@codeinsights/shared'
+import { PatchWorkDocumentWorkbench } from './PatchWorkDocumentWorkbench'
 
 export interface ReviewDocumentItemViewModel {
   displayName: string
@@ -142,6 +143,7 @@ export function buildReviewDocumentBoardViewModel({
 }
 
 export function ReviewDocumentBoard({
+  sessionId,
   stage = 'planner',
   documents,
   contents,
@@ -150,7 +152,9 @@ export function ReviewDocumentBoard({
   onApprove,
   onReject,
   onRerun,
+  onOpenPatchWorkDir,
 }: {
+  sessionId: string
   stage?: ReviewDocumentStage
   documents: PipelinePatchWorkDocumentRef[]
   contents: Map<string, string>
@@ -159,6 +163,7 @@ export function ReviewDocumentBoard({
   onApprove: () => Promise<void>
   onReject: (feedback: string) => Promise<void>
   onRerun: () => Promise<void>
+  onOpenPatchWorkDir?: () => Promise<void>
 }): React.ReactElement {
   const [feedback, setFeedback] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
@@ -219,30 +224,15 @@ export function ReviewDocumentBoard({
           Planner 尚未生成可审核文档。
         </div>
       ) : (
-        <div className="mt-4 space-y-3">
-          {viewModel.documents.map((document) => (
-            <article key={document.relativePath} className="rounded-card bg-background px-3 py-3 text-text-primary shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium">{document.displayName}</div>
-                  <div className="mt-1 truncate font-mono text-[11px] text-text-tertiary">
-                    {document.relativePath}
-                  </div>
-                </div>
-                <div className="flex flex-shrink-0 flex-col items-end gap-1 text-[11px] text-text-tertiary">
-                  <span>{document.revisionLabel}</span>
-                  <span>{document.checksumLabel}</span>
-                </div>
-              </div>
-              <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap rounded-card bg-surface-muted/70 px-3 py-3 text-xs leading-5 text-text-primary">
-                {document.loading
-                  ? '正在读取文档...'
-                  : document.error
-                    ? `读取失败：${document.error}`
-                    : document.content ?? '文档内容暂不可用。'}
-              </pre>
-            </article>
-          ))}
+        <div className="mt-4">
+          <PatchWorkDocumentWorkbench
+            sessionId={sessionId}
+            documents={documents}
+            contents={contents}
+            loadingPaths={loadingPaths}
+            readErrors={readErrors}
+            onOpenPatchWorkDir={onOpenPatchWorkDir}
+          />
         </div>
       )}
 

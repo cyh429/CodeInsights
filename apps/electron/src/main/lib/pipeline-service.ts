@@ -6,6 +6,7 @@ import type {
   PipelineGateRequest,
   PipelineGateResponse,
   PipelinePatchWorkReadFileInput,
+  PipelinePatchWorkRevisionInput,
   PipelinePatchWorkSessionInput,
   PipelineRecordsTailInput,
   PipelineRecordsTailResult,
@@ -33,6 +34,7 @@ import type {
   PipelineLocalCommitSummary,
   PipelineRemoteSubmissionSummary,
   PipelineChangedFileType,
+  PatchWorkDocumentRevision,
   PatchWorkFileKind,
 } from '@codeinsights/shared'
 import { replayPipelineRecords } from '@codeinsights/shared'
@@ -70,10 +72,13 @@ import {
   acceptPatchWorkDocuments,
   assertPatchWorkDocumentsAcceptable,
   initializePatchWork,
+  listPatchWorkDocumentRevisions,
   listPatchWorkExplorerReports,
+  readPatchWorkDocumentRevision,
   readPatchWorkManifestFile,
   readPatchWorkManifest,
   resolvePatchWorkDir,
+  resolvePatchWorkManifestFilePath,
   selectPatchWorkTask,
 } from './pipeline-patch-work-service'
 import { getAgentWorkspace } from './agent-workspace-manager'
@@ -164,6 +169,22 @@ function parsePatchWorkReadFileInput(input: PipelinePatchWorkReadFileInput): Pip
   return {
     sessionId: requireNonEmptyString(value.sessionId, 'sessionId'),
     relativePath: requireNonEmptyString(value.relativePath, 'relativePath'),
+  }
+}
+
+function parsePatchWorkRevisionInput(input: PipelinePatchWorkRevisionInput): PipelinePatchWorkRevisionInput {
+  const value = input as unknown
+  if (!isObject(value)) {
+    throw new Error('Pipeline IPC 参数无效: input')
+  }
+  const revision = typeof value.revision === 'number' ? value.revision : Number.NaN
+  if (!Number.isInteger(revision) || revision < 1) {
+    throw new Error('Pipeline IPC 参数无效: revision')
+  }
+  return {
+    sessionId: requireNonEmptyString(value.sessionId, 'sessionId'),
+    relativePath: requireNonEmptyString(value.relativePath, 'relativePath'),
+    revision,
   }
 }
 
@@ -1805,6 +1826,15 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       return resolvePatchWorkDir(task!.repositoryRoot, { create: false })
     },
 
+    getPatchWorkFilePath(input: PipelinePatchWorkReadFileInput): string {
+      const parsed = parsePatchWorkReadFileInput(input)
+      const task = getContributionTaskForSession(parsed.sessionId, { required: true })
+      return resolvePatchWorkManifestFilePath({
+        repositoryRoot: task!.repositoryRoot,
+        relativePath: parsed.relativePath,
+      })
+    },
+
     async runPreflight(input: PipelineRunPreflightInput): Promise<PipelinePreflightResult> {
       const meta = getPipelineSessionMeta(input.sessionId)
       if (!meta) {
@@ -2024,6 +2054,25 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       return readPatchWorkManifestFile({
         repositoryRoot: task!.repositoryRoot,
         relativePath: parsed.relativePath,
+      })
+    },
+
+    listPatchWorkRevisions(input: PipelinePatchWorkReadFileInput): PatchWorkDocumentRevision[] {
+      const parsed = parsePatchWorkReadFileInput(input)
+      const task = getContributionTaskForSession(parsed.sessionId, { required: true })
+      return listPatchWorkDocumentRevisions({
+        repositoryRoot: task!.repositoryRoot,
+        relativePath: parsed.relativePath,
+      })
+    },
+
+    readPatchWorkRevision(input: PipelinePatchWorkRevisionInput): PatchWorkDocumentRevision {
+      const parsed = parsePatchWorkRevisionInput(input)
+      const task = getContributionTaskForSession(parsed.sessionId, { required: true })
+      return readPatchWorkDocumentRevision({
+        repositoryRoot: task!.repositoryRoot,
+        relativePath: parsed.relativePath,
+        revision: parsed.revision,
       })
     },
 

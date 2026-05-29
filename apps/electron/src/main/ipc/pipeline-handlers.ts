@@ -6,6 +6,7 @@ import type {
   PipelineGateRequest,
   PipelineGateResponse,
   PipelinePatchWorkReadFileInput,
+  PipelinePatchWorkRevisionInput,
   PipelinePatchWorkSessionInput,
   PipelineRecord,
   PipelineRecordsSearchInput,
@@ -21,6 +22,7 @@ import type {
   PipelineStartInput,
   PipelineStateSnapshot,
   PipelineVersion,
+  PatchWorkDocumentRevision,
   PatchWorkManifest,
 } from '@codeinsights/shared'
 import { getPipelineService } from '../lib/pipeline-service'
@@ -97,6 +99,20 @@ export function registerPipelineIpcHandlers(): void {
   )
 
   ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.LIST_PATCH_WORK_REVISIONS,
+    async (_event, input: PipelinePatchWorkReadFileInput): Promise<PatchWorkDocumentRevision[]> => {
+      return getPipelineService().listPatchWorkRevisions(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.READ_PATCH_WORK_REVISION,
+    async (_event, input: PipelinePatchWorkRevisionInput): Promise<PatchWorkDocumentRevision> => {
+      return getPipelineService().readPatchWorkRevision(input)
+    }
+  )
+
+  ipcMain.handle(
     PIPELINE_IPC_CHANNELS.LIST_EXPLORER_REPORTS,
     async (_event, input: PipelinePatchWorkSessionInput): Promise<PipelineExplorerReportRef[]> => {
       return getPipelineService().listExplorerReports(input)
@@ -127,6 +143,17 @@ export function registerPipelineIpcHandlers(): void {
       const errorMessage = await shell.openPath(getPipelineService().getPatchWorkDir(sessionId))
       if (errorMessage) {
         throw new Error(`打开 patch-work 目录失败: ${errorMessage}`)
+      }
+      return errorMessage.length === 0
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_FILE,
+    async (_event, input: PipelinePatchWorkReadFileInput): Promise<boolean> => {
+      const errorMessage = await shell.openPath(getPipelineService().getPatchWorkFilePath(input))
+      if (errorMessage) {
+        throw new Error(`打开 patch-work 文件失败: ${errorMessage}`)
       }
       return errorMessage.length === 0
     }

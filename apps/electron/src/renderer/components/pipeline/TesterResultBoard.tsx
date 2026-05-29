@@ -6,6 +6,7 @@ import type {
   PipelineTesterStageOutput,
   PipelineTestEvidence,
 } from '@codeinsights/shared'
+import { PatchWorkDocumentWorkbench } from './PatchWorkDocumentWorkbench'
 
 export interface TesterPatchWorkDocumentViewModel {
   displayName: string
@@ -210,6 +211,7 @@ function toneClass(tone: TesterResultBoardViewModel['statusTone']): string {
 }
 
 export function TesterResultBoard({
+  sessionId,
   output,
   contents,
   loadingPaths,
@@ -220,6 +222,7 @@ export function TesterResultBoard({
   onRerun,
   onOpenPatchWorkDir,
 }: {
+  sessionId: string
   output: PipelineTesterStageOutput | null | undefined
   contents: Map<string, string>
   loadingPaths: Set<string>
@@ -341,30 +344,15 @@ export function TesterResultBoard({
         </div>
       ) : null}
 
-      <div className="mt-4 space-y-3">
-        {viewModel.documents.map((document) => (
-          <article key={document.relativePath} className="rounded-card bg-background px-3 py-3 text-text-primary shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-medium">{document.displayName}</div>
-                <div className="mt-1 truncate font-mono text-[11px] text-text-tertiary">
-                  {document.relativePath}
-                </div>
-              </div>
-              <div className="flex flex-shrink-0 flex-col items-end gap-1 text-[11px] text-text-tertiary">
-                <span>{document.revisionLabel}</span>
-                <span>{document.checksumLabel}</span>
-              </div>
-            </div>
-            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-card bg-surface-muted/70 px-3 py-3 text-xs leading-5 text-text-primary">
-              {document.loading
-                ? '正在读取 Tester 产物...'
-                : document.error
-                  ? `读取失败：${document.error}`
-                  : document.content}
-            </pre>
-          </article>
-        ))}
+      <div className="mt-4">
+        <PatchWorkDocumentWorkbench
+          sessionId={sessionId}
+          documents={collectTesterPatchWorkRefs(output)}
+          contents={contents}
+          loadingPaths={loadingPaths}
+          readErrors={readErrors}
+          onOpenPatchWorkDir={onOpenPatchWorkDir}
+        />
       </div>
 
       <label className="mt-4 block text-xs font-medium text-emerald-700 dark:text-emerald-200" htmlFor="pipeline-tester-feedback">

@@ -6,6 +6,7 @@ import type {
   PipelineTestEvidence,
   PipelineTesterStageOutput,
 } from '@codeinsights/shared'
+import { PatchWorkDocumentWorkbench } from './PatchWorkDocumentWorkbench'
 
 interface CommitterDocumentViewModel {
   displayName: string
@@ -278,6 +279,7 @@ function toneClass(tone: CommitterPanelViewModel['statusTone']): string {
 }
 
 export function CommitterPanel({
+  sessionId,
   output,
   testerOutput,
   contents,
@@ -290,6 +292,7 @@ export function CommitterPanel({
   onRerun,
   onOpenPatchWorkDir,
 }: {
+  sessionId: string
   output: PipelineCommitterStageOutput | null | undefined
   testerOutput: PipelineTesterStageOutput | null | undefined
   contents: Map<string, string>
@@ -448,30 +451,15 @@ export function CommitterPanel({
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
-        {viewModel.documents.map((document) => (
-          <article key={document.relativePath} className="rounded-card bg-background px-3 py-3 text-text-primary shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-medium">{document.displayName}</div>
-                <div className="mt-1 truncate font-mono text-[11px] text-text-tertiary">
-                  {document.relativePath}
-                </div>
-              </div>
-              <div className="flex flex-shrink-0 flex-col items-end gap-1 text-[11px] text-text-tertiary">
-                <span>{document.revisionLabel}</span>
-                <span>{document.checksumLabel}</span>
-              </div>
-            </div>
-            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-card bg-surface-muted/70 px-3 py-3 text-xs leading-5 text-text-primary">
-              {document.loading
-                ? '正在读取提交材料...'
-                : document.error
-                  ? `读取失败：${document.error}`
-                  : document.content}
-            </pre>
-          </article>
-        ))}
+      <div className="mt-4">
+        <PatchWorkDocumentWorkbench
+          sessionId={sessionId}
+          documents={collectCommitterPatchWorkRefs(output)}
+          contents={contents}
+          loadingPaths={loadingPaths}
+          readErrors={readErrors}
+          onOpenPatchWorkDir={onOpenPatchWorkDir}
+        />
       </div>
 
       <label className="mt-4 block text-xs font-semibold text-status-running-fg" htmlFor="pipeline-committer-feedback">
