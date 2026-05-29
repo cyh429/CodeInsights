@@ -26,13 +26,20 @@ import {
   getPipelineLiveOutput,
   hasPipelineLiveOutputNode,
   pipelineLiveOutputAtom,
+  pipelinePreflightStateMapAtom,
   pipelineRecordRefreshAtom,
   pipelineSessionStateMapAtom,
   pipelineSessionsAtom,
   pipelineStreamErrorsAtom,
 } from '@/atoms/pipeline-atoms'
 import { settingsOpenAtom, settingsTabAtom } from '@/atoms/settings-tab'
-import { resolvePipelineRunConfig, type PipelinePreflightError } from './pipeline-preflight'
+import {
+  createPipelinePreflightAcknowledgement,
+  isPipelinePreflightAcknowledged,
+  resolvePipelineRunConfig,
+  shouldBlockPipelineStartForPreflight,
+  type PipelinePreflightError,
+} from './pipeline-preflight'
 import { ExplorerTaskBoard } from './ExplorerTaskBoard'
 import { PipelineComposer } from './PipelineComposer'
 import { PipelineFailureCard } from './PipelineFailureCard'
@@ -60,6 +67,7 @@ import {
   CommitterPanel,
   collectCommitterPatchWorkRefs,
 } from './CommitterPanel'
+import { PipelinePreflightPanel } from './PipelinePreflightPanel'
 
 export function PipelineView({
   sessionId,
@@ -72,6 +80,7 @@ export function PipelineView({
   const refreshMap = useAtomValue(pipelineRecordRefreshAtom)
   const errorMap = useAtomValue(pipelineStreamErrorsAtom)
   const liveOutputMap = useAtomValue(pipelineLiveOutputAtom)
+  const preflightStateMap = useAtomValue(pipelinePreflightStateMapAtom)
   const channels = useAtomValue(channelsAtom)
   const workspaces = useAtomValue(agentWorkspacesAtom)
   const fallbackChannelId = useAtomValue(agentChannelIdAtom)
@@ -84,6 +93,7 @@ export function PipelineView({
   const setErrors = useSetAtom(pipelineStreamErrorsAtom)
   const setRecordRefresh = useSetAtom(pipelineRecordRefreshAtom)
   const setLiveOutput = useSetAtom(pipelineLiveOutputAtom)
+  const setPreflightStateMap = useSetAtom(pipelinePreflightStateMapAtom)
   const setSettingsOpen = useSetAtom(settingsOpenAtom)
   const setSettingsTab = useSetAtom(settingsTabAtom)
   const [records, setRecords] = React.useState<PipelineRecord[]>([])
@@ -114,7 +124,17 @@ export function PipelineView({
   const pendingGate = pendingGates.get(sessionId) ?? session?.pendingGate ?? null
   const refreshVersion = refreshMap.get(sessionId) ?? 0
   const error = errorMap.get(sessionId)
+  const repositoryPreflight = preflightStateMap.get(sessionId) ?? {
+    result: null,
+    acknowledgement: null,
+    loading: false,
+    error: null,
+  }
   const running = state?.status === 'running' || state?.status === 'waiting_human'
+  const repositoryPreflightBlocksStart = shouldBlockPipelineStartForPreflight(
+    repositoryPreflight.result,
+    repositoryPreflight.acknowledgement,
+  )
   const currentTask = React.useMemo(() => {
     return [...records].reverse().find((record) => record.type === 'user_input')?.content
   }, [records])
@@ -343,7 +363,7 @@ export function PipelineView({
     }
   }, [reviewDocumentKey, reviewDocuments, sessionId, showPatchWorkDocumentRead])
 
-  const handleStart = React.useCallback(async (userInput: string): Promise<void> => {
+  const handleStart = React.useCallback(async (userInput: string): Promise<{ started: boolean }> => {
     const resolved = resolvePipelineRunConfig({
       sessionChannelId: session?.channelId,
       sessionWorkspaceId: session?.workspaceId,
@@ -355,10 +375,64 @@ export function PipelineView({
     })
     if (!resolved.ok) {
       setPreflightError(resolved.error)
-      return
+      return { started: false }
     }
+    setPreflightError(null)
 
     const pipelineVersion = session?.version ?? state?.version
+    let preflightAcknowledgement = repositoryPreflight.acknowledgement
+    if (pipelineVersion === 2) {
+      setPreflightStateMap((prev) => {
+        const next = new Map(prev)
+        next.set(sessionId, {
+          result: repositoryPreflight.result,
+          acknowledgement: repositoryPreflight.acknowledgement,
+          loading: true,
+          error: null,
+          updatedAt: Date.now(),
+        })
+        return next
+      })
+
+      try {
+        const result = await window.electronAPI.runPipelinePreflight({
+          sessionId,
+          workspaceId: resolved.config.workspaceId,
+        })
+        preflightAcknowledgement = isPipelinePreflightAcknowledged(result, preflightAcknowledgement)
+          ? preflightAcknowledgement
+          : null
+        setPreflightStateMap((prev) => {
+          const next = new Map(prev)
+          next.set(sessionId, {
+            result,
+            acknowledgement: preflightAcknowledgement ?? null,
+            loading: false,
+            error: null,
+            updatedAt: Date.now(),
+          })
+          return next
+        })
+        if (shouldBlockPipelineStartForPreflight(result, preflightAcknowledgement)) {
+          return { started: false }
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Pipeline preflight 检查失败'
+        setPreflightStateMap((prev) => {
+          const next = new Map(prev)
+          next.set(sessionId, {
+            result: null,
+            acknowledgement: null,
+            loading: false,
+            error: message,
+            updatedAt: Date.now(),
+          })
+          return next
+        })
+        return { started: false }
+      }
+    }
+
     const optimisticState: PipelineStateSnapshot = {
       sessionId,
       ...(pipelineVersion ? { version: pipelineVersion } : {}),
@@ -408,6 +482,7 @@ export function PipelineView({
       channelId: resolved.config.channelId,
       workspaceId: resolved.config.workspaceId,
       threadId: session?.threadId,
+      preflightAcknowledgement: preflightAcknowledgement ?? undefined,
     }).catch((error) => {
       console.error('[PipelineView] 启动失败:', error)
       const message = error instanceof Error ? error.message : '启动 Pipeline 失败'
@@ -445,7 +520,85 @@ export function PipelineView({
           : item
       )))
     })
-  }, [channels, fallbackChannelId, fallbackWorkspaceId, pipelineCodexChannelId, session, sessionId, setDraftSessionIds, setErrors, setPendingGates, setSessions, setStateMap, state, workspaces])
+    return { started: true }
+  }, [channels, fallbackChannelId, fallbackWorkspaceId, pipelineCodexChannelId, repositoryPreflight.acknowledgement, repositoryPreflight.result, session, sessionId, setDraftSessionIds, setErrors, setPendingGates, setPreflightStateMap, setSessions, setStateMap, state, workspaces])
+
+  const handleRefreshRepositoryPreflight = React.useCallback(async (): Promise<void> => {
+    const resolved = resolvePipelineRunConfig({
+      sessionChannelId: session?.channelId,
+      sessionWorkspaceId: session?.workspaceId,
+      fallbackChannelId: fallbackChannelId ?? undefined,
+      fallbackWorkspaceId: fallbackWorkspaceId ?? undefined,
+      pipelineCodexChannelId: pipelineCodexChannelId ?? undefined,
+      channels,
+      workspaces,
+    })
+    if (!resolved.ok) {
+      setPreflightError(resolved.error)
+      return
+    }
+    setPreflightError(null)
+
+    setPreflightStateMap((prev) => {
+      const next = new Map(prev)
+      next.set(sessionId, {
+        result: repositoryPreflight.result,
+        acknowledgement: repositoryPreflight.acknowledgement,
+        loading: true,
+        error: null,
+        updatedAt: Date.now(),
+      })
+      return next
+    })
+
+    try {
+      const result = await window.electronAPI.runPipelinePreflight({
+        sessionId,
+        workspaceId: resolved.config.workspaceId,
+      })
+      const acknowledgement = isPipelinePreflightAcknowledged(result, repositoryPreflight.acknowledgement)
+        ? repositoryPreflight.acknowledgement
+        : null
+      setPreflightStateMap((prev) => {
+        const next = new Map(prev)
+        next.set(sessionId, {
+          result,
+          acknowledgement,
+          loading: false,
+          error: null,
+          updatedAt: Date.now(),
+        })
+        return next
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Pipeline preflight 检查失败'
+      setPreflightStateMap((prev) => {
+        const next = new Map(prev)
+        next.set(sessionId, {
+          result: null,
+          acknowledgement: null,
+          loading: false,
+          error: message,
+          updatedAt: Date.now(),
+        })
+        return next
+      })
+    }
+  }, [channels, fallbackChannelId, fallbackWorkspaceId, pipelineCodexChannelId, repositoryPreflight, session, sessionId, setPreflightStateMap, workspaces])
+
+  const handleAcknowledgePreflightWarnings = React.useCallback((): void => {
+    if (!repositoryPreflight.result) return
+    const acknowledgement = createPipelinePreflightAcknowledgement(repositoryPreflight.result)
+    setPreflightStateMap((prev) => {
+      const next = new Map(prev)
+      next.set(sessionId, {
+        ...repositoryPreflight,
+        acknowledgement,
+        updatedAt: Date.now(),
+      })
+      return next
+    })
+  }, [repositoryPreflight, sessionId, setPreflightStateMap])
 
   const applyStoppedState = React.useCallback((stoppedState: PipelineStateSnapshot): void => {
     setPendingGates((prev) => {
@@ -666,6 +819,17 @@ export function PipelineView({
             </div>
           ) : null}
 
+          {repositoryPreflight.loading || repositoryPreflight.result || repositoryPreflight.error ? (
+            <PipelinePreflightPanel
+              result={repositoryPreflight.result}
+              acknowledgement={repositoryPreflight.acknowledgement}
+              loading={repositoryPreflight.loading}
+              error={repositoryPreflight.error}
+              onAcknowledgeWarnings={handleAcknowledgePreflightWarnings}
+              onRefreshPreflight={handleRefreshRepositoryPreflight}
+            />
+          ) : null}
+
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="min-w-0">
               <PipelineRecords
@@ -750,6 +914,7 @@ export function PipelineView({
               ) : null}
               <PipelineComposer
                 disabled={running}
+                startDisabled={repositoryPreflightBlocksStart}
                 currentTask={currentTask}
                 status={state?.status ?? session?.status}
                 onSubmit={handleStart}

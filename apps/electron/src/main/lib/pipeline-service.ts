@@ -18,6 +18,11 @@ import type {
   PipelineStartInput,
   PipelineStateSnapshot,
   PipelineVersion,
+  PipelinePreflightAcknowledgement,
+  PipelinePreflightInput,
+  PipelinePreflightIssueCode,
+  PipelinePreflightResult,
+  PipelineRunPreflightInput,
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
   PipelineStreamPayload,
@@ -79,6 +84,19 @@ import {
   PipelineRemoteSubmissionError,
   redactSecretText,
 } from './pipeline-git-submission-service'
+import {
+  redactPreflightDiagnosticText,
+  redactPreflightRemoteUrl,
+  runPipelinePreflight,
+} from './pipeline-preflight-service'
+
+interface RunSessionPreflightInput {
+  sessionId: string
+  workspaceId?: string
+  requireClaudeCli?: boolean
+  requireCodexCli?: boolean
+  requireGit?: boolean
+}
 
 export interface PipelineServiceCallbacks {
   onEvent?: (payload: PipelineStreamPayload) => void
@@ -102,6 +120,7 @@ interface CreatePipelineServiceOptions {
   gateService?: PipelineHumanGateService
   checkpointer?: PipelineCheckpointer
   createRemoteSubmission?: typeof createRemotePipelineSubmission
+  runRepositoryPreflight?: (input: PipelinePreflightInput) => Promise<PipelinePreflightResult>
 }
 
 const COMMITTER_SUBMISSION_DOCUMENT_KINDS: PatchWorkFileKind[] = ['commit_doc', 'pr_doc']
@@ -192,6 +211,7 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
   const activeRunners = new Map<string, PipelineNodeRunner>()
   const activeCallbacks = new Map<string, PipelineServiceCallbacks | undefined>()
   const remoteSubmissionRunner = options.createRemoteSubmission ?? createRemotePipelineSubmission
+  const repositoryPreflightRunner = options.runRepositoryPreflight ?? runPipelinePreflight
   let reconcileSessionsPromise: Promise<PipelineSessionMeta[]> | null = null
 
   function emitEvent(
@@ -366,6 +386,185 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       throw new Error(`未找到 Pipeline 贡献任务: ${sessionId}`)
     }
     return task
+  }
+
+  function resolvePipelineRepositoryRoot(
+    sessionId: string,
+    workspaceId: string | undefined,
+  ): string {
+    const existingTask = getContributionTaskByPipelineSessionId(sessionId)
+    if (existingTask) {
+      return existingTask.repositoryRoot
+    }
+
+    if (!workspaceId) {
+      throw new Error('Pipeline preflight 需要先选择工作区。')
+    }
+
+    const workspace = getAgentWorkspace(workspaceId)
+    if (!workspace) {
+      throw new Error(`Pipeline preflight 工作区不存在: ${workspaceId}`)
+    }
+
+    return getAgentSessionWorkspacePath(workspace.slug, sessionId)
+  }
+
+  async function runSessionPreflight(
+    meta: PipelineSessionMeta,
+    input: RunSessionPreflightInput,
+  ): Promise<PipelinePreflightResult> {
+    const repositoryRoot = resolvePipelineRepositoryRoot(
+      meta.id,
+      input.workspaceId ?? meta.workspaceId,
+    )
+
+    return repositoryPreflightRunner({
+      repositoryRoot,
+      requireGit: input.requireGit,
+      requireClaudeCli: input.requireClaudeCli,
+      requireCodexCli: input.requireCodexCli,
+    })
+  }
+
+  function issueCodes(issues: { code: PipelinePreflightIssueCode }[]): PipelinePreflightIssueCode[] {
+    return issues.map((issue) => issue.code)
+  }
+
+  function validatePreflightAcknowledgement(
+    preflight: PipelinePreflightResult,
+    acknowledgement?: PipelinePreflightAcknowledgement,
+  ): PipelinePreflightAcknowledgement | undefined {
+    if (preflight.blockers.length > 0) {
+      return undefined
+    }
+    if (preflight.warnings.length === 0) {
+      return undefined
+    }
+    if (!acknowledgement || acknowledgement.fingerprint !== preflight.fingerprint) {
+      throw new Error('Pipeline preflight warning 需要用户确认')
+    }
+
+    const warningCodes = new Set(issueCodes(preflight.warnings))
+    const acceptedCodes = new Set(acknowledgement.acceptedWarningCodes)
+    if (acceptedCodes.size !== acknowledgement.acceptedWarningCodes.length) {
+      throw new Error('Pipeline preflight warning 确认包含重复 code，请刷新后重试')
+    }
+    for (const code of acceptedCodes) {
+      if (!warningCodes.has(code)) {
+        throw new Error(`Pipeline preflight warning 确认包含未知 code: ${code}`)
+      }
+    }
+    for (const code of warningCodes) {
+      if (!acceptedCodes.has(code)) {
+        throw new Error('Pipeline preflight warning 需要用户确认')
+      }
+    }
+    return {
+      fingerprint: acknowledgement.fingerprint,
+      acceptedWarningCodes: [...acknowledgement.acceptedWarningCodes],
+      acknowledgedAt: Date.now(),
+    }
+  }
+
+  function appendPreflightFailureRecord(
+    meta: PipelineSessionMeta,
+    message: string,
+  ): void {
+    appendPipelineRecord(meta.id, {
+      id: `${meta.id}-preflight-error-${Date.now()}`,
+      sessionId: meta.id,
+      type: 'error',
+      node: meta.currentNode,
+      error: message,
+      createdAt: Date.now(),
+    })
+    updatePipelineSessionMeta(meta.id, {
+      status: 'node_failed',
+      pendingGate: null,
+    })
+    appendStatusRecord(meta.id, 'node_failed', message)
+  }
+
+  function appendPreflightContributionEvent(
+    sessionId: string,
+    preflight: PipelinePreflightResult,
+    acknowledgement?: PipelinePreflightAcknowledgement,
+  ): void {
+    const task = getContributionTaskByPipelineSessionId(sessionId)
+    if (!task) return
+
+    appendContributionTaskEvent(task.id, {
+      pipelineSessionId: sessionId,
+      type: 'preflight_completed',
+      payload: {
+        ok: preflight.ok,
+        fingerprint: preflight.fingerprint,
+        checkedAt: preflight.checkedAt,
+        warningCodes: issueCodes(preflight.warnings),
+        blockerCodes: issueCodes(preflight.blockers),
+        acknowledgedWarningCodes: acknowledgement?.acceptedWarningCodes,
+        acknowledgedAt: acknowledgement?.acknowledgedAt,
+        repository: {
+          root: preflight.repository.root,
+          currentBranch: preflight.repository.currentBranch,
+          baseBranch: preflight.repository.baseBranch,
+          remoteUrl: preflight.repository.remoteUrl
+            ? redactPreflightRemoteUrl(preflight.repository.remoteUrl)
+            : undefined,
+          hasUncommittedChanges: preflight.repository.hasUncommittedChanges,
+          hasConflicts: preflight.repository.hasConflicts,
+        },
+        packageManager: preflight.packageManager,
+        runtimes: preflight.runtimes.map((runtime) => ({
+          kind: runtime.kind,
+          available: runtime.available,
+          version: runtime.version,
+          path: runtime.path,
+          error: runtime.error ? redactPreflightDiagnosticText(redactSecretText(runtime.error)) : undefined,
+        })),
+      },
+    })
+  }
+
+  async function assertStartPreflight(
+    meta: PipelineSessionMeta,
+    workspaceId: string | undefined,
+    acknowledgement?: PipelinePreflightAcknowledgement,
+  ): Promise<{
+    preflight: PipelinePreflightResult
+    acknowledgement?: PipelinePreflightAcknowledgement
+  } | null> {
+    if (meta.version !== 2) {
+      return null
+    }
+
+    const preflight = await runSessionPreflight(meta, {
+      sessionId: meta.id,
+      workspaceId,
+      requireGit: true,
+      requireClaudeCli: true,
+      requireCodexCli: true,
+    })
+
+    if (preflight.blockers.length > 0) {
+      const message = `Pipeline preflight 未通过：${preflight.blockers.map((issue) => issue.message).join('；')}`
+      appendPreflightFailureRecord(meta, message)
+      throw new Error(message)
+    }
+
+    let acceptedAcknowledgement: PipelinePreflightAcknowledgement | undefined
+    try {
+      acceptedAcknowledgement = validatePreflightAcknowledgement(preflight, acknowledgement)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Pipeline preflight warning 需要用户确认'
+      appendPreflightFailureRecord(meta, message)
+      throw error
+    }
+
+    return {
+      preflight,
+      acknowledgement: acceptedAcknowledgement,
+    }
   }
 
   function patchTextContainsPatchWorkFile(patch: string): boolean {
@@ -1606,6 +1805,20 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       return resolvePatchWorkDir(task!.repositoryRoot, { create: false })
     },
 
+    async runPreflight(input: PipelineRunPreflightInput): Promise<PipelinePreflightResult> {
+      const meta = getPipelineSessionMeta(input.sessionId)
+      if (!meta) {
+        throw new Error(`未找到 Pipeline 会话: ${input.sessionId}`)
+      }
+      return runSessionPreflight(meta, {
+        sessionId: meta.id,
+        workspaceId: input.workspaceId ?? meta.workspaceId,
+        requireGit: true,
+        requireClaudeCli: true,
+        requireCodexCli: meta.version === 2,
+      })
+    },
+
     togglePin(sessionId: string): PipelineSessionMeta {
       const meta = getPipelineSessionMeta(sessionId)
       if (!meta) {
@@ -1639,6 +1852,13 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
         throw new Error(`未找到 Pipeline 会话: ${input.sessionId}`)
       }
 
+      const effectiveWorkspaceId = input.workspaceId ?? meta.workspaceId
+      const startPreflight = await assertStartPreflight(
+        meta,
+        effectiveWorkspaceId,
+        input.preflightAcknowledgement,
+      )
+
       appendPipelineRecord(meta.id, {
         id: `${meta.id}-user-${Date.now()}`,
         sessionId: meta.id,
@@ -1647,8 +1867,14 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
         createdAt: Date.now(),
       })
 
-      const effectiveWorkspaceId = input.workspaceId ?? meta.workspaceId
       ensureV2ContributionTask(meta, effectiveWorkspaceId)
+      if (startPreflight) {
+        appendPreflightContributionEvent(
+          meta.id,
+          startPreflight.preflight,
+          startPreflight.acknowledgement,
+        )
+      }
 
       updatePipelineSessionMeta(meta.id, {
         channelId: input.channelId ?? meta.channelId,

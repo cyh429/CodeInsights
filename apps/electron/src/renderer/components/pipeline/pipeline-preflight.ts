@@ -1,4 +1,9 @@
-import type { AgentWorkspace, Channel } from '@codeinsights/shared'
+import type {
+  AgentWorkspace,
+  Channel,
+  PipelinePreflightAcknowledgement,
+  PipelinePreflightResult,
+} from '@codeinsights/shared'
 import { isAgentCompatibleProvider } from '@codeinsights/shared'
 import type { SettingsTab } from '@/atoms/settings-tab'
 
@@ -137,4 +142,35 @@ export function resolvePipelineRunConfig(
       workspaceId,
     },
   }
+}
+
+export function createPipelinePreflightAcknowledgement(
+  result: PipelinePreflightResult,
+  acknowledgedAt = Date.now(),
+): PipelinePreflightAcknowledgement {
+  return {
+    fingerprint: result.fingerprint,
+    acceptedWarningCodes: result.warnings.map((warning) => warning.code),
+    acknowledgedAt,
+  }
+}
+
+export function isPipelinePreflightAcknowledged(
+  result: PipelinePreflightResult,
+  acknowledgement: PipelinePreflightAcknowledgement | null | undefined,
+): boolean {
+  if (result.warnings.length === 0) return true
+  if (!acknowledgement || acknowledgement.fingerprint !== result.fingerprint) return false
+
+  const acceptedCodes = new Set(acknowledgement.acceptedWarningCodes)
+  return result.warnings.every((warning) => acceptedCodes.has(warning.code))
+}
+
+export function shouldBlockPipelineStartForPreflight(
+  result: PipelinePreflightResult | null | undefined,
+  acknowledgement: PipelinePreflightAcknowledgement | null | undefined,
+): boolean {
+  if (!result) return false
+  if (result.blockers.length > 0) return true
+  return result.warnings.length > 0 && !isPipelinePreflightAcknowledged(result, acknowledgement)
 }

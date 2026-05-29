@@ -15,6 +15,8 @@ import type {
   PipelineResumeInput,
   PipelineSelectTaskInput,
   PipelineSelectTaskResult,
+  PipelineRunPreflightInput,
+  PipelinePreflightResult,
   PipelineSessionMeta,
   PipelineStartInput,
   PipelineStateSnapshot,
@@ -70,6 +72,13 @@ export function registerPipelineIpcHandlers(): void {
     PIPELINE_IPC_CHANNELS.READ_ARTIFACT_CONTENT,
     async (_event, input: PipelineArtifactContentInput): Promise<string> => {
       return getPipelineService().readArtifactContent(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT,
+    async (_event, input: PipelineRunPreflightInput): Promise<PipelinePreflightResult> => {
+      return getPipelineService().runPreflight(input)
     }
   )
 

@@ -112,6 +112,8 @@ import type {
   PipelineRecordsTailResult,
   PipelineRecordsSearchInput,
   PipelineRecordsSearchResult,
+  PipelineRunPreflightInput,
+  PipelinePreflightResult,
   PipelineStartInput,
   PipelineResumeInput,
   PipelineGateRequest,
@@ -385,6 +387,9 @@ export interface ElectronAPI {
 
   /** 选择 Pipeline v2 Explorer report 作为任务 */
   selectPipelineTask: (input: PipelineSelectTaskInput) => Promise<PipelineSelectTaskResult>
+
+  /** 执行 Pipeline 启动前仓库检查 */
+  runPipelinePreflight: (input: PipelineRunPreflightInput) => Promise<PipelinePreflightResult>
 
   /** 打开 Pipeline 产物目录 */
   openPipelineArtifactsDir: (sessionId: string) => Promise<boolean>
@@ -1200,6 +1205,10 @@ const electronAPI: ElectronAPI = {
 
   selectPipelineTask: (input: PipelineSelectTaskInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.SELECT_TASK, input)
+  },
+
+  runPipelinePreflight: (input: PipelineRunPreflightInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT, input)
   },
 
   openPipelineArtifactsDir: (sessionId: string) => {

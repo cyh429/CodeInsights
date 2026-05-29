@@ -2,6 +2,8 @@ import { atom } from 'jotai'
 import type {
   PipelineGateRequest,
   PipelineNodeKind,
+  PipelinePreflightAcknowledgement,
+  PipelinePreflightResult,
   PipelineSessionMeta,
   PipelineStateSnapshot,
   PipelineStreamErrorPayload,
@@ -26,6 +28,15 @@ export const pipelineRecordRefreshAtom = atom<Map<string, number>>(new Map())
 export const pipelineSessionStateMapAtom = atom<Map<string, PipelineStateSnapshot>>(new Map())
 export const pipelinePendingGatesAtom = atom<Map<string, PipelineGateRequest>>(new Map())
 export const pipelineStreamErrorsAtom = atom<Map<string, string>>(new Map())
+export interface PipelinePreflightState {
+  result: PipelinePreflightResult | null
+  acknowledgement: PipelinePreflightAcknowledgement | null
+  loading: boolean
+  error: string | null
+  updatedAt?: number
+}
+
+export const pipelinePreflightStateMapAtom = atom<Map<string, PipelinePreflightState>>(new Map())
 export type PipelineLiveOutputState = Map<string, Map<PipelineNodeKind, string>>
 export const pipelineLiveOutputAtom = atom<PipelineLiveOutputState>(new Map())
 

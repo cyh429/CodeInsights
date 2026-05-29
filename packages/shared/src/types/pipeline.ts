@@ -487,6 +487,8 @@ export interface PipelinePreflightRepositoryStatus {
   currentBranch?: string
   baseBranch?: string
   remoteUrl?: string
+  headCommit?: string
+  statusDigest?: string
   hasUncommittedChanges: boolean
   hasConflicts: boolean
 }
@@ -498,6 +500,17 @@ export interface PipelinePreflightInput {
   requireGit?: boolean
 }
 
+export interface PipelineRunPreflightInput {
+  sessionId: string
+  workspaceId?: string
+}
+
+export interface PipelinePreflightAcknowledgement {
+  fingerprint: string
+  acceptedWarningCodes: PipelinePreflightIssueCode[]
+  acknowledgedAt: number
+}
+
 export interface PipelinePreflightResult {
   ok: boolean
   repository: PipelinePreflightRepositoryStatus
@@ -505,6 +518,8 @@ export interface PipelinePreflightResult {
   packageManager: PipelinePackageManager
   warnings: PipelinePreflightIssue[]
   blockers: PipelinePreflightIssue[]
+  checkedAt: number
+  fingerprint: string
 }
 
 /** 启动 Pipeline 输入 */
@@ -514,6 +529,7 @@ export interface PipelineStartInput {
   channelId?: string
   workspaceId?: string
   threadId?: string
+  preflightAcknowledgement?: PipelinePreflightAcknowledgement
 }
 
 /** 恢复 Pipeline 输入 */
@@ -802,6 +818,7 @@ export const PIPELINE_IPC_CHANNELS = {
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
   LIST_EXPLORER_REPORTS: 'pipeline-v2:list-explorer-reports',
   SELECT_TASK: 'pipeline-v2:select-task',
+  RUN_PREFLIGHT: 'pipeline:run-preflight',
   UPDATE_TITLE: 'pipeline:update-title',
   DELETE_SESSION: 'pipeline:delete-session',
   TOGGLE_PIN: 'pipeline:toggle-pin',

@@ -9,8 +9,8 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
-> 当前结论：Phase 0 清理与对齐已完成、已提交并通过聚焦验证；Phase 1-6 尚未开始。下次正式开发应从 **Phase 1：Preflight 主路径** 开始。
+> 最新开发基线：Phase 1 本轮提交（提交完成后以 `git log -5 --oneline` 中的 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 为准）；上一稳定基线：`30399335 docs(pipeline): 同步 Phase 0 后续开发状态` / `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径已完成并通过聚焦验证；Phase 2-6 尚未开始。下次正式开发应从 **Phase 2：PipelineView 拆分** 开始。
 
 ### 已完成
 
@@ -22,16 +22,23 @@
   - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
   - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
   - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
+  - Phase 1 本轮提交：`feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`（提交完成后用 `git log -5 --oneline` 确认真实 hash）
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
   - `pipeline-record-view-model` artifact group 排序已显式使用 `getPipelineNodeOrder(version)`，v2 `committer` 稳定排在 `tester` 后。
   - 已新增 `openPipelinePatchWorkDir(sessionId)` shared IPC / preload / main handler / service / Tester / Committer UI 入口；Renderer 只传 `sessionId`，main 端重新解析 repo 内 `patch-work/`。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.50`、`@codeinsights/electron` 到 `0.0.122`，并同步 `bun.lock`。
+- [x] Phase 1：Preflight 主路径。
+  - 已新增 repository preflight shared 契约 / IPC / preload API：`PipelineRunPreflightInput`、`PipelinePreflightAcknowledgement`、`RUN_PREFLIGHT`、`window.electronAPI.runPipelinePreflight()`。
+  - `runPipelinePreflight()` 已返回 `checkedAt` / `fingerprint`，fingerprint 纳入 HEAD / dirty status digest，并对 credentialed remote URL、query/hash token、Authorization 和 runtime diagnostic 做脱敏。
+  - `PipelineService.start()` 已对 v2 会话服务端复验 preflight；blocker 和未确认 / 过期 warning acknowledgement 都会阻断 Graph invoke。
+  - Renderer 启动前展示 `PipelinePreflightPanel`，blocker 禁止启动但可重新检查，warning 需用户明确点击“记录风险继续”。
+  - warning acknowledgement 匹配服务端最新 fingerprint / warning code 后，会由服务端重写审计时间并写入 `preflight_completed` ContributionTask event。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.51`、`@codeinsights/electron` 到 `0.0.123`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 1：Preflight 主路径。
 - [ ] Phase 2：PipelineView 拆分。
 - [ ] Phase 3：Patch-work Document Workbench。
 - [ ] Phase 4：Contribution Dashboard 与 Submission Plan。
@@ -40,7 +47,6 @@
 
 ### 当前未完成的关键能力
 
-- [ ] 主进程 `runPipelinePreflight()` 仍未接入 Pipeline IPC / Renderer / `PipelineService.start()` 主路径。
 - [ ] `PipelineView` 仍未拆分为 hooks / view models。
 - [ ] Patch-work 文档 Workbench、revision diff、accepted badge 仍未实现。
 - [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
@@ -52,11 +58,11 @@
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0 已完成，Phase 1 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `ca1bcf77` 或其后的状态同步提交。
-4. 在 `tasks/todo.md` 写入 Phase 1 计划。
-5. 从 Phase 1 开始开发，先补测试，再接入 repository preflight IPC / Renderer / `PipelineService.start()` 服务端守卫。
-6. Phase 1 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1 已完成，Phase 2 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 Phase 1 提交 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 或其后的状态同步提交。
+4. 在 `tasks/todo.md` 写入 Phase 2 计划。
+5. 从 Phase 2 开始开发，先补测试，再拆分 `PipelineView` 为 hooks / view models，保持行为不变。
+6. Phase 2 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -103,7 +109,7 @@
 | 里程碑 | 阶段 | 目标 | 初始状态 |
 |--------|------|------|----------|
 | M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [x] |
-| M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [ ] |
+| M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [x] |
 | M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [ ] |
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [ ] |
 | M4 | Phase 4 | Contribution Dashboard + Submission Plan | [ ] |
@@ -224,13 +230,13 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] 测试先行完成
-- [ ] shared / IPC / preload 完成
-- [ ] main service 完成
-- [ ] renderer UI 完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] shared / IPC / preload 完成
+- [x] main service 完成
+- [x] renderer UI 完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -238,66 +244,76 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 入口条件
 
-- [ ] Phase 0 已完成并提交。
-- [ ] 已确认 Codex SDK 模式和 CLI 模式的 runtime 检查语义。
-- [ ] 已明确 warning acknowledgement 只对当前 preflight fingerprint 有效。
+- [x] Phase 0 已完成并提交。
+- [x] 已确认 Codex SDK 模式和 CLI 模式的 runtime 检查语义。
+- [x] 已明确 warning acknowledgement 只对当前 preflight fingerprint 有效。
 
 ### 契约任务
 
-- [ ] `packages/shared/src/types/pipeline.ts`：新增 `PipelineRunPreflightInput`。
-- [ ] `packages/shared/src/types/pipeline.ts`：新增 `PipelinePreflightAcknowledgement` 或等价字段。
-- [ ] `packages/shared/src/types/pipeline.ts`：新增 `PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT`。
-- [ ] 明确 `PipelinePreflightRuntimeKind` 是否需要拆分 `codex-sdk-auth` / `codex-cli`。
-- [ ] 明确 warning code 白名单，拒绝前端传入未知 warning code。
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PipelineRunPreflightInput`。
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PipelinePreflightAcknowledgement` 或等价字段。
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT`。
+- [x] 明确 `PipelinePreflightRuntimeKind` 是否需要拆分 `codex-sdk-auth` / `codex-cli`。
+- [x] 明确 warning code 白名单，拒绝前端传入未知 warning code。
+- [x] `PipelineRunPreflightInput` 只暴露 `sessionId` / `workspaceId`，不允许 Renderer 传入任意 repository path 或 require override。
 
 ### 后端任务
 
-- [ ] `pipeline-service.ts`：新增 `runPreflight(input)`。
-- [ ] `pipeline-service.ts`：`start()` 解析 workspace session path 后执行服务端 preflight。
-- [ ] `pipeline-service.ts`：blocker 阻断 Graph invoke。
-- [ ] `pipeline-service.ts`：warning acknowledgement 与 fingerprint 不匹配时要求重新确认。
-- [ ] `pipeline-service.ts`：写入 Pipeline record 或 status/error record，便于审计。
-- [ ] `contribution-task-service.ts`：写入 `preflight_completed` event。
-- [ ] `pipeline-preflight-service.ts`：补齐 runtime 检查缺口和错误脱敏。
-- [ ] `pipeline-handlers.ts`：注册 `RUN_PREFLIGHT`。
-- [ ] `preload/index.ts`：暴露 `runPipelinePreflight()`。
+- [x] `pipeline-service.ts`：新增 `runPreflight(input)`。
+- [x] `pipeline-service.ts`：`start()` 解析 workspace session path 后执行服务端 preflight。
+- [x] `pipeline-service.ts`：blocker 阻断 Graph invoke。
+- [x] `pipeline-service.ts`：warning acknowledgement 与 fingerprint 不匹配时要求重新确认。
+- [x] `pipeline-service.ts`：重复 / 未知 warning code 会阻断启动；服务端重写 acknowledgement 审计时间。
+- [x] `pipeline-service.ts`：写入 Pipeline record 或 status/error record，便于审计。
+- [x] `contribution-task-service.ts`：写入 `preflight_completed` event。
+- [x] `pipeline-preflight-service.ts`：补齐 runtime 检查缺口和错误脱敏。
+- [x] `pipeline-handlers.ts`：注册 `RUN_PREFLIGHT`。
+- [x] `preload/index.ts`：暴露 `runPipelinePreflight()`。
 
 ### 前端任务
 
-- [ ] `pipeline-atoms.ts`：新增 `pipelinePreflightResultAtom`。
-- [ ] `pipeline-atoms.ts`：新增 warning acknowledgement atom。
-- [ ] 新增 `PipelinePreflightPanel.tsx`。
-- [ ] `PipelinePreflightPanel` 展示 Repository / Runtime / Package Manager / Blockers / Warnings。
-- [ ] `PipelineView.tsx` 或 `usePipelinePreflight()`：启动前自动运行 preflight。
-- [ ] blocker 禁用启动按钮。
-- [ ] warning 需要用户明确“记录风险继续”。
-- [ ] 渠道 / 工作区错误仍能跳转设置页。
+- [x] `pipeline-atoms.ts`：新增 `pipelinePreflightResultAtom`。
+- [x] `pipeline-atoms.ts`：新增 warning acknowledgement atom。
+- [x] 新增 `PipelinePreflightPanel.tsx`。
+- [x] `PipelinePreflightPanel` 展示 Repository / Runtime / Package Manager / Blockers / Warnings。
+- [x] `PipelineView.tsx` 或 `usePipelinePreflight()`：启动前自动运行 preflight。
+- [x] blocker 禁用启动按钮。
+- [x] blocker 修复后可通过 `PipelinePreflightPanel` 重新检查。
+- [x] warning 需要用户明确“记录风险继续”。
+- [x] preflight 早退不会清空用户输入。
+- [x] 渠道 / 工作区错误仍能跳转设置页。
 - [ ] preflight result 超过 60 秒或 workspace 变化后标记“需要刷新”。
 
 ### 测试任务
 
-- [ ] `pipeline-preflight-service.test.ts`：Git root 不存在。
-- [ ] `pipeline-preflight-service.test.ts`：非 Git root。
-- [ ] `pipeline-preflight-service.test.ts`：Git conflict blocker。
-- [ ] `pipeline-preflight-service.test.ts`：dirty worktree warning。
-- [ ] `pipeline-preflight-service.test.ts`：Claude / Codex runtime 缺失。
-- [ ] `pipeline-service.test.ts`：start 遇 blocker 不调用 Graph。
-- [ ] `pipeline-service.test.ts`：warning acknowledgement 通过后可启动。
-- [ ] `pipeline-preflight.test.ts`：渠道 / 工作区错误保持原行为。
-- [ ] `PipelinePreflightPanel.test.tsx`：blocker / warning / runtime status 展示。
+- [x] `pipeline-preflight-service.test.ts`：Git root 不存在。
+- [x] `pipeline-preflight-service.test.ts`：非 Git root。
+- [x] `pipeline-preflight-service.test.ts`：Git conflict blocker。
+- [x] `pipeline-preflight-service.test.ts`：dirty worktree warning。
+- [x] `pipeline-preflight-service.test.ts`：dirty 文件集合变化会改变 fingerprint。
+- [x] `pipeline-preflight-service.test.ts`：remote URL query/hash token、Authorization / token diagnostic 脱敏。
+- [x] `pipeline-preflight-service.test.ts`：Claude / Codex runtime 缺失。
+- [x] `pipeline-service.test.ts`：start 遇 blocker 不调用 Graph。
+- [x] `pipeline-service.test.ts`：warning acknowledgement 通过后可启动。
+- [x] `pipeline-service.test.ts`：过期 fingerprint、重复 / 未知 warning code 不调用 Graph。
+- [x] `pipeline-service.test.ts`：RUN_PREFLIGHT 忽略 renderer 传入的 repositoryRoot / require override。
+- [x] `pipeline-service.test.ts`：`preflight_completed` event 二次脱敏且服务端生成审计时间。
+- [x] `pipeline-preflight.test.ts`：渠道 / 工作区错误保持原行为。
+- [x] `PipelinePreflightPanel.test.tsx`：blocker / warning / runtime status 展示。
+- [x] `PipelineComposer.test.ts`：preflight 阻断或等待风险确认时不清空输入。
 
 ### 触达文件
 
-- [ ] `packages/shared/src/types/pipeline.ts`
-- [ ] `apps/electron/src/main/lib/pipeline-preflight-service.ts`
-- [ ] `apps/electron/src/main/lib/pipeline-service.ts`
-- [ ] `apps/electron/src/main/ipc/pipeline-handlers.ts`
-- [ ] `apps/electron/src/preload/index.ts`
-- [ ] `apps/electron/src/renderer/atoms/pipeline-atoms.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts`
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.tsx`
-- [ ] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
-- [ ] 相关测试文件
+- [x] `packages/shared/src/types/pipeline.ts`
+- [x] `apps/electron/src/main/lib/pipeline-preflight-service.ts`
+- [x] `apps/electron/src/main/lib/pipeline-service.ts`
+- [x] `apps/electron/src/main/ipc/pipeline-handlers.ts`
+- [x] `apps/electron/src/preload/index.ts`
+- [x] `apps/electron/src/renderer/atoms/pipeline-atoms.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] 相关测试文件
 
 ### 验证命令
 
@@ -306,7 +322,7 @@ bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/elec
 ```
 
 ```bash
-bun test apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx
+bun test apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts
 ```
 
 ```bash
@@ -316,21 +332,32 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 
 ### 完成定义
 
-- [ ] Renderer 启动前能显示 repository / runtime preflight 结果。
-- [ ] blocker 禁止启动，Service start 也会阻断。
-- [ ] warning 可以人工接受，接受记录可审计。
-- [ ] 服务端不会信任前端传回的旧 preflight result。
-- [ ] preflight 错误不泄露 secret。
-- [ ] 受影响 package patch version 已递增。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] Renderer 启动前能显示 repository / runtime preflight 结果。
+- [x] blocker 禁止启动，Service start 也会阻断。
+- [x] warning 可以人工接受，接受记录可审计。
+- [x] 服务端不会信任前端传回的旧 preflight result。
+- [x] Renderer 不能通过 preflight IPC 探测任意本地路径。
+- [x] preflight 错误不泄露 secret。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不绕过服务端 preflight。
-- [ ] 不把 warning 当 blocker 一概阻断。
-- [ ] 不在 Renderer 直接运行 shell 检查。
-- [ ] 不把真实 token、auth header、credentialed remote URL 写入 records。
+- [x] 不绕过服务端 preflight。
+- [x] 不把 warning 当 blocker 一概阻断。
+- [x] 不在 Renderer 直接运行 shell 检查。
+- [x] 不把真实 token、auth header、credentialed remote URL 写入 records。
+
+## 2026-05-29 Pipeline v1 Phase 1 Review
+
+- 阶段范围：Preflight 主路径；仅接入 repository preflight IPC / preload / Renderer / `PipelineService.start()` 守卫与 warning acknowledgement 审计。
+- 主要变更：shared 新增 `PipelineRunPreflightInput`、`PipelinePreflightAcknowledgement`、`PipelinePreflightResult.checkedAt/fingerprint` 和 `RUN_PREFLIGHT`；main handler / preload 暴露 `runPipelinePreflight()`；`PipelineService.start()` 在 v2 会话进入 Graph 前服务端复验 preflight，blocker、未确认 warning 与过期 warning acknowledgement 均阻断；Renderer 新增 `PipelinePreflightPanel`、重新检查入口和 Jotai preflight state。
+- 审计与安全：warning acknowledgement 只对最新 fingerprint 和 warning code 有效；匹配后由服务端重写 `acknowledgedAt` 并写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 路径 / require override；credentialed remote URL、query/hash token、Authorization / token / api key 形态诊断已脱敏。
+- 兼容性确认：渠道 / 工作区配置错误仍走原 `resolvePipelineRunConfig()` 和设置跳转；旧 v1 会话不强制 repository preflight；未修改 Graph、runner、Git submission 或真实远端写路径。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记未做，留给 Phase 2 hook 化时收敛；Phase 2-6 仍未开始。
+- 阶段提交：本轮提交完成后，以 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 的真实提交为准。
 
 ## Phase 2：PipelineView 拆分
 

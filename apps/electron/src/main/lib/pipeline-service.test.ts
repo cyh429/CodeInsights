@@ -9,6 +9,8 @@ import type {
   PipelineStateSnapshot,
   PipelineStreamCompletePayload,
   PipelineStreamPayload,
+  PipelinePreflightResult,
+  PipelineRunPreflightInput,
 } from '@codeinsights/shared'
 import {
   appendPipelineNodeCompleteRecords,
@@ -45,6 +47,33 @@ function setupPipelineGitRepo(repoRoot: string): void {
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   runGit(repoRoot, ['add', 'src/index.ts'])
   runGit(repoRoot, ['commit', '-m', 'initial'])
+}
+
+function createPreflightResult(
+  overrides: Partial<PipelinePreflightResult> = {},
+): PipelinePreflightResult {
+  return {
+    ok: true,
+    repository: {
+      root: '/tmp/codeinsights-test-repo',
+      currentBranch: 'main',
+      baseBranch: 'origin/main',
+      remoteUrl: 'https://github.com/example/repo.git',
+      hasUncommittedChanges: false,
+      hasConflicts: false,
+    },
+    runtimes: [
+      { kind: 'git', available: true, version: 'git version 2.0.0' },
+      { kind: 'claude-cli', available: true, version: '1.0.0', path: '/mock/bin/claude' },
+      { kind: 'codex-cli', available: true, version: '1.0.0', path: '/mock/bin/codex' },
+    ],
+    packageManager: 'bun',
+    warnings: [],
+    blockers: [],
+    checkedAt: 1,
+    fingerprint: 'preflight-fingerprint-ok',
+    ...overrides,
+  }
 }
 
 describe('pipeline-service', () => {
@@ -155,6 +184,7 @@ describe('pipeline-service', () => {
   test('启动 v2 会话前会创建 ContributionTask 和 patch-work manifest', async () => {
     const workspace = createAgentWorkspace('贡献工作区')
     const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult(),
       createGraph: (meta) => ({
         invoke: async () => ({
           state: {
@@ -204,6 +234,362 @@ describe('pipeline-service', () => {
       contributionTaskId: task!.id,
       pipelineSessionId: session.id,
     })
+  })
+
+  test('v2 start 遇到 preflight blocker 时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('阻断工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        ok: false,
+        blockers: [{ code: 'git_conflicts', message: '工作区存在 Git 冲突' }],
+        fingerprint: 'preflight-blocked',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight blocker', 'channel-1', workspace.id, 2)
+
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+    })).rejects.toThrow('Pipeline preflight 未通过')
+
+    expect(invokeCalls).toBe(0)
+    expect(getPipelineRecords(session.id).find((record) => record.type === 'error')).toMatchObject({
+      type: 'error',
+      error: 'Pipeline preflight 未通过：工作区存在 Git 冲突',
+    })
+  })
+
+  test('v2 start 遇到 warning 但未确认时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('warning 工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight warning', 'channel-1', workspace.id, 2)
+
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+    })).rejects.toThrow('Pipeline preflight warning 需要用户确认')
+
+    expect(invokeCalls).toBe(0)
+  })
+
+  test('v2 start 的 warning acknowledgement 匹配时可启动并写入审计事件', async () => {
+    const workspace = createAgentWorkspace('warning 确认工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning-ack',
+      }),
+      createGraph: (meta) => ({
+        invoke: async () => {
+          invokeCalls += 1
+          return {
+            state: {
+              sessionId: meta.id,
+              version: 2,
+              currentNode: 'committer',
+              status: 'completed',
+              reviewIteration: 0,
+              lastApprovedNode: 'committer',
+              pendingGate: null,
+              updatedAt: Date.now(),
+            },
+          }
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: meta.id,
+          version: 2,
+          currentNode: 'committer',
+          status: 'completed',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight warning ack', 'channel-1', workspace.id, 2)
+    await service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'preflight-warning-ack',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })
+
+    const task = getContributionTaskByPipelineSessionId(session.id)
+    expect(invokeCalls).toBe(1)
+    expect(task).toBeTruthy()
+    expect(getContributionTaskEvents(task!.id).find((event) => event.type === 'preflight_completed')).toMatchObject({
+      type: 'preflight_completed',
+      payload: {
+        fingerprint: 'preflight-warning-ack',
+        warningCodes: ['git_uncommitted_changes'],
+        acknowledgedWarningCodes: ['git_uncommitted_changes'],
+      },
+    })
+    const event = getContributionTaskEvents(task!.id).find((item) => item.type === 'preflight_completed')
+    expect((event?.payload?.acknowledgedAt as number | undefined) ?? 0).toBeGreaterThan(2)
+  })
+
+  test('v2 start 的 warning acknowledgement 过期时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('warning 过期确认工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'fresh-fingerprint',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight stale ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'stale-fingerprint',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 需要用户确认')
+
+    expect(invokeCalls).toBe(0)
+  })
+
+  test('v2 start 拒绝重复或未知的 warning acknowledgement code', async () => {
+    const workspace = createAgentWorkspace('warning 非法确认工作区')
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'warning-fingerprint',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const duplicateSession = service.createSession('preflight duplicate ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: duplicateSession.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'warning-fingerprint',
+        acceptedWarningCodes: ['git_uncommitted_changes', 'git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 确认包含重复 code')
+
+    const unknownSession = service.createSession('preflight unknown ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: unknownSession.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'warning-fingerprint',
+        acceptedWarningCodes: ['git_remote_missing'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 确认包含未知 code')
+  })
+
+  test('runPreflight 会忽略 renderer 传入的 repositoryRoot 和 require override', async () => {
+    const workspace = createAgentWorkspace('preflight override 工作区')
+    let capturedRepositoryRoot = ''
+    let capturedRequireGit: boolean | undefined
+    let capturedRequireClaudeCli: boolean | undefined
+    let capturedRequireCodexCli: boolean | undefined
+    const service = createPipelineService({
+      runRepositoryPreflight: async (input) => {
+        capturedRepositoryRoot = input.repositoryRoot
+        capturedRequireGit = input.requireGit
+        capturedRequireClaudeCli = input.requireClaudeCli
+        capturedRequireCodexCli = input.requireCodexCli
+        return createPreflightResult()
+      },
+    })
+    const session = service.createSession('preflight override', 'channel-1', workspace.id, 2)
+    const unsafeInput = {
+      sessionId: session.id,
+      workspaceId: workspace.id,
+      repositoryRoot: '/tmp/should-not-be-used',
+      requireGit: false,
+      requireClaudeCli: false,
+      requireCodexCli: false,
+    } as unknown as PipelineRunPreflightInput
+
+    await service.runPreflight(unsafeInput)
+
+    expect(capturedRepositoryRoot).not.toBe('/tmp/should-not-be-used')
+    expect(capturedRepositoryRoot).toContain(session.id)
+    expect(capturedRequireGit).toBe(true)
+    expect(capturedRequireClaudeCli).toBe(true)
+    expect(capturedRequireCodexCli).toBe(true)
+  })
+
+  test('preflight 审计事件会再次脱敏 remote URL 和 runtime diagnostic', async () => {
+    const workspace = createAgentWorkspace('warning 脱敏审计工作区')
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        repository: {
+          root: '/tmp/codeinsights-test-repo',
+          currentBranch: 'main',
+          baseBranch: 'origin/main',
+          remoteUrl: 'https://github.com/org/repo.git?access_token=secret-token#secret-fragment',
+          hasUncommittedChanges: true,
+          hasConflicts: false,
+        },
+        runtimes: [
+          {
+            kind: 'git',
+            available: true,
+            version: 'git version 2.0.0',
+            error: 'Authorization: Basic abc123 token=secret-token',
+          },
+        ],
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning-redacted',
+      }),
+      createGraph: (meta) => ({
+        invoke: async () => ({
+          state: {
+            sessionId: meta.id,
+            version: 2,
+            currentNode: 'committer',
+            status: 'completed',
+            reviewIteration: 0,
+            lastApprovedNode: 'committer',
+            pendingGate: null,
+            updatedAt: Date.now(),
+          },
+        }),
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: meta.id,
+          version: 2,
+          currentNode: 'committer',
+          status: 'completed',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight audit redact', 'channel-1', workspace.id, 2)
+    await service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'preflight-warning-redacted',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })
+
+    const task = getContributionTaskByPipelineSessionId(session.id)
+    const event = getContributionTaskEvents(task!.id).find((item) => item.type === 'preflight_completed')
+    const serialized = JSON.stringify(event?.payload)
+    expect(serialized).not.toContain('secret-token')
+    expect(serialized).not.toContain('secret-fragment')
+    expect(serialized).not.toContain('abc123')
+    expect(serialized).toContain('Authorization: Basic ***')
   })
 
   test('task_selection gate 必须选择 report，并写回 selected-task.md 和 ContributionTask', async () => {

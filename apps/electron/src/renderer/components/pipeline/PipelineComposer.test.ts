@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { buildPipelineComposerViewModel } from './PipelineComposer'
+import {
+  buildPipelineComposerViewModel,
+  shouldClearPipelineComposerInput,
+} from './PipelineComposer'
 
 describe('PipelineComposer', () => {
   test('停止请求处理中要给出立即可见反馈', () => {
@@ -33,5 +36,10 @@ describe('PipelineComposer', () => {
       tone: 'neutral',
       message: 'Pipeline 已停止运行，可以调整任务后重新启动。',
     })
+  })
+
+  test('preflight 阻断或等待风险确认时不清空输入', () => {
+    expect(shouldClearPipelineComposerInput({ started: false })).toBe(false)
+    expect(shouldClearPipelineComposerInput({ started: true })).toBe(true)
   })
 })

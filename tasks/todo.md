@@ -1,5 +1,61 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 1 Preflight 主路径计划
+
+范围确认：本轮只做 Phase 1。把已有 repository preflight 接入 IPC / preload / Renderer 启动前主路径，并在 `PipelineService.start()` 服务端复验 blocker；warning 需要用户明确接受并留下审计记录。不改 runner / Graph，不新增真实 Git 写操作，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖。
+
+BDD 验收场景：
+
+- [x] Given 目标 workspace 不存在 Git root / 存在 Git 冲突 / 缺失必需 runtime，When 用户准备启动 Pipeline，Then Renderer 展示 blocker 且启动按钮不可用。
+- [x] Given Renderer 被绕过或传入过期确认，When `PipelineService.start()` 服务端 preflight 发现 blocker，Then 不调用 Graph invoke，并写入可解释失败记录。
+- [x] Given preflight 只有 dirty worktree 等 warning，When 用户未确认风险，Then Renderer 禁止启动；When 用户明确“记录风险继续”，Then start payload 携带 warning acknowledgement。
+- [x] Given warning acknowledgement 与服务端最新 preflight fingerprint 不匹配，When start 被调用，Then 服务端要求重新确认，不进入 Graph。
+- [x] Given warning acknowledgement 匹配，When start 成功进入 Pipeline，Then warning 接受行为至少写入 Pipeline records 或 ContributionTask event。
+
+TDD 执行计划：
+
+- [x] 先补 main 测试：`pipeline-preflight-service.test.ts` 覆盖 Git root 缺失 / 非 Git root / conflict blocker / dirty warning / runtime 缺失和 preflight fingerprint。
+- [x] 先补 service 测试：`pipeline-service.test.ts` 覆盖 blocker 不调用 Graph、warning 未确认阻断、过期 / 重复 / 未知 warning acknowledgement 阻断、确认后可启动并留下审计记录。
+- [x] 先补 renderer 测试：`pipeline-preflight.test.ts` 保持渠道 / 工作区错误原行为；`PipelinePreflightPanel.test.tsx` 覆盖 blocker / warning / runtime status 展示与重新检查入口；`PipelineComposer.test.ts` 覆盖 preflight 早退不清空输入。
+- [x] 运行新增测试并确认失败点来自未实现 Phase 1 行为。
+- [x] 实现 shared IPC / preload / main handler：新增 repository preflight API，Renderer 只传 session/workspace 相关白名单字段，服务端忽略 renderer 传入的路径 / require override。
+- [x] 实现 `PipelineService.start()` 服务端 preflight：blocker 阻断 Graph invoke；warning ack 必须匹配最新 fingerprint / warning code；服务端重写 acknowledgement 审计时间；审计记录不写入 secret。
+- [x] 实现 Renderer 启动前 preflight：展示 repository / runtime / package manager / blockers / warnings；blocker 禁止启动但可重新检查；warning 需显式接受。
+- [x] 递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 更新 development checklist、next-session prompt 和本节 Review。
+- [x] 运行 Phase 1 聚焦测试、Electron typecheck、`git diff --check`，核对 staged 范围后单独提交 Phase 1 成果。
+
+触达边界：
+
+- [x] 允许触达：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、Pipeline preflight/service/IPC/preload、Pipeline renderer preflight panel / atoms / tests、Phase 1 文档状态、`tasks/todo.md`。
+- [x] 不触达：`pipeline-graph.ts`、Claude / Codex runner、Git submission 真实写逻辑、根 `README.md`、根 `AGENTS.md`、`patch-work/**`、远端 push / PR 行为。
+
+验证命令：
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+## 2026-05-29 Pipeline v1 Phase 1 Preflight 主路径 Review
+
+- 阶段范围：只完成 Phase 1；未修改 Graph、Claude / Codex runner、Git submission 真实写逻辑、远端 push / PR 行为、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增 `PipelineRunPreflightInput`、`PipelinePreflightAcknowledgement`、preflight fingerprint / checkedAt 和 `RUN_PREFLIGHT` IPC；preload 暴露 `runPipelinePreflight()`；main 端 `PipelineService.runPreflight()` 复用已有 repository preflight；`PipelineService.start()` 对 v2 会话服务端复验，blocker / 未确认 warning / 过期 warning acknowledgement 均阻断 Graph invoke。
+- Renderer 变更：新增 `PipelinePreflightPanel` 和 preflight acknowledgement helper；`PipelineView` 在启动前调用 repository preflight，blocker 禁止启动但提供“重新检查”，warning 需点击“记录风险继续”后才会把 acknowledgement 带给 start；preflight 早退不会清空用户任务输入；渠道 / 工作区配置错误仍保留原设置跳转。
+- 审计与安全：warning acknowledgement 匹配最新 fingerprint 和 warning code 后，会由服务端重写 `acknowledgedAt` 并写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 路径 / require override；remote URL query/hash、Authorization、token、api key 形态诊断已脱敏。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.51`，`@codeinsights/electron` 提升到 `0.0.123`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
+- 阶段提交：本轮提交完成后，以包含本 Review 的 Phase 1 提交为准；最终回复会给出实际提交号。
+
 ## 2026-05-29 Pipeline v1 Phase 0 后状态同步计划
 
 范围确认：本轮只同步 Pipeline v1 Phase 0 完成后的最新开发状态、下次启动提示词、任务记录和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。

@@ -25,6 +25,14 @@ export interface PipelineComposerViewModel {
   notice: PipelineComposerNotice | null
 }
 
+export interface PipelineComposerSubmitResult {
+  started: boolean
+}
+
+export function shouldClearPipelineComposerInput(result: PipelineComposerSubmitResult): boolean {
+  return result.started
+}
+
 export function buildPipelineComposerViewModel({
   currentTask,
   stopping,
@@ -84,15 +92,17 @@ function PipelineComposerNoticeLine({
 
 export function PipelineComposer({
   disabled,
+  startDisabled = false,
   currentTask,
   status,
   onSubmit,
   onStop,
 }: {
   disabled: boolean
+  startDisabled?: boolean
   currentTask?: string
   status?: PipelineSessionStatus | null
-  onSubmit: (input: string) => Promise<void>
+  onSubmit: (input: string) => Promise<PipelineComposerSubmitResult>
   onStop: () => Promise<void>
 }): React.ReactElement {
   const [value, setValue] = React.useState('')
@@ -112,8 +122,10 @@ export function PipelineComposer({
     if (!input) return
     setSubmitting(true)
     try {
-      await onSubmit(input)
-      setValue('')
+      const result = await onSubmit(input)
+      if (shouldClearPipelineComposerInput(result)) {
+        setValue('')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -203,7 +215,7 @@ export function PipelineComposer({
       <div className="mt-3 flex gap-2">
         <Button
           type="button"
-          disabled={disabled || submitting}
+          disabled={disabled || startDisabled || submitting}
           onClick={() => void handleSubmit()}
           loading={submitting}
           loadingLabel="正在启动 Pipeline"
