@@ -11,6 +11,7 @@ import type {
   PipelineStreamPayload,
   PipelinePreflightResult,
   PipelineRunPreflightInput,
+  PipelineCommitterStageOutput,
 } from '@codeinsights/shared'
 import {
   appendPipelineNodeCompleteRecords,
@@ -26,6 +27,7 @@ import {
   getContributionTaskByPipelineSessionId,
 } from './contribution-task-service'
 import {
+  initializePatchWork,
   readPatchWorkManifest,
   writePatchWorkFile,
 } from './pipeline-patch-work-service'
@@ -234,6 +236,102 @@ describe('pipeline-service', () => {
       contributionTaskId: task!.id,
       pipelineSessionId: session.id,
     })
+  })
+
+  test('ContributionTask summary 和 submission plan read model 不触发 graph 或 gate 写入', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-read-model-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
+    initializePatchWork({
+      contributionTaskId: 'task-service-read-model',
+      pipelineSessionId: 'session-service-read-model',
+      repositoryRoot: repoRoot,
+    })
+    const graphCalls: string[] = []
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          graphCalls.push('invoke')
+          throw new Error('read model 不应执行 graph')
+        },
+        resume: async () => {
+          graphCalls.push('resume')
+          throw new Error('read model 不应恢复 graph')
+        },
+        getState: async () => {
+          graphCalls.push('getState')
+          throw new Error('read model 不应读取 graph')
+        },
+      }),
+    })
+    const session = service.createSession('read model 测试', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-read-model',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '实现提交计划',
+      baseBranch: 'main',
+      workingBranch: 'feature/pipeline-phase-4',
+      status: 'committing',
+    })
+    appendPipelineNodeCompleteRecords(session.id, {
+      type: 'node_complete',
+      node: 'committer',
+      output: JSON.stringify({
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): read model',
+        prTitle: 'Read model',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput),
+      artifact: {
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): read model',
+        prTitle: 'Read model',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput,
+      createdAt: Date.now(),
+    })
+
+    const summary = service.getContributionTaskSummary({ sessionId: session.id })
+    const plan = service.getSubmissionPlan({ sessionId: session.id })
+
+    expect(summary.task?.selectedTaskTitle).toBe('实现提交计划')
+    expect(plan.commitMessage).toBe('feat(pipeline): read model')
+    expect(plan.candidateFiles).toEqual(['src/index.ts'])
+    expect(plan.excludedFiles).toContain('patch-work/**')
+    expect(graphCalls).toEqual([])
+    expect(getPipelineRecords(session.id).filter((record) => record.type === 'gate_decision')).toHaveLength(0)
+
+    rmSync(repoRoot, { recursive: true, force: true })
   })
 
   test('v2 start 遇到 preflight blocker 时不调用 Graph invoke', async () => {

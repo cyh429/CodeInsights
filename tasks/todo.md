@@ -1,5 +1,69 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 4 Contribution Dashboard 与 Submission Plan 计划
+
+范围确认：本轮只做 Phase 4。目标是把 ContributionTask 暴露为一等只读 Dashboard，并新增 `PipelineSubmissionPlan` read model，让 `CommitterPanel` 从服务端 read model 展示提交计划，而不是在 UI 中零散拼 tester / committer output。保持本地 commit / remote PR 现有执行服务不变；不修改 Graph、runner、Git submission 真实写逻辑，不新增真实 Git 写路径，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`。
+
+BDD 验收场景：
+
+- [x] Given 当前会话已有 ContributionTask 和 selected report，When 用户打开 Pipeline 工作台，Then Dashboard 展示 task、repository、branch、mode、patch-work、commit、PR 和最近事件。
+- [x] Given 当前会话尚未创建 ContributionTask 或 read model 读取失败，When Dashboard 加载，Then UI 展示中文空态 / 错误态，不影响 Records 和其它 gate 面板。
+- [x] Given committer 已生成 `commit.md` / `pr.md` 和 patch-set，When 用户进入提交面板，Then `CommitterPanel` 通过 `PipelineSubmissionPlan` 展示 commit message、PR title/body、candidate files、excluded files、blockers、warnings。
+- [x] Given submission plan 中存在 `patch-work/**`，When 用户查看本地 commit / Draft PR 分区，Then `patch-work/**` 明确出现在 excluded files，且 UI 不把它作为候选提交文件。
+- [x] Given 尚未完成 local commit，When 用户尝试 Draft PR，Then UI 禁用远端提交入口并展示需要先完成本地 commit 的原因。
+- [x] Given push 成功但 PR 创建失败的历史结果存在，When 用户查看远端分区，Then UI 展示脱敏后的恢复提示，但不新增真实远端写路径。
+
+TDD 执行计划：
+
+- [x] 先补 `pipeline-read-model-service.test.ts`：覆盖 summary 缺 task、summary 从 events 汇总 commit / PR、submission plan 排除 `patch-work/**`、缺 committer output 时返回 blocker / warning。
+- [x] 先补 shared / IPC / preload 类型编译路径：新增 `ContributionTaskSummary`、`PipelineSubmissionPlan`、`GET_CONTRIBUTION_TASK_SUMMARY`、`GET_SUBMISSION_PLAN`，确保 Renderer 只能传 `sessionId`。
+- [x] 先补 `ContributionTaskDashboard.test.tsx`：覆盖正常态、空态、错误态、最近事件、patch-work / commit / PR 状态展示。
+- [x] 先补 `CommitterPanel.test.tsx`：覆盖三段式分区、button disabled 条件、没有 local commit 时禁用 Draft PR、candidate / excluded files 展示。
+- [x] 运行新增测试并确认失败点来自未实现 Phase 4 行为。
+- [x] 实现 `pipeline-read-model-service.ts`：只读汇总 ContributionTask、patch-work manifest、committer output、submission result，不改变 manifest、不执行 Git 写操作。
+- [x] 补充 read model 只读回归：summary 读取缺失 `patch-work/` 时不创建目录，且 repository URL 已脱敏。
+- [x] 实现 `PipelineService.getContributionTaskSummary(sessionId)` 和 `PipelineService.getSubmissionPlan(sessionId)`，找不到 task 时返回可解释空态或中文错误。
+- [x] 实现 shared IPC / main handler / preload：新增 summary / submission plan read API，main 端只接受 `sessionId` 并重新解析本地事实源。
+- [x] 新增 `useContributionTaskSummary(sessionId)`、`usePipelineSubmissionPlan(sessionId)`，不使用 localStorage，不从 records 文本反推事实源。
+- [x] 新增 `ContributionTaskDashboard.tsx` 并接入 `PipelineView` 布局；保持 Records / gate 面板可独立工作。
+- [x] 改造 `CommitterPanel` 为三段：保存材料、本地 commit、Draft PR；提交动作继续走现有 `onSubmit` / `PipelineService` 逻辑。
+- [x] 递增受影响 package patch version，并同步 `bun.lock`。
+- [x] 更新 development checklist、next-session prompt 和本节 Review。
+- [x] 运行 Phase 4 聚焦测试、Electron typecheck、`bun install --frozen-lockfile --dry-run`、`git diff --check`，核对 staged 范围后单独提交 Phase 4 成果。
+
+触达边界：
+
+- [x] 允许触达：`packages/shared/src/types/pipeline.ts`、`packages/shared/package.json`、`apps/electron/package.json`、`bun.lock`、`apps/electron/src/main/lib/pipeline-read-model-service.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、Pipeline renderer hooks / Dashboard / CommitterPanel / PipelineView / tests、Phase 4 文档状态、`tasks/todo.md`。
+- [x] 不触达：`pipeline-graph.ts`、Claude / Codex runner、Git submission 真实写逻辑、远端写确认模型、GitHub API / existing PR、根 `README.md`、根 `AGENTS.md`、`patch-work/**`、远端 push / PR 行为。
+
+验证命令：
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+## 2026-05-29 Pipeline v1 Phase 4 Contribution Dashboard 与 Submission Plan Review
+
+- 阶段范围：只完成 Phase 4 Contribution Dashboard 与 Submission Plan；未修改 Graph、runner、Git submission 真实写逻辑、远端写确认模型、GitHub API / existing PR、根 `README.md` 或根 `AGENTS.md`，未执行真实远端写。
+- 主要变更：新增 `ContributionTaskSummary`、`PipelineSubmissionPlan`、summary / submission plan IPC 与 preload API；新增 `pipeline-read-model-service.ts`，从 ContributionTask、events、stage outputs、patch-work manifest 和本地 Git 只读状态重建 dashboard / submission plan。
+- UI 接入：新增 `ContributionTaskDashboard`、`useContributionTaskSummary`、`usePipelineSubmissionPlan`；`PipelineView` 在 v2 会话展示贡献任务 dashboard；`CommitterPanel` 改为“保存提交材料 / 本地 commit / Draft PR”三段式，并优先使用服务端 `PipelineSubmissionPlan`。
+- 安全与只读确认：Renderer 只传 `sessionId`；read model 不调用远端 preflight，不执行 `git commit` / `git push` / `gh`；summary 读取缺失 `patch-work/` 时不会创建目录；`patch-work/**` 永远进入 excluded files；repository URL、PR URL、error、blocker、warning 已脱敏。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.53`，`@codeinsights/electron` 提升到 `0.0.126`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- Code review 处理：已修复 reviewer 指出的 read model 非严格只读问题，并新增“缺失 patch-work 不创建目录”回归测试；已收紧新 read model 返回面的 URL / error 脱敏。
+- 未完成项：Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备仍未开始。
+- 阶段提交：本次提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+
 ## 2026-05-29 Pipeline v1 Phase 3 状态同步再确认计划
 
 范围确认：本轮只响应用户要求，同步 Pipeline v1 最新开发状态、完成/未完成清单、下次启动提示词和阶段收尾习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。

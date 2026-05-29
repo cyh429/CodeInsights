@@ -103,8 +103,10 @@ import type {
   WeChatBridgeState,
   AgentQueueMessageInput,
   PendingRequestsSnapshot,
+  ContributionTaskSummary,
   PipelineArtifactContentInput,
   PipelineExplorerReportRef,
+  PipelineContributionTaskSummaryInput,
   PipelineSessionMeta,
   PipelineVersion,
   PipelineRecord,
@@ -127,6 +129,8 @@ import type {
   PipelineStreamPayload,
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
+  PipelineSubmissionPlan,
+  PipelineSubmissionPlanInput,
   PatchWorkDocumentRevision,
   PatchWorkManifest,
 } from '@codeinsights/shared'
@@ -380,6 +384,12 @@ export interface ElectronAPI {
 
   /** 读取 Pipeline v2 patch-work manifest */
   getPipelinePatchWorkManifest: (input: PipelinePatchWorkSessionInput) => Promise<PatchWorkManifest>
+
+  /** 读取 Pipeline v2 ContributionTask Dashboard summary */
+  getContributionTaskSummary: (input: PipelineContributionTaskSummaryInput) => Promise<ContributionTaskSummary>
+
+  /** 读取 Pipeline v2 提交计划 */
+  getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => Promise<PipelineSubmissionPlan>
 
   /** 读取 Pipeline v2 patch-work 文件 */
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<string>
@@ -1204,6 +1214,14 @@ const electronAPI: ElectronAPI = {
 
   getPipelinePatchWorkManifest: (input: PipelinePatchWorkSessionInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_PATCH_WORK_MANIFEST, input)
+  },
+
+  getContributionTaskSummary: (input: PipelineContributionTaskSummaryInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_CONTRIBUTION_TASK_SUMMARY, input)
+  },
+
+  getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_SUBMISSION_PLAN, input)
   },
 
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {

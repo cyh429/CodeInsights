@@ -37,13 +37,16 @@ import { PipelineRecords } from './PipelineRecords'
 import { PipelineStageRail } from './PipelineStageRail'
 import { buildPipelineFailureViewModel } from './pipeline-display-model'
 import { buildPipelineGatePanelModel } from './pipeline-gate-panel-model'
+import { ContributionTaskDashboard } from './ContributionTaskDashboard'
 import { PipelineGateSidePanel } from './PipelineGateSidePanel'
 import { PipelinePreflightPanel } from './PipelinePreflightPanel'
+import { useContributionTaskSummary } from './useContributionTaskSummary'
 import { usePipelineExplorerReports } from './usePipelineExplorerReports'
 import { usePipelinePatchWorkDocuments } from './usePipelinePatchWorkDocuments'
 import { usePipelineGateActions } from './usePipelineGateActions'
 import { usePipelineRecordsTail } from './usePipelineRecordsTail'
 import { usePipelineSessionSnapshot } from './usePipelineSessionSnapshot'
+import { usePipelineSubmissionPlan } from './usePipelineSubmissionPlan'
 
 const EMPTY_DOCUMENT_CONTENTS = new Map<string, string>()
 
@@ -180,6 +183,16 @@ export function PipelineView({
     sessionId,
     enabled: gatePanel.panelKind === 'explorer_task',
     initialReports: gatePanel.stageOutputs.explorer?.reports,
+  })
+  const contributionTaskSummary = useContributionTaskSummary({
+    sessionId,
+    enabled: (session?.version ?? state?.version) === 2,
+    refreshVersion,
+  })
+  const submissionPlan = usePipelineSubmissionPlan({
+    sessionId,
+    enabled: gatePanel.panelKind === 'committer',
+    refreshVersion,
   })
 
   usePipelineSessionSnapshot({
@@ -615,6 +628,16 @@ export function PipelineView({
             />
           ) : null}
 
+          {(session?.version ?? state?.version) === 2 ? (
+            <ContributionTaskDashboard
+              summary={contributionTaskSummary.summary}
+              loading={contributionTaskSummary.loading}
+              error={contributionTaskSummary.error}
+              onRefresh={contributionTaskSummary.refresh}
+              onOpenPatchWorkDir={handleOpenPatchWorkDir}
+            />
+          ) : null}
+
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div className="min-w-0">
               <PipelineRecords
@@ -638,6 +661,9 @@ export function PipelineView({
               documentContents={documentContents}
               documentLoadingPaths={documentLoadingPaths}
               documentReadErrors={documentReadErrors}
+              submissionPlan={submissionPlan.submissionPlan}
+              submissionPlanLoading={submissionPlan.loading}
+              submissionPlanError={submissionPlan.error}
               running={running}
               startDisabled={repositoryPreflightBlocksStart}
               currentTask={currentTask}

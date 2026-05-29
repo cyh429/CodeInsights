@@ -9,9 +9,9 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`；上一稳定基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
-> 最新恢复入口：`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`；上一恢复入口：`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench 已完成并通过聚焦验证；Phase 4-6 尚未开始。下次正式开发应从 **Phase 4：Contribution Dashboard 与 Submission Plan** 开始。
+> 最新开发基线：本次 Phase 4 提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`；上一稳定基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
+> 最新恢复入口：本次 Phase 4 提交内已同步；上一恢复入口：`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan 已完成并通过聚焦验证；Phase 5-6 尚未开始。下次正式开发应从 **Phase 5：远端写确认与 GitHub 增强** 开始。
 
 ### 已完成
 
@@ -30,6 +30,8 @@
   - `24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`
   - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
   - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
+  - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
+  - 本次 Phase 4 提交：`feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -52,16 +54,21 @@
   - 已新增统一只读 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text、revision selector、current / accepted badge、checksum mismatch / read error、current vs accepted 对比。
   - 已接入 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel`，并保留既有审核 / 提交流程的保守阻断条件。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.52`、`@codeinsights/electron` 到 `0.0.125`，并同步 `bun.lock`。
+- [x] Phase 4：Contribution Dashboard 与 Submission Plan。
+  - 已新增 `ContributionTaskSummary` / `PipelineSubmissionPlan` shared 契约、`GET_CONTRIBUTION_TASK_SUMMARY` / `GET_SUBMISSION_PLAN` IPC、preload API 和 `pipeline-read-model-service.ts`。
+  - read model 只接受 `sessionId`，从 ContributionTask、events、stage outputs、patch-work manifest 和本地 Git 只读状态重建 summary / submission plan；不调用远端 preflight，不执行 `git commit` / `git push` / `gh`。
+  - summary 读取缺失 `patch-work/` 时不会创建目录；repository URL、PR URL、error、blocker、warning 等新 IPC 返回面已统一脱敏。
+  - 已新增 `ContributionTaskDashboard` 和 summary / submission plan hooks，并在 `PipelineView` 中展示 task、repo、branch、mode、patch-work、commit、PR 与最近事件。
+  - `CommitterPanel` 已改为“保存提交材料 / 本地 commit / Draft PR”三段式展示，优先使用 `PipelineSubmissionPlan`，并明确展示 candidate files、excluded files、blockers、warnings 和远端恢复状态。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.53`、`@codeinsights/electron` 到 `0.0.126`，并同步 `bun.lock`。
 
 ### 尚未开始
 
-- [ ] Phase 4：Contribution Dashboard 与 Submission Plan。
 - [ ] Phase 5：远端写确认与 GitHub 增强。
 - [ ] Phase 6：真实端到端验收与交付准备。
 
 ### 当前未完成的关键能力
 
-- [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
 - [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
 - [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
 
@@ -70,11 +77,11 @@
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3 已完成，Phase 4 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -7 --oneline`，确认没有未提交改动，并确认最近历史包含 `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
-4. 在 `tasks/todo.md` 写入 Phase 4 计划。
-5. 从 Phase 4 开始开发，先补测试，再实现 Contribution Dashboard 与 Submission Plan read model / UI。
-6. Phase 4 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4 已完成，Phase 5 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -8 --oneline`，确认没有未提交改动，并确认最近历史包含本次 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`、`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+4. 在 `tasks/todo.md` 写入 Phase 5 计划。
+5. 从 Phase 5 开始开发，先补测试，再实现远端写确认与 GitHub 增强。
+6. Phase 5 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
 
 ## 使用规则
 
@@ -124,7 +131,7 @@
 | M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [x] |
 | M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [x] |
 | M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [x] |
-| M4 | Phase 4 | Contribution Dashboard + Submission Plan | [ ] |
+| M4 | Phase 4 | Contribution Dashboard + Submission Plan | [x] |
 | M5 | Phase 5 | 远端写确认 + GitHub 增强 | [ ] |
 | M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [ ] |
 
@@ -568,12 +575,12 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 
 ### 阶段状态
 
-- [ ] 阶段开始
-- [ ] read model 完成
-- [ ] Dashboard 完成
-- [ ] CommitterPanel 三段式改造完成
-- [ ] 验证完成
-- [ ] 阶段提交完成
+- [x] 阶段开始
+- [x] read model 完成
+- [x] Dashboard 完成
+- [x] CommitterPanel 三段式改造完成
+- [x] 验证完成
+- [x] 阶段提交完成
 
 ### 目标
 
@@ -582,44 +589,45 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 ### 入口条件
 
 - [x] Phase 3 已完成并提交。
-- [ ] 已确认本阶段不改变真实 commit / remote PR 执行服务。
-- [ ] 已确认 Dashboard 使用 read model，不从 records 文本反推状态。
+- [x] 已确认本阶段不改变真实 commit / remote PR 执行服务。
+- [x] 已确认 Dashboard 使用 read model，不从 records 文本反推状态。
 
 ### 契约与后端任务
 
-- [ ] 新增 `ContributionTaskSummary` 类型。
-- [ ] 新增 `PipelineSubmissionPlan` 类型。
-- [ ] 新增 `GET_CONTRIBUTION_TASK_SUMMARY` IPC。
-- [ ] 新增 `GET_SUBMISSION_PLAN` IPC。
-- [ ] 新增 `pipeline-read-model-service.ts`。
-- [ ] Summary 包含 task、repo、branch、mode、patch-work、commit、PR、最近事件。
-- [ ] SubmissionPlan 包含 commit message、PR title/body、candidate files、excluded files、blockers、warnings、local commit、remote submission。
-- [ ] service 读取失败时返回可解释错误，不让 UI 静默空白。
+- [x] 新增 `ContributionTaskSummary` 类型。
+- [x] 新增 `PipelineSubmissionPlan` 类型。
+- [x] 新增 `GET_CONTRIBUTION_TASK_SUMMARY` IPC。
+- [x] 新增 `GET_SUBMISSION_PLAN` IPC。
+- [x] 新增 `pipeline-read-model-service.ts`。
+- [x] Summary 包含 task、repo、branch、mode、patch-work、commit、PR、最近事件。
+- [x] SubmissionPlan 包含 commit message、PR title/body、candidate files、excluded files、blockers、warnings、local commit、remote submission。
+- [x] service 读取失败时返回可解释错误，不让 UI 静默空白。
 
 ### 前端任务
 
-- [ ] 新增 `ContributionTaskDashboard.tsx`。
-- [ ] 新增 `useContributionTaskSummary(sessionId)`。
-- [ ] 新增 `usePipelineSubmissionPlan(sessionId)`。
-- [ ] Dashboard 展示 selected task、repository、branch、mode、patch-work 状态、commit hash、PR URL、最近事件。
-- [ ] CommitterPanel 改为三段：保存材料、本地 commit、Draft PR。
-- [ ] 本地 commit 前展示 candidate files / excluded files / branch。
-- [ ] Draft PR 前展示 remote / base/head / PR preview。
-- [ ] push 成功但 PR 失败时展示恢复入口。
+- [x] 新增 `ContributionTaskDashboard.tsx`。
+- [x] 新增 `useContributionTaskSummary(sessionId)`。
+- [x] 新增 `usePipelineSubmissionPlan(sessionId)`。
+- [x] Dashboard 展示 selected task、repository、branch、mode、patch-work 状态、commit hash、PR URL、最近事件。
+- [x] CommitterPanel 改为三段：保存材料、本地 commit、Draft PR。
+- [x] 本地 commit 前展示 candidate files / excluded files / branch。
+- [x] Draft PR 前展示 remote / base/head / PR preview。
+- [x] push 成功但 PR 失败时展示恢复入口。
 
 ### 测试任务
 
-- [ ] `pipeline-read-model-service.test.ts`：summary 缺 task。
-- [ ] `pipeline-read-model-service.test.ts`：summary 从 events 汇总 commit / PR。
-- [ ] `pipeline-read-model-service.test.ts`：submission plan 排除 `patch-work/**`。
-- [ ] `CommitterPanel.test.tsx`：三段按钮禁用条件。
-- [ ] `CommitterPanel.test.tsx`：没有 local commit 时不能进入 Draft PR。
-- [ ] `ContributionTaskDashboard.test.tsx`：summary 正常 / 空态 / 错误态。
+- [x] `pipeline-read-model-service.test.ts`：summary 缺 task。
+- [x] `pipeline-read-model-service.test.ts`：summary 从 events 汇总 commit / PR。
+- [x] `pipeline-read-model-service.test.ts`：submission plan 排除 `patch-work/**`。
+- [x] `pipeline-read-model-service.test.ts`：summary 读取缺失 `patch-work/` 时不创建目录，并脱敏 repository URL。
+- [x] `CommitterPanel.test.tsx`：三段按钮禁用条件。
+- [x] `CommitterPanel.test.tsx`：没有 local commit 时不能进入 Draft PR。
+- [x] `ContributionTaskDashboard.test.tsx`：summary 正常 / 空态 / 错误态。
 
 ### 验证命令
 
 ```bash
-bun test apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
 ```
 
 ```bash
@@ -628,25 +636,38 @@ bun test apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx 
 
 ```bash
 bun run --filter='@codeinsights/electron' typecheck
-git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pipeline/v1
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
 ```
 
 ### 完成定义
 
-- [ ] Dashboard 可见 task / repo / branch / mode / patch-work / commit / PR。
-- [ ] CommitterPanel 不再零散拼提交计划。
-- [ ] local patch / local commit / remote PR 三个动作清晰分区。
-- [ ] `patch-work/**` 明确显示在 excluded files。
-- [ ] read model 错误可见且不阻断 records。
-- [ ] 受影响 package patch version 已递增。
-- [ ] 阶段 Review 已写入 `tasks/todo.md`。
-- [ ] 阶段提交完成。
+- [x] Dashboard 可见 task / repo / branch / mode / patch-work / commit / PR。
+- [x] CommitterPanel 不再零散拼提交计划。
+- [x] local patch / local commit / remote PR 三个动作清晰分区。
+- [x] `patch-work/**` 明确显示在 excluded files。
+- [x] read model 错误可见且不阻断 records。
+- [x] read model 缺失 `patch-work/` 时保持只读，不创建目录。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
 
 ### 禁止事项
 
-- [ ] 不引入真实远端写新路径。
-- [ ] 不把 Dashboard 状态写入 localStorage。
-- [ ] 不让 UI 直接计算提交候选文件作为事实源。
+- [x] 不引入真实远端写新路径。
+- [x] 不把 Dashboard 状态写入 localStorage。
+- [x] 不让 UI 直接计算提交候选文件作为事实源。
+
+## 2026-05-29 Pipeline v1 Phase 4 Review
+
+- 阶段范围：只完成 Contribution Dashboard 与 Submission Plan read model / UI；未修改 Graph、runner、Git submission 真实写逻辑、远端写确认模型、GitHub API、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增 `ContributionTaskSummary`、`PipelineSubmissionPlan`、summary / submission plan IPC 与 preload API；新增 `pipeline-read-model-service.ts`，从 ContributionTask、events、stage outputs、patch-work manifest 和本地 Git 只读状态重建提交前视图。
+- 前端接入：新增 `ContributionTaskDashboard`、`useContributionTaskSummary`、`usePipelineSubmissionPlan`；`PipelineView` 在 v2 会话展示贡献任务 dashboard；`CommitterPanel` 改为保存提交材料、本地 commit、Draft PR 三段式，并优先使用服务端 `PipelineSubmissionPlan`。
+- 安全确认：Renderer 只传 `sessionId`；read model 不调用远端 preflight，不执行真实 `git commit` / `git push` / `gh`；summary 读取缺失 `patch-work/` 时不创建目录；`patch-work/**` 永远进入 excluded files；URL、error、blocker、warning 等新 IPC 返回字段已脱敏。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.53`，`@codeinsights/electron` 提升到 `0.0.126`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备仍未开始。
+- 阶段提交：本次提交 `feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
 
 ## Phase 5：远端写确认与 GitHub 增强
 
@@ -887,11 +908,11 @@ git diff --check -- packages/shared apps/electron docs/improve/pipeline/v1 tasks
 
 ## 下一轮启动入口
 
-下一轮正式开发从 Phase 1 开始，推荐最小切片：
+下一轮正式开发从 Phase 5 开始，推荐最小切片：
 
-1. 新增 repository preflight IPC / preload / renderer 调用入口。
-2. 接入 `PipelineView` 启动前 preflight 状态展示与 blocker 拦截。
-3. 在 `PipelineService.start()` 增加服务端 preflight 守卫。
-4. 不拆 `PipelineView`，不接入完整 Preflight Center，不改 runner / Graph。
-5. 跑 Phase 1 聚焦测试、typecheck、diff check。
-6. 阶段完成后单独提交。
+1. 先在 `tasks/todo.md` 写 Phase 5 计划，明确远端写确认与 GitHub 增强的测试边界。
+2. 先补 remote confirmation / GitHub existing PR / push 成功 PR 失败恢复相关测试。
+3. 实现独立、可审计的远端写确认状态，确保未二次确认时不会执行 `git push` 或创建 PR。
+4. 补充 GitHub API / existing PR / skipPush 重试能力，并保持 token、credentialed URL、Authorization 全链路脱敏。
+5. 不修改根 `README.md` / 根 `AGENTS.md`，不执行真实远端写，除非用户明确提供凭证并要求 smoke。
+6. 跑 Phase 5 聚焦测试、typecheck、diff check；阶段完成后更新本文、next-session prompt、`tasks/todo.md` Review，并单独提交。

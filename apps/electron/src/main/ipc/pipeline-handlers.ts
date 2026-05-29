@@ -2,9 +2,11 @@ import { ipcMain, shell } from 'electron'
 import { PIPELINE_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   PipelineArtifactContentInput,
+  ContributionTaskSummary,
   PipelineExplorerReportRef,
   PipelineGateRequest,
   PipelineGateResponse,
+  PipelineContributionTaskSummaryInput,
   PipelinePatchWorkReadFileInput,
   PipelinePatchWorkRevisionInput,
   PipelinePatchWorkSessionInput,
@@ -18,6 +20,8 @@ import type {
   PipelineSelectTaskResult,
   PipelineRunPreflightInput,
   PipelinePreflightResult,
+  PipelineSubmissionPlan,
+  PipelineSubmissionPlanInput,
   PipelineSessionMeta,
   PipelineStartInput,
   PipelineStateSnapshot,
@@ -88,6 +92,20 @@ export function registerPipelineIpcHandlers(): void {
     PIPELINE_IPC_CHANNELS.GET_PATCH_WORK_MANIFEST,
     async (_event, input: PipelinePatchWorkSessionInput): Promise<PatchWorkManifest> => {
       return getPipelineService().getPatchWorkManifest(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.GET_CONTRIBUTION_TASK_SUMMARY,
+    async (_event, input: PipelineContributionTaskSummaryInput): Promise<ContributionTaskSummary> => {
+      return getPipelineService().getContributionTaskSummary(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.GET_SUBMISSION_PLAN,
+    async (_event, input: PipelineSubmissionPlanInput): Promise<PipelineSubmissionPlan> => {
+      return getPipelineService().getSubmissionPlan(input)
     }
   )
 

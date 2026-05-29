@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type {
   PipelineCommitterStageOutput,
   PipelinePatchWorkDocumentRef,
+  PipelineSubmissionPlan,
   PipelineTesterStageOutput,
 } from '@codeinsights/shared'
 import {
@@ -98,6 +99,41 @@ function makeTesterOutput(): PipelineTesterStageOutput {
   }
 }
 
+function makeSubmissionPlan(patch: Partial<PipelineSubmissionPlan> = {}): PipelineSubmissionPlan {
+  return {
+    sessionId: 'session-committer-ui',
+    mode: 'local_patch',
+    commitMessage: 'feat(pipeline): read model plan',
+    prTitle: 'Expose read model plan',
+    prBody: '## Summary\n- Use read model',
+    baseBranch: 'main',
+    headBranch: 'feature/read-model-plan',
+    remoteName: 'origin',
+    sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+    candidateFiles: ['src/from-read-model.ts'],
+    excludedFiles: ['patch-work/**', 'patch-work/commit.md'],
+    blockers: [],
+    warnings: ['当前计划来自只读 read model'],
+    localCommit: {
+      attempted: false,
+      status: 'not_requested',
+    },
+    remoteSubmission: {
+      attempted: false,
+      status: 'not_requested',
+      type: 'pull_request',
+      remoteName: 'origin',
+      baseBranch: 'main',
+      headBranch: 'feature/read-model-plan',
+      prTitle: 'Expose read model plan',
+      prBody: '## Summary\n- Use read model',
+      draft: true,
+    },
+    updatedAt: 1,
+    ...patch,
+  }
+}
+
 describe('CommitterPanel', () => {
   test('从 committer stage output 收集 commit.md 和 pr.md 文件引用', () => {
     const refs = collectCommitterPatchWorkRefs(makeCommitterOutput())
@@ -139,6 +175,35 @@ describe('CommitterPanel', () => {
       }),
     ])
     expect(viewModel.documents.map((document) => document.relativePath)).toEqual(['commit.md', 'pr.md'])
+  })
+
+  test('三段式提交计划优先使用 SubmissionPlan read model', () => {
+    const viewModel = buildCommitterPanelViewModel({
+      output: makeCommitterOutput(),
+      testerOutput: makeTesterOutput(),
+      submissionPlan: makeSubmissionPlan(),
+      contents: new Map([
+        ['commit.md', '# Commit 准备'],
+        ['pr.md', '# PR 草稿'],
+      ]),
+      loadingPaths: new Set(),
+      readErrors: new Map(),
+      submitting: false,
+    })
+
+    expect(viewModel.sections.map((section) => section.title)).toEqual([
+      '保存提交材料',
+      '本地 commit',
+      'Draft PR',
+    ])
+    expect(viewModel.commitMessage).toBe('feat(pipeline): read model plan')
+    expect(viewModel.prTitle).toBe('Expose read model plan')
+    expect(viewModel.branchSummary).toBe('main -> feature/read-model-plan')
+    expect(viewModel.commitCandidateItems).toEqual(['src/from-read-model.ts'])
+    expect(viewModel.excludedItems).toEqual(['patch-work/**', 'patch-work/commit.md'])
+    expect(viewModel.remoteTargetSummary).toContain('origin')
+    expect(viewModel.remoteTargetSummary).toContain('feature/read-model-plan')
+    expect(viewModel.planWarnings).toContain('当前计划来自只读 read model')
   })
 
   test('缺少提交材料正文时禁止完成 submission review', () => {

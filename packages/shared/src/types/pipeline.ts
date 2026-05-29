@@ -419,6 +419,65 @@ export interface ContributionTaskEvent {
   createdAt: number
 }
 
+export interface ContributionTaskRepositorySummary {
+  root: string
+  url?: string
+  issueUrl?: string
+  baseBranch?: string
+  workingBranch?: string
+  baseCommit?: string
+}
+
+export interface ContributionTaskPatchWorkSummary {
+  dir: string
+  manifestFound: boolean
+  fileCount: number
+  acceptedFileCount: number
+  updatedAt?: number
+  error?: string
+}
+
+export interface ContributionTaskSummaryEvent {
+  id: string
+  type: ContributionTaskEventType
+  title: string
+  detail?: string
+  createdAt: number
+}
+
+export interface ContributionTaskSummary {
+  sessionId: string
+  task: ContributionTask | null
+  repository?: ContributionTaskRepositorySummary
+  mode?: ContributionMode
+  allowRemoteWrites?: boolean
+  patchWork?: ContributionTaskPatchWorkSummary
+  localCommit?: PipelineLocalCommitSummary
+  remoteSubmission?: PipelineRemoteSubmissionSummary
+  recentEvents: ContributionTaskSummaryEvent[]
+  updatedAt: number
+  error?: string
+}
+
+export interface PipelineSubmissionPlan {
+  sessionId: string
+  mode: ContributionMode
+  commitMessage: string
+  prTitle: string
+  prBody: string
+  baseBranch?: string
+  headBranch?: string
+  remoteName?: string
+  sanitizedRemoteUrl?: string
+  candidateFiles: string[]
+  excludedFiles: string[]
+  blockers: string[]
+  warnings: string[]
+  localCommit?: PipelineLocalCommitSummary
+  remoteSubmission?: PipelineRemoteSubmissionSummary
+  updatedAt: number
+}
+
 /** patch-work 文件归属节点。preflight 不是 Agent 阶段，但会写入检查产物。 */
 export type PatchWorkNodeKind = PipelineNodeKind | 'preflight'
 
@@ -610,6 +669,10 @@ export interface PipelineArtifactContentInput {
 export interface PipelinePatchWorkSessionInput {
   sessionId: string
 }
+
+export interface PipelineContributionTaskSummaryInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineSubmissionPlanInput extends PipelinePatchWorkSessionInput {}
 
 export interface PipelinePatchWorkReadFileInput extends PipelinePatchWorkSessionInput {
   relativePath: string
@@ -834,6 +897,8 @@ export const PIPELINE_IPC_CHANNELS = {
   SEARCH_RECORDS: 'pipeline:search-records',
   READ_ARTIFACT_CONTENT: 'pipeline:read-artifact-content',
   GET_PATCH_WORK_MANIFEST: 'pipeline-v2:get-patch-work-manifest',
+  GET_CONTRIBUTION_TASK_SUMMARY: 'pipeline-v2:get-contribution-task-summary',
+  GET_SUBMISSION_PLAN: 'pipeline-v2:get-submission-plan',
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
   LIST_PATCH_WORK_REVISIONS: 'pipeline-v2:list-patch-work-revisions',
   READ_PATCH_WORK_REVISION: 'pipeline-v2:read-patch-work-revision',

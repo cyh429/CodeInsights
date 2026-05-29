@@ -34,8 +34,12 @@ import type {
   PipelineLocalCommitSummary,
   PipelineRemoteSubmissionSummary,
   PipelineChangedFileType,
+  PipelineContributionTaskSummaryInput,
+  ContributionTaskSummary,
   PatchWorkDocumentRevision,
   PatchWorkFileKind,
+  PipelineSubmissionPlan,
+  PipelineSubmissionPlanInput,
 } from '@codeinsights/shared'
 import { replayPipelineRecords } from '@codeinsights/shared'
 import type { PipelineNodeRunner } from './pipeline-node-runner'
@@ -94,6 +98,10 @@ import {
   redactPreflightRemoteUrl,
   runPipelinePreflight,
 } from './pipeline-preflight-service'
+import {
+  getContributionTaskSummary as buildContributionTaskSummary,
+  getPipelineSubmissionPlan as buildPipelineSubmissionPlan,
+} from './pipeline-read-model-service'
 
 interface RunSessionPreflightInput {
   sessionId: string
@@ -2046,6 +2054,16 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
       const parsed = parsePatchWorkSessionInput(input)
       const task = getContributionTaskForSession(parsed.sessionId, { required: true })
       return readPatchWorkManifest(task!.repositoryRoot)
+    },
+
+    getContributionTaskSummary(input: PipelineContributionTaskSummaryInput): ContributionTaskSummary {
+      const parsed = parsePatchWorkSessionInput(input)
+      return buildContributionTaskSummary(parsed)
+    },
+
+    getSubmissionPlan(input: PipelineSubmissionPlanInput): PipelineSubmissionPlan {
+      const parsed = parsePatchWorkSessionInput(input)
+      return buildPipelineSubmissionPlan(parsed)
     },
 
     readPatchWorkFile(input: PipelinePatchWorkReadFileInput): string {

@@ -4,6 +4,7 @@ import type {
   PipelineGateRequest,
   PipelineSessionMeta,
   PipelineStateSnapshot,
+  PipelineSubmissionPlan,
 } from '@codeinsights/shared'
 import { PipelineComposer } from './PipelineComposer'
 import { PipelineGateCard } from './PipelineGateCard'
@@ -25,6 +26,9 @@ interface PipelineGateSidePanelProps {
   documentContents: Map<string, string>
   documentLoadingPaths: Set<string>
   documentReadErrors: Map<string, string>
+  submissionPlan: PipelineSubmissionPlan | null
+  submissionPlanLoading: boolean
+  submissionPlanError: string | null
   running: boolean
   startDisabled: boolean
   currentTask?: string
@@ -45,6 +49,9 @@ export function PipelineGateSidePanel({
   documentContents,
   documentLoadingPaths,
   documentReadErrors,
+  submissionPlan,
+  submissionPlanLoading,
+  submissionPlanError,
   running,
   startDisabled,
   currentTask,
@@ -69,6 +76,9 @@ export function PipelineGateSidePanel({
           sessionId={sessionId}
           output={gatePanel.stageOutputs.committer}
           testerOutput={gatePanel.stageOutputs.tester}
+          submissionPlan={submissionPlan}
+          submissionPlanLoading={submissionPlanLoading}
+          submissionPlanError={submissionPlanError}
           contents={documentContents}
           loadingPaths={documentLoadingPaths}
           readErrors={documentReadErrors}

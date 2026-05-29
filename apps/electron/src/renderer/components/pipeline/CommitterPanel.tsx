@@ -3,6 +3,7 @@ import { FolderOpen } from 'lucide-react'
 import type {
   PipelineCommitterStageOutput,
   PipelinePatchWorkDocumentRef,
+  PipelineSubmissionPlan,
   PipelineTestEvidence,
   PipelineTesterStageOutput,
 } from '@codeinsights/shared'
@@ -22,6 +23,11 @@ interface CommitterEvidenceViewModel {
   command: string
   statusLabel: string
   summary: string
+}
+
+interface CommitterSectionViewModel {
+  title: string
+  description: string
 }
 
 export interface CommitterPanelViewModel {
@@ -54,6 +60,9 @@ export interface CommitterPanelViewModel {
   remoteSubmitWarning?: string
   remoteSubmitResult?: string
   remoteTargetSummary: string
+  sections: CommitterSectionViewModel[]
+  planWarnings: string[]
+  planBlockers: string[]
   evidenceItems: CommitterEvidenceViewModel[]
   documents: CommitterDocumentViewModel[]
 }
@@ -102,6 +111,7 @@ function sumPatchSetStats(output: PipelineTesterStageOutput | null | undefined):
 export function buildCommitterPanelViewModel({
   output,
   testerOutput,
+  submissionPlan,
   contents,
   loadingPaths,
   readErrors,
@@ -110,6 +120,7 @@ export function buildCommitterPanelViewModel({
 }: {
   output: PipelineCommitterStageOutput | null | undefined
   testerOutput: PipelineTesterStageOutput | null | undefined
+  submissionPlan?: PipelineSubmissionPlan | null
   contents: Map<string, string>
   loadingPaths: Set<string>
   readErrors: Map<string, string>
@@ -118,10 +129,14 @@ export function buildCommitterPanelViewModel({
 }): CommitterPanelViewModel {
   const documents = collectCommitterPatchWorkRefs(output)
   const blockers = output?.blockers ?? []
+  const planBlockers = submissionPlan?.blockers ?? []
+  const planWarnings = submissionPlan?.warnings ?? []
   const missingRequiredDocuments = Boolean(output)
     && ((!output?.commitDocRef && !output?.commitRef) || (!output?.prDocRef && !output?.prRef))
-  const remoteCreated = output?.submissionStatus === 'remote_pr_created' || output?.remoteSubmission?.status === 'created'
-  const remoteFailed = output?.submissionStatus === 'remote_pr_failed' || output?.remoteSubmission?.status === 'failed'
+  const localCommit = submissionPlan?.localCommit ?? output?.localCommit
+  const remoteSubmission = submissionPlan?.remoteSubmission ?? output?.remoteSubmission
+  const remoteCreated = output?.submissionStatus === 'remote_pr_created' || remoteSubmission?.status === 'created'
+  const remoteFailed = output?.submissionStatus === 'remote_pr_failed' || remoteSubmission?.status === 'failed'
   const hasForbiddenRemoteAttempt = Boolean(output?.remoteSubmission?.attempted) && !remoteCreated && !remoteFailed
   const missingChecksum = documents.some((document) => !document.checksum)
   const hasLoading = documents.some((document) => loadingPaths.has(document.relativePath))
@@ -132,7 +147,7 @@ export function buildCommitterPanelViewModel({
       && !readErrors.has(document.relativePath)
       && (!content || !content.trim())
   })
-  const localCommitCreated = output?.submissionStatus === 'local_commit_created' || output?.localCommit?.status === 'created'
+  const localCommitCreated = output?.submissionStatus === 'local_commit_created' || localCommit?.status === 'created'
   const statusTone: CommitterPanelViewModel['statusTone'] = blockers.length > 0
     ? 'warning'
     : output?.submissionStatus === 'draft_only' || localCommitCreated || remoteCreated
@@ -164,28 +179,32 @@ export function buildCommitterPanelViewModel({
   })()
   const stats = sumPatchSetStats(testerOutput)
   const evidence = testerOutput?.patchSet?.testEvidence ?? testerOutput?.testEvidence ?? []
-  const commitCandidateFiles = output?.localCommit?.files?.length
+  const commitCandidateFiles = submissionPlan?.candidateFiles?.length
+    ? submissionPlan.candidateFiles.map((path) => ({ path }))
+    : output?.localCommit?.files?.length
     ? output.localCommit.files
     : testerOutput?.patchSet?.files ?? []
-  const excludedItems = output?.localCommit?.excludedFiles?.length
+  const excludedItems = submissionPlan?.excludedFiles?.length
+    ? submissionPlan.excludedFiles
+    : output?.localCommit?.excludedFiles?.length
     ? output.localCommit.excludedFiles
     : ['patch-work/**']
-  const baseBranch = output?.localCommit?.baseBranch ?? testerOutput?.patchSet?.baseBranch
-  const workingBranch = output?.localCommit?.workingBranch ?? testerOutput?.patchSet?.workingBranch
+  const baseBranch = submissionPlan?.baseBranch ?? output?.localCommit?.baseBranch ?? testerOutput?.patchSet?.baseBranch
+  const workingBranch = submissionPlan?.headBranch ?? output?.localCommit?.workingBranch ?? testerOutput?.patchSet?.workingBranch
   const branchSummary = baseBranch && workingBranch
     ? `${baseBranch} -> ${workingBranch}`
     : workingBranch ?? '工作分支未知'
-  const localCommitResult = output?.localCommit?.status === 'created' && output.localCommit.commitHash
-    ? `已创建 ${output.localCommit.commitHash}`
-    : output?.localCommit?.status === 'failed'
-      ? `提交失败：${output.localCommit.error ?? '未知错误'}`
+  const localCommitResult = localCommit?.status === 'created' && localCommit.commitHash
+    ? `已创建 ${localCommit.commitHash}`
+    : localCommit?.status === 'failed'
+      ? `提交失败：${localCommit.error ?? '未知错误'}`
       : undefined
-  const remoteSubmission = output?.remoteSubmission
-  const remoteCommitHash = remoteSubmission?.commitHash ?? output?.localCommit?.commitHash
-  const remoteHeadBranch = remoteSubmission?.headBranch ?? output?.localCommit?.workingBranch
+  const remoteCommitHash = remoteSubmission?.commitHash ?? localCommit?.commitHash
+  const remoteHeadBranch = remoteSubmission?.headBranch ?? submissionPlan?.headBranch ?? localCommit?.workingBranch
+  const remoteName = submissionPlan?.remoteName ?? remoteSubmission?.remoteName ?? 'origin'
   const remoteTargetSummary = remoteCommitHash
-    ? `${remoteSubmission?.remoteName ?? 'origin'} ${remoteHeadBranch ?? branchSummary} (${remoteCommitHash})`
-    : '需要先创建本地 commit'
+    ? `${remoteName} ${remoteHeadBranch ?? branchSummary} (${remoteCommitHash})`
+    : `${remoteName} ${remoteHeadBranch ?? branchSummary}（需要先创建本地 commit）`
   const remoteSubmitResult = remoteSubmission?.status === 'created'
     ? `已创建 ${remoteSubmission.prUrl ?? '远端 PR'}`
     : remoteSubmission?.status === 'pushed'
@@ -201,6 +220,7 @@ export function buildCommitterPanelViewModel({
   const remoteSubmitDisabled = submitting
     || hasDocumentBlockingIssue
     || blockers.length > 0
+    || planBlockers.length > 0
     || !localCommitCreated
     || remoteCreated
     || remoteConfirmed !== true
@@ -223,8 +243,8 @@ export function buildCommitterPanelViewModel({
                 : '等待提交草稿',
     statusTone,
     summary: output?.summary ?? '等待 Committer 输出 commit.md 和 pr.md。',
-    commitMessage: output?.commitMessage ?? '',
-    prTitle: output?.prTitle ?? '',
+    commitMessage: submissionPlan?.commitMessage ?? output?.commitMessage ?? '',
+    prTitle: submissionPlan?.prTitle ?? output?.prTitle ?? '',
     approveDisabled: submitting || Boolean(warning) || localCommitCreated || remoteCreated,
     approveLabel: submitting ? '正在保存提交材料' : '仅保存提交材料并完成',
     rejectLabel: '要求修订',
@@ -243,7 +263,7 @@ export function buildCommitterPanelViewModel({
       : submitting
         ? '正在创建本地 commit'
         : '创建本地 commit',
-    localCommitDisabled: submitting || Boolean(warning) || localCommitCreated || remoteCreated,
+    localCommitDisabled: submitting || Boolean(warning) || planBlockers.length > 0 || localCommitCreated || remoteCreated,
     localCommitResult,
     remoteConfirmLabel: '我确认将本地 commit 推送到远端并创建 Draft PR',
     remoteSubmitLabel: remoteCreated
@@ -255,6 +275,22 @@ export function buildCommitterPanelViewModel({
     remoteSubmitWarning,
     remoteSubmitResult,
     remoteTargetSummary,
+    sections: [
+      {
+        title: '保存提交材料',
+        description: '接受 commit.md 与 pr.md，不创建真实 Git commit。',
+      },
+      {
+        title: '本地 commit',
+        description: '基于提交计划创建受控本地 commit。',
+      },
+      {
+        title: 'Draft PR',
+        description: '基于已创建的本地 commit 执行远端提交。',
+      },
+    ],
+    planWarnings,
+    planBlockers,
     evidenceItems: evidence.map((item) => ({
       command: item.command,
       statusLabel: statusLabel(item.status),
@@ -282,6 +318,9 @@ export function CommitterPanel({
   sessionId,
   output,
   testerOutput,
+  submissionPlan,
+  submissionPlanLoading,
+  submissionPlanError,
   contents,
   loadingPaths,
   readErrors,
@@ -295,6 +334,9 @@ export function CommitterPanel({
   sessionId: string
   output: PipelineCommitterStageOutput | null | undefined
   testerOutput: PipelineTesterStageOutput | null | undefined
+  submissionPlan?: PipelineSubmissionPlan | null
+  submissionPlanLoading?: boolean
+  submissionPlanError?: string | null
   contents: Map<string, string>
   loadingPaths: Set<string>
   readErrors: Map<string, string>
@@ -314,10 +356,11 @@ export function CommitterPanel({
   const viewModel = buildCommitterPanelViewModel({
     output,
     testerOutput,
+    submissionPlan,
     contents,
     loadingPaths,
     readErrors,
-    submitting,
+    submitting: submitting || submissionPlanLoading === true,
     remoteConfirmed,
   })
 
@@ -392,6 +435,27 @@ export function CommitterPanel({
       {viewModel.warning ? (
         <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
           {viewModel.warning}
+        </div>
+      ) : null}
+      {submissionPlanError ? (
+        <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
+          提交计划读取失败：{submissionPlanError}
+        </div>
+      ) : null}
+      {viewModel.planBlockers.length > 0 ? (
+        <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
+          <div className="font-medium">提交计划阻塞</div>
+          <ul className="mt-2 space-y-1">
+            {viewModel.planBlockers.map((blocker) => <li key={blocker}>- {blocker}</li>)}
+          </ul>
+        </div>
+      ) : null}
+      {viewModel.planWarnings.length > 0 ? (
+        <div className="mt-3 rounded-card bg-background/80 px-3 py-2 text-xs text-text-secondary">
+          <div className="font-medium text-text-primary">提交计划提醒</div>
+          <ul className="mt-2 space-y-1">
+            {viewModel.planWarnings.map((warning) => <li key={warning}>- {warning}</li>)}
+          </ul>
         </div>
       ) : null}
 
@@ -480,44 +544,56 @@ export function CommitterPanel({
       {error ? <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">{error}</div> : null}
 
       <div className="mt-3 grid grid-cols-1 gap-2">
-        <button
-          type="button"
-          disabled={viewModel.approveDisabled}
-          onClick={() => runAction(onApprove)}
-          className="rounded-control bg-status-running px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-running/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        >
-          {viewModel.approveLabel}
-        </button>
-        <button
-          type="button"
-          disabled={viewModel.localCommitDisabled}
-          onClick={() => runAction(onLocalCommit)}
-          className="rounded-control bg-status-success px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-success/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        >
-          {viewModel.localCommitLabel}
-        </button>
-        <label className="flex items-start gap-2 rounded-card bg-background px-3 py-2 text-xs text-text-secondary shadow-sm">
-          <input
-            type="checkbox"
-            checked={remoteConfirmed}
-            onChange={(event) => setRemoteConfirmed(event.target.checked)}
-            className="mt-0.5"
-          />
-          <span>{viewModel.remoteConfirmLabel}</span>
-        </label>
-        {viewModel.remoteSubmitWarning ? (
-          <div className="rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
-            {viewModel.remoteSubmitWarning}
-          </div>
-        ) : null}
-        <button
-          type="button"
-          disabled={viewModel.remoteSubmitDisabled}
-          onClick={() => runAction(onRemoteSubmit)}
-          className="rounded-control bg-status-danger px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-danger/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        >
-          {viewModel.remoteSubmitLabel}
-        </button>
+        <div className="rounded-card bg-background px-3 py-3 shadow-sm">
+          <div className="text-sm font-semibold text-text-primary">{viewModel.sections[0]?.title}</div>
+          <p className="mt-1 text-xs text-text-secondary">{viewModel.sections[0]?.description}</p>
+          <button
+            type="button"
+            disabled={viewModel.approveDisabled}
+            onClick={() => runAction(onApprove)}
+            className="mt-3 w-full rounded-control bg-status-running px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-running/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            {viewModel.approveLabel}
+          </button>
+        </div>
+        <div className="rounded-card bg-background px-3 py-3 shadow-sm">
+          <div className="text-sm font-semibold text-text-primary">{viewModel.sections[1]?.title}</div>
+          <p className="mt-1 text-xs text-text-secondary">{viewModel.sections[1]?.description}</p>
+          <button
+            type="button"
+            disabled={viewModel.localCommitDisabled}
+            onClick={() => runAction(onLocalCommit)}
+            className="mt-3 w-full rounded-control bg-status-success px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-success/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            {viewModel.localCommitLabel}
+          </button>
+        </div>
+        <div className="rounded-card bg-background px-3 py-3 shadow-sm">
+          <div className="text-sm font-semibold text-text-primary">{viewModel.sections[2]?.title}</div>
+          <p className="mt-1 text-xs text-text-secondary">{viewModel.sections[2]?.description}</p>
+          <label className="mt-3 flex items-start gap-2 rounded-card bg-surface-muted px-3 py-2 text-xs text-text-secondary">
+            <input
+              type="checkbox"
+              checked={remoteConfirmed}
+              onChange={(event) => setRemoteConfirmed(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>{viewModel.remoteConfirmLabel}</span>
+          </label>
+          {viewModel.remoteSubmitWarning ? (
+            <div className="mt-2 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
+              {viewModel.remoteSubmitWarning}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            disabled={viewModel.remoteSubmitDisabled}
+            onClick={() => runAction(onRemoteSubmit)}
+            className="mt-3 w-full rounded-control bg-status-danger px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-status-danger/90 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            {viewModel.remoteSubmitLabel}
+          </button>
+        </div>
         <button
           type="button"
           disabled={submitting}
