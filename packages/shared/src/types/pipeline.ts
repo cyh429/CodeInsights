@@ -496,6 +496,14 @@ export interface PipelineSubmissionPlan {
   updatedAt: number
 }
 
+export interface PipelineReportExport {
+  sessionId: string
+  title: string
+  markdown: string
+  fileName: string
+  generatedAt: number
+}
+
 /** patch-work 文件归属节点。preflight 不是 Agent 阶段，但会写入检查产物。 */
 export type PatchWorkNodeKind = PipelineNodeKind | 'preflight'
 
@@ -691,6 +699,8 @@ export interface PipelinePatchWorkSessionInput {
 export interface PipelineContributionTaskSummaryInput extends PipelinePatchWorkSessionInput {}
 
 export interface PipelineSubmissionPlanInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportExportInput extends PipelinePatchWorkSessionInput {}
 
 export interface PipelinePatchWorkReadFileInput extends PipelinePatchWorkSessionInput {
   relativePath: string
@@ -918,6 +928,7 @@ export const PIPELINE_IPC_CHANNELS = {
   GET_PATCH_WORK_MANIFEST: 'pipeline-v2:get-patch-work-manifest',
   GET_CONTRIBUTION_TASK_SUMMARY: 'pipeline-v2:get-contribution-task-summary',
   GET_SUBMISSION_PLAN: 'pipeline-v2:get-submission-plan',
+  EXPORT_REPORT: 'pipeline-v2:export-report',
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
   LIST_PATCH_WORK_REVISIONS: 'pipeline-v2:list-patch-work-revisions',
   READ_PATCH_WORK_REVISION: 'pipeline-v2:read-patch-work-revision',

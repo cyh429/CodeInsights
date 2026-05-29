@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type {
@@ -13,6 +13,7 @@ import {
   createContributionTask,
 } from './contribution-task-service'
 import {
+  exportPipelineReport,
   getContributionTaskSummary,
   getPipelineSubmissionPlan,
 } from './pipeline-read-model-service'
@@ -308,5 +309,302 @@ describe('pipeline-read-model-service', () => {
     expect(plan.commitMessage).toBe('')
     expect(plan.candidateFiles).toEqual([])
     expect(plan.excludedFiles).toContain('patch-work/**')
+  })
+
+  test('export report 汇总 draft-only 会话且不伪造 commit 或 PR', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-draft-only-repo-'))
+    tempRepos.push(repoRoot)
+    setupGitRepo(repoRoot)
+    writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
+    initializePatchWork({
+      contributionTaskId: 'task-report-draft',
+      pipelineSessionId: 'session-report-draft',
+      repositoryRoot: repoRoot,
+    })
+    const session = createPipelineSession('报告导出 draft-only', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-draft',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      repositoryUrl: 'https://user:ghp_should_not_leak@github.com/example/repo.git?token=secret#frag',
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '修复报告导出',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    writePatchWorkFile({
+      contributionTaskId: 'task-report-draft',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      kind: 'test_result',
+      createdByNode: 'tester',
+      content: '# 测试报告\n\nbun test 通过。',
+    })
+    appendPipelineRecord(session.id, {
+      id: 'user-input-report',
+      sessionId: session.id,
+      type: 'user_input',
+      content: '请导出 Pipeline 贡献报告',
+      createdAt: 1,
+    })
+    appendPipelineRecord(session.id, {
+      id: 'tester-artifact-report',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'tester',
+      artifact: makeTesterOutput(),
+      createdAt: 2,
+    })
+    appendPipelineRecord(session.id, {
+      id: 'committer-artifact-report',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'committer',
+      artifact: makeCommitterOutput(),
+      createdAt: 3,
+    })
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.sessionId).toBe(session.id)
+    expect(report.fileName.endsWith('.md')).toBe(true)
+    expect(report.markdown).toContain('# Pipeline 贡献报告')
+    expect(report.markdown).toContain('修复报告导出')
+    expect(report.markdown).toContain('本地 patch')
+    expect(report.markdown).toContain('draft-only')
+    expect(report.markdown).toContain('不会创建本地 commit 或真实 PR')
+    expect(report.markdown).toContain('src/index.ts')
+    expect(report.markdown).toContain('patch-work/**')
+    expect(report.markdown).toContain('bun test')
+    expect(report.markdown).not.toContain('ghp_should_not_leak')
+    expect(report.markdown).not.toContain('token=secret')
+  })
+
+  test('export report 不调用 Git 读模型，只使用已持久化的 records 和 events', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-no-live-git-repo-'))
+    const binDir = mkdtempSync(join(tmpdir(), 'codeinsights-report-no-live-git-bin-'))
+    tempRepos.push(repoRoot, binDir)
+    setupGitRepo(repoRoot)
+    writeFileSync(join(repoRoot, 'src', 'unrelated.ts'), 'export const unrelated = true\n', 'utf-8')
+    const session = createPipelineSession('报告导出 no live git', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-no-live-git',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出报告不刷新 Git 状态',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendPipelineRecord(session.id, {
+      id: 'tester-artifact-no-live-git',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'tester',
+      artifact: makeTesterOutput(),
+      createdAt: 2,
+    })
+    appendPipelineRecord(session.id, {
+      id: 'committer-artifact-no-live-git',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'committer',
+      artifact: makeCommitterOutput(),
+      createdAt: 3,
+    })
+    const gitMarker = join(binDir, 'git-called.txt')
+    const fakeGit = join(binDir, 'git')
+    writeFileSync(fakeGit, '#!/bin/sh\nprintf called >> "$CODEINSIGHTS_TEST_GIT_MARKER"\nexit 1\n', 'utf-8')
+    chmodSync(fakeGit, 0o755)
+    const originalPath = process.env.PATH
+    process.env.PATH = binDir
+    process.env.CODEINSIGHTS_TEST_GIT_MARKER = gitMarker
+
+    try {
+      const report = exportPipelineReport({ sessionId: session.id })
+
+      expect(report.markdown).toContain('src/index.ts')
+      expect(report.markdown).not.toContain('src/unrelated.ts')
+      expect(existsSync(gitMarker)).toBe(false)
+    } finally {
+      if (originalPath == null) {
+        delete process.env.PATH
+      } else {
+        process.env.PATH = originalPath
+      }
+      delete process.env.CODEINSIGHTS_TEST_GIT_MARKER
+    }
+  })
+
+  test('export report 汇总 local commit 并标明 patch-work 排除项', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-local-commit-repo-'))
+    tempRepos.push(repoRoot)
+    setupGitRepo(repoRoot)
+    const session = createPipelineSession('报告导出 local commit', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-local',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_commit',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '提交报告导出实现',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendContributionTaskEvent('task-report-local', {
+      id: 'event-report-local',
+      pipelineSessionId: session.id,
+      type: 'local_commit_created',
+      payload: {
+        localCommit: {
+          attempted: true,
+          operationId: 'op-local-report',
+          status: 'created',
+          commitHash: 'abc123def456',
+          commitMessage: 'feat(pipeline): export report',
+          files: [{ path: 'src/index.ts', changeType: 'modified', summary: '新增报告导出' }],
+          excludedFiles: ['patch-work/**', 'patch-work/commit.md'],
+        },
+      },
+      createdAt: 4,
+    })
+    appendPipelineRecord(session.id, {
+      id: 'committer-artifact-local',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'committer',
+      artifact: makeCommitterOutput({
+        submissionStatus: 'local_commit_created',
+        localCommit: {
+          attempted: true,
+          operationId: 'op-local-report',
+          status: 'created',
+          commitHash: 'abc123def456',
+          commitMessage: 'feat(pipeline): export report',
+          files: [{ path: 'src/index.ts', changeType: 'modified', summary: '新增报告导出' }],
+          excludedFiles: ['patch-work/**', 'patch-work/commit.md'],
+        },
+      }),
+      createdAt: 5,
+    })
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('本地 commit')
+    expect(report.markdown).toContain('abc123def456')
+    expect(report.markdown).toContain('src/index.ts')
+    expect(report.markdown).toContain('patch-work/**')
+    expect(report.markdown).toContain('op-local-report')
+  })
+
+  test('export report 汇总远端写确认审计且脱敏凭证', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-remote-repo-'))
+    tempRepos.push(repoRoot)
+    setupGitRepo(repoRoot)
+    const session = createPipelineSession('报告导出 remote', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-remote',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      repositoryUrl: 'https://github.com/example/repo.git',
+      contributionMode: 'remote_pr',
+      allowRemoteWrites: true,
+      selectedTaskTitle: '创建远端报告',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendContributionTaskEvent('task-report-remote', {
+      id: 'event-remote-confirmed',
+      pipelineSessionId: session.id,
+      type: 'remote_write_confirmed',
+      payload: {
+        operationId: 'op-remote-report',
+        remoteName: 'origin',
+        baseBranch: 'main',
+        headBranch: 'feature/report-export',
+        commitHash: 'abc123def456',
+        sanitizedRemoteUrl: 'https://x-access-token:ghp_should_not_leak@github.com/example/repo.git',
+      },
+      createdAt: 6,
+    })
+    appendContributionTaskEvent('task-report-remote', {
+      id: 'event-remote-created',
+      pipelineSessionId: session.id,
+      type: 'remote_submission_created',
+      payload: {
+        remoteSubmission: {
+          attempted: true,
+          operationId: 'op-remote-report',
+          status: 'created',
+          type: 'pull_request',
+          provider: 'github_api',
+          remoteName: 'origin',
+          sanitizedRemoteUrl: 'https://x-access-token:ghp_should_not_leak@github.com/example/repo.git',
+          baseBranch: 'main',
+          headBranch: 'feature/report-export',
+          commitHash: 'abc123def456',
+          prTitle: 'Export report',
+          prUrl: 'https://github.com/example/repo/pull/7',
+          prNumber: 7,
+          draft: true,
+        },
+      },
+      createdAt: 7,
+    })
+    appendPipelineRecord(session.id, {
+      id: 'error-token-record',
+      sessionId: session.id,
+      type: 'error',
+      error: 'Authorization: Bearer ghp_should_not_leak',
+      createdAt: 8,
+    })
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('远端写已确认')
+    expect(report.markdown).toContain('op-remote-report')
+    expect(report.markdown).toContain('origin')
+    expect(report.markdown).toContain('main -> feature/report-export')
+    expect(report.markdown).toContain('https://github.com/example/repo/pull/7')
+    expect(report.markdown).not.toContain('ghp_should_not_leak')
+    expect(report.markdown).not.toContain('Bearer')
+  })
+
+  test('export report 顶层 title 和 fileName 也会脱敏会话标题', () => {
+    const session = createPipelineSession(
+      'Authorization: Bearer ghp_should_not_leak https://user:ghp_url_secret@github.com/example/repo.git?token=secret',
+      'channel-1',
+      'workspace-1',
+      2,
+    )
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    for (const value of [report.title, report.fileName, report.markdown]) {
+      expect(value).not.toContain('ghp_should_not_leak')
+      expect(value).not.toContain('ghp_url_secret')
+      expect(value).not.toContain('token=secret')
+      expect(value).not.toContain('Bearer')
+    }
+  })
+
+  test('export report 缺少 ContributionTask 时返回可解释报告', () => {
+    const session = createPipelineSession('缺少任务报告', 'channel-1', 'workspace-1', 2)
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('未找到贡献任务')
+    expect(report.markdown).toContain(session.id)
+    expect(report.markdown).toContain('暂无提交候选文件')
   })
 })

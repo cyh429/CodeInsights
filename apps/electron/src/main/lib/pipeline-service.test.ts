@@ -337,6 +337,94 @@ describe('pipeline-service', () => {
     rmSync(repoRoot, { recursive: true, force: true })
   })
 
+  test('Pipeline report export 只读生成 Markdown，不触发 graph 或 gate 写入', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-report-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const graphCalls: string[] = []
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          graphCalls.push('invoke')
+          throw new Error('报告导出不应执行 graph')
+        },
+        resume: async () => {
+          graphCalls.push('resume')
+          throw new Error('报告导出不应恢复 graph')
+        },
+        getState: async () => {
+          graphCalls.push('getState')
+          throw new Error('报告导出不应读取 graph')
+        },
+      }),
+    })
+    const session = service.createSession('报告导出测试', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-report',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出贡献报告',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendPipelineNodeCompleteRecords(session.id, {
+      type: 'node_complete',
+      node: 'committer',
+      output: JSON.stringify({
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): export report',
+        prTitle: 'Export report',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput),
+      artifact: {
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): export report',
+        prTitle: 'Export report',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput,
+      createdAt: Date.now(),
+    })
+    const recordCountBefore = getPipelineRecords(session.id).length
+
+    const report = service.exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('导出贡献报告')
+    expect(report.markdown).toContain('draft-only')
+    expect(graphCalls).toEqual([])
+    expect(getPipelineRecords(session.id)).toHaveLength(recordCountBefore)
+
+    rmSync(repoRoot, { recursive: true, force: true })
+  })
+
   test('v2 start 遇到 preflight blocker 时不调用 Graph invoke', async () => {
     const workspace = createAgentWorkspace('阻断工作区')
     let invokeCalls = 0

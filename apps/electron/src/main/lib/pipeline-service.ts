@@ -34,6 +34,8 @@ import type {
   PipelineLocalCommitSummary,
   PipelineRemoteSubmissionSummary,
   PipelineRemoteWriteConfirmationPlan,
+  PipelineReportExport,
+  PipelineReportExportInput,
   PipelineChangedFileType,
   PipelineContributionTaskSummaryInput,
   ContributionTaskSummary,
@@ -105,6 +107,7 @@ import {
   PipelineFixtureNodeRunner,
 } from './pipeline-fixture-runner'
 import {
+  exportPipelineReport as buildPipelineReportExport,
   getContributionTaskSummary as buildContributionTaskSummary,
   getPipelineSubmissionPlan as buildPipelineSubmissionPlan,
 } from './pipeline-read-model-service'
@@ -2403,6 +2406,11 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
     getSubmissionPlan(input: PipelineSubmissionPlanInput): PipelineSubmissionPlan {
       const parsed = parsePatchWorkSessionInput(input)
       return buildPipelineSubmissionPlan(parsed)
+    },
+
+    exportPipelineReport(input: PipelineReportExportInput): PipelineReportExport {
+      const parsed = parsePatchWorkSessionInput(input)
+      return buildPipelineReportExport(parsed)
     },
 
     readPatchWorkFile(input: PipelinePatchWorkReadFileInput): string {

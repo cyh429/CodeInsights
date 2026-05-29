@@ -116,6 +116,8 @@ import type {
   PipelineRecordsSearchResult,
   PipelineRunPreflightInput,
   PipelinePreflightResult,
+  PipelineReportExport,
+  PipelineReportExportInput,
   PipelineStartInput,
   PipelineResumeInput,
   PipelineGateRequest,
@@ -390,6 +392,9 @@ export interface ElectronAPI {
 
   /** 读取 Pipeline v2 提交计划 */
   getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => Promise<PipelineSubmissionPlan>
+
+  /** 导出 Pipeline v2 贡献报告 Markdown */
+  exportPipelineReport: (input: PipelineReportExportInput) => Promise<PipelineReportExport>
 
   /** 读取 Pipeline v2 patch-work 文件 */
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<string>
@@ -1222,6 +1227,10 @@ const electronAPI: ElectronAPI = {
 
   getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_SUBMISSION_PLAN, input)
+  },
+
+  exportPipelineReport: (input: PipelineReportExportInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.EXPORT_REPORT, input)
   },
 
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {

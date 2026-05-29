@@ -40,6 +40,7 @@ import { buildPipelineGatePanelModel } from './pipeline-gate-panel-model'
 import { ContributionTaskDashboard } from './ContributionTaskDashboard'
 import { PipelineGateSidePanel } from './PipelineGateSidePanel'
 import { PipelinePreflightPanel } from './PipelinePreflightPanel'
+import { PipelineReportExportPanel } from './PipelineReportExportPanel'
 import { useContributionTaskSummary } from './useContributionTaskSummary'
 import { usePipelineExplorerReports } from './usePipelineExplorerReports'
 import { usePipelinePatchWorkDocuments } from './usePipelinePatchWorkDocuments'
@@ -629,13 +630,16 @@ export function PipelineView({
           ) : null}
 
           {(session?.version ?? state?.version) === 2 ? (
-            <ContributionTaskDashboard
-              summary={contributionTaskSummary.summary}
-              loading={contributionTaskSummary.loading}
-              error={contributionTaskSummary.error}
-              onRefresh={contributionTaskSummary.refresh}
-              onOpenPatchWorkDir={handleOpenPatchWorkDir}
-            />
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <ContributionTaskDashboard
+                summary={contributionTaskSummary.summary}
+                loading={contributionTaskSummary.loading}
+                error={contributionTaskSummary.error}
+                onRefresh={contributionTaskSummary.refresh}
+                onOpenPatchWorkDir={handleOpenPatchWorkDir}
+              />
+              <PipelineReportExportPanel sessionId={sessionId} />
+            </div>
           ) : null}
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">

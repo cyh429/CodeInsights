@@ -22,6 +22,8 @@ import type {
   PipelinePreflightResult,
   PipelineSubmissionPlan,
   PipelineSubmissionPlanInput,
+  PipelineReportExport,
+  PipelineReportExportInput,
   PipelineSessionMeta,
   PipelineStartInput,
   PipelineStateSnapshot,
@@ -106,6 +108,13 @@ export function registerPipelineIpcHandlers(): void {
     PIPELINE_IPC_CHANNELS.GET_SUBMISSION_PLAN,
     async (_event, input: PipelineSubmissionPlanInput): Promise<PipelineSubmissionPlan> => {
       return getPipelineService().getSubmissionPlan(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.EXPORT_REPORT,
+    async (_event, input: PipelineReportExportInput): Promise<PipelineReportExport> => {
+      return getPipelineService().exportPipelineReport(input)
     }
   )
 

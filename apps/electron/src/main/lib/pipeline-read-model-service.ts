@@ -8,7 +8,9 @@ import type {
   PipelineCommitterStageOutput,
   PipelineLocalCommitSummary,
   PipelinePatchSetFile,
+  PipelineRecord,
   PipelineRemoteSubmissionSummary,
+  PipelineReportExport,
   PipelineStageOutputMap,
   PipelineSubmissionPlan,
 } from '@codeinsights/shared'
@@ -37,9 +39,19 @@ interface SessionReadModelInput {
 }
 
 const DEFAULT_EXCLUDED_FILES = ['patch-work/**']
+const REPORT_STAGE_LABELS: Record<keyof PipelineStageOutputMap, string> = {
+  explorer: 'Explorer',
+  planner: 'Planner',
+  developer: 'Developer',
+  reviewer: 'Reviewer',
+  tester: 'Tester',
+  committer: 'Committer',
+}
 
 function redactReadModelText(value: string): string {
   return redactPreflightDiagnosticText(redactSecretText(value))
+    .replace(/\bAuthorization\s*[:=]\s*[A-Za-z][A-Za-z0-9_-]*\s+(?:\[REDACTED\]|\*\*\*)/gi, 'Authorization: [REDACTED]')
+    .replace(/\bBearer\s+(?:\[REDACTED\]|\*\*\*)/gi, '[REDACTED]')
 }
 
 function redactReadModelUrl(value: string): string {
@@ -261,6 +273,349 @@ function ensurePatchWorkExcluded(files: string[]): string[] {
   ])
 }
 
+function formatReportTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString('zh-CN', { hour12: false })
+}
+
+function sanitizeReportFileName(value: string): string {
+  const normalized = value
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+  return normalized || 'pipeline-report'
+}
+
+function modeLabel(mode?: ContributionMode): string {
+  if (mode === 'remote_pr') return 'Draft PR'
+  if (mode === 'local_commit') return '本地 commit'
+  return '本地 patch'
+}
+
+function taskStatusLabel(task: ContributionTask | null | undefined): string {
+  if (!task) return '未找到贡献任务'
+  return task.status
+}
+
+function findLatestUserInput(records: PipelineRecord[]): string | undefined {
+  return records
+    .slice()
+    .reverse()
+    .find((record): record is Extract<PipelineRecord, { type: 'user_input' }> => record.type === 'user_input')
+    ?.content
+}
+
+function appendSection(lines: string[], title: string): void {
+  lines.push('', `## ${title}`, '')
+}
+
+function appendBullet(lines: string[], label: string, value: string | undefined): void {
+  if (!value || !value.trim()) return
+  lines.push(`- ${label}：${redactReadModelText(value)}`)
+}
+
+function appendOptionalList(lines: string[], title: string, values: string[]): void {
+  const normalized = uniqueStrings(values.map(redactReadModelText))
+  if (normalized.length === 0) {
+    lines.push(`- ${title}：暂无`)
+    return
+  }
+  lines.push(`- ${title}：`)
+  for (const value of normalized) {
+    lines.push(`  - ${value}`)
+  }
+}
+
+function localCommitReportLine(localCommit: PipelineLocalCommitSummary | undefined): string {
+  if (!localCommit || localCommit.status === 'not_requested') {
+    return '未创建'
+  }
+  if (localCommit.status === 'created') {
+    return `已创建 ${redactReadModelText(localCommit.commitHash ?? 'commit')}（operation: ${redactReadModelText(localCommit.operationId ?? 'unknown')}）`
+  }
+  return `创建失败：${redactReadModelText(localCommit.error ?? '未知错误')}`
+}
+
+function remoteSubmissionReportLine(remoteSubmission: PipelineRemoteSubmissionSummary | undefined): string {
+  if (!remoteSubmission || remoteSubmission.status === 'not_requested') {
+    return '未提交远端'
+  }
+  const operation = remoteSubmission.operationId ? `（operation: ${redactReadModelText(remoteSubmission.operationId)}）` : ''
+  if (remoteSubmission.status === 'created') {
+    return `Draft PR 已创建：${redactReadModelUrl(remoteSubmission.prUrl ?? 'URL 未返回')}${operation}`
+  }
+  if (remoteSubmission.status === 'pushed') {
+    return `远端分支已推送，PR 创建失败：${redactReadModelText(remoteSubmission.error ?? '可重试创建 PR')}${operation}`
+  }
+  return `远端提交失败：${redactReadModelText(remoteSubmission.error ?? '未知错误')}${operation}`
+}
+
+function appendStageSummaries(lines: string[], stageOutputs: PipelineStageOutputMap): void {
+  const entries = Object.entries(REPORT_STAGE_LABELS) as Array<[keyof PipelineStageOutputMap, string]>
+  for (const [node, label] of entries) {
+    const output = stageOutputs[node]
+    if (!output) continue
+    lines.push(`### ${label}`)
+    lines.push('')
+    appendBullet(lines, '摘要', output.summary)
+    if (node === 'tester' && output.node === 'tester') {
+      appendOptionalList(lines, '测试命令', output.commands ?? [])
+      appendOptionalList(lines, '测试结果', output.results ?? [])
+      if (output.patchSet?.testEvidence?.length) {
+        lines.push('- 测试证据：')
+        for (const evidence of output.patchSet.testEvidence) {
+          lines.push(`  - ${redactReadModelText(evidence.command)}：${evidence.status}，${redactReadModelText(evidence.summary)}`)
+        }
+      }
+    }
+    if (node === 'committer' && output.node === 'committer') {
+      appendBullet(lines, '提交状态', output.submissionStatus)
+      if (output.submissionStatus === 'draft_only') {
+        lines.push('- draft-only：仅保存提交材料，不会创建本地 commit 或真实 PR。')
+      }
+    }
+    lines.push('')
+  }
+}
+
+function appendPatchWorkSummary(lines: string[], task: ContributionTask | null): void {
+  if (!task) {
+    lines.push('- patch-work：未找到贡献任务，无法读取。')
+    return
+  }
+
+  try {
+    const manifest = readPatchWorkManifest(task.repositoryRoot)
+    appendBullet(lines, '目录', manifest.patchWorkDir)
+    if (manifest.files.length === 0) {
+      lines.push('- 文件：暂无')
+      return
+    }
+    lines.push('- 文件：')
+    for (const file of manifest.files) {
+      const accepted = file.acceptedRevision ? `，accepted r${file.acceptedRevision}` : ''
+      lines.push(`  - ${redactReadModelText(file.relativePath)}（r${file.revision}${accepted}）`)
+    }
+  } catch (error) {
+    lines.push(`- patch-work：读取失败，${redactReadModelText(error instanceof Error ? error.message : String(error))}`)
+  }
+}
+
+function payloadString(payload: Record<string, unknown>, key: string, url = false): string | undefined {
+  const value = payload[key]
+  if (typeof value !== 'string' || !value.trim()) return undefined
+  return url ? redactReadModelUrl(value) : redactReadModelText(value)
+}
+
+function remoteSubmissionPayload(payload: Record<string, unknown>): PipelineRemoteSubmissionSummary | undefined {
+  return toRemoteSubmissionSummary(payload.remoteSubmission)
+}
+
+function appendAuditDetail(details: string[], value: string | undefined, url = false): void {
+  if (!value || !value.trim()) return
+  details.push(url ? redactReadModelUrl(value) : redactReadModelText(value))
+}
+
+function appendAuditEvents(lines: string[], events: ContributionTaskEvent[], records: PipelineRecord[]): void {
+  const gateDecisions = records.filter((record): record is Extract<PipelineRecord, { type: 'gate_decision' }> =>
+    record.type === 'gate_decision',
+  )
+  const errorRecords = records.filter((record): record is Extract<PipelineRecord, { type: 'error' }> =>
+    record.type === 'error',
+  )
+
+  if (events.length === 0 && gateDecisions.length === 0 && errorRecords.length === 0) {
+    lines.push('暂无人工审核、风险接受或错误记录。')
+    return
+  }
+
+  for (const event of events.slice().sort((a, b) => a.createdAt - b.createdAt)) {
+    const payload = isObject(event.payload) ? event.payload : {}
+    const details = [
+      payloadString(payload, 'operationId'),
+      payloadString(payload, 'remoteName'),
+      payloadString(payload, 'commitHash'),
+    ].filter((item): item is string => Boolean(item))
+    const baseBranch = payloadString(payload, 'baseBranch')
+    const headBranch = payloadString(payload, 'headBranch')
+    if (baseBranch || headBranch) {
+      details.push(`${baseBranch ?? '?'} -> ${headBranch ?? '?'}`)
+    }
+    const remoteSubmission = remoteSubmissionPayload(payload)
+    appendAuditDetail(details, remoteSubmission?.operationId)
+    appendAuditDetail(details, remoteSubmission?.remoteName)
+    if (remoteSubmission?.baseBranch || remoteSubmission?.headBranch) {
+      const remoteBase = remoteSubmission.baseBranch ? redactReadModelText(remoteSubmission.baseBranch) : '?'
+      const remoteHead = remoteSubmission.headBranch ? redactReadModelText(remoteSubmission.headBranch) : '?'
+      details.push(`${remoteBase} -> ${remoteHead}`)
+    }
+    appendAuditDetail(details, remoteSubmission?.prUrl, true)
+
+    const suffix = details.length ? `：${uniqueStrings(details).join('，')}` : ''
+    lines.push(`- ${formatReportTime(event.createdAt)} ${eventTitle(event)}${suffix}`)
+  }
+
+  for (const decision of gateDecisions) {
+    const mode = decision.submissionMode ? `，模式 ${decision.submissionMode}` : ''
+    const feedback = decision.feedback ? `，反馈 ${redactReadModelText(decision.feedback)}` : ''
+    lines.push(`- ${formatReportTime(decision.createdAt)} gate ${decision.kind ?? decision.node}：${decision.action}${mode}${feedback}`)
+  }
+
+  for (const record of errorRecords) {
+    lines.push(`- ${formatReportTime(record.createdAt)} 错误：${redactReadModelText(record.error)}`)
+  }
+}
+
+function buildPipelineReportMarkdown(input: {
+  sessionId: string
+  sessionTitle?: string
+  generatedAt: number
+  summary: ContributionTaskSummary
+  plan: PipelineSubmissionPlan
+  records: PipelineRecord[]
+  events: ContributionTaskEvent[]
+  stageOutputs: PipelineStageOutputMap
+}): string {
+  const task = input.summary.task
+  const latestUserInput = findLatestUserInput(input.records)
+  const lines: string[] = [
+    '# Pipeline 贡献报告',
+    '',
+    `生成时间：${formatReportTime(input.generatedAt)}`,
+    `会话：${redactReadModelText(input.sessionTitle ?? input.sessionId)}`,
+  ]
+
+  appendSection(lines, '任务')
+  appendBullet(lines, '任务', task?.selectedTaskTitle ?? task?.selectedReportId ?? latestUserInput ?? input.summary.error)
+  appendBullet(lines, '状态', taskStatusLabel(task))
+  appendBullet(lines, '贡献模式', `${modeLabel(input.summary.mode ?? input.plan.mode)}（${input.summary.mode ?? input.plan.mode}）`)
+  appendBullet(lines, '远端写授权', input.summary.allowRemoteWrites ? '已授权' : '未授权')
+
+  appendSection(lines, '仓库与分支')
+  appendBullet(lines, '仓库', input.summary.repository?.root)
+  appendBullet(lines, '远端', input.summary.repository?.url ? redactReadModelUrl(input.summary.repository.url) : undefined)
+  appendBullet(lines, 'Issue', input.summary.repository?.issueUrl ? redactReadModelUrl(input.summary.repository.issueUrl) : undefined)
+  appendBullet(lines, '分支', `${input.plan.baseBranch ?? input.summary.repository?.baseBranch ?? '?'} -> ${input.plan.headBranch ?? input.summary.repository?.workingBranch ?? '?'}`)
+  appendBullet(lines, 'base commit', input.summary.repository?.baseCommit)
+
+  appendSection(lines, '阶段摘要')
+  appendStageSummaries(lines, input.stageOutputs)
+  if (Object.keys(input.stageOutputs).length === 0) {
+    lines.push('暂无阶段结构化摘要。')
+  }
+
+  appendSection(lines, 'Patch-set')
+  if (input.plan.candidateFiles.length === 0) {
+    lines.push('- 候选文件：暂无提交候选文件')
+  } else {
+    appendOptionalList(lines, '候选文件', input.plan.candidateFiles)
+  }
+  appendOptionalList(lines, '排除文件', input.plan.excludedFiles)
+  if (input.plan.blockers.length) appendOptionalList(lines, '阻塞项', input.plan.blockers)
+  if (input.plan.warnings.length) appendOptionalList(lines, '风险提示', input.plan.warnings)
+
+  appendSection(lines, '提交 / PR')
+  appendBullet(lines, '本地 commit', localCommitReportLine(input.plan.localCommit ?? input.summary.localCommit))
+  appendBullet(lines, '远端提交', remoteSubmissionReportLine(input.plan.remoteSubmission ?? input.summary.remoteSubmission))
+  appendBullet(lines, 'Commit message', input.plan.commitMessage)
+  appendBullet(lines, 'PR title', input.plan.prTitle)
+  if ((input.stageOutputs.committer?.node === 'committer' && input.stageOutputs.committer.submissionStatus === 'draft_only')
+    || input.plan.mode === 'local_patch') {
+    lines.push('- draft-only：仅保存提交材料，不会创建本地 commit 或真实 PR。')
+  }
+
+  appendSection(lines, 'patch-work')
+  appendPatchWorkSummary(lines, task)
+
+  appendSection(lines, '人工审核与审计')
+  appendAuditEvents(lines, input.events, input.records)
+
+  appendSection(lines, '原始事件索引')
+  lines.push(`- Pipeline records：${input.records.length}`)
+  lines.push(`- ContributionTask events：${input.events.length}`)
+
+  return lines.join('\n').trimEnd() + '\n'
+}
+
+function buildPipelineReportSubmissionPlan(input: {
+  sessionId: string
+  summary: ContributionTaskSummary
+  events: ContributionTaskEvent[]
+  stageOutputs: PipelineStageOutputMap
+  generatedAt: number
+}): PipelineSubmissionPlan {
+  const task = input.summary.task
+  if (!task) {
+    return {
+      sessionId: input.sessionId,
+      mode: 'local_patch',
+      commitMessage: '',
+      prTitle: '',
+      prBody: '',
+      candidateFiles: [],
+      excludedFiles: DEFAULT_EXCLUDED_FILES,
+      blockers: [`未找到贡献任务: ${input.sessionId}`],
+      warnings: [],
+      updatedAt: input.generatedAt,
+    }
+  }
+
+  const committerOutput = input.stageOutputs.committer?.node === 'committer'
+    ? input.stageOutputs.committer
+    : undefined
+  const testerOutput = input.stageOutputs.tester?.node === 'tester'
+    ? input.stageOutputs.tester
+    : undefined
+  const committerLocalCommit = toLocalCommitSummary(committerOutput?.localCommit)
+  const committerRemoteSubmission = toRemoteSubmissionSummary(committerOutput?.remoteSubmission)
+  const localCommit = isMeaningfulLocalCommit(committerLocalCommit)
+    ? committerLocalCommit
+    : latestLocalCommit(input.events) ?? committerLocalCommit
+  const remoteSubmission = isMeaningfulRemoteSubmission(committerRemoteSubmission)
+    ? committerRemoteSubmission
+    : latestRemoteSubmission(input.events) ?? committerRemoteSubmission
+  const candidateFiles = localCommit?.files?.map((file) => file.path)
+    ?? testerOutput?.patchSet?.files.map((file) => file.path)
+    ?? testerOutput?.changedFiles
+    ?? []
+  const excludedFiles = localCommit?.excludedFiles
+    ?? (testerOutput?.patchSet?.excludesPatchWork ? DEFAULT_EXCLUDED_FILES : [])
+  const blockers = [...(committerOutput?.blockers ?? [])]
+  const warnings = [...(committerOutput?.risks ?? [])]
+
+  if (!committerOutput) {
+    blockers.push('Committer 尚未生成提交材料')
+  }
+  if (remoteSubmission?.status === 'pushed') {
+    warnings.push('远端分支已推送但 PR 创建失败，可在确认后重试创建 PR。')
+  }
+
+  const mode: ContributionMode = remoteSubmission?.status === 'created'
+    ? 'remote_pr'
+    : localCommit?.status === 'created'
+      ? 'local_commit'
+      : task.contributionMode
+
+  return {
+    sessionId: input.sessionId,
+    mode,
+    commitMessage: redactReadModelText(committerOutput?.commitMessage ?? localCommit?.commitMessage ?? ''),
+    prTitle: redactReadModelText(committerOutput?.prTitle ?? remoteSubmission?.prTitle ?? ''),
+    prBody: redactReadModelText(committerOutput?.prBody ?? remoteSubmission?.prBody ?? ''),
+    baseBranch: localCommit?.baseBranch ?? remoteSubmission?.baseBranch ?? testerOutput?.patchSet?.baseBranch ?? task.baseBranch,
+    headBranch: remoteSubmission?.headBranch ?? localCommit?.workingBranch ?? testerOutput?.patchSet?.workingBranch ?? task.workingBranch,
+    remoteName: remoteSubmission?.remoteName ?? 'origin',
+    sanitizedRemoteUrl: remoteSubmission?.sanitizedRemoteUrl,
+    candidateFiles: uniqueStrings(candidateFiles),
+    excludedFiles: ensurePatchWorkExcluded(excludedFiles),
+    blockers: uniqueStrings(blockers.map(redactReadModelText)),
+    warnings: uniqueStrings(warnings.map(redactReadModelText)),
+    localCommit,
+    remoteSubmission,
+    updatedAt: input.generatedAt,
+  }
+}
+
 function sanitizeContributionTask(task: ContributionTask): ContributionTask {
   return {
     ...task,
@@ -438,5 +793,46 @@ export function getPipelineSubmissionPlan(input: SessionReadModelInput): Pipelin
     localCommit,
     remoteSubmission,
     updatedAt: Date.now(),
+  }
+}
+
+export function exportPipelineReport(input: SessionReadModelInput): PipelineReportExport {
+  const sessionId = requireSessionId(input.sessionId)
+  const generatedAt = Date.now()
+  const meta = getPipelineSessionMeta(sessionId)
+  const summary = getContributionTaskSummary({ sessionId })
+  const records = getPipelineRecords(sessionId)
+  const events = summary.task ? getContributionTaskEvents(summary.task.id) : []
+  const stageOutputs = meta
+    ? replayPipelineRecords(sessionId, records, {
+        version: meta.version,
+        now: meta.updatedAt,
+      }).stageOutputs ?? {}
+    : {}
+  const plan = buildPipelineReportSubmissionPlan({
+    sessionId,
+    summary,
+    events,
+    stageOutputs,
+    generatedAt,
+  })
+  const safeSessionTitle = meta?.title ? redactReadModelText(meta.title) : undefined
+  const title = safeSessionTitle ? `${safeSessionTitle} - Pipeline 贡献报告` : 'Pipeline 贡献报告'
+
+  return {
+    sessionId,
+    title,
+    markdown: buildPipelineReportMarkdown({
+      sessionId,
+      sessionTitle: meta?.title,
+      generatedAt,
+      summary,
+      plan,
+      records,
+      events,
+      stageOutputs,
+    }),
+    fileName: `${sanitizeReportFileName(safeSessionTitle ?? sessionId)}-${sessionId.slice(0, 8)}-pipeline-report.md`,
+    generatedAt,
   }
 }
