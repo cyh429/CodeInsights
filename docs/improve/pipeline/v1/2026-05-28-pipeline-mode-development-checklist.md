@@ -10,7 +10,7 @@
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
 > 最新开发基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`；上一稳定基线：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
-> 最新恢复入口：本轮 `docs(pipeline): 同步 Phase 3 后续开发状态` 提交；上一恢复入口：`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`。
+> 最新恢复入口：`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`；上一恢复入口：`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`。
 > 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench 已完成并通过聚焦验证；Phase 4-6 尚未开始。下次正式开发应从 **Phase 4：Contribution Dashboard 与 Submission Plan** 开始。
 
 ### 已完成
@@ -29,6 +29,7 @@
   - `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`
   - `24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`
   - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
+  - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -70,7 +71,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3 已完成，Phase 4 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -6 --oneline`，确认没有未提交改动，并确认最近历史包含 `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+3. 运行 `git status --short --branch` 和 `git log -7 --oneline`，确认没有未提交改动，并确认最近历史包含 `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`、`24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`、`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分` 和 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 4. 在 `tasks/todo.md` 写入 Phase 4 计划。
 5. 从 Phase 4 开始开发，先补测试，再实现 Contribution Dashboard 与 Submission Plan read model / UI。
 6. Phase 4 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。

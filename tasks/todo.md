@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 3 状态同步再确认计划
+
+范围确认：本轮只响应用户要求，同步 Pipeline v1 最新开发状态、完成/未完成清单、下次启动提示词和阶段收尾习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
+
+- [x] 复核当前分支、工作树和最近提交，确认 Phase 3 功能提交为 `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`，Phase 3 状态同步提交为 `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`。
+- [x] 更新 Pipeline v1 development checklist：回填真实最新恢复入口 `009ba970`，明确 Phase 0-3 已完成，Phase 4-6 未完成，下一步从 Phase 4 Contribution Dashboard 与 Submission Plan 继续。
+- [x] 更新 Pipeline v1 `next-session-prompt.md`：启动检查最近历史补齐 `009ba970`，当前真实进度写清 Phase 3 状态已同步。
+- [x] 更新 `tasks/lessons.md`：把用户再次强调的“每个阶段性任务完成后自动更新状态文档并给启动提示词”固化为更具体的默认动作。
+- [x] 在本节追加 Review，运行文档 diff check，单独提交本轮状态同步改动。
+
+## 2026-05-29 Pipeline v1 Phase 3 状态同步再确认 Review
+
+- 已确认当前分支 `pipeline-improve` 工作基线：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`，状态同步基线：`009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`。
+- 已更新 Pipeline v1 development checklist：最新恢复入口回填为 `009ba970`，已完成项明确为 Phase 0 / Phase 1 / Phase 2 / Phase 3，未完成项明确为 Phase 4-6，下一步从 Phase 4 Contribution Dashboard 与 Submission Plan 继续。
+- 已更新 `docs/improve/pipeline/v1/next-session-prompt.md`：启动检查最近历史补齐 `009ba970`，当前真实进度写清 Phase 3 后续开发状态已同步。
+- 已更新 `tasks/lessons.md`：每个阶段完成后必须自动同步 development checklist、next-session prompt、`tasks/todo.md` Review，并在最终回复给可复制提示词；后续再次请求状态同步时要回填上一轮真实状态同步提交号。
+- 本轮只修改状态文档、任务记录和 lessons；未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push / PR / 远端写。
+- 验证：`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-29 Pipeline v1 Phase 3 Patch-work Document Workbench 计划
 
 范围确认：本轮只做 Phase 3。目标是实现只读 Patch-work Document Workbench MVP，统一展示 `plan.md`、`dev.md`、`review.md`、`result.md`、`patch-set/*`、`commit.md`、`pr.md` 等 patch-work 产物，支持 markdown、patch/diff、json/text 渲染、revision selector、current / accepted badge、checksum mismatch / read error，并接入 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel`。不修改 Graph、runner、Git submission，不新增真实 Git 写操作，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`。

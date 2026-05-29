@@ -15,7 +15,8 @@ pipeline-improve
 1. 读取 `tasks/lessons.md`，重点关注阶段完成即提交、Pipeline patch-work 路径安全、stop 后副作用、Tester Git 防护、Codex secret 注入和状态文档同步习惯。
 2. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
-4. 运行 `git status --short --branch` 和 `git log -6 --oneline`，确认当前分支状态；最近历史应包含：
+4. 运行 `git status --short --branch` 和 `git log -7 --oneline`，确认当前分支状态；最近历史应包含：
+   - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
    - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
    - `24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`
    - `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`
@@ -31,6 +32,7 @@ pipeline-improve
 - Phase 1 Preflight 主路径已完成。
 - Phase 2 PipelineView 拆分已提交为 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`：`PipelineView` 已拆出 records tail、session snapshot、patch-work 文档读取、explorer reports、gate actions、gate panel model 和 `PipelineGateSidePanel`；preflight result 超过 60 秒或 workspace 变化后会显式标记“需要刷新”，并阻止复用旧 acknowledgement 直接启动。
 - Phase 3 Patch-work Document Workbench 已提交为 `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`：新增 patch-work revision read model、LIST/READ revision IPC、受控打开文件入口、统一只读 Workbench，支持 markdown、diff、json/text、revision selector、current / accepted badge、checksum mismatch / read error，并已接入 ReviewDocumentBoard、TesterResultBoard、CommitterPanel。
+- Phase 3 后续开发状态已同步为 `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`：development checklist、next-session prompt 和 `tasks/todo.md` Review 已标清 Phase 0-3 完成、Phase 4-6 未完成。
 - Phase 4-6 尚未完成。
 
 本次请从 Phase 4 开始：
