@@ -4642,3 +4642,24 @@ CodeInsights 已具备 Agent / Pipeline 执行能力，但缺少类似 Codex App
 - 已记录：如果用户要求提交但工作树干净，应报告最近提交和 ahead 状态；如有 lessons / 习惯同步，只提交同步改动，不制造无关业务修改。
 - 本轮仅修改 `tasks/lessons.md` 和 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push。
 - 验证通过：`git diff --check -- tasks/todo.md tasks/lessons.md`。
+
+## 2026-05-29 Pipeline v1 最新状态同步计划
+
+范围确认：更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 的最新开发状态，新增下次启动可直接复制的 prompt，并把“每完成阶段后同步状态文档和 next-session prompt”的习惯写回 `tasks/lessons.md`；不修改业务代码、不修改根 `README.md` / `AGENTS.md`，不安装依赖，不 push。
+
+- [x] 记录本轮状态同步范围和文件边界。
+- [x] 更新 Pipeline v1 开发清单的最新开发状态，明确已完成和未完成项。
+- [x] 新增 next-session prompt 文档，供下次直接复制给 Codex。
+- [x] 同步 lessons 中的阶段后状态文档习惯。
+- [x] 验证文档空白、占位符和任务记录，并追加 Review。
+- [x] 提交本轮状态同步改动，使用详细中文 commit 信息。
+
+## 2026-05-29 Pipeline v1 最新状态同步 Review
+
+- 已更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 的“最新开发状态”，明确当前是“方案与开发清单已完成，业务实现尚未开始”，下次应从 Phase 0 开始。
+- 已清楚标注已完成项：优化方案文档、开发跟踪清单、阶段提交习惯同步，以及对应阶段提交 `ae5c85ba`、`3c754ac6`、`3ce1402e`。
+- 已清楚标注未完成项：Phase 0-6 全部未开始，Records v2 `committer`、`openPipelinePatchWorkDir`、Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认 / GitHub 增强、真实 smoke 均未实现。
+- 已新增 `docs/improve/pipeline/v1/next-session-prompt.md`，包含下次启动检查、当前真实进度、Phase 0 范围、推荐触达文件、验证命令和阶段完成纪律。
+- 已在 `tasks/lessons.md` 补充每个阶段完成后要同步开发清单、更新 next-session prompt，并在 `tasks/todo.md` Review 中写明完成项、未完成项、验证结果和下一阶段入口。
+- 本轮仅修改 v1 文档、`tasks/lessons.md` 和 `tasks/todo.md`，未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push。
+- 验证通过：`test -f docs/improve/pipeline/v1/next-session-prompt.md`；`rg -n "TODO|TBD|待补|xxx|FIXME" docs/improve/pipeline/v1/next-session-prompt.md docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md` 无命中；Markdown 代码块 fence 成对；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。

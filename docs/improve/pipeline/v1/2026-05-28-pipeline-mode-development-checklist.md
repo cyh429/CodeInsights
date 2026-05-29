@@ -5,6 +5,55 @@
 > 适用范围：当前 Pipeline v2 六阶段贡献工作流的可靠性、可见性、审核体验、提交安全和可维护性优化。
 > 说明：本文中的 v1 指“优化方案版本”，不是旧 `PipelineVersion = 1` 会话协议。
 
+## 最新开发状态
+
+> 更新时间：2026-05-29
+> 当前分支：`pipeline-improve`
+> 当前结论：方案与开发清单已完成，业务实现尚未开始；下次正式开发应从 **Phase 0：清理与对齐** 开始。
+
+### 已完成
+
+- [x] 完成 Pipeline v1 优化方案文档：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
+- [x] 完成 Pipeline v1 开发跟踪清单：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
+- [x] 完成阶段提交习惯同步：`tasks/lessons.md` 已记录“重新启动 Codex 会话后也要主动检查已完成但未提交阶段成果”。
+- [x] 已按阶段提交文档成果：
+  - `ae5c85ba docs(pipeline): 完善 Pipeline v1 优化方案`
+  - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
+  - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
+- [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
+
+### 尚未开始
+
+- [ ] Phase 0：清理与对齐。
+- [ ] Phase 1：Preflight 主路径。
+- [ ] Phase 2：PipelineView 拆分。
+- [ ] Phase 3：Patch-work Document Workbench。
+- [ ] Phase 4：Contribution Dashboard 与 Submission Plan。
+- [ ] Phase 5：远端写确认与 GitHub 增强。
+- [ ] Phase 6：真实端到端验收与交付准备。
+
+### 当前未完成的关键能力
+
+- [ ] Records v2 `committer` filter / artifact group 仍需修复。
+- [ ] `openPipelinePatchWorkDir` IPC / preload / UI 入口仍未实现。
+- [ ] 主进程 `runPipelinePreflight()` 仍未接入 Pipeline IPC / Renderer / `PipelineService.start()` 主路径。
+- [ ] `PipelineView` 仍未拆分为 hooks / view models。
+- [ ] Patch-work 文档 Workbench、revision diff、accepted badge 仍未实现。
+- [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
+- [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
+- [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
+
+### 下次启动入口
+
+下次启动 Codex 后先执行以下动作：
+
+1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
+2. 读取本文和优化方案文档，确认当前状态仍是“文档完成、Phase 0 未开始”。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近提交包含 `3ce1402e`、`3c754ac6`、`ae5c85ba` 或其后的状态同步提交。
+4. 在 `tasks/todo.md` 写入 Phase 0 计划。
+5. 从 Phase 0 开始开发，先补测试，再实现 Records v2 `committer` 可见性和 `openPipelinePatchWorkDir`。
+6. Phase 0 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
+
 ## 使用规则
 
 后续 Pipeline 优化开发必须以本文为执行入口。每次开始新阶段时，先在 `tasks/todo.md` 写本阶段计划；阶段完成后在本文对应阶段勾选、追加阶段 Review，并单独提交该阶段相关文件。
