@@ -1,5 +1,23 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 0 后状态同步计划
+
+范围确认：本轮只同步 Pipeline v1 Phase 0 完成后的最新开发状态、下次启动提示词、任务记录和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
+
+- [x] 复核当前分支、工作树和最近提交，确认 Phase 0 已提交为 `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
+- [x] 更新 Pipeline v1 development checklist：写清 Phase 0 已完成并提交、Phase 1-6 未完成、下一步从 Phase 1 Preflight 主路径继续。
+- [x] 更新 Pipeline v1 `next-session-prompt.md`：写入真实开发基线 `ca1bcf77`，并明确下次启动要确认其或其后的状态同步提交在历史中。
+- [x] 更新 `tasks/lessons.md`：把“阶段完成后自动同步开发状态文档和下次启动提示词”固化为 Pipeline v1 默认收尾习惯。
+- [x] 在本节追加 Review，运行文档 diff check，单独提交本轮状态同步改动。
+
+## 2026-05-29 Pipeline v1 Phase 0 后状态同步 Review
+
+- 已更新 Pipeline v1 development checklist：最新开发基线明确为 `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`，已完成项包含方案文档、开发清单、阶段提交习惯和 Phase 0；未完成项明确为 Phase 1-6。
+- 已更新 `docs/improve/pipeline/v1/next-session-prompt.md`：下次启动直接从 Phase 1 Preflight 主路径继续，启动检查要求确认 `ca1bcf77` 或其后的状态同步提交在历史中。
+- 已更新 `tasks/lessons.md`：Pipeline v1 阶段完成后自动同步 development checklist、next-session prompt、`tasks/todo.md` Review，并在最终回复给可复制提示词。
+- 本轮只改状态文档和任务记录；未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push / PR / 远端写。
+- 验证：`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-29 Pipeline v1 Phase 0 清理与对齐计划
 
 范围确认：本轮只做 Phase 0。修复 v2 Records 中 `committer` 的可见性与排序，新增打开仓库内 `patch-work/` 的受控 IPC / preload / UI 入口，清理 shared Pipeline 类型中的明显过期注释；不改 Graph、不改 runner、不改 Git submission、不接入完整 Preflight Center，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
@@ -54,7 +72,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 兼容性确认：旧 v1 会话 filter 不显示 `committer`；已有 committer record 不被隐藏；新建 v2 路径可从 Records 与 Tester / Committer 面板看到提交阶段相关入口。
 - 安全确认：Renderer 不传本地路径，只传 `sessionId`；main 端通过 ContributionTask 的 `repositoryRoot` 重新解析固定 `repoRoot/patch-work`，并复用 realpath / lstat / symlink 检查，额外拒绝非目录路径。
 - 未完成项：Phase 1 Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强、真实端到端验收均未开始。
-- 阶段提交：本轮 Phase 0 提交，提交后以 `git log -1 --oneline` 为准。
+- 阶段提交：`ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
 
 ## 2026-05-28 Agent Runtime 设置页补齐 Codex 可选计划
 

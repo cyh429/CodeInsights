@@ -9,17 +9,19 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 当前结论：Phase 0 清理与对齐已完成并通过聚焦验证；下次正式开发应从 **Phase 1：Preflight 主路径** 开始。
+> 最新开发基线：`ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
+> 当前结论：Phase 0 清理与对齐已完成、已提交并通过聚焦验证；Phase 1-6 尚未开始。下次正式开发应从 **Phase 1：Preflight 主路径** 开始。
 
 ### 已完成
 
 - [x] 完成 Pipeline v1 优化方案文档：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 - [x] 完成 Pipeline v1 开发跟踪清单：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
 - [x] 完成阶段提交习惯同步：`tasks/lessons.md` 已记录“重新启动 Codex 会话后也要主动检查已完成但未提交阶段成果”。
-- [x] 已按阶段提交文档成果：
+- [x] 已按阶段提交成果：
   - `ae5c85ba docs(pipeline): 完善 Pipeline v1 优化方案`
   - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
   - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
+  - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -51,7 +53,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0 已完成，Phase 1 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近提交包含 `172eaf3c` 或其后的 Phase 0 提交。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `ca1bcf77` 或其后的状态同步提交。
 4. 在 `tasks/todo.md` 写入 Phase 1 计划。
 5. 从 Phase 1 开始开发，先补测试，再接入 repository preflight IPC / Renderer / `PipelineService.start()` 服务端守卫。
 6. Phase 1 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
@@ -216,7 +218,7 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 - 兼容性确认：缺失 `version` 或 `version=1` 的旧会话仍只显示五阶段 filter；已存在的 committer 记录不被丢弃；Graph、runner、Git submission 和远端 PR 行为未修改。
 - 安全确认：Renderer 只传 `sessionId`；main 端通过 ContributionTask 的 `repositoryRoot` 重新解析 `repoRoot/patch-work`；`resolvePatchWorkDir` 继续做 realpath / lstat / symlink 检查，并拒绝非目录路径。
 - 未完成项 / [!]：Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
-- 阶段提交：本轮 Phase 0 提交，提交后以 `git log -1 --oneline` 为准。
+- 阶段提交：`ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
 
 ## Phase 1：Preflight 主路径
 

@@ -15,18 +15,19 @@ pipeline-improve
 1. 读取 `tasks/lessons.md`，重点关注阶段完成即提交、Pipeline patch-work 路径安全、v2 前端可见性、结构化输出 fallback、stop 后副作用、Tester Git 防护、Codex secret 注入和状态文档同步习惯。
 2. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
-4. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认当前分支状态；最近历史应包含或晚于：
+4. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认当前分支状态；最近历史应包含 `ca1bcf77`，或包含其后的文档状态同步提交：
+   - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
    - `172eaf3c docs(pipeline): 同步 Pipeline v1 最新开发状态`
    - `ae5c85ba docs(pipeline): 完善 Pipeline v1 优化方案`
    - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
    - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
-   - Phase 0 阶段提交，或其后的状态同步提交
 5. 如果发现已完成但未提交的阶段成果，先提交该阶段成果，再继续开发。
 
 当前真实进度：
 - Pipeline v1 优化方案文档已完成。
 - Pipeline v1 开发跟踪清单已完成。
 - 阶段提交习惯已写入 `tasks/lessons.md`。
+- Phase 0 清理与对齐已提交为 `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
 - Phase 0 清理与对齐已完成：v2 Records `committer` filter 可见，v1 旧会话不显示 committer filter；artifact group 显式使用 version-aware 顺序；Tester / Committer 面板已能通过受控 IPC 打开 repo 内 `patch-work/`。
 - Phase 1-6 尚未完成。
 
@@ -80,4 +81,5 @@ Phase 1 验证命令：
 - Phase 1 完成后更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下一次 Codex 能从最新状态继续。
 - Phase 1 完成后在 `tasks/todo.md` 追加 Review。
 - Phase 1 完成并验证通过后，立即单独提交该阶段成果，提交信息必须使用详细中文，说明主要变更、验证结果和未做事项。
+- 如果最新 HEAD 已经是状态同步提交，也要核对 Phase 0 开发基线 `ca1bcf77` 是否仍在历史中，避免把文档同步误当成开发基线。
 ```
