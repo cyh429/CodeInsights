@@ -4,7 +4,9 @@
 
 - Pipeline v1 每个 Phase 完成并提交后，必须立即同步 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`、`docs/improve/pipeline/v1/next-session-prompt.md` 和 `tasks/todo.md` Review，写清真实开发基线提交、已完成项、未完成项、下一阶段入口和验证结果。
 - 用户要求“更新文档最新开发状态 / 标清完成未完成 / 给下次启动提示词”时，直接执行上述同步并提交文档状态更新；最终回复必须给一份可直接复制的下一次启动提示词。
-- 仓库内 next-session prompt 无法写入自身提交 hash 时，至少写清最近真实 Phase 开发基线，例如 `ca1bcf77`，并要求下次启动确认该提交或其后的状态同步提交在历史中。
+- 每个阶段性任务完成后，不需要用户再次提醒，默认执行“development checklist + next-session prompt + `tasks/todo.md` Review + 最终可复制提示词”的状态同步；如用户再次强调“记住这个习惯”，要在本文件更新更具体的执行规则。
+- 仓库内 next-session prompt 无法写入自身提交 hash 时，至少写清最近真实 Phase 开发基线，例如 `ff515a01`，并要求下次启动确认该提交或其后的状态同步提交在历史中。
+- 同步文档时必须明确区分开发基线和状态同步提交：Phase 实现提交（如 `ff515a01`）代表功能完成，后续 `docs(pipeline): 同步 Phase N 后续开发状态` 代表恢复入口更新。
 - 收到子代理或人工 review 提醒“文档提前标记提交完成”时，若提交已真实完成，要立刻回填真实提交号；若尚未提交，不能把阶段提交 checkbox 标记为完成。
 
 ## 2026-05-28 README 架构图视觉验收

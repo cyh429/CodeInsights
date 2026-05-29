@@ -16,9 +16,10 @@ pipeline-improve
 2. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
 4. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认当前分支状态；最近历史应包含：
+   - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
    - `30399335 docs(pipeline): 同步 Phase 0 后续开发状态`
    - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
-   - Phase 1 提交：`feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`（真实 hash 以 `git log -5 --oneline` 为准；也可以是其后的状态同步提交）
+   - 如已有 Phase 1 后续状态同步提交，也应保留在 `ff515a01` 之后。
 5. 如果发现已完成但未提交的阶段成果，先提交该阶段成果，再继续开发。
 
 当前真实进度：
@@ -26,7 +27,8 @@ pipeline-improve
 - Pipeline v1 开发跟踪清单已完成。
 - Phase 0 清理与对齐已提交为 `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
 - Phase 0 后续状态同步已提交为 `30399335 docs(pipeline): 同步 Phase 0 后续开发状态`。
-- Phase 1 Preflight 主路径已完成：新增 repository preflight IPC / preload API；Renderer 启动前展示 preflight panel，blocker 禁止启动但可重新检查，warning 需用户明确“记录风险继续”；`PipelineService.start()` 服务端复验 blocker / warning acknowledgement 并阻断 Graph invoke；warning acknowledgement 由服务端重写审计时间后写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 任意路径 / require override；remote URL query/hash / Authorization / diagnostic 已脱敏。
+- Phase 1 Preflight 主路径已提交为 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`：新增 repository preflight IPC / preload API；Renderer 启动前展示 preflight panel，blocker 禁止启动但可重新检查，warning 需用户明确“记录风险继续”；`PipelineService.start()` 服务端复验 blocker / warning acknowledgement 并阻断 Graph invoke；warning acknowledgement 由服务端重写审计时间后写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 任意路径 / require override；remote URL query/hash / Authorization / diagnostic 已脱敏。
+- Phase 1 尚余一个后续收敛项：preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记未做，计划在 Phase 2 hook 化时处理。
 - Phase 2-6 尚未完成。
 
 本次请从 Phase 2 开始：

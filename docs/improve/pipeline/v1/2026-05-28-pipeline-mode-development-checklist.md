@@ -9,7 +9,7 @@
 
 > 更新时间：2026-05-29
 > 当前分支：`pipeline-improve`
-> 最新开发基线：Phase 1 本轮提交（提交完成后以 `git log -5 --oneline` 中的 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 为准）；上一稳定基线：`30399335 docs(pipeline): 同步 Phase 0 后续开发状态` / `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
+> 最新开发基线：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`；上一稳定基线：`30399335 docs(pipeline): 同步 Phase 0 后续开发状态` / `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
 > 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径已完成并通过聚焦验证；Phase 2-6 尚未开始。下次正式开发应从 **Phase 2：PipelineView 拆分** 开始。
 
 ### 已完成
@@ -22,7 +22,7 @@
   - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
   - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
   - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
-  - Phase 1 本轮提交：`feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`（提交完成后用 `git log -5 --oneline` 确认真实 hash）
+  - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -52,6 +52,7 @@
 - [ ] ContributionTask Dashboard 和 SubmissionPlan read model 仍未实现。
 - [ ] 独立 `remote_write_confirmation` 状态和 GitHub API / existing PR 增强仍未实现。
 - [ ] 真实 smoke、packaged smoke 和公开文档同步均未开始。
+- [ ] preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记仍未实现，计划在 Phase 2 hook 化时收敛。
 
 ### 下次启动入口
 
@@ -59,7 +60,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1 已完成，Phase 2 未开始”。
-3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 Phase 1 提交 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 或其后的状态同步提交。
+3. 运行 `git status --short --branch` 和 `git log -5 --oneline`，确认没有未提交改动，并确认最近历史包含 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 或其后的状态同步提交。
 4. 在 `tasks/todo.md` 写入 Phase 2 计划。
 5. 从 Phase 2 开始开发，先补测试，再拆分 `PipelineView` 为 hooks / view models，保持行为不变。
 6. Phase 2 完成后更新本文状态、更新 next-session prompt、追加 `tasks/todo.md` Review，并单独提交。
@@ -357,7 +358,7 @@ git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pip
 - 兼容性确认：渠道 / 工作区配置错误仍走原 `resolvePipelineRunConfig()` 和设置跳转；旧 v1 会话不强制 repository preflight；未修改 Graph、runner、Git submission 或真实远端写路径。
 - 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 未完成项 / [!]：preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记未做，留给 Phase 2 hook 化时收敛；Phase 2-6 仍未开始。
-- 阶段提交：本轮提交完成后，以 `feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径` 的真实提交为准。
+- 阶段提交：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 
 ## Phase 2：PipelineView 拆分
 

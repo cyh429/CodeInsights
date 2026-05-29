@@ -1,5 +1,24 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-29 Pipeline v1 Phase 1 后状态同步计划
+
+范围确认：本轮只同步 Pipeline v1 Phase 1 完成后的最新开发状态、下次启动提示词、任务记录和长期习惯；不修改业务代码，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖，不 push、不创建 PR、不执行真实远端写。
+
+- [x] 复核当前分支、工作树和最近提交，确认 Phase 1 已提交为 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+- [x] 更新 Pipeline v1 development checklist：写清 Phase 0 / Phase 1 已完成并提交、Phase 2-6 未完成、下一步从 Phase 2 PipelineView 拆分继续。
+- [x] 更新 Pipeline v1 `next-session-prompt.md`：写入真实开发基线 `ff515a01`，并明确下次启动要确认其或其后的状态同步提交在历史中。
+- [x] 更新 `tasks/lessons.md`：把“每个阶段完成后自动同步开发状态文档、next-session prompt、todo Review 和最终可复制提示词”固化为 Pipeline v1 默认收尾习惯。
+- [x] 在本节追加 Review，运行文档 diff check，单独提交本轮状态同步改动。
+
+## 2026-05-29 Pipeline v1 Phase 1 后状态同步 Review
+
+- 已确认当前最新开发基线为 `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`，历史包含 `30399335 docs(pipeline): 同步 Phase 0 后续开发状态` 和 `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
+- 已更新 Pipeline v1 development checklist：明确 Phase 0 / Phase 1 已完成，Phase 2-6 未完成，下一步从 Phase 2 PipelineView 拆分继续；同时记录 preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记仍留给 Phase 2 收敛。
+- 已更新 `docs/improve/pipeline/v1/next-session-prompt.md`：下次启动提示词要求确认 `ff515a01` 或其后的状态同步提交，并直接从 Phase 2 继续。
+- 已更新 `tasks/lessons.md`：阶段完成后自动同步 development checklist、next-session prompt、`tasks/todo.md` Review 和最终可复制提示词，不需要用户再次提醒。
+- 本轮只修改状态文档和任务记录；未修改业务代码、根 `README.md`、根 `AGENTS.md`，未安装依赖，未 push / PR / 远端写。
+- 验证：`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`。
+
 ## 2026-05-29 Pipeline v1 Phase 1 Preflight 主路径计划
 
 范围确认：本轮只做 Phase 1。把已有 repository preflight 接入 IPC / preload / Renderer 启动前主路径，并在 `PipelineService.start()` 服务端复验 blocker；warning 需要用户明确接受并留下审计记录。不改 runner / Graph，不新增真实 Git 写操作，不执行真实远端写，不修改根 `README.md` / 根 `AGENTS.md`，不安装依赖。
@@ -54,7 +73,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 版本同步：`@codeinsights/shared` 提升到 `0.1.51`，`@codeinsights/electron` 提升到 `0.0.123`，`bun.lock` 已同步。
 - 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 未完成项：Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
-- 阶段提交：本轮提交完成后，以包含本 Review 的 Phase 1 提交为准；最终回复会给出实际提交号。
+- 阶段提交：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
 
 ## 2026-05-29 Pipeline v1 Phase 0 后状态同步计划
 
