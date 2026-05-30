@@ -1,5 +1,39 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 b1163b1f 恢复入口校正计划
+
+范围确认：本轮只处理启动检查发现的状态文档偏差，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新状态同步提交 `b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词` 写入 Pipeline v1 checklist 和 next-session prompt，并保留 `fb864d6a` 作为 Phase 8 功能开发基线。
+
+执行计划：
+
+- [x] 完成启动检查：读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`。
+- [x] 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支 `pipeline-improve`、工作树干净、历史包含 `b1163b1f` / `e77139fd` / `7d309cc0` / `c79f6b48` / `fb864d6a`。
+- [x] 更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，把最新已确认恢复入口从 `e77139fd` 提升为 `b1163b1f`。
+- [x] 更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下一次启动检查包含 `b1163b1f`，并继续禁止未授权远端写和根文档修改。
+- [x] 更新 `tasks/lessons.md`，记录启动检查发现“HEAD 已是新状态同步提交但文档仍指向上一恢复入口”时的校正规则。
+- [x] 在本节追加 Review，记录本轮校正、验证结果、未完成 gated 项和实际提交边界。
+- [x] 运行文档一致性搜索、`git diff --check`、`git status --short`。
+- [x] 单独提交本轮状态文档校正。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不把 fake runner smoke 说成真实模型验收。
+- [x] 不把 unpacked app smoke 说成 DMG / installer 或多平台验收。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 启动检查：已读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`；`git status --short --branch` 显示当前分支为 `pipeline-improve`，工作树干净且 ahead 28；`git log -12 --oneline` 已确认包含 `b1163b1f`、`e77139fd`、`7d309cc0`、`c79f6b48` 和 `fb864d6a`。
+- 文档校正：已将 development checklist 和 next-session prompt 的最新已确认恢复入口从 `e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口` 提升为 `b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`，同时保留 `fb864d6a` 为 Phase 8 功能开发基线。
+- 边界确认：本轮未改业务代码，未重新实现 Markdown / HTML / PDF 报告导出，未运行真实 GitHub remote smoke，未读取或输出 token，未 push，未创建真实 PR，未修改根 `README.md` / 根 `AGENTS.md`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 验证通过：`rg -n 'b1163b1f|e77139fd|7d309cc0|最新已确认恢复入口|最新状态同步提交|当前真实进度' docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md docs/improve/pipeline/v1/next-session-prompt.md tasks/todo.md tasks/lessons.md`；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`；`git status --short --branch`。
+- 阶段提交：本节由本轮状态文档校正提交承载；实际最新 HEAD 在最终回复中给出。
+
 ## 2026-05-30 Pipeline v1 最新开发状态同步计划
 
 范围确认：本轮只做用户要求的状态文档同步和长期习惯加固，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把 `e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口` 写入 Pipeline v1 文档，标清 Phase 0-8 已完成、gated 未完成项和下次启动入口，并给用户一份可直接复制的下次启动提示词。
