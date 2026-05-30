@@ -17,6 +17,7 @@ pipeline-improve
 3. 读取 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
 4. 读取 `docs/improve/pipeline/v1/next-session-prompt.md`，确认本提示词没有要求从 Phase 6、Phase 7 或 Phase 8 功能开发重新开始。
 5. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支状态；最近历史应包含：
+   - `e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`
    - `7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`
    - `c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`
    - `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`
@@ -35,7 +36,7 @@ pipeline-improve
 当前真实进度：
 - Pipeline v1 优化方案文档已完成。
 - Pipeline v1 开发跟踪清单已完成。
-- 最新开发基线是 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；最新已确认恢复入口是 `7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`。
+- 最新开发基线是 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；最新已确认恢复入口是 `e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`。
 - Phase 0 清理与对齐已完成。
 - Phase 1 Preflight 主路径已完成。
 - Phase 2 PipelineView 拆分已完成。
