@@ -78,6 +78,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 版本同步：`@codeinsights/shared` 提升到 `0.1.56`，`@codeinsights/electron` 提升到 `0.0.130`，`bun.lock` 已同步。
 - 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
 - 阶段提交：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。
+- 状态同步提交：`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`；本轮回填提交负责更新恢复入口。
 
 ## 2026-05-30 Pipeline v1 Phase 7 最新恢复入口回填计划
 
