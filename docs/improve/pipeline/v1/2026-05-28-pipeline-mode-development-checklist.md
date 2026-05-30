@@ -10,7 +10,7 @@
 > 更新时间：2026-05-30
 > 当前分支：`pipeline-improve`
 > 最新开发基线：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`；上一稳定基线：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
-> 最新已确认恢复入口：`70b30ea3` 或其后的 `docs(pipeline)` 状态同步提交；Phase 7 开发基线为 `70b30ea3`。
+> 最新已确认恢复入口：`1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`；Phase 7 开发基线为 `70b30ea3`。
 > 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP 已完成并通过本地验收。真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
 
 ### 当前阶段完成状态
@@ -38,6 +38,7 @@
   - `d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`
   - `d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`
   - `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
+  - `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -105,7 +106,7 @@
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
 2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7 已完成；真实 GitHub remote PR smoke gated 且未授权未验证”。
-3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`、`d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`、`d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`、`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`、`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench` 和 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`、`d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`、`d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`、`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`、`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench` 和 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
 4. 如果用户明确授权真实 GitHub remote smoke，先确认授权范围和凭证条件，再运行；授权前不读取 token、不 push、不创建真实 PR。
 5. 如果用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；否则只在 docs/improve 和任务记录中维护状态。
 
@@ -984,4 +985,4 @@ git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline
 1. 若用户明确授权真实 GitHub remote smoke，先确认授权范围、测试仓库、token / `gh` / API 条件和允许的远端副作用，再运行；授权前不读取 token、不 push、不创建真实 PR。
 2. 若用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；建议同步 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 DMG / installer / 多平台验收。
 3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD；Report Export 下一步只应进入 HTML / PDF 增强，不重复实现 Markdown MVP。
-4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP` 和 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
+4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP` 和 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。

@@ -1,5 +1,35 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 Phase 7 最新恢复入口回填计划
+
+范围确认：本轮只做文档状态回填和长期习惯加固，不改业务代码。目标是把 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态` 固化为最新已确认恢复入口，标清 Phase 0-7 已完成、未完成项和下一轮入口，并给用户一份可直接复制的下次启动提示词。
+
+执行计划：
+
+- [x] 读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`。
+- [x] 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支、最新提交和未提交状态。
+- [x] 更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，回填 `1cbe1de7`，标明完成 / 未完成 / 下一轮入口。
+- [x] 更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下次启动明确从 `1cbe1de7` 或其后的状态同步提交恢复。
+- [x] 更新 `tasks/lessons.md`，补充“状态同步提交落地后仍要回填真实同步提交号”的默认收尾习惯。
+- [x] 在本节追加 Review，并运行陈旧入口搜索与 `git diff --check`。
+- [x] 单独提交本轮状态同步文档。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 完成状态：Phase 0-7 已完成；最新开发基线为 `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`；最新已确认恢复入口已回填为 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；Report Export HTML / PDF 仍为后续增强；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 本轮同步：已更新 development checklist、next-session prompt、`tasks/lessons.md` 和本节任务记录；未改业务代码。
+- 验证：陈旧入口搜索通过；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md` 通过。
+- 阶段提交：本节由当前状态同步提交承载；实际最新 HEAD 在最终回复中给出。
+
 ## 2026-05-30 Pipeline v1 Phase 7 Report Export MVP 计划
 
 范围确认：本轮只做 Phase 7。目标是新增 Pipeline 贡献报告 Markdown 导出 MVP，把已有 ContributionTask、stage artifacts、patch-work 文档摘要和 records / events 审计信息汇总成可复制 / 可保存的本地报告。不运行真实模型验收，不执行真实远端写，不读取 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。
