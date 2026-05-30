@@ -1,5 +1,12 @@
 # Lessons
 
+## 2026-05-30 客户端完整验证与 Bun 测试隔离
+
+- 仓库级 `bun test` 在默认非隔离模式下会受到跨文件 mock / module state 污染影响；完整客户端验证应使用根脚本 `bun run test`，并保持其映射到 `bun test --isolate`，避免把测试顺序污染误判为产品回归。
+- 即使失败集中表现为跨文件污染，也要先分离真实契约问题；本轮 `run_completed` fixture 缺失 `usage` 字段属于真实类型契约偏差，必须补测试数据而不是用隔离模式掩盖。
+- packaged smoke 结论必须按脚本边界描述：`smoke:pipeline-fixture` 是 deterministic fixture runner，不是真实模型验收；`smoke:agent-history-reload-ui` 是本地 seeded history reload，不是模型调用；opencode `binary/server/config/permission/abort/resume/mcp` 是非模型 smoke，不能替代 `readonly/channel/native/packaged`。
+- 客户端完整验证报告里必须明确区分“当前平台 unpacked app 通过”和“DMG / installer、多平台 packaged、真实 GitHub remote、真实模型”仍未验证；未授权时不读取 token、不 push、不创建真实 PR。
+
 ## 2026-05-30 Pipeline Report Export HTML / PDF 安全边界
 
 - 报告脱敏不能给 Bearer token 设置长度门槛；`Bearer secret` 这类短 token 同样必须在 Markdown、HTML、顶层 title 和所有导出文件名中被替换，脱敏规则应按空白、引号、反引号和尖括号截断。

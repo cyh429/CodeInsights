@@ -10,8 +10,8 @@
 > 更新时间：2026-05-30
 > 当前分支：`pipeline-improve`
 > 最新开发基线：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；上一稳定基线：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
-> 最新已确认恢复入口：`ab34910c docs(pipeline): 同步 da6961de 最新开发状态`；Phase 8 开发基线为 `fb864d6a`，上一恢复入口为 `da6961de`。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP、Phase 8 Report Export HTML / PDF 增强已完成并通过本地验收。真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
+> 最新已确认恢复入口：`81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`；Phase 8 开发基线为 `fb864d6a`，上一恢复入口为 `ab34910c`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP、Phase 8 Report Export HTML / PDF 增强已完成并通过本地验收。本轮完整客户端验证已通过全量测试、类型检查、锁文件 dry-run、Electron 构建、当前平台 unpacked 打包、Pipeline fixture packaged smoke、Agent history reload UI smoke 和 opencode 非模型 smoke；真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证，真实模型、DMG / installer 和非 macOS arm64 packaged smoke 仍不在本机验收结论内；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
 
 ### 当前阶段完成状态
 
@@ -49,6 +49,7 @@
   - `f687166c docs(pipeline): 同步 c75e132f 最新开发状态`
   - `da6961de docs(pipeline): 校正 f687166c 恢复入口状态`
   - `ab34910c docs(pipeline): 同步 da6961de 最新开发状态`
+  - `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -105,25 +106,32 @@
   - patch-work manifest 读取增加只读 `create:false` 路径，报告导出和 PDF 保存不会因为缺失 `patch-work/` 创建目录。
   - PDF 渲染窗口关闭 nodeIntegration / webview / JavaScript，阻断导航和 http / https / file / ftp / ws / wss 子资源。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.56`、`@codeinsights/electron` 到 `0.0.130`，并同步 `bun.lock`。
+- [x] 2026-05-30 完整客户端验证。
+  - 全量 `bun run test` 已切换到 `bun test --isolate` 并通过 768 pass / 0 fail，避免跨文件 mock / module state 污染；`packages/shared/src/agent/runtime-events.test.ts` 已补齐 `run_completed` fixture 的 `usage` 字段。
+  - 已通过 `bun run typecheck`、`bun install --frozen-lockfile --dry-run`、`bun run electron:build`、`bun run --filter='@codeinsights/electron' pack`。
+  - 当前平台 macOS arm64 unpacked app 已通过 `smoke:pipeline-fixture` 的 draft-only / local-commit 主路径，以及 `smoke:agent-history-reload-ui` 的 first-open / reopen。
+  - opencode 已通过非模型 smoke：`binary`、`server`、`config`、`permission`、`abort`、`resume`、`mcp`；未把 `readonly`、`channel`、`native`、`packaged` 伪装为已验证。
+  - 已按规则递增根 package 到 `0.1.2`、`@codeinsights/shared` 到 `0.1.57`，并同步 `bun.lock`。
 
 ### 已完成
 
 - [x] Phase 6：真实端到端验收与交付准备。
 - [x] Phase 7：Report Export Markdown MVP。
 - [x] Phase 8：Report Export HTML / PDF 增强。
+- [x] 2026-05-30 完整客户端验证。
 
 ### 当前未完成的关键能力
 
-- [ ] [!] 真实 GitHub remote PR smoke 未授权未验证；DMG / installer 和非 macOS arm64 平台 packaged smoke 未在本机验证。
+- [ ] [!] 真实 GitHub remote PR smoke 未授权未验证；真实模型 Agent / runtime smoke、DMG / installer 和非 macOS arm64 平台 packaged smoke 未在本机验证。
 - [ ] 根 `README.md` / 根 `AGENTS.md` 公开文档同步需用户明确允许后再修改。
 
 ### 下次启动入口
 
 下次启动 Codex 后先执行以下动作：
 
-1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7、Phase 8 已完成；真实 GitHub remote PR smoke gated 且未授权未验证”。
-3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`、`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`、`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`、`1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态` 和 `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`。
+1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入、测试隔离和状态同步习惯。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7、Phase 8 已完成；2026-05-30 完整客户端验证已通过本机自动化范围；真实 GitHub remote PR smoke gated 且未授权未验证”。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`、`ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`、`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`、`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态` 和 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`。
 4. 如果用户明确授权真实 GitHub remote smoke，先确认授权范围和凭证条件，再运行；授权前不读取 token、不 push、不创建真实 PR。
 5. 如果用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；否则只在 docs/improve 和任务记录中维护状态。
 
@@ -1016,4 +1024,4 @@ git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline
 1. 若用户明确授权真实 GitHub remote smoke，先确认授权范围、测试仓库、token / `gh` / API 条件和允许的远端副作用，再运行；授权前不读取 token、不 push、不创建真实 PR。
 2. 若用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；建议同步 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 DMG / installer / 多平台验收。
 3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD；不要重复实现 Markdown、HTML 或 PDF 报告导出。
-4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态` 和 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。
+4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`、`ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态` 和 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。

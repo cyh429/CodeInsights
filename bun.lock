@@ -152,7 +152,7 @@
     },
     "packages/shared": {
       "name": "@codeinsights/shared",
-      "version": "0.1.56",
+      "version": "0.1.57",
       "devDependencies": {
         "typescript": "^5.0.0",
       },

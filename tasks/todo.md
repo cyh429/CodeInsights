@@ -1,5 +1,45 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 完整客户端验证计划
+
+范围确认：本轮只对已完成的客户端与 Pipeline v1 相关能力做完整本机验证，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是用仓库现有测试、类型检查、构建、打包和 smoke 脚本确认客户端主功能可运行，并把真实通过 / 失败 / gated 项写入 Review。
+
+验证计划：
+
+- [x] 启动前检查当前分支和工作树，确认没有待提交业务改动。
+- [x] 读取根 `package.json`、`apps/electron/package.json` 和 Pipeline v1 checklist，确认可用验证脚本。
+- [x] 运行全量 `bun test`，覆盖 shared/core/ui/electron 的单元、主进程、renderer 和 smoke 类测试。
+- [x] 运行 `bun run typecheck`，覆盖所有 workspace package TypeScript 类型检查。
+- [x] 运行 `bun install --frozen-lockfile --dry-run`，确认锁文件与依赖声明一致。
+- [x] 运行 `bun run electron:build`，确认 Electron main / preload / renderer / resources 构建通过。
+- [x] 运行 `bun run --filter='@codeinsights/electron' pack`，生成当前平台 unpacked app。
+- [x] 运行 `bun run --filter='@codeinsights/electron' smoke:pipeline-fixture`，验证当前平台 unpacked app 的 Pipeline draft-only / local commit 主路径。
+- [x] 评估 Agent Codex / opencode / history reload UI smoke 是否可在不读取 token、不触发真实模型或远端副作用的前提下运行；若脚本需要真实凭证或会读取 ambient auth，则记录为 gated，不伪装为已验证。
+- [x] 运行 `git diff --check` 和 `git status --short --branch`。
+- [x] 在本节追加 Review，记录每条命令结果、失败项、未授权项和客户端可运行结论。
+- [x] 同步 Pipeline v1 development checklist、next-session prompt 和 `tasks/lessons.md`，单独提交本轮验证记录。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不把 fake runner smoke 说成真实模型验收。
+- [x] 不把 unpacked app smoke 说成 DMG / installer 或多平台验收。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 启动检查：已读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`；`git status --short --branch` 确认当前分支为 `pipeline-improve`，本轮开始时仅有验证阶段改动；`git log -12 --oneline` 已确认包含 `81c72e30`、`ab34910c`、`da6961de`、`f687166c`、`c75e132f`、`b1163b1f` 和 `fb864d6a`。
+- 发现并修复：裸 `bun test` 暴露跨文件 mock / module state 污染，同时发现 `packages/shared/src/agent/runtime-events.test.ts` 中 `run_completed` fixture 缺少 `usage` 字段。已将根 `test` 脚本改为 `bun test --isolate`，补齐 fixture，并按规则递增根版本到 `0.1.2`、`@codeinsights/shared` 到 `0.1.57`，同步 `bun.lock`。
+- 全量自动化验证通过：`bun run test`，768 pass / 0 fail；`bun run typecheck`，shared / core / ui / electron 全部通过；`bun install --frozen-lockfile --dry-run` 通过；`bun run electron:build` 通过，Vite 仅输出既有大 chunk 警告。
+- 当前平台 packaged 验证通过：`bun run --filter='@codeinsights/electron' pack` 生成 macOS arm64 unpacked app；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture` 通过 draft-only 和 local-commit；`bun run --filter='@codeinsights/electron' smoke:agent-history-reload-ui` 通过 first-open 和 reopen。
+- 安全 Agent smoke 通过：`bun run --filter='@codeinsights/electron' smoke:agent-opencode -- --only=binary,server,config,permission,abort,resume,mcp` 通过；未运行 `readonly`、`channel`、`native`、`packaged`，因为这些路径需要真实模型、API key、native auth 或额外 packaged 条件。
+- 未运行 / [!]：真实 GitHub remote PR smoke 未授权未验证；未读取或输出 token；未 push；未创建真实 PR；未执行 DMG / installer、macOS x64、Windows x64、Linux packaged smoke；未修改根 `README.md` / 根 `AGENTS.md`。
+- 客户端结论：在本机 macOS arm64、当前仓库自动化覆盖范围内，已完成的客户端功能通过测试、类型检查、构建、当前平台 unpacked 打包、Pipeline fixture packaged smoke、Agent 历史恢复 UI smoke 和 opencode 非模型 smoke。该结论不等同于真实 GitHub remote、真实模型、DMG / installer 或多平台验收。
+- 验证收尾：已同步 development checklist、next-session prompt、`tasks/lessons.md` 和本节 Review；`git diff --check`、`git status --short --branch` 在提交前复核通过后单独提交。
+
 ## 2026-05-30 Pipeline v1 ab34910c 恢复入口校正计划
 
 范围确认：本轮只处理启动检查发现的状态文档偏差，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新状态同步提交 `ab34910c docs(pipeline): 同步 da6961de 最新开发状态` 写入 Pipeline v1 checklist 和 next-session prompt，并保留 `fb864d6a` 作为 Phase 8 功能开发基线。
