@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-05-30 Pipeline Report Export HTML / PDF 安全边界
+
+- 报告脱敏不能给 Bearer token 设置长度门槛；`Bearer secret` 这类短 token 同样必须在 Markdown、HTML、顶层 title 和所有导出文件名中被替换，脱敏规则应按空白、引号、反引号和尖括号截断。
+- 报告导出、HTML 生成和 PDF 保存必须保持严格只读；读取 patch-work manifest 时要显式使用 `create:false` 路径，缺失 `patch-work/` 或 manifest 只能返回可解释状态，不能为了展示报告创建目录或写入工作区。
+- 使用 Electron `BrowserWindow.printToPDF()` 渲染报告时，窗口必须关闭 nodeIntegration、webview 和 JavaScript，并阻断导航与 http / https / file / ftp / ws / wss 子资源；Renderer 只能传 `sessionId`，main 端重新生成报告，不接受任意 HTML 或文件路径。
+
 ## 2026-05-30 Pipeline Report Export 只读与脱敏边界
 
 - Pipeline 报告导出不能复用会触发 live Git 检查的 submission plan；导出类 IPC 必须只从已持久化的 records、stage artifacts、ContributionTask events 和 patch-work manifest 组装事实，避免 `git status` / `git diff` 刷新 index 或把当前工作树误当成已验收结果。

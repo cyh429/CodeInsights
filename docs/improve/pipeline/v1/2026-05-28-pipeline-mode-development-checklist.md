@@ -9,9 +9,9 @@
 
 > 更新时间：2026-05-30
 > 当前分支：`pipeline-improve`
-> 最新开发基线：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`；上一稳定基线：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
-> 最新已确认恢复入口：`1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`；Phase 7 开发基线为 `70b30ea3`。
-> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP 已完成并通过本地验收。真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
+> 最新开发基线：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；上一稳定基线：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
+> 最新已确认恢复入口：`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`；Phase 8 开发基线为 `fb864d6a`，Phase 8 状态同步提交完成后需回填为新的恢复入口。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP、Phase 8 Report Export HTML / PDF 增强已完成并通过本地验收。真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
 
 ### 当前阶段完成状态
 
@@ -39,6 +39,8 @@
   - `d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`
   - `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
   - `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`
+  - `b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`
+  - `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`
 - [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
 - [x] Phase 0：清理与对齐。
   - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
@@ -88,16 +90,23 @@
   - Renderer 已新增 `PipelineReportExportPanel`，支持生成、复制 Markdown 和保存 `.md`，并接入 `PipelineView` 的 v2 Contribution Dashboard 区域。
   - 报告 Markdown、顶层 `title` 和 `fileName` 均复用脱敏策略，覆盖 credentialed URL、token、Authorization / Bearer 片段。
   - 已按规则递增 `@codeinsights/shared` 到 `0.1.55`、`@codeinsights/electron` 到 `0.0.129`，并同步 `bun.lock`。
+- [x] Phase 8：Report Export HTML / PDF 增强。
+  - 在 Phase 7 Markdown MVP 之上新增同源安全 HTML、`.html` 保存、main 端 PDF 保存 IPC 和 `printToPDF` 服务。
+  - PDF 保存只接受 `sessionId`，main 端重新生成报告，不信任 Renderer 传入任意 HTML 或本地路径。
+  - 报告脱敏已覆盖 Markdown、HTML、title、`.md` / `.html` / `.pdf` 文件名、Authorization、短 Bearer token、JWT-like token 和 credentialed URL。
+  - patch-work manifest 读取增加只读 `create:false` 路径，报告导出和 PDF 保存不会因为缺失 `patch-work/` 创建目录。
+  - PDF 渲染窗口关闭 nodeIntegration / webview / JavaScript，阻断导航和 http / https / file / ftp / ws / wss 子资源。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.56`、`@codeinsights/electron` 到 `0.0.130`，并同步 `bun.lock`。
 
 ### 已完成
 
 - [x] Phase 6：真实端到端验收与交付准备。
 - [x] Phase 7：Report Export Markdown MVP。
+- [x] Phase 8：Report Export HTML / PDF 增强。
 
 ### 当前未完成的关键能力
 
 - [ ] [!] 真实 GitHub remote PR smoke 未授权未验证；DMG / installer 和非 macOS arm64 平台 packaged smoke 未在本机验证。
-- [ ] Pipeline Report Export HTML / PDF 仍属于后续增强；当前 Phase 7 只完成 Markdown MVP。
 - [ ] 根 `README.md` / 根 `AGENTS.md` 公开文档同步需用户明确允许后再修改。
 
 ### 下次启动入口
@@ -105,8 +114,8 @@
 下次启动 Codex 后先执行以下动作：
 
 1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入和状态同步习惯。
-2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7 已完成；真实 GitHub remote PR smoke gated 且未授权未验证”。
-3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`、`d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`、`d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`、`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`、`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench` 和 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7、Phase 8 已完成；真实 GitHub remote PR smoke gated 且未授权未验证”。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`、`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`、`1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`、`d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`、`d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`、`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`、`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`、`9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`、`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`、`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench` 和 `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
 4. 如果用户明确授权真实 GitHub remote smoke，先确认授权范围和凭证条件，再运行；授权前不读取 token、不 push、不创建真实 PR。
 5. 如果用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；否则只在 docs/improve 和任务记录中维护状态。
 
@@ -162,6 +171,7 @@
 | M5 | Phase 5 | 远端写确认 + GitHub 增强 | [x] |
 | M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [x] |
 | M7 | Phase 7 | Report Export Markdown MVP | [x] |
+| M8 | Phase 8 | Report Export HTML / PDF 增强 | [x] |
 
 ## Phase 0：清理与对齐
 
@@ -907,6 +917,19 @@ git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline
 - 未完成项 / [!]：Report Export HTML / PDF 仍为后续增强；真实 GitHub remote PR smoke、DMG / installer 和多平台 packaged smoke 仍未授权或未在本机验证。
 - 阶段提交：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`。
 
+## 2026-05-30 Pipeline v1 Phase 8 Review
+
+- 阶段范围：完成 Report Export HTML / PDF 增强；未重新实现 Markdown MVP，未执行真实 GitHub remote smoke，未 push，未创建真实 PR，未读取或输出 token，未修改根 `README.md` / 根 `AGENTS.md`。
+- 主要变更：`PipelineReportExport` 新增 `html`、`htmlFileName`、`pdfFileName`；新增 `PipelineReportPdfSaveInput` / `PipelineReportPdfSaveResult` 和 `SAVE_REPORT_PDF` IPC；Renderer 新增保存 `.html` 和保存 PDF 操作。
+- Read model 边界：HTML 从同一份只读 Markdown 报告派生，事实源仍限于 ContributionTask、events、records、stage artifacts 和 patch-work manifest；不触发 graph、Git precondition、远端写或凭证读取。
+- PDF 边界：Renderer 只传 `sessionId`；main 端重新生成报告后通过 Electron `printToPDF` 保存，取消保存返回结构化结果，不信任 Renderer 传入任意 HTML 或本地路径。
+- 安全确认：HTML 输出转义用户 / 模型内容并中和 `on*=` 片段；PDF 渲染窗口关闭 nodeIntegration / webview / JavaScript，阻断导航和 http / https / file / ftp / ws / wss 子资源；报告脱敏覆盖 Markdown、HTML、title、`.md` / `.html` / `.pdf` 文件名、Authorization、短 Bearer token、JWT-like token 和 credentialed URL。
+- Code review 阻断修复：已修复短 Bearer token 因长度门槛泄露的问题；已修复 `appendPatchWorkSummary()` 读取缺失 patch-work 时可能创建目录的问题，`readPatchWorkManifest()` 增加只读 `create:false` 路径，并补回归测试。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.56`，`@codeinsights/electron` 提升到 `0.0.130`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`，64 pass；`bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts`，25 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineReportExportPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx`，6 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build:main`；`bun run --filter='@codeinsights/electron' build:preload`；`bun run --filter='@codeinsights/electron' build:renderer`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 阶段提交：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。
+
 ## 横向工作流
 
 ### 安全审查清单
@@ -954,7 +977,7 @@ git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline
 - [ ] Patch-work 文档内评论和锚点反馈。
 - [ ] 用户编辑 `plan.md` / `pr.md` 后保存为新 revision。
 - [ ] Workflow Profile 设置页。
-- [ ] Pipeline Report Export HTML / PDF（Markdown MVP 已在 Phase 7 完成）。
+- [x] Pipeline Report Export HTML / PDF（Phase 8 已完成）。
 - [ ] GitHub labels / reviewers / linked issue。
 - [ ] 现有 PR 更新的冲突预览。
 - [ ] Pipeline run policy per session 固化。
@@ -980,9 +1003,9 @@ git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline
 
 ## 下一轮启动入口
 
-下一轮不再从 Phase 6 或 Phase 7 功能开发开始；Phase 0-7 已完成。推荐入口按用户目标选择：
+下一轮不再从 Phase 6、Phase 7 或 Phase 8 功能开发开始；Phase 0-8 已完成。推荐入口按用户目标选择：
 
 1. 若用户明确授权真实 GitHub remote smoke，先确认授权范围、测试仓库、token / `gh` / API 条件和允许的远端副作用，再运行；授权前不读取 token、不 push、不创建真实 PR。
 2. 若用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；建议同步 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 DMG / installer / 多平台验收。
-3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD；Report Export 下一步只应进入 HTML / PDF 增强，不重复实现 Markdown MVP。
-4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP` 和 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
+3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD；不要重复实现 Markdown、HTML 或 PDF 报告导出。
+4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`、`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`、`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP` 和 `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。

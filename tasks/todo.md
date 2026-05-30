@@ -33,7 +33,7 @@ TDD 执行计划：
 - [x] 实现 preload API 和 Renderer UI：新增保存 HTML、保存 PDF 操作，按钮用图标并保持 compact 布局。
 - [x] 递增受影响 package patch version，并同步 `bun.lock`。
 - [x] 运行聚焦测试、Electron typecheck、`bun install --frozen-lockfile --dry-run`、`git diff --check`。
-- [ ] Phase 8 完成后同步 development checklist、next-session prompt、本节 Review 和 lessons，并单独提交状态更新。
+- [x] Phase 8 完成后同步 development checklist、next-session prompt、本节 Review 和 lessons，并单独提交状态更新。
 
 触达边界：
 
@@ -77,7 +77,7 @@ git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/im
 - 验证通过：`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build:main`；`bun run --filter='@codeinsights/electron' build:preload`；`bun run --filter='@codeinsights/electron' build:renderer`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
 - 版本同步：`@codeinsights/shared` 提升到 `0.1.56`，`@codeinsights/electron` 提升到 `0.0.130`，`bun.lock` 已同步。
 - 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
-- 阶段提交：待提交后回填真实提交号。
+- 阶段提交：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。
 
 ## 2026-05-30 Pipeline v1 Phase 7 最新恢复入口回填计划
 
