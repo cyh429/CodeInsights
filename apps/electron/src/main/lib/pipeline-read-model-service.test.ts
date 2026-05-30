@@ -371,16 +371,27 @@ describe('pipeline-read-model-service', () => {
 
     expect(report.sessionId).toBe(session.id)
     expect(report.fileName.endsWith('.md')).toBe(true)
+    expect(report.htmlFileName.endsWith('.html')).toBe(true)
+    expect(report.pdfFileName.endsWith('.pdf')).toBe(true)
     expect(report.markdown).toContain('# Pipeline 贡献报告')
+    expect(report.html).toContain('<!doctype html>')
+    expect(report.html).toContain('<main')
+    expect(report.html).toContain('Pipeline 贡献报告')
     expect(report.markdown).toContain('修复报告导出')
+    expect(report.html).toContain('修复报告导出')
     expect(report.markdown).toContain('本地 patch')
     expect(report.markdown).toContain('draft-only')
     expect(report.markdown).toContain('不会创建本地 commit 或真实 PR')
     expect(report.markdown).toContain('src/index.ts')
+    expect(report.html).toContain('src/index.ts')
     expect(report.markdown).toContain('patch-work/**')
+    expect(report.html).toContain('patch-work/**')
     expect(report.markdown).toContain('bun test')
+    expect(report.html).toContain('bun test')
     expect(report.markdown).not.toContain('ghp_should_not_leak')
     expect(report.markdown).not.toContain('token=secret')
+    expect(report.html).not.toContain('ghp_should_not_leak')
+    expect(report.html).not.toContain('token=secret')
   })
 
   test('export report 不调用 Git 读模型，只使用已持久化的 records 和 events', () => {
@@ -430,7 +441,9 @@ describe('pipeline-read-model-service', () => {
       const report = exportPipelineReport({ sessionId: session.id })
 
       expect(report.markdown).toContain('src/index.ts')
+      expect(report.html).toContain('src/index.ts')
       expect(report.markdown).not.toContain('src/unrelated.ts')
+      expect(report.html).not.toContain('src/unrelated.ts')
       expect(existsSync(gitMarker)).toBe(false)
     } finally {
       if (originalPath == null) {
@@ -440,6 +453,40 @@ describe('pipeline-read-model-service', () => {
       }
       delete process.env.CODEINSIGHTS_TEST_GIT_MARKER
     }
+  })
+
+  test('export report 缺少 patch-work 目录时保持只读，不创建目录', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-missing-patch-work-repo-'))
+    tempRepos.push(repoRoot)
+    setupGitRepo(repoRoot)
+    const patchWorkDir = join(repoRoot, 'patch-work')
+    const session = createPipelineSession('报告导出 missing patch-work', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-missing-patch-work',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir,
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出报告不创建 patch-work',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendPipelineRecord(session.id, {
+      id: 'tester-artifact-missing-patch-work',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'tester',
+      artifact: makeTesterOutput(),
+      createdAt: 2,
+    })
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('patch-work：读取失败')
+    expect(report.html).toContain('patch-work：读取失败')
+    expect(existsSync(patchWorkDir)).toBe(false)
   })
 
   test('export report 汇总 local commit 并标明 patch-work 排除项', () => {
@@ -582,20 +629,68 @@ describe('pipeline-read-model-service', () => {
 
   test('export report 顶层 title 和 fileName 也会脱敏会话标题', () => {
     const session = createPipelineSession(
-      'Authorization: Bearer ghp_should_not_leak https://user:ghp_url_secret@github.com/example/repo.git?token=secret',
+      'Authorization: Bearer ghp_should_not_leak Bearer secret Bearer eyJhbGciOiJIUzI1Ni.secret https://user:ghp_url_secret@github.com/example/repo.git?token=secret',
       'channel-1',
       'workspace-1',
       2,
     )
+    appendPipelineRecord(session.id, {
+      id: 'error-generic-bearer-record',
+      sessionId: session.id,
+      type: 'error',
+      error: 'generic bearer leaked: Bearer standalone-secret-token-12345 and Bearer tiny',
+      createdAt: 1,
+    })
 
     const report = exportPipelineReport({ sessionId: session.id })
 
-    for (const value of [report.title, report.fileName, report.markdown]) {
+    for (const value of [report.title, report.fileName, report.htmlFileName, report.pdfFileName, report.markdown, report.html]) {
       expect(value).not.toContain('ghp_should_not_leak')
       expect(value).not.toContain('ghp_url_secret')
+      expect(value).not.toContain('eyJhbGciOiJIUzI1Ni.secret')
+      expect(value).not.toContain('standalone-secret-token-12345')
+      expect(value).not.toContain('secret')
+      expect(value).not.toContain('tiny')
       expect(value).not.toContain('token=secret')
       expect(value).not.toContain('Bearer')
     }
+  })
+
+  test('export report HTML 转义用户和模型内容，避免脚本注入', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-report-html-escape-repo-'))
+    tempRepos.push(repoRoot)
+    setupGitRepo(repoRoot)
+    const session = createPipelineSession('报告 <script>alert(1)</script>', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-report-html-escape',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '修复 <img src=x onerror=alert(1)>',
+      status: 'completed',
+    })
+    appendPipelineRecord(session.id, {
+      id: 'committer-artifact-html-escape',
+      sessionId: session.id,
+      type: 'stage_artifact',
+      node: 'committer',
+      artifact: makeCommitterOutput({
+        commitMessage: 'feat: <script>alert(1)</script>',
+        prBody: '## Summary\n- <img src=x onerror=alert(1)>',
+      }),
+      createdAt: 3,
+    })
+
+    const report = exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('<script>alert(1)</script>')
+    expect(report.html).not.toContain('<script>')
+    expect(report.html).not.toContain('onerror=')
+    expect(report.html).not.toContain('<img')
+    expect(report.html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(report.html).toContain('&lt;img src=x')
   })
 
   test('export report 缺少 ContributionTask 时返回可解释报告', () => {

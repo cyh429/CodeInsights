@@ -24,6 +24,8 @@ import type {
   PipelineSubmissionPlanInput,
   PipelineReportExport,
   PipelineReportExportInput,
+  PipelineReportPdfSaveInput,
+  PipelineReportPdfSaveResult,
   PipelineSessionMeta,
   PipelineStartInput,
   PipelineStateSnapshot,
@@ -115,6 +117,13 @@ export function registerPipelineIpcHandlers(): void {
     PIPELINE_IPC_CHANNELS.EXPORT_REPORT,
     async (_event, input: PipelineReportExportInput): Promise<PipelineReportExport> => {
       return getPipelineService().exportPipelineReport(input)
+    }
+  )
+
+  ipcMain.handle(
+    PIPELINE_IPC_CHANNELS.SAVE_REPORT_PDF,
+    async (_event, input: PipelineReportPdfSaveInput): Promise<PipelineReportPdfSaveResult> => {
+      return getPipelineService().savePipelineReportPdf(input)
     }
   )
 

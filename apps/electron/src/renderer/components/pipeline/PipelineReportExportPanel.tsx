@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { Clipboard, Download, FileText, RefreshCw } from 'lucide-react'
+import { Clipboard, Download, FileText, FileType, RefreshCw } from 'lucide-react'
 import type { PipelineReportExport } from '@codeinsights/shared'
 
-type ReportActionStatus = 'idle' | 'copied' | 'saved' | 'failed'
+type ReportActionStatus = 'idle' | 'copied' | 'saved' | 'saving' | 'failed' | 'canceled'
 
 export interface PipelineReportExportPanelViewModel {
   title: string
@@ -10,11 +10,17 @@ export interface PipelineReportExportPanelViewModel {
   generateLabel: string
   copyLabel: string
   saveLabel: string
+  saveHtmlLabel: string
+  savePdfLabel: string
   fileName: string
+  htmlFileName: string
+  pdfFileName: string
   preview: string
   generateDisabled: boolean
   copyDisabled: boolean
   saveDisabled: boolean
+  saveHtmlDisabled: boolean
+  savePdfDisabled: boolean
   error?: string
 }
 
@@ -24,12 +30,16 @@ export function buildPipelineReportExportPanelViewModel({
   error,
   copyStatus,
   saveStatus,
+  htmlSaveStatus,
+  pdfSaveStatus,
 }: {
   report: PipelineReportExport | null
   loading: boolean
   error: string | null
   copyStatus: ReportActionStatus
   saveStatus: ReportActionStatus
+  htmlSaveStatus: ReportActionStatus
+  pdfSaveStatus: ReportActionStatus
 }): PipelineReportExportPanelViewModel {
   const hasReport = Boolean(report)
   const preview = report?.markdown
@@ -44,11 +54,25 @@ export function buildPipelineReportExportPanelViewModel({
     generateLabel: loading ? '生成中' : hasReport ? '重新生成' : '生成报告',
     copyLabel: copyStatus === 'copied' ? '已复制' : copyStatus === 'failed' ? '复制失败' : '复制 Markdown',
     saveLabel: saveStatus === 'saved' ? '已保存' : saveStatus === 'failed' ? '保存失败' : '保存 .md',
+    saveHtmlLabel: htmlSaveStatus === 'saved' ? '已保存' : htmlSaveStatus === 'failed' ? '保存失败' : '保存 .html',
+    savePdfLabel: pdfSaveStatus === 'saving'
+      ? '保存中'
+      : pdfSaveStatus === 'saved'
+        ? '已保存'
+        : pdfSaveStatus === 'failed'
+          ? '保存失败'
+          : pdfSaveStatus === 'canceled'
+            ? '已取消'
+            : '保存 PDF',
     fileName: report?.fileName ?? 'pipeline-report.md',
+    htmlFileName: report?.htmlFileName ?? 'pipeline-report.html',
+    pdfFileName: report?.pdfFileName ?? 'pipeline-report.pdf',
     preview,
     generateDisabled: loading,
     copyDisabled: loading || !hasReport,
     saveDisabled: loading || !hasReport,
+    saveHtmlDisabled: loading || !hasReport,
+    savePdfDisabled: loading || !hasReport || pdfSaveStatus === 'saving',
     error: error ?? undefined,
   }
 }
@@ -77,12 +101,12 @@ function copyTextToClipboard(text: string): Promise<void> {
   }
 }
 
-function saveMarkdownFile(report: PipelineReportExport): void {
-  const blob = new Blob([report.markdown], { type: 'text/markdown;charset=utf-8' })
+function saveBrowserFile(content: string, fileName: string, mediaType: string): void {
+  const blob = new Blob([content], { type: `${mediaType};charset=utf-8` })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = report.fileName
+  link.download = fileName
   link.style.display = 'none'
   document.body.appendChild(link)
   link.click()
@@ -100,12 +124,16 @@ export function PipelineReportExportPanel({
   const [error, setError] = React.useState<string | null>(null)
   const [copyStatus, setCopyStatus] = React.useState<ReportActionStatus>('idle')
   const [saveStatus, setSaveStatus] = React.useState<ReportActionStatus>('idle')
+  const [htmlSaveStatus, setHtmlSaveStatus] = React.useState<ReportActionStatus>('idle')
+  const [pdfSaveStatus, setPdfSaveStatus] = React.useState<ReportActionStatus>('idle')
 
   React.useEffect(() => {
     setReport(null)
     setError(null)
     setCopyStatus('idle')
     setSaveStatus('idle')
+    setHtmlSaveStatus('idle')
+    setPdfSaveStatus('idle')
   }, [sessionId])
 
   const viewModel = buildPipelineReportExportPanelViewModel({
@@ -114,6 +142,8 @@ export function PipelineReportExportPanel({
     error,
     copyStatus,
     saveStatus,
+    htmlSaveStatus,
+    pdfSaveStatus,
   })
 
   const resetActionStatus = React.useCallback((setter: React.Dispatch<React.SetStateAction<ReportActionStatus>>): void => {
@@ -125,6 +155,8 @@ export function PipelineReportExportPanel({
     setError(null)
     setCopyStatus('idle')
     setSaveStatus('idle')
+    setHtmlSaveStatus('idle')
+    setPdfSaveStatus('idle')
     try {
       const nextReport = await window.electronAPI.exportPipelineReport({ sessionId })
       setReport(nextReport)
@@ -151,7 +183,7 @@ export function PipelineReportExportPanel({
   const saveReport = React.useCallback((): void => {
     if (!report) return
     try {
-      saveMarkdownFile(report)
+      saveBrowserFile(report.markdown, report.fileName, 'text/markdown')
       setSaveStatus('saved')
       resetActionStatus(setSaveStatus)
     } catch (saveError) {
@@ -160,6 +192,33 @@ export function PipelineReportExportPanel({
       resetActionStatus(setSaveStatus)
     }
   }, [report, resetActionStatus])
+
+  const saveHtmlReport = React.useCallback((): void => {
+    if (!report) return
+    try {
+      saveBrowserFile(report.html, report.htmlFileName, 'text/html')
+      setHtmlSaveStatus('saved')
+      resetActionStatus(setHtmlSaveStatus)
+    } catch (saveError) {
+      console.error('[PipelineReportExport] 保存 HTML 报告失败:', saveError)
+      setHtmlSaveStatus('failed')
+      resetActionStatus(setHtmlSaveStatus)
+    }
+  }, [report, resetActionStatus])
+
+  const savePdfReport = React.useCallback(async (): Promise<void> => {
+    if (!report) return
+    setPdfSaveStatus('saving')
+    try {
+      const result = await window.electronAPI.savePipelineReportPdf({ sessionId })
+      setPdfSaveStatus(result.canceled ? 'canceled' : 'saved')
+      resetActionStatus(setPdfSaveStatus)
+    } catch (saveError) {
+      console.error('[PipelineReportExport] 保存 PDF 报告失败:', saveError)
+      setPdfSaveStatus('failed')
+      resetActionStatus(setPdfSaveStatus)
+    }
+  }, [report, resetActionStatus, sessionId])
 
   return (
     <section className="rounded-panel bg-background/95 px-4 py-4 text-text-primary shadow-card">
@@ -211,6 +270,24 @@ export function PipelineReportExportPanel({
         >
           <Download size={14} aria-hidden="true" />
           {viewModel.saveLabel}
+        </button>
+        <button
+          type="button"
+          disabled={viewModel.saveHtmlDisabled}
+          onClick={saveHtmlReport}
+          className="inline-flex items-center gap-2 rounded-control bg-background px-3 py-2 text-xs font-medium text-text-primary shadow-sm transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          <FileType size={14} aria-hidden="true" />
+          {viewModel.saveHtmlLabel}
+        </button>
+        <button
+          type="button"
+          disabled={viewModel.savePdfDisabled}
+          onClick={() => void savePdfReport()}
+          className="inline-flex items-center gap-2 rounded-control bg-background px-3 py-2 text-xs font-medium text-text-primary shadow-sm transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          {pdfSaveStatus === 'saving' ? <RefreshCw className="animate-spin" size={14} aria-hidden="true" /> : <Download size={14} aria-hidden="true" />}
+          {viewModel.savePdfLabel}
         </button>
       </div>
     </section>

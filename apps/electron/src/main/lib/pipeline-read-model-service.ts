@@ -24,7 +24,6 @@ import {
   getPipelineSessionMeta,
 } from './pipeline-session-manager'
 import { readPatchWorkManifest } from './pipeline-patch-work-service'
-import { resolvePatchWorkDir } from './pipeline-patch-work-service'
 import {
   redactPreflightDiagnosticText,
   redactPreflightRemoteUrl,
@@ -50,8 +49,8 @@ const REPORT_STAGE_LABELS: Record<keyof PipelineStageOutputMap, string> = {
 
 function redactReadModelText(value: string): string {
   return redactPreflightDiagnosticText(redactSecretText(value))
-    .replace(/\bAuthorization\s*[:=]\s*[A-Za-z][A-Za-z0-9_-]*\s+(?:\[REDACTED\]|\*\*\*)/gi, 'Authorization: [REDACTED]')
-    .replace(/\bBearer\s+(?:\[REDACTED\]|\*\*\*)/gi, '[REDACTED]')
+    .replace(/\bAuthorization\s*[:=]\s*[A-Za-z][A-Za-z0-9_-]*\s+\S+/gi, 'Authorization: [REDACTED]')
+    .replace(/\bBearer\s+[^\s"'`<>]+/gi, '[REDACTED]')
 }
 
 function redactReadModelUrl(value: string): string {
@@ -286,6 +285,105 @@ function sanitizeReportFileName(value: string): string {
   return normalized || 'pipeline-report'
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function closeReportHtmlLists(lines: string[], listDepth: number): number {
+  while (listDepth > 0) {
+    lines.push('</ul>')
+    listDepth -= 1
+  }
+  return listDepth
+}
+
+function markdownLineToHtmlContent(value: string): string {
+  return escapeHtml(value)
+    .replace(/\bon[a-z]+\s*=/gi, (match) => match.replace('=', '&#61;'))
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+}
+
+function buildPipelineReportHtml(input: {
+  title: string
+  markdown: string
+  generatedAt: number
+}): string {
+  const body: string[] = []
+  let listDepth = 0
+
+  for (const rawLine of input.markdown.split(/\r?\n/)) {
+    const line = rawLine.trimEnd()
+    if (!line.trim()) {
+      listDepth = closeReportHtmlLists(body, listDepth)
+      continue
+    }
+
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line)
+    if (heading) {
+      listDepth = closeReportHtmlLists(body, listDepth)
+      const level = heading[1]!.length
+      body.push(`<h${level}>${markdownLineToHtmlContent(heading[2]!)}</h${level}>`)
+      continue
+    }
+
+    const bullet = /^(\s*)-\s+(.+)$/.exec(line)
+    if (bullet) {
+      const indent = Math.min(3, Math.floor(bullet[1]!.length / 2))
+      while (listDepth < 1) {
+        body.push('<ul>')
+        listDepth += 1
+      }
+      body.push(`<li class="indent-${indent}">${markdownLineToHtmlContent(bullet[2]!)}</li>`)
+      continue
+    }
+
+    listDepth = closeReportHtmlLists(body, listDepth)
+    body.push(`<p>${markdownLineToHtmlContent(line)}</p>`)
+  }
+
+  closeReportHtmlLists(body, listDepth)
+
+  return [
+    '<!doctype html>',
+    '<html lang="zh-CN">',
+    '<head>',
+    '<meta charset="utf-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    `<title>${escapeHtml(input.title)}</title>`,
+    '<style>',
+    ':root{color-scheme:light;--bg:#f7f8fb;--surface:#ffffff;--text:#18202f;--muted:#5d687a;--line:#d8dee9;--accent:#2563eb;}',
+    '*{box-sizing:border-box;}',
+    'body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.65;}',
+    'main{width:min(920px,calc(100% - 48px));margin:40px auto;padding:40px;background:var(--surface);box-shadow:0 18px 48px rgba(15,23,42,.10);}',
+    'h1{margin:0 0 24px;font-size:30px;line-height:1.2;}',
+    'h2{margin:32px 0 12px;padding-top:18px;border-top:1px solid var(--line);font-size:20px;}',
+    'h3{margin:22px 0 8px;font-size:16px;}',
+    'p{margin:8px 0;color:var(--muted);}',
+    'ul{margin:8px 0 8px 20px;padding:0;}',
+    'li{margin:4px 0;}',
+    '.indent-1{margin-left:18px;}',
+    '.indent-2,.indent-3{margin-left:36px;}',
+    'code{padding:2px 5px;border-radius:5px;background:#eef2ff;color:#1d4ed8;font-family:"SFMono-Regular",Consolas,monospace;font-size:.92em;}',
+    '.meta{margin-bottom:24px;color:var(--muted);font-size:13px;}',
+    '@media print{body{background:#fff;}main{width:auto;margin:0;padding:24px;box-shadow:none;}h2{break-after:avoid;}li,p{break-inside:avoid;}}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<main>',
+    `<div class="meta">生成时间：${escapeHtml(formatReportTime(input.generatedAt))}</div>`,
+    ...body,
+    '</main>',
+    '</body>',
+    '</html>',
+  ].join('\n')
+}
+
 function modeLabel(mode?: ContributionMode): string {
   if (mode === 'remote_pr') return 'Draft PR'
   if (mode === 'local_commit') return '本地 commit'
@@ -385,7 +483,7 @@ function appendPatchWorkSummary(lines: string[], task: ContributionTask | null):
   }
 
   try {
-    const manifest = readPatchWorkManifest(task.repositoryRoot)
+    const manifest = readPatchWorkManifest(task.repositoryRoot, { create: false })
     appendBullet(lines, '目录', manifest.patchWorkDir)
     if (manifest.files.length === 0) {
       lines.push('- 文件：暂无')
@@ -650,10 +748,9 @@ export function getContributionTaskSummary(input: SessionReadModelInput): Contri
     : latestRemoteSubmission(events) ?? committerRemoteSubmission
   const patchWork = (() => {
     try {
-      const patchWorkDir = resolvePatchWorkDir(task.repositoryRoot, { create: false })
-      const manifest = readPatchWorkManifest(task.repositoryRoot)
+      const manifest = readPatchWorkManifest(task.repositoryRoot, { create: false })
       return {
-        dir: patchWorkDir,
+        dir: manifest.patchWorkDir,
         manifestFound: true,
         fileCount: manifest.files.length,
         acceptedFileCount: manifest.files.filter((file) => file.acceptedRevision !== undefined).length,
@@ -818,21 +915,26 @@ export function exportPipelineReport(input: SessionReadModelInput): PipelineRepo
   })
   const safeSessionTitle = meta?.title ? redactReadModelText(meta.title) : undefined
   const title = safeSessionTitle ? `${safeSessionTitle} - Pipeline 贡献报告` : 'Pipeline 贡献报告'
+  const markdown = buildPipelineReportMarkdown({
+    sessionId,
+    sessionTitle: meta?.title,
+    generatedAt,
+    summary,
+    plan,
+    records,
+    events,
+    stageOutputs,
+  })
+  const baseFileName = `${sanitizeReportFileName(safeSessionTitle ?? sessionId)}-${sessionId.slice(0, 8)}-pipeline-report`
 
   return {
     sessionId,
     title,
-    markdown: buildPipelineReportMarkdown({
-      sessionId,
-      sessionTitle: meta?.title,
-      generatedAt,
-      summary,
-      plan,
-      records,
-      events,
-      stageOutputs,
-    }),
-    fileName: `${sanitizeReportFileName(safeSessionTitle ?? sessionId)}-${sessionId.slice(0, 8)}-pipeline-report.md`,
+    markdown,
+    html: buildPipelineReportHtml({ title, markdown, generatedAt }),
+    fileName: `${baseFileName}.md`,
+    htmlFileName: `${baseFileName}.html`,
+    pdfFileName: `${baseFileName}.pdf`,
     generatedAt,
   }
 }

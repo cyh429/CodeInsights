@@ -36,6 +36,8 @@ import type {
   PipelineRemoteWriteConfirmationPlan,
   PipelineReportExport,
   PipelineReportExportInput,
+  PipelineReportPdfSaveInput,
+  PipelineReportPdfSaveResult,
   PipelineChangedFileType,
   PipelineContributionTaskSummaryInput,
   ContributionTaskSummary,
@@ -111,6 +113,10 @@ import {
   getContributionTaskSummary as buildContributionTaskSummary,
   getPipelineSubmissionPlan as buildPipelineSubmissionPlan,
 } from './pipeline-read-model-service'
+import {
+  type PipelineReportPdfSaver,
+  savePipelineReportPdfFile,
+} from './pipeline-report-pdf-service'
 
 interface RunSessionPreflightInput {
   sessionId: string
@@ -143,6 +149,7 @@ interface CreatePipelineServiceOptions {
   checkpointer?: PipelineCheckpointer
   createRemoteSubmission?: PipelineRemoteSubmissionRunner
   runRepositoryPreflight?: (input: PipelinePreflightInput) => Promise<PipelinePreflightResult>
+  saveReportPdf?: PipelineReportPdfSaver
 }
 
 type PipelineRemoteSubmissionRunner = (
@@ -254,6 +261,7 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
   const activeCallbacks = new Map<string, PipelineServiceCallbacks | undefined>()
   const remoteSubmissionRunner = options.createRemoteSubmission ?? createRemotePipelineSubmissionWithGitHubApi
   const repositoryPreflightRunner = options.runRepositoryPreflight ?? runPipelinePreflight
+  const reportPdfSaver = options.saveReportPdf ?? savePipelineReportPdfFile
   let reconcileSessionsPromise: Promise<PipelineSessionMeta[]> | null = null
 
   function emitEvent(
@@ -2411,6 +2419,12 @@ export function createPipelineService(options: CreatePipelineServiceOptions = {}
     exportPipelineReport(input: PipelineReportExportInput): PipelineReportExport {
       const parsed = parsePatchWorkSessionInput(input)
       return buildPipelineReportExport(parsed)
+    },
+
+    async savePipelineReportPdf(input: PipelineReportPdfSaveInput): Promise<PipelineReportPdfSaveResult> {
+      const parsed = parsePatchWorkSessionInput(input)
+      const report = buildPipelineReportExport(parsed)
+      return reportPdfSaver(report)
     },
 
     readPatchWorkFile(input: PipelinePatchWorkReadFileInput): string {

@@ -118,6 +118,8 @@ import type {
   PipelinePreflightResult,
   PipelineReportExport,
   PipelineReportExportInput,
+  PipelineReportPdfSaveInput,
+  PipelineReportPdfSaveResult,
   PipelineStartInput,
   PipelineResumeInput,
   PipelineGateRequest,
@@ -393,8 +395,11 @@ export interface ElectronAPI {
   /** 读取 Pipeline v2 提交计划 */
   getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => Promise<PipelineSubmissionPlan>
 
-  /** 导出 Pipeline v2 贡献报告 Markdown */
+  /** 导出 Pipeline v2 贡献报告 Markdown / HTML */
   exportPipelineReport: (input: PipelineReportExportInput) => Promise<PipelineReportExport>
+
+  /** 保存 Pipeline v2 贡献报告 PDF */
+  savePipelineReportPdf: (input: PipelineReportPdfSaveInput) => Promise<PipelineReportPdfSaveResult>
 
   /** 读取 Pipeline v2 patch-work 文件 */
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<string>
@@ -1231,6 +1236,10 @@ const electronAPI: ElectronAPI = {
 
   exportPipelineReport: (input: PipelineReportExportInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.EXPORT_REPORT, input)
+  },
+
+  savePipelineReportPdf: (input: PipelineReportPdfSaveInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.SAVE_REPORT_PDF, input)
   },
 
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {

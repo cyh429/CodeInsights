@@ -500,7 +500,10 @@ export interface PipelineReportExport {
   sessionId: string
   title: string
   markdown: string
+  html: string
   fileName: string
+  htmlFileName: string
+  pdfFileName: string
   generatedAt: number
 }
 
@@ -701,6 +704,14 @@ export interface PipelineContributionTaskSummaryInput extends PipelinePatchWorkS
 export interface PipelineSubmissionPlanInput extends PipelinePatchWorkSessionInput {}
 
 export interface PipelineReportExportInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportPdfSaveInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportPdfSaveResult {
+  canceled: boolean
+  fileName: string
+  filePath?: string
+}
 
 export interface PipelinePatchWorkReadFileInput extends PipelinePatchWorkSessionInput {
   relativePath: string
@@ -929,6 +940,7 @@ export const PIPELINE_IPC_CHANNELS = {
   GET_CONTRIBUTION_TASK_SUMMARY: 'pipeline-v2:get-contribution-task-summary',
   GET_SUBMISSION_PLAN: 'pipeline-v2:get-submission-plan',
   EXPORT_REPORT: 'pipeline-v2:export-report',
+  SAVE_REPORT_PDF: 'pipeline-v2:save-report-pdf',
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
   LIST_PATCH_WORK_REVISIONS: 'pipeline-v2:list-patch-work-revisions',
   READ_PATCH_WORK_REVISION: 'pipeline-v2:read-patch-work-revision',

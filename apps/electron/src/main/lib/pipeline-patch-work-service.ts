@@ -42,6 +42,10 @@ interface PatchWorkInitInput {
   repositoryRoot: string
 }
 
+interface PatchWorkReadOptions {
+  create?: boolean
+}
+
 interface PatchWorkWriteInput extends PatchWorkInitInput {
   kind: PatchWorkFileKind
   createdByNode: PatchWorkNodeKind
@@ -319,8 +323,8 @@ function resolvePatchWorkFilePath(
   return target
 }
 
-function getManifestPath(repositoryRoot: string): string {
-  const manifestPath = join(resolvePatchWorkDir(repositoryRoot), 'manifest.json')
+function getManifestPath(repositoryRoot: string, options: PatchWorkReadOptions = {}): string {
+  const manifestPath = join(resolvePatchWorkDir(repositoryRoot, options), 'manifest.json')
   assertManifestPathSafe(manifestPath)
   return manifestPath
 }
@@ -329,14 +333,14 @@ function checksum(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex')
 }
 
-function createEmptyManifest(input: PatchWorkInitInput): PatchWorkManifest {
+function createEmptyManifest(input: PatchWorkInitInput, options: PatchWorkReadOptions = {}): PatchWorkManifest {
   const repositoryRoot = ensureRepositoryRoot(input.repositoryRoot)
   return {
     version: MANIFEST_VERSION,
     contributionTaskId: input.contributionTaskId,
     pipelineSessionId: input.pipelineSessionId,
     repositoryRoot,
-    patchWorkDir: resolvePatchWorkDir(repositoryRoot),
+    patchWorkDir: resolvePatchWorkDir(repositoryRoot, options),
     files: [],
     checksums: {},
     updatedAt: 0,
@@ -378,8 +382,9 @@ function normalizeFileRef(value: unknown): PatchWorkFileRef | null {
 function normalizeManifest(
   input: PatchWorkInitInput,
   manifest: PatchWorkManifest | null,
+  options: PatchWorkReadOptions = {},
 ): PatchWorkManifest {
-  const emptyManifest = createEmptyManifest(input)
+  const emptyManifest = createEmptyManifest(input, options)
   if (!isObject(manifest)) return emptyManifest
 
   const files = Array.isArray(manifest.files)
@@ -448,7 +453,10 @@ export function initializePatchWork(input: PatchWorkInitInput): PatchWorkManifes
   return manifest
 }
 
-export function readPatchWorkManifest(repositoryRoot: string): PatchWorkManifest {
+export function readPatchWorkManifest(
+  repositoryRoot: string,
+  options: PatchWorkReadOptions = {},
+): PatchWorkManifest {
   const input: PatchWorkInitInput = {
     contributionTaskId: '',
     pipelineSessionId: '',
@@ -456,7 +464,8 @@ export function readPatchWorkManifest(repositoryRoot: string): PatchWorkManifest
   }
   return normalizeManifest(
     input,
-    readJsonFileSafe<PatchWorkManifest>(getManifestPath(repositoryRoot)),
+    readJsonFileSafe<PatchWorkManifest>(getManifestPath(repositoryRoot, options)),
+    options,
   )
 }
 

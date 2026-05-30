@@ -12,6 +12,7 @@ import type {
   PipelinePreflightResult,
   PipelineRunPreflightInput,
   PipelineCommitterStageOutput,
+  PipelineReportExport,
 } from '@codeinsights/shared'
 import {
   appendPipelineNodeCompleteRecords,
@@ -337,7 +338,7 @@ describe('pipeline-service', () => {
     rmSync(repoRoot, { recursive: true, force: true })
   })
 
-  test('Pipeline report export 只读生成 Markdown，不触发 graph 或 gate 写入', () => {
+  test('Pipeline report export 只读生成 Markdown / HTML，不触发 graph 或 gate 写入', () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-report-repo-'))
     setupPipelineGitRepo(repoRoot)
     const graphCalls: string[] = []
@@ -419,8 +420,53 @@ describe('pipeline-service', () => {
 
     expect(report.markdown).toContain('导出贡献报告')
     expect(report.markdown).toContain('draft-only')
+    expect(report.html).toContain('导出贡献报告')
+    expect(report.html).toContain('draft-only')
+    expect(report.htmlFileName).toMatch(/\.html$/)
+    expect(report.pdfFileName).toMatch(/\.pdf$/)
     expect(graphCalls).toEqual([])
     expect(getPipelineRecords(session.id)).toHaveLength(recordCountBefore)
+
+    rmSync(repoRoot, { recursive: true, force: true })
+  })
+
+  test('Pipeline report PDF 保存只接收 sessionId，并由 main 端重新生成报告', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-report-pdf-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    let savedReport: PipelineReportExport | undefined
+    const service = createPipelineService({
+      saveReportPdf: async (report) => {
+        savedReport = report
+        return {
+          canceled: false,
+          filePath: `/tmp/${report.pdfFileName}`,
+          fileName: report.pdfFileName,
+        }
+      },
+    })
+    const session = service.createSession('PDF 报告导出', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-report-pdf',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出 PDF 报告',
+      status: 'completed',
+    })
+
+    const result = await service.savePipelineReportPdf({
+      sessionId: session.id,
+      html: '<script>renderer injected</script>',
+      filePath: '/tmp/unsafe.pdf',
+    } as never)
+
+    expect(result.canceled).toBe(false)
+    expect(result.fileName).toMatch(/\.pdf$/)
+    expect(savedReport?.html).toContain('导出 PDF 报告')
+    expect(savedReport?.html).not.toContain('renderer injected')
+    expect(savedReport?.pdfFileName).toMatch(/\.pdf$/)
 
     rmSync(repoRoot, { recursive: true, force: true })
   })
