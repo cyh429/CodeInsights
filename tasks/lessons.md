@@ -27,6 +27,7 @@
 - 当 `git log` 已能确认具体状态同步提交号时，例如 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`，不能继续在 checklist 或 next-session prompt 中写“开发提交或其后的 docs 提交”；必须把真实恢复入口写入文档，下一次启动才不会误从功能提交恢复。
 - 用户再次要求“请更新文档的最新开发状态、标注完成/未完成、给下次启动提示词”并强调“每个阶段性任务完成后自动去做”时，即使刚完成过恢复入口校正，也要新建 `tasks/todo.md` 状态同步计划，回填当前 `git log` 可确认的最新恢复入口，更新 next-session prompt 和 lessons，验证后单独提交；最终回复里的提示词再补上本轮提交后的实际 HEAD。
 - 启动检查若发现当前 HEAD 已是新的状态同步提交，但 checklist / next-session prompt 仍把上一提交写成最新恢复入口，应先按一个小阶段写 `tasks/todo.md` 计划并校正文档，再进入后续 gated smoke、根文档同步或产品功能开发。
+- 只要用户明确要求“更新文档最新开发状态 / 标注完成未完成 / 给下次启动提示词”，即使没有业务代码变化，也要执行完整状态同步闭环：`tasks/todo.md` 计划、development checklist、next-session prompt、`tasks/lessons.md`、Review、验证、单独提交和最终可复制提示词。
 
 ## 2026-05-28 README 架构图视觉验收
 
