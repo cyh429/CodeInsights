@@ -1,5 +1,40 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 da6961de 最新状态同步计划
+
+范围确认：本轮响应用户要求，更新 Pipeline v1 最新开发状态、完成 / 未完成清单和下次启动提示词，并把“每个阶段性任务完成后自动同步状态文档、任务 Review、lessons 和可复制提示词”的习惯再次固化。不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新恢复入口 `da6961de docs(pipeline): 校正 f687166c 恢复入口状态` 写入 Pipeline v1 文档，并给下一次 Codex 启动提供可恢复上下文。
+
+执行计划：
+
+- [x] 运行 `git status --short --branch` 和 `git log -8 --oneline`，确认当前分支、工作树和最新提交。
+- [x] 读取 development checklist、next-session prompt、`tasks/todo.md` 和 `tasks/lessons.md` 当前状态同步规则。
+- [x] 更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，回填 `da6961de`，标清 Phase 0-8 已完成和 gated 未完成项。
+- [x] 更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下次启动明确检查 `da6961de`，并继续禁止未授权远端写、token 读取、push / PR 和根文档修改。
+- [x] 更新 `tasks/lessons.md`，强化用户再次要求“更新文档最新状态 / 标注完成未完成 / 给下次启动提示词”时仍要执行完整闭环。
+- [x] 在本节追加 Review，记录本轮同步、验证结果、未完成项和实际提交边界。
+- [x] 运行文档一致性搜索、`git diff --check`、`git status --short`。
+- [x] 单独提交本轮状态文档同步。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不把 fake runner smoke 说成真实模型验收。
+- [x] 不把 unpacked app smoke 说成 DMG / installer 或多平台验收。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 最新状态：Phase 0-8 已完成；最新开发基线仍为 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；本轮已把最新已确认恢复入口回填为 `da6961de docs(pipeline): 校正 f687166c 恢复入口状态`。
+- 已完成项：Pipeline v1 优化方案、开发跟踪清单、Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 本地 E2E / packaged fixture smoke、Phase 7 Markdown 报告导出、Phase 8 HTML / PDF 报告导出均已完成并有阶段提交。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 本轮同步：已更新 development checklist、next-session prompt、`tasks/lessons.md` 和本节任务记录；未改业务代码，未重新实现报告导出，未进入真实远端写或凭证路径。
+- 习惯加固：已在 `tasks/lessons.md` 补充“用户再次提出同一状态同步要求时，也必须新建计划、同步文档、写 Review、验证并提交”的执行规则。
+- 验证通过：`rg -n 'da6961de|f687166c|最新已确认恢复入口|当前真实进度|真实 GitHub remote PR smoke|根 \`README.md\`|DMG / installer' docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md docs/improve/pipeline/v1/next-session-prompt.md tasks/todo.md tasks/lessons.md`；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`；`git status --short --branch`。
+- 阶段提交：本节由本轮状态文档同步提交承载；实际最新 HEAD 在最终回复中给出。
+
 ## 2026-05-30 Pipeline v1 f687166c 恢复入口校正计划
 
 范围确认：本轮只处理启动检查发现的状态文档偏差，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新状态同步提交 `f687166c docs(pipeline): 同步 c75e132f 最新开发状态` 写入 Pipeline v1 checklist 和 next-session prompt，并保留 `fb864d6a` 作为 Phase 8 功能开发基线。

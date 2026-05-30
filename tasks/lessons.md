@@ -29,6 +29,7 @@
 - 启动检查若发现当前 HEAD 已是新的状态同步提交，但 checklist / next-session prompt 仍把上一提交写成最新恢复入口，应先按一个小阶段写 `tasks/todo.md` 计划并校正文档，再进入后续 gated smoke、根文档同步或产品功能开发。
 - 启动提示或用户上下文明确给出最新状态同步提交（例如 `f687166c`），而仓库文档仍停留在上一恢复入口（例如 `c75e132f`）时，要以 `git log` 确认后的 HEAD 为准，先校正 checklist、next-session prompt 和 `tasks/todo.md` Review；不要继续沿用旧提示词导致恢复入口倒退。
 - 只要用户明确要求“更新文档最新开发状态 / 标注完成未完成 / 给下次启动提示词”，即使没有业务代码变化，也要执行完整状态同步闭环：`tasks/todo.md` 计划、development checklist、next-session prompt、`tasks/lessons.md`、Review、验证、单独提交和最终可复制提示词。
+- 用户再次重复要求“更新文档最新状态、完成/未完成、下次启动提示词”并强调“记住这个习惯”时，不要认为上一轮已做完即可口头回复；仍要新建本轮 `tasks/todo.md` 计划，回填当前 `git log` 可确认的最新恢复入口，更新 checklist / next-session prompt / lessons，写 Review，验证后单独提交。
 
 ## 2026-05-28 README 架构图视觉验收
 
