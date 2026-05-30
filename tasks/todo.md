@@ -1,5 +1,39 @@
 # CodeInsights Agent 重构任务
 
+## 2026-05-30 Pipeline v1 ab34910c 恢复入口校正计划
+
+范围确认：本轮只处理启动检查发现的状态文档偏差，不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新状态同步提交 `ab34910c docs(pipeline): 同步 da6961de 最新开发状态` 写入 Pipeline v1 checklist 和 next-session prompt，并保留 `fb864d6a` 作为 Phase 8 功能开发基线。
+
+执行计划：
+
+- [x] 完成启动检查：读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`。
+- [x] 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认当前分支 `pipeline-improve`、工作树干净、历史包含 `ab34910c`、`da6961de`、`f687166c`、`c75e132f`、`b1163b1f` 和 `fb864d6a`。
+- [x] 更新 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`，把最新已确认恢复入口从 `da6961de` 提升为 `ab34910c`。
+- [x] 更新 `docs/improve/pipeline/v1/next-session-prompt.md`，让下一次启动检查包含 `ab34910c`，并继续禁止未授权远端写和根文档修改。
+- [x] 更新 `tasks/lessons.md`，补充根 `README.md` / 根 `AGENTS.md` 只有明确授权公开文档同步后才能修改的执行规则。
+- [x] 在本节追加 Review，记录本轮校正、验证结果、未完成 gated 项和实际提交边界。
+- [x] 运行文档一致性搜索、`git diff --check`、`git status --short`。
+- [x] 单独提交本轮状态文档校正。
+
+边界：
+
+- [x] 不 push。
+- [x] 不创建真实 PR。
+- [x] 不运行真实 GitHub remote smoke。
+- [x] 不检查、读取或输出 token。
+- [x] 不把 fake runner smoke 说成真实模型验收。
+- [x] 不把 unpacked app smoke 说成 DMG / installer 或多平台验收。
+- [x] 不修改根 `README.md` / 根 `AGENTS.md`。
+
+### Review
+
+- 启动检查：已读取 `tasks/lessons.md`、Pipeline v1 optimization plan、development checklist 和 `next-session-prompt.md`；`git status --short --branch` 显示当前分支为 `pipeline-improve`，本轮开始时工作树干净且 ahead 32；`git log -12 --oneline` 已确认包含 `ab34910c`、`da6961de`、`f687166c`、`c75e132f`、`b1163b1f` 和 `fb864d6a`。
+- 文档校正：已将 development checklist 和 next-session prompt 的最新已确认恢复入口从 `da6961de docs(pipeline): 校正 f687166c 恢复入口状态` 提升为 `ab34910c docs(pipeline): 同步 da6961de 最新开发状态`，同时保留 `fb864d6a` 为 Phase 8 功能开发基线。
+- 边界确认：本轮未改业务代码，未重新实现 Markdown / HTML / PDF 报告导出，未运行真实 GitHub remote smoke，未读取或输出 token，未 push，未创建真实 PR，未修改根 `README.md` / 根 `AGENTS.md`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 验证通过：`rg -n 'ab34910c|da6961de|最新已确认恢复入口|当前真实进度|真实 GitHub remote PR smoke|根 \`README.md\`|DMG / installer' docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md docs/improve/pipeline/v1/next-session-prompt.md tasks/todo.md tasks/lessons.md`；`git diff --check -- docs/improve/pipeline/v1 tasks/todo.md tasks/lessons.md`；`git status --short --branch`。
+- 阶段提交：本节由本轮状态文档校正提交承载；实际最新 HEAD 在最终回复中给出。
+
 ## 2026-05-30 Pipeline v1 da6961de 最新状态同步计划
 
 范围确认：本轮响应用户要求，更新 Pipeline v1 最新开发状态、完成 / 未完成清单和下次启动提示词，并把“每个阶段性任务完成后自动同步状态文档、任务 Review、lessons 和可复制提示词”的习惯再次固化。不改业务代码，不重新实现 Markdown / HTML / PDF 报告导出，不运行真实 GitHub remote smoke，不读取或输出 token，不 push，不创建真实 PR，不修改根 `README.md` / 根 `AGENTS.md`。目标是把当前 `git log` 已确认的最新恢复入口 `da6961de docs(pipeline): 校正 f687166c 恢复入口状态` 写入 Pipeline v1 文档，并给下一次 Codex 启动提供可恢复上下文。
