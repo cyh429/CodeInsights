@@ -1,4 +1,4 @@
-import type { PipelineNodeKind, PipelineRecord } from '@codeinsights/shared'
+import type { PipelineNodeKind, PipelineRecord, PipelineVersion } from '@codeinsights/shared'
 import {
   buildPipelineRecordGroups,
   buildPipelineRecordViewModel,
@@ -49,6 +49,11 @@ export interface PipelineMarkdownReportInput {
   title: string
   records: PipelineRecord[]
   generatedAt: number
+  version?: PipelineVersion
+}
+
+interface PipelineRecordExperienceOptions {
+  version?: PipelineVersion
 }
 
 const SEARCH_FIELD_LIMIT = 4000
@@ -178,11 +183,12 @@ export function slicePipelineRecordGroups(
 export function buildPipelineRecordSearchMatches(
   records: PipelineRecord[],
   query: string,
+  options: PipelineRecordExperienceOptions = {},
 ): PipelineRecordSearchMatch[] {
   const normalized = normalizeQuery(query)
   if (!normalized) return []
 
-  const groups = buildPipelineRecordGroups(records)
+  const groups = buildPipelineRecordGroups(records, { version: options.version })
   const artifactIds = new Set(flattenPipelineRecordGroups(groups.artifacts).map((record) => record.id))
 
   return records
@@ -203,8 +209,9 @@ export function buildPipelineRecordSearchMatches(
 export function buildPipelineRecordFocusTarget(
   records: PipelineRecord[],
   recordId: string,
+  options: PipelineRecordExperienceOptions = {},
 ): PipelineRecordNavigationTarget | null {
-  const groups = buildPipelineRecordGroups(records)
+  const groups = buildPipelineRecordGroups(records, { version: options.version })
   const artifactIds = new Set(flattenPipelineRecordGroups(groups.artifacts).map((record) => record.id))
   const record = records.find((item) => item.id === recordId)
   if (!record) return null
@@ -220,8 +227,9 @@ export function buildPipelineRecordFocusTarget(
 export function buildPipelineStageNavigationTarget(
   records: PipelineRecord[],
   stage: PipelineNodeKind,
+  options: PipelineRecordExperienceOptions = {},
 ): PipelineRecordNavigationTarget | null {
-  const groups = buildPipelineRecordGroups(records)
+  const groups = buildPipelineRecordGroups(records, { version: options.version })
   const artifactRecord = flattenPipelineRecordGroups(groups.artifacts)
     .find((record) => getPipelineRecordStage(record) === stage)
   if (artifactRecord) {
@@ -279,7 +287,7 @@ function appendRecordMarkdown(lines: string[], record: PipelineRecord): void {
 }
 
 export function buildPipelineMarkdownReport(input: PipelineMarkdownReportInput): string {
-  const groups = buildPipelineRecordGroups(input.records)
+  const groups = buildPipelineRecordGroups(input.records, { version: input.version })
   const lines: string[] = [
     `# ${input.title}`,
     '',

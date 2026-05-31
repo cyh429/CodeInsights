@@ -8,6 +8,7 @@ import { existsSync, realpathSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import type {
   PipelinePackageManager,
   PipelinePreflightInput,
@@ -139,6 +140,62 @@ function buildIssue(
   return { code, message }
 }
 
+const SECRET_QUERY_KEY_PATTERN = /(?:token|api[_-]?key|access[_-]?token|authorization|auth|password|passwd|secret|credential|client[_-]?secret)/i
+
+function redactUrlSecrets(url: URL): URL {
+  if (url.username || url.password) {
+    url.username = '***'
+    url.password = ''
+  }
+
+  for (const key of Array.from(url.searchParams.keys())) {
+    if (SECRET_QUERY_KEY_PATTERN.test(key)) {
+      url.searchParams.set(key, '***')
+    }
+  }
+
+  if (url.hash) {
+    url.hash = '#***'
+  }
+
+  return url
+}
+
+export function redactPreflightRemoteUrl(url: string): string {
+  try {
+    return redactUrlSecrets(new URL(url)).toString()
+  } catch {
+    return url
+      .replace(/([a-z][a-z0-9+.-]*:\/\/)[^/@\s]+@/i, '$1***@')
+      .replace(/([?&][^=\s&#]*(?:token|api[_-]?key|access[_-]?token|authorization|auth|password|passwd|secret|credential|client[_-]?secret)[^=\s&#]*=)[^&#\s]*/gi, '$1***')
+      .replace(/#[^\s]*/g, '#***')
+  }
+}
+
+export function redactPreflightDiagnosticText(text: string): string {
+  return text
+    .replace(/https?:\/\/[^\s"'`<>]+/gi, (match) => redactPreflightRemoteUrl(match))
+    .replace(/\b(authorization\s*[:=]\s*)([A-Za-z][A-Za-z0-9_-]*)(\s+)[^\s"'`]+/gi, '$1$2$3***')
+    .replace(/((?:api[_-]?key|access[_-]?token|token|secret|password|passwd|credential)\s*[:=]\s*)[^\s"'`]+/gi, '$1***')
+}
+
+function buildPreflightFingerprint(result: Omit<PipelinePreflightResult, 'checkedAt' | 'fingerprint'>): string {
+  const payload = {
+    repository: result.repository,
+    runtimes: result.runtimes.map((runtime) => ({
+      kind: runtime.kind,
+      available: runtime.available,
+      version: runtime.version,
+      path: runtime.path,
+      error: runtime.error,
+    })).sort((a, b) => a.kind.localeCompare(b.kind)),
+    packageManager: result.packageManager,
+    warnings: result.warnings.map((issue) => issue.code).sort(),
+    blockers: result.blockers.map((issue) => issue.code).sort(),
+  }
+  return createHash('sha256').update(JSON.stringify(payload)).digest('hex')
+}
+
 function parseRuntimeVersion(stdout: string): string | undefined {
   const firstLine = stdout.split('\n').find((line) => line.trim().length > 0)
   return firstLine?.trim()
@@ -170,7 +227,7 @@ function checkExecutableRuntime(
       kind,
       available: false,
       path,
-      error: result.stderr || result.error || '执行失败',
+      error: redactPreflightDiagnosticText(result.stderr || result.error || '执行失败'),
     }
   }
 
@@ -203,7 +260,7 @@ function checkResolvedExecutableRuntime(
     return {
       kind,
       available: false,
-      error: message,
+      error: redactPreflightDiagnosticText(message),
     }
   }
 }
@@ -251,6 +308,8 @@ export async function runPipelinePreflight(
     currentBranch: undefined as string | undefined,
     baseBranch: undefined as string | undefined,
     remoteUrl: undefined as string | undefined,
+    headCommit: undefined as string | undefined,
+    statusDigest: undefined as string | undefined,
     hasUncommittedChanges: false,
     hasConflicts: false,
   }
@@ -267,7 +326,7 @@ export async function runPipelinePreflight(
     runtimes.push({
       kind: 'git',
       available: false,
-      error: gitVersion.stderr || gitVersion.error || 'Git 执行失败',
+      error: redactPreflightDiagnosticText(gitVersion.stderr || gitVersion.error || 'Git 执行失败'),
     })
   } else {
     runtimes.push({
@@ -289,6 +348,9 @@ export async function runPipelinePreflight(
       const branchResult = getGitOutput(['branch', '--show-current'], repositoryRoot, deps.runCommand)
       repository.currentBranch = branchResult.stdout || undefined
 
+      const headResult = getGitOutput(['rev-parse', 'HEAD'], repositoryRoot, deps.runCommand)
+      repository.headCommit = headResult.status === 0 ? headResult.stdout : undefined
+
       if (!repository.currentBranch) {
         warnings.push(buildIssue('git_detached_head', '当前仓库处于 detached HEAD 状态'))
       }
@@ -302,7 +364,7 @@ export async function runPipelinePreflight(
       repository.baseBranch = upstreamResult.status === 0 ? upstreamResult.stdout : undefined
 
       const remoteResult = getGitOutput(['config', '--get', 'remote.origin.url'], repositoryRoot, deps.runCommand)
-      repository.remoteUrl = remoteResult.status === 0 ? remoteResult.stdout : undefined
+      repository.remoteUrl = remoteResult.status === 0 ? redactPreflightRemoteUrl(remoteResult.stdout) : undefined
       if (!repository.remoteUrl) {
         warnings.push(buildIssue('git_remote_missing', '未配置 remote.origin.url'))
       }
@@ -312,6 +374,7 @@ export async function runPipelinePreflight(
         .split('\n')
         .map((line) => line.trimEnd())
         .filter((line) => line.length > 0)
+      repository.statusDigest = createHash('sha256').update(statusLines.join('\n')).digest('hex')
       repository.hasUncommittedChanges = statusLines.length > 0
       repository.hasConflicts = statusLines.some(hasConflictStatus)
 
@@ -349,12 +412,17 @@ export async function runPipelinePreflight(
     ))
   }
 
-  return {
+  const result = {
     ok: blockers.length === 0,
     repository,
     runtimes,
     packageManager,
     warnings,
     blockers,
+  }
+  return {
+    ...result,
+    checkedAt: Date.now(),
+    fingerprint: buildPreflightFingerprint(result),
   }
 }

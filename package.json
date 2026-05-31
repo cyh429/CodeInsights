@@ -1,6 +1,6 @@
 {
   "name": "codeinsights",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "The next gen ai software with general agents",
   "type": "module",
   "private": true,
@@ -15,7 +15,7 @@
     "electron:start": "bun run --filter='@codeinsights/electron' start",
     "build": "bun run --filter='*' build",
     "typecheck": "bun run --filter='*' typecheck",
-    "test": "bun test"
+    "test": "bun test --isolate"
   },
   "devDependencies": {
     "@types/bun": "latest",

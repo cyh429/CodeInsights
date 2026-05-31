@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 import type { AgentWorkspace, Channel } from '@codeinsights/shared'
-import { resolvePipelineRunConfig } from './pipeline-preflight'
+import type { PipelinePreflightResult } from '@codeinsights/shared'
+import {
+  PIPELINE_PREFLIGHT_RESULT_TTL_MS,
+  createPipelinePreflightAcknowledgement,
+  getPipelinePreflightRefreshState,
+  isPipelinePreflightAcknowledged,
+  resolvePipelineRunConfig,
+  shouldBlockPipelineStartForPreflight,
+} from './pipeline-preflight'
 
 const channel: Channel = {
   id: 'channel-1',
@@ -157,6 +165,139 @@ describe('resolvePipelineRunConfig', () => {
         message: '请先在 Agent 配置中选择默认工作区，再启动 Pipeline。',
         settingsTab: 'agent',
       },
+    })
+  })
+})
+
+function makeRepositoryPreflightResult(
+  overrides: Partial<PipelinePreflightResult> = {},
+): PipelinePreflightResult {
+  return {
+    ok: true,
+    repository: {
+      root: '/repo',
+      currentBranch: 'main',
+      hasUncommittedChanges: false,
+      hasConflicts: false,
+    },
+    runtimes: [{ kind: 'git', available: true, version: 'git version 2.0.0' }],
+    packageManager: 'bun',
+    warnings: [],
+    blockers: [],
+    checkedAt: 1,
+    fingerprint: 'fingerprint-ok',
+    ...overrides,
+  }
+}
+
+describe('repository preflight acknowledgement', () => {
+  test('blocker 会阻止启动且不能通过 warning acknowledgement 放行', () => {
+    const result = makeRepositoryPreflightResult({
+      ok: false,
+      blockers: [{ code: 'git_conflicts', message: '工作区存在 Git 冲突' }],
+      fingerprint: 'fingerprint-blocked',
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 10)
+
+    expect(shouldBlockPipelineStartForPreflight(result, acknowledgement)).toBe(true)
+    expect(isPipelinePreflightAcknowledged(result, acknowledgement)).toBe(true)
+  })
+
+  test('warning 未确认时阻止启动，确认后允许继续', () => {
+    const result = makeRepositoryPreflightResult({
+      warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+      fingerprint: 'fingerprint-warning',
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 10)
+
+    expect(shouldBlockPipelineStartForPreflight(result, null)).toBe(true)
+    expect(acknowledgement).toEqual({
+      fingerprint: 'fingerprint-warning',
+      acceptedWarningCodes: ['git_uncommitted_changes'],
+      acknowledgedAt: 10,
+    })
+    expect(shouldBlockPipelineStartForPreflight(result, acknowledgement)).toBe(false)
+  })
+
+  test('过期 fingerprint 或缺少 warning code 时视为未确认', () => {
+    const result = makeRepositoryPreflightResult({
+      warnings: [
+        { code: 'git_uncommitted_changes', message: '工作区存在未提交变更' },
+        { code: 'git_remote_missing', message: '未配置 remote' },
+      ],
+      fingerprint: 'fingerprint-current',
+    })
+
+    expect(isPipelinePreflightAcknowledged(result, {
+      fingerprint: 'fingerprint-old',
+      acceptedWarningCodes: ['git_uncommitted_changes', 'git_remote_missing'],
+      acknowledgedAt: 10,
+    })).toBe(false)
+    expect(isPipelinePreflightAcknowledged(result, {
+      fingerprint: 'fingerprint-current',
+      acceptedWarningCodes: ['git_uncommitted_changes'],
+      acknowledgedAt: 10,
+    })).toBe(false)
+  })
+})
+
+describe('repository preflight freshness', () => {
+  test('超过 60 秒的 preflight result 需要刷新', () => {
+    const result = makeRepositoryPreflightResult({
+      checkedAt: 1000,
+      warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 1100)
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-1',
+      now: 1000 + PIPELINE_PREFLIGHT_RESULT_TTL_MS + 1,
+    })).toEqual({
+      refreshRequired: true,
+      reason: 'stale',
+      acknowledgement: null,
+      message: '启动前检查已超过 60 秒，请重新检查。',
+    })
+  })
+
+  test('workspace 变化后的 preflight result 需要刷新', () => {
+    const result = makeRepositoryPreflightResult({ checkedAt: 1000 })
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement: null,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-2',
+      now: 1001,
+    })).toEqual({
+      refreshRequired: true,
+      reason: 'workspace_changed',
+      acknowledgement: null,
+      message: '当前工作区已变化，请重新执行启动前检查。',
+    })
+  })
+
+  test('fresh result 保留匹配的 acknowledgement', () => {
+    const result = makeRepositoryPreflightResult({
+      checkedAt: 1000,
+      warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+    })
+    const acknowledgement = createPipelinePreflightAcknowledgement(result, 1100)
+
+    expect(getPipelinePreflightRefreshState({
+      result,
+      acknowledgement,
+      checkedWorkspaceId: 'workspace-1',
+      currentWorkspaceId: 'workspace-1',
+      now: 1000 + PIPELINE_PREFLIGHT_RESULT_TTL_MS,
+    })).toEqual({
+      refreshRequired: false,
+      reason: null,
+      acknowledgement,
+      message: null,
     })
   })
 })

@@ -9,12 +9,16 @@ import type {
   PipelineStateSnapshot,
   PipelineStreamCompletePayload,
   PipelineStreamPayload,
+  PipelinePreflightResult,
+  PipelineRunPreflightInput,
+  PipelineCommitterStageOutput,
+  PipelineReportExport,
 } from '@codeinsights/shared'
 import {
   appendPipelineNodeCompleteRecords,
   createPipelineService,
 } from './pipeline-service'
-import { getPipelineRecords, updatePipelineSessionMeta } from './pipeline-session-manager'
+import { getPipelineRecords, getPipelineSessionMeta, updatePipelineSessionMeta } from './pipeline-session-manager'
 import { resolvePipelineSessionArtifactsDir } from './pipeline-artifact-service'
 import { getPipelineSessionCheckpointDir } from './config-paths'
 import {
@@ -24,11 +28,15 @@ import {
   getContributionTaskByPipelineSessionId,
 } from './contribution-task-service'
 import {
+  initializePatchWork,
   readPatchWorkManifest,
   writePatchWorkFile,
 } from './pipeline-patch-work-service'
 import { createAgentWorkspace } from './agent-workspace-manager'
-import { PipelineRemoteSubmissionError } from './pipeline-git-submission-service'
+import {
+  type CreateRemotePipelineSubmissionInput,
+  PipelineRemoteSubmissionError,
+} from './pipeline-git-submission-service'
 
 function runGit(repoRoot: string, args: string[]): string {
   return execFileSync('git', ['-C', repoRoot, ...args], {
@@ -45,6 +53,33 @@ function setupPipelineGitRepo(repoRoot: string): void {
   writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 1\n', 'utf-8')
   runGit(repoRoot, ['add', 'src/index.ts'])
   runGit(repoRoot, ['commit', '-m', 'initial'])
+}
+
+function createPreflightResult(
+  overrides: Partial<PipelinePreflightResult> = {},
+): PipelinePreflightResult {
+  return {
+    ok: true,
+    repository: {
+      root: '/tmp/codeinsights-test-repo',
+      currentBranch: 'main',
+      baseBranch: 'origin/main',
+      remoteUrl: 'https://github.com/example/repo.git',
+      hasUncommittedChanges: false,
+      hasConflicts: false,
+    },
+    runtimes: [
+      { kind: 'git', available: true, version: 'git version 2.0.0' },
+      { kind: 'claude-cli', available: true, version: '1.0.0', path: '/mock/bin/claude' },
+      { kind: 'codex-cli', available: true, version: '1.0.0', path: '/mock/bin/codex' },
+    ],
+    packageManager: 'bun',
+    warnings: [],
+    blockers: [],
+    checkedAt: 1,
+    fingerprint: 'preflight-fingerprint-ok',
+    ...overrides,
+  }
 }
 
 describe('pipeline-service', () => {
@@ -155,6 +190,7 @@ describe('pipeline-service', () => {
   test('启动 v2 会话前会创建 ContributionTask 和 patch-work manifest', async () => {
     const workspace = createAgentWorkspace('贡献工作区')
     const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult(),
       createGraph: (meta) => ({
         invoke: async () => ({
           state: {
@@ -204,6 +240,591 @@ describe('pipeline-service', () => {
       contributionTaskId: task!.id,
       pipelineSessionId: session.id,
     })
+  })
+
+  test('ContributionTask summary 和 submission plan read model 不触发 graph 或 gate 写入', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-read-model-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
+    initializePatchWork({
+      contributionTaskId: 'task-service-read-model',
+      pipelineSessionId: 'session-service-read-model',
+      repositoryRoot: repoRoot,
+    })
+    const graphCalls: string[] = []
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          graphCalls.push('invoke')
+          throw new Error('read model 不应执行 graph')
+        },
+        resume: async () => {
+          graphCalls.push('resume')
+          throw new Error('read model 不应恢复 graph')
+        },
+        getState: async () => {
+          graphCalls.push('getState')
+          throw new Error('read model 不应读取 graph')
+        },
+      }),
+    })
+    const session = service.createSession('read model 测试', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-read-model',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '实现提交计划',
+      baseBranch: 'main',
+      workingBranch: 'feature/pipeline-phase-4',
+      status: 'committing',
+    })
+    appendPipelineNodeCompleteRecords(session.id, {
+      type: 'node_complete',
+      node: 'committer',
+      output: JSON.stringify({
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): read model',
+        prTitle: 'Read model',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput),
+      artifact: {
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): read model',
+        prTitle: 'Read model',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput,
+      createdAt: Date.now(),
+    })
+
+    const summary = service.getContributionTaskSummary({ sessionId: session.id })
+    const plan = service.getSubmissionPlan({ sessionId: session.id })
+
+    expect(summary.task?.selectedTaskTitle).toBe('实现提交计划')
+    expect(plan.commitMessage).toBe('feat(pipeline): read model')
+    expect(plan.candidateFiles).toEqual(['src/index.ts'])
+    expect(plan.excludedFiles).toContain('patch-work/**')
+    expect(graphCalls).toEqual([])
+    expect(getPipelineRecords(session.id).filter((record) => record.type === 'gate_decision')).toHaveLength(0)
+
+    rmSync(repoRoot, { recursive: true, force: true })
+  })
+
+  test('Pipeline report export 只读生成 Markdown / HTML，不触发 graph 或 gate 写入', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-report-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const graphCalls: string[] = []
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          graphCalls.push('invoke')
+          throw new Error('报告导出不应执行 graph')
+        },
+        resume: async () => {
+          graphCalls.push('resume')
+          throw new Error('报告导出不应恢复 graph')
+        },
+        getState: async () => {
+          graphCalls.push('getState')
+          throw new Error('报告导出不应读取 graph')
+        },
+      }),
+    })
+    const session = service.createSession('报告导出测试', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-report',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出贡献报告',
+      baseBranch: 'main',
+      workingBranch: 'feature/report-export',
+      status: 'completed',
+    })
+    appendPipelineNodeCompleteRecords(session.id, {
+      type: 'node_complete',
+      node: 'committer',
+      output: JSON.stringify({
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): export report',
+        prTitle: 'Export report',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput),
+      artifact: {
+        node: 'committer',
+        summary: '提交材料已生成',
+        commitMessage: 'feat(pipeline): export report',
+        prTitle: 'Export report',
+        prBody: '## Summary',
+        submissionStatus: 'draft_only',
+        blockers: [],
+        risks: [],
+        localCommit: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+        },
+        content: '{}',
+      } satisfies PipelineCommitterStageOutput,
+      createdAt: Date.now(),
+    })
+    const recordCountBefore = getPipelineRecords(session.id).length
+
+    const report = service.exportPipelineReport({ sessionId: session.id })
+
+    expect(report.markdown).toContain('导出贡献报告')
+    expect(report.markdown).toContain('draft-only')
+    expect(report.html).toContain('导出贡献报告')
+    expect(report.html).toContain('draft-only')
+    expect(report.htmlFileName).toMatch(/\.html$/)
+    expect(report.pdfFileName).toMatch(/\.pdf$/)
+    expect(graphCalls).toEqual([])
+    expect(getPipelineRecords(session.id)).toHaveLength(recordCountBefore)
+
+    rmSync(repoRoot, { recursive: true, force: true })
+  })
+
+  test('Pipeline report PDF 保存只接收 sessionId，并由 main 端重新生成报告', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-report-pdf-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    let savedReport: PipelineReportExport | undefined
+    const service = createPipelineService({
+      saveReportPdf: async (report) => {
+        savedReport = report
+        return {
+          canceled: false,
+          filePath: `/tmp/${report.pdfFileName}`,
+          fileName: report.pdfFileName,
+        }
+      },
+    })
+    const session = service.createSession('PDF 报告导出', 'channel-1', 'workspace-1', 2)
+    createContributionTask({
+      id: 'task-service-report-pdf',
+      pipelineSessionId: session.id,
+      repositoryRoot: repoRoot,
+      patchWorkDir: join(repoRoot, 'patch-work'),
+      contributionMode: 'local_patch',
+      allowRemoteWrites: false,
+      selectedTaskTitle: '导出 PDF 报告',
+      status: 'completed',
+    })
+
+    const result = await service.savePipelineReportPdf({
+      sessionId: session.id,
+      html: '<script>renderer injected</script>',
+      filePath: '/tmp/unsafe.pdf',
+    } as never)
+
+    expect(result.canceled).toBe(false)
+    expect(result.fileName).toMatch(/\.pdf$/)
+    expect(savedReport?.html).toContain('导出 PDF 报告')
+    expect(savedReport?.html).not.toContain('renderer injected')
+    expect(savedReport?.pdfFileName).toMatch(/\.pdf$/)
+
+    rmSync(repoRoot, { recursive: true, force: true })
+  })
+
+  test('v2 start 遇到 preflight blocker 时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('阻断工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        ok: false,
+        blockers: [{ code: 'git_conflicts', message: '工作区存在 Git 冲突' }],
+        fingerprint: 'preflight-blocked',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight blocker', 'channel-1', workspace.id, 2)
+
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+    })).rejects.toThrow('Pipeline preflight 未通过')
+
+    expect(invokeCalls).toBe(0)
+    expect(getPipelineRecords(session.id).find((record) => record.type === 'error')).toMatchObject({
+      type: 'error',
+      error: 'Pipeline preflight 未通过：工作区存在 Git 冲突',
+    })
+  })
+
+  test('v2 start 遇到 warning 但未确认时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('warning 工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight warning', 'channel-1', workspace.id, 2)
+
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+    })).rejects.toThrow('Pipeline preflight warning 需要用户确认')
+
+    expect(invokeCalls).toBe(0)
+  })
+
+  test('v2 start 的 warning acknowledgement 匹配时可启动并写入审计事件', async () => {
+    const workspace = createAgentWorkspace('warning 确认工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning-ack',
+      }),
+      createGraph: (meta) => ({
+        invoke: async () => {
+          invokeCalls += 1
+          return {
+            state: {
+              sessionId: meta.id,
+              version: 2,
+              currentNode: 'committer',
+              status: 'completed',
+              reviewIteration: 0,
+              lastApprovedNode: 'committer',
+              pendingGate: null,
+              updatedAt: Date.now(),
+            },
+          }
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: meta.id,
+          version: 2,
+          currentNode: 'committer',
+          status: 'completed',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight warning ack', 'channel-1', workspace.id, 2)
+    await service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'preflight-warning-ack',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })
+
+    const task = getContributionTaskByPipelineSessionId(session.id)
+    expect(invokeCalls).toBe(1)
+    expect(task).toBeTruthy()
+    expect(getContributionTaskEvents(task!.id).find((event) => event.type === 'preflight_completed')).toMatchObject({
+      type: 'preflight_completed',
+      payload: {
+        fingerprint: 'preflight-warning-ack',
+        warningCodes: ['git_uncommitted_changes'],
+        acknowledgedWarningCodes: ['git_uncommitted_changes'],
+      },
+    })
+    const event = getContributionTaskEvents(task!.id).find((item) => item.type === 'preflight_completed')
+    expect((event?.payload?.acknowledgedAt as number | undefined) ?? 0).toBeGreaterThan(2)
+  })
+
+  test('v2 start 的 warning acknowledgement 过期时不调用 Graph invoke', async () => {
+    const workspace = createAgentWorkspace('warning 过期确认工作区')
+    let invokeCalls = 0
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'fresh-fingerprint',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          invokeCalls += 1
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight stale ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'stale-fingerprint',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 需要用户确认')
+
+    expect(invokeCalls).toBe(0)
+  })
+
+  test('v2 start 拒绝重复或未知的 warning acknowledgement code', async () => {
+    const workspace = createAgentWorkspace('warning 非法确认工作区')
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'warning-fingerprint',
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: 'unused',
+          version: 2,
+          currentNode: 'explorer',
+          status: 'idle',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const duplicateSession = service.createSession('preflight duplicate ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: duplicateSession.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'warning-fingerprint',
+        acceptedWarningCodes: ['git_uncommitted_changes', 'git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 确认包含重复 code')
+
+    const unknownSession = service.createSession('preflight unknown ack', 'channel-1', workspace.id, 2)
+    await expect(service.start({
+      sessionId: unknownSession.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'warning-fingerprint',
+        acceptedWarningCodes: ['git_remote_missing'],
+        acknowledgedAt: 2,
+      },
+    })).rejects.toThrow('Pipeline preflight warning 确认包含未知 code')
+  })
+
+  test('runPreflight 会忽略 renderer 传入的 repositoryRoot 和 require override', async () => {
+    const workspace = createAgentWorkspace('preflight override 工作区')
+    let capturedRepositoryRoot = ''
+    let capturedRequireGit: boolean | undefined
+    let capturedRequireClaudeCli: boolean | undefined
+    let capturedRequireCodexCli: boolean | undefined
+    const service = createPipelineService({
+      runRepositoryPreflight: async (input) => {
+        capturedRepositoryRoot = input.repositoryRoot
+        capturedRequireGit = input.requireGit
+        capturedRequireClaudeCli = input.requireClaudeCli
+        capturedRequireCodexCli = input.requireCodexCli
+        return createPreflightResult()
+      },
+    })
+    const session = service.createSession('preflight override', 'channel-1', workspace.id, 2)
+    const unsafeInput = {
+      sessionId: session.id,
+      workspaceId: workspace.id,
+      repositoryRoot: '/tmp/should-not-be-used',
+      requireGit: false,
+      requireClaudeCli: false,
+      requireCodexCli: false,
+    } as unknown as PipelineRunPreflightInput
+
+    await service.runPreflight(unsafeInput)
+
+    expect(capturedRepositoryRoot).not.toBe('/tmp/should-not-be-used')
+    expect(capturedRepositoryRoot).toContain(session.id)
+    expect(capturedRequireGit).toBe(true)
+    expect(capturedRequireClaudeCli).toBe(true)
+    expect(capturedRequireCodexCli).toBe(true)
+  })
+
+  test('preflight 审计事件会再次脱敏 remote URL 和 runtime diagnostic', async () => {
+    const workspace = createAgentWorkspace('warning 脱敏审计工作区')
+    const service = createPipelineService({
+      runRepositoryPreflight: async () => createPreflightResult({
+        repository: {
+          root: '/tmp/codeinsights-test-repo',
+          currentBranch: 'main',
+          baseBranch: 'origin/main',
+          remoteUrl: 'https://github.com/org/repo.git?access_token=secret-token#secret-fragment',
+          hasUncommittedChanges: true,
+          hasConflicts: false,
+        },
+        runtimes: [
+          {
+            kind: 'git',
+            available: true,
+            version: 'git version 2.0.0',
+            error: 'Authorization: Basic abc123 token=secret-token',
+          },
+        ],
+        warnings: [{ code: 'git_uncommitted_changes', message: '工作区存在未提交变更' }],
+        fingerprint: 'preflight-warning-redacted',
+      }),
+      createGraph: (meta) => ({
+        invoke: async () => ({
+          state: {
+            sessionId: meta.id,
+            version: 2,
+            currentNode: 'committer',
+            status: 'completed',
+            reviewIteration: 0,
+            lastApprovedNode: 'committer',
+            pendingGate: null,
+            updatedAt: Date.now(),
+          },
+        }),
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: meta.id,
+          version: 2,
+          currentNode: 'committer',
+          status: 'completed',
+          reviewIteration: 0,
+          pendingGate: null,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    const session = service.createSession('preflight audit redact', 'channel-1', workspace.id, 2)
+    await service.start({
+      sessionId: session.id,
+      userInput: '请执行 v2 贡献流程',
+      channelId: 'channel-1',
+      workspaceId: workspace.id,
+      preflightAcknowledgement: {
+        fingerprint: 'preflight-warning-redacted',
+        acceptedWarningCodes: ['git_uncommitted_changes'],
+        acknowledgedAt: 2,
+      },
+    })
+
+    const task = getContributionTaskByPipelineSessionId(session.id)
+    const event = getContributionTaskEvents(task!.id).find((item) => item.type === 'preflight_completed')
+    const serialized = JSON.stringify(event?.payload)
+    expect(serialized).not.toContain('secret-token')
+    expect(serialized).not.toContain('secret-fragment')
+    expect(serialized).not.toContain('abc123')
+    expect(serialized).toContain('Authorization: Basic ***')
   })
 
   test('task_selection gate 必须选择 report，并写回 selected-task.md 和 ContributionTask', async () => {
@@ -899,7 +1520,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-denied',
       sessionId: 'session-committer-remote-denied',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
@@ -1020,6 +1641,313 @@ describe('pipeline-service', () => {
     }
   })
 
+  test('committer submission_review 选择 remote_pr 只进入独立远端确认 gate', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-gate-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    runGit(repoRoot, ['checkout', '-b', 'feature/remote-gate'])
+    writeFileSync(join(repoRoot, 'src', 'index.ts'), 'export const value = 2\n', 'utf-8')
+    const submissionGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-plan',
+      sessionId: 'session-committer-remote-plan',
+      node: 'committer',
+      kind: 'submission_review',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const remoteGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-confirm',
+      sessionId: 'session-committer-remote-plan',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      title: '确认远端写',
+      iteration: 0,
+      createdAt: Date.now() + 1,
+    }
+    let remoteCalls = 0
+    const service = createPipelineService({
+      createRemoteSubmission: () => {
+        remoteCalls += 1
+        throw new Error('远端确认 gate 创建前不应执行远端写')
+      },
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => ({
+          state: {
+            sessionId: 'session-committer-remote-plan',
+            version: 2,
+            currentNode: 'committer',
+            status: 'waiting_human',
+            reviewIteration: 0,
+            lastApprovedNode: 'tester',
+            pendingGate: remoteGate,
+            updatedAt: Date.now(),
+          },
+          interrupted: remoteGate,
+        }),
+        getState: async () => ({
+          sessionId: 'session-committer-remote-plan',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: submissionGate,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端确认 gate 测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...submissionGate,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: false,
+        status: 'committing',
+        workingBranch: 'feature/remote-gate',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-plan',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitCountBefore = Number(runGit(repoRoot, ['rev-list', '--count', 'HEAD']))
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '提交草稿已生成',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '提交草稿已生成',
+          commitMessage: 'feat(pipeline): add remote gate',
+          prTitle: 'Add remote gate',
+          prBody: '## Summary\n- Add remote gate',
+          submissionStatus: 'draft_only',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await service.respondGate({
+        gateId: submissionGate.gateId,
+        sessionId: session.id,
+        kind: 'submission_review',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-plan',
+        createdAt: Date.now(),
+      })
+
+      expect(remoteCalls).toBe(0)
+      expect(Number(runGit(repoRoot, ['rev-list', '--count', 'HEAD']))).toBe(commitCountBefore + 1)
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      expect(getContributionTaskEvents('task-committer-remote-plan')
+        .filter((event) => event.type === 'local_commit_created')).toHaveLength(1)
+      expect(getPipelineRecords(session.id)
+        .filter((record) => record.type === 'gate_decision')
+        .at(-1)).toMatchObject({
+          type: 'gate_decision',
+          kind: 'submission_review',
+          submissionMode: 'remote_pr',
+          remoteSubmissionOperationId: 'op-remote-plan',
+        })
+      expect(getContributionTaskEvents('task-committer-remote-plan')
+        .filter((event) => event.type === 'remote_submission_created')).toHaveLength(0)
+      expect(getPipelineRecords(session.id)
+        .filter((record) => record.type === 'gate_requested')
+        .at(-1)).toMatchObject({
+          type: 'gate_requested',
+          kind: 'remote_write_confirmation',
+          gateId: 'gate-committer-remote-confirm',
+          remoteWritePlan: {
+            operationId: 'op-remote-plan',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-gate',
+            commitHash,
+            prTitle: 'Add remote gate',
+          },
+        })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
+  test('remote_write_confirmation 恢复路径会补齐远端确认计划', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-recover-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const remoteGate: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-recover',
+      sessionId: 'session-committer-remote-recover',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      title: '确认远端写',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    let activeSessionId = remoteGate.sessionId
+    const service = createPipelineService({
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('resume 不应被调用')
+        },
+        getState: async () => ({
+          sessionId: activeSessionId,
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: {
+            ...remoteGate,
+            sessionId: activeSessionId,
+          },
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端确认恢复测试', 'channel-1', 'workspace-1')
+      activeSessionId = session.id
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...remoteGate,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: false,
+        status: 'committing',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-recover',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '本地 commit 已创建',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '本地 commit 已创建',
+          commitMessage: 'feat(pipeline): add remote recover',
+          prTitle: 'Recover remote gate',
+          prBody: '## Summary\n- Recover remote gate',
+          submissionStatus: 'local_commit_created',
+          blockers: [],
+          risks: ['需要远端写确认'],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-before-recover',
+            commitHash,
+            workingBranch: 'feature/remote-recover',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+            operationId: 'op-remote-recover',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-recover',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      const sessionState = await service.getSessionState(session.id)
+      expect(sessionState.pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        remoteName: 'origin',
+        baseBranch: 'main',
+        headBranch: 'feature/remote-recover',
+        commitHash,
+        prTitle: 'Recover remote gate',
+      })
+
+      const pendingGate = service.getPendingGates().find((gate) => gate.gateId === remoteGate.gateId)
+      expect(pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        commitHash,
+      })
+
+      const reconciled = (await service.listSessions()).find((item) => item.id === session.id)
+      expect(reconciled?.pendingGate?.remoteWritePlan).toMatchObject({
+        operationId: 'op-remote-recover',
+        headBranch: 'feature/remote-recover',
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
   test('committer remote_pr 会回填远端结果并通过 operation id 保持幂等', async () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-repo-'))
     setupPipelineGitRepo(repoRoot)
@@ -1027,13 +1955,23 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote',
       sessionId: 'session-committer-remote',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
     let remoteCalls = 0
     const service = createPipelineService({
       createRemoteSubmission: (input) => {
+        const confirmationEvents = getContributionTaskEvents('task-committer-remote')
+          .filter((event) => event.type === 'remote_write_confirmed')
+        expect(confirmationEvents).toHaveLength(1)
+        expect(confirmationEvents[0]?.payload).toMatchObject({
+          operationId: input.operationId,
+          commitHash: input.commitHash,
+          remoteName: input.remoteName ?? 'origin',
+          headBranch: input.headBranch ?? 'feature/remote-gate',
+          baseBranch: input.baseBranch ?? 'main',
+        })
         remoteCalls += 1
         return {
           attempted: true,
@@ -1210,6 +2148,328 @@ describe('pipeline-service', () => {
     }
   })
 
+  test('committer remote_pr 创建成功后 graph resume 失败时保留远端完成状态', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-resume-fail-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const gateRequest: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-resume-fail',
+      sessionId: 'session-committer-remote-resume-fail',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const service = createPipelineService({
+      createRemoteSubmission: (input) => ({
+        attempted: true,
+        operationId: input.operationId,
+        status: 'created',
+        type: 'pull_request',
+        commitHash: input.commitHash,
+        remoteName: input.remoteName ?? 'origin',
+        sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+        headBranch: input.headBranch ?? 'feature/remote-gate',
+        baseBranch: input.baseBranch ?? 'main',
+        pushedRef: `refs/heads/${input.headBranch ?? 'feature/remote-gate'}`,
+        prTitle: input.prTitle,
+        prBody: input.prBody,
+        prUrl: 'https://github.com/example/repo/pull/99',
+        draft: input.draft ?? true,
+        createdAt: 123456,
+      }),
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async () => {
+          throw new Error('checkpoint resume failed')
+        },
+        getState: async () => ({
+          sessionId: 'session-committer-remote-resume-fail',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: gateRequest,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端成功但 resume 失败测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...gateRequest,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: true,
+        status: 'committing',
+        workingBranch: 'feature/remote-gate',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-resume-fail',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '本地 commit 已创建',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '本地 commit 已创建',
+          commitMessage: 'feat(pipeline): add remote gate',
+          prTitle: 'Add remote gate',
+          prBody: '## Summary\n- Add remote gate',
+          submissionStatus: 'local_commit_created',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-before-remote',
+            commitHash,
+            workingBranch: 'feature/remote-gate',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: false,
+            status: 'not_requested',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await expect(service.respondGate({
+        gateId: gateRequest.gateId,
+        sessionId: session.id,
+        kind: 'remote_write_confirmation',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-resume-fail',
+        remoteWriteConfirmed: true,
+        createdAt: Date.now(),
+      })).resolves.toBeUndefined()
+
+      expect(getPipelineSessionMeta(session.id)).toMatchObject({
+        status: 'completed',
+        pendingGate: null,
+        currentNode: 'committer',
+      })
+      await expect(service.getSessionState(session.id)).resolves.toMatchObject({
+        status: 'completed',
+        stageOutputs: {
+          committer: {
+            submissionStatus: 'remote_pr_created',
+            remoteSubmission: {
+              status: 'created',
+              prUrl: 'https://github.com/example/repo/pull/99',
+            },
+          },
+        },
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
+  test('committer remote_pr 复用 pushed 结果前会复验 commit 和分支上下文', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-mismatch-repo-'))
+    setupPipelineGitRepo(repoRoot)
+    const gateRequest: PipelineGateRequest = {
+      gateId: 'gate-committer-remote-mismatch',
+      sessionId: 'session-committer-remote-mismatch',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      iteration: 0,
+      createdAt: Date.now(),
+    }
+    const runnerInputs: CreateRemotePipelineSubmissionInput[] = []
+    const service = createPipelineService({
+      createRemoteSubmission: (input) => {
+        runnerInputs.push(input)
+        return {
+          attempted: true,
+          operationId: input.operationId,
+          status: 'created',
+          type: 'pull_request',
+          commitHash: input.commitHash,
+          remoteName: input.remoteName ?? 'origin',
+          sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+          headBranch: input.headBranch ?? 'feature/remote-current',
+          baseBranch: input.baseBranch ?? 'main',
+          pushedRef: `refs/heads/${input.headBranch ?? 'feature/remote-current'}`,
+          prTitle: input.prTitle,
+          prBody: input.prBody,
+          prUrl: 'https://github.com/example/repo/pull/77',
+          draft: input.draft ?? true,
+          createdAt: 123456,
+        }
+      },
+      createGraph: () => ({
+        invoke: async () => {
+          throw new Error('invoke 不应被调用')
+        },
+        resume: async (input: { sessionId: string }) => ({
+          state: {
+            sessionId: input.sessionId,
+            version: 2,
+            currentNode: 'committer',
+            status: 'completed',
+            reviewIteration: 0,
+            lastApprovedNode: 'committer',
+            pendingGate: null,
+            updatedAt: Date.now(),
+          },
+        }),
+        getState: async () => ({
+          sessionId: 'session-committer-remote-mismatch',
+          version: 2,
+          currentNode: 'committer',
+          status: 'waiting_human',
+          reviewIteration: 0,
+          pendingGate: gateRequest,
+          updatedAt: Date.now(),
+        }),
+      }),
+    })
+
+    try {
+      const session = service.createSession('committer 远端上下文复验测试', 'channel-1', 'workspace-1')
+      updatePipelineSessionMeta(session.id, {
+        version: 2,
+        currentNode: 'committer',
+        status: 'waiting_human',
+        pendingGate: {
+          ...gateRequest,
+          sessionId: session.id,
+        },
+      })
+      createContributionTask({
+        id: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(repoRoot, 'patch-work'),
+        contributionMode: 'remote_pr',
+        allowRemoteWrites: true,
+        status: 'committing',
+        workingBranch: 'feature/remote-current',
+        baseBranch: 'main',
+      })
+      const commitRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'commit_doc',
+        createdByNode: 'committer',
+        content: '# Commit 准备\n',
+      })
+      const prRef = writePatchWorkFile({
+        contributionTaskId: 'task-committer-remote-mismatch',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        kind: 'pr_doc',
+        createdByNode: 'committer',
+        content: '# PR 草稿\n',
+      })
+      const commitHash = runGit(repoRoot, ['rev-parse', 'HEAD'])
+      appendPipelineNodeCompleteRecords(session.id, {
+        type: 'node_complete',
+        node: 'committer',
+        output: '{}',
+        summary: '远端提交可恢复',
+        approved: true,
+        issues: [],
+        artifact: {
+          node: 'committer',
+          summary: '远端提交可恢复',
+          commitMessage: 'feat(pipeline): add current remote',
+          prTitle: 'Current remote',
+          prBody: '## Summary\n- Current remote',
+          submissionStatus: 'remote_pr_failed',
+          blockers: [],
+          risks: [],
+          commitDocRef: commitRef,
+          prDocRef: prRef,
+          localCommit: {
+            attempted: true,
+            status: 'created',
+            operationId: 'op-local-current',
+            commitHash,
+            workingBranch: 'feature/remote-current',
+            baseBranch: 'main',
+          },
+          remoteSubmission: {
+            attempted: true,
+            operationId: 'op-remote-context',
+            status: 'pushed',
+            type: 'pull_request',
+            commitHash: 'old-commit',
+            remoteName: 'origin',
+            baseBranch: 'main',
+            headBranch: 'feature/remote-current',
+            pushedRef: 'refs/heads/feature/remote-current',
+            error: '旧提交 PR 创建失败',
+          },
+          content: '{}',
+        },
+        createdAt: Date.now(),
+      })
+
+      await service.respondGate({
+        gateId: gateRequest.gateId,
+        sessionId: session.id,
+        kind: 'remote_write_confirmation',
+        action: 'approve',
+        submissionMode: 'remote_pr',
+        remoteSubmissionOperationId: 'op-remote-context',
+        remoteWriteConfirmed: true,
+        createdAt: Date.now(),
+      })
+
+      expect(runnerInputs).toHaveLength(1)
+      expect(runnerInputs[0]).toMatchObject({
+        operationId: 'op-remote-context',
+        commitHash,
+        headBranch: 'feature/remote-current',
+        baseBranch: 'main',
+        skipPush: false,
+      })
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+    }
+  }, 10_000)
+
   test('committer remote_pr 必须使用 remote_write_confirmation gate kind', async () => {
     const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-remote-kind-repo-'))
     setupPipelineGitRepo(repoRoot)
@@ -1217,7 +2477,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-kind',
       sessionId: 'session-committer-remote-kind',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
@@ -1327,7 +2587,7 @@ describe('pipeline-service', () => {
         remoteSubmissionOperationId: 'op-remote-kind',
         remoteWriteConfirmed: true,
         createdAt: Date.now(),
-      })).rejects.toThrow('远端写必须使用独立高风险确认')
+      })).rejects.toThrow('Pipeline gate 类型不匹配')
 
       expect(remoteCalls).toBe(0)
       expect(getPipelineRecords(session.id).find((record) => record.type === 'gate_decision')).toBeUndefined()
@@ -1343,7 +2603,7 @@ describe('pipeline-service', () => {
       gateId: 'gate-committer-remote-retry',
       sessionId: 'session-committer-remote-retry',
       node: 'committer',
-      kind: 'submission_review',
+      kind: 'remote_write_confirmation',
       iteration: 0,
       createdAt: Date.now(),
     }
@@ -2265,6 +3525,47 @@ describe('pipeline-service', () => {
       })).toThrow('未登记')
     } finally {
       rmSync(repoRoot, { recursive: true, force: true })
+    }
+  })
+
+  test('patch-work 目录打开入口只按 sessionId 解析仓库内固定目录', () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-open-patch-work-'))
+    const repoWithoutPatchWork = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-missing-patch-work-'))
+    const outsideRoot = mkdtempSync(join(tmpdir(), 'codeinsights-pipeline-service-outside-patch-work-'))
+    const service = createPipelineService()
+
+    try {
+      const session = service.createSession('patch-work 打开目录测试', 'channel-1', 'workspace-1')
+      const missingPatchWorkSession = service.createSession('patch-work 缺失测试', 'channel-1', 'workspace-1')
+      const expectedPatchWorkDir = join(repoRoot, 'patch-work')
+      mkdirSync(expectedPatchWorkDir, { recursive: true })
+      createContributionTask({
+        id: 'task-open-patch-work',
+        pipelineSessionId: session.id,
+        repositoryRoot: repoRoot,
+        patchWorkDir: join(outsideRoot, 'patch-work'),
+        contributionMode: 'local_patch',
+        allowRemoteWrites: false,
+        status: 'testing',
+      })
+      createContributionTask({
+        id: 'task-missing-patch-work',
+        pipelineSessionId: missingPatchWorkSession.id,
+        repositoryRoot: repoWithoutPatchWork,
+        patchWorkDir: join(repoWithoutPatchWork, 'patch-work'),
+        contributionMode: 'local_patch',
+        allowRemoteWrites: false,
+        status: 'testing',
+      })
+
+      expect(service.getPatchWorkDir(session.id)).toBe(expectedPatchWorkDir)
+      expect(service.getPatchWorkDir(session.id)).not.toContain(outsideRoot)
+      expect(() => service.getPatchWorkDir(missingPatchWorkSession.id)).toThrow('patch-work 目录不存在')
+      expect(() => service.getPatchWorkDir('missing-session')).toThrow('未找到 Pipeline 会话')
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true })
+      rmSync(repoWithoutPatchWork, { recursive: true, force: true })
+      rmSync(outsideRoot, { recursive: true, force: true })
     }
   })
 

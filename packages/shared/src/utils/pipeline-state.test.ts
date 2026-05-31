@@ -160,6 +160,65 @@ describe('pipeline-state', () => {
     expect(next.stageOutputs?.committer?.submissionStatus).toBe('draft_only')
   })
 
+  test('v2 submission_review 选择 remote_pr 后进入远端确认而不是直接完成', () => {
+    const state = {
+      ...createInitialPipelineState('session-v2-remote', 1, { version: 2 }),
+      lastApprovedNode: 'tester' as const,
+    }
+
+    const afterSubmissionReview = applyPipelineRecord(state, {
+      id: 'record-v2-remote-review',
+      sessionId: 'session-v2-remote',
+      type: 'gate_decision',
+      node: 'committer',
+      kind: 'submission_review',
+      action: 'approve',
+      submissionMode: 'remote_pr',
+      remoteSubmissionOperationId: 'op-remote-confirm',
+      createdAt: 10,
+    })
+
+    expect(afterSubmissionReview.currentNode).toBe('committer')
+    expect(afterSubmissionReview.status).toBe('running')
+    expect(afterSubmissionReview.lastApprovedNode).toBe('tester')
+
+    const waitingRemoteConfirmation = applyPipelineRecord(afterSubmissionReview, {
+      id: 'record-v2-remote-gate',
+      sessionId: 'session-v2-remote',
+      type: 'gate_requested',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      gateId: 'gate-remote-confirm',
+      title: '确认远端写',
+      iteration: 0,
+      createdAt: 20,
+    })
+
+    expect(waitingRemoteConfirmation.status).toBe('waiting_human')
+    expect(waitingRemoteConfirmation.pendingGate).toMatchObject({
+      kind: 'remote_write_confirmation',
+      gateId: 'gate-remote-confirm',
+      node: 'committer',
+    })
+
+    const completed = applyPipelineRecord(waitingRemoteConfirmation, {
+      id: 'record-v2-remote-confirmed',
+      sessionId: 'session-v2-remote',
+      type: 'gate_decision',
+      node: 'committer',
+      kind: 'remote_write_confirmation',
+      action: 'approve',
+      submissionMode: 'remote_pr',
+      remoteSubmissionOperationId: 'op-remote-confirm',
+      remoteWriteConfirmed: true,
+      createdAt: 30,
+    })
+
+    expect(completed.currentNode).toBe('committer')
+    expect(completed.status).toBe('completed')
+    expect(completed.lastApprovedNode).toBe('committer')
+  })
+
   test('records replay 能恢复 pendingGate、reviewIteration 和终态', () => {
     const state = replayPipelineRecords('session-4', [
       {

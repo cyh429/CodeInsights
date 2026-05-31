@@ -7,6 +7,20 @@ export interface PipelineRecordsTailLoadState {
   currentCursor: number
 }
 
+export interface PipelineRecordsTailCursorState {
+  cursor: number
+  latestLoadId: number
+}
+
+export function resetPipelineRecordsTailLoadState({
+  latestLoadId,
+}: PipelineRecordsTailCursorState): PipelineRecordsTailCursorState {
+  return {
+    cursor: 0,
+    latestLoadId: latestLoadId + 1,
+  }
+}
+
 export function shouldApplyPipelineRecordsTailLoad({
   loadId,
   latestLoadId,

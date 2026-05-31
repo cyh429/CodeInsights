@@ -103,8 +103,10 @@ import type {
   WeChatBridgeState,
   AgentQueueMessageInput,
   PendingRequestsSnapshot,
+  ContributionTaskSummary,
   PipelineArtifactContentInput,
   PipelineExplorerReportRef,
+  PipelineContributionTaskSummaryInput,
   PipelineSessionMeta,
   PipelineVersion,
   PipelineRecord,
@@ -112,11 +114,18 @@ import type {
   PipelineRecordsTailResult,
   PipelineRecordsSearchInput,
   PipelineRecordsSearchResult,
+  PipelineRunPreflightInput,
+  PipelinePreflightResult,
+  PipelineReportExport,
+  PipelineReportExportInput,
+  PipelineReportPdfSaveInput,
+  PipelineReportPdfSaveResult,
   PipelineStartInput,
   PipelineResumeInput,
   PipelineGateRequest,
   PipelineGateResponse,
   PipelinePatchWorkReadFileInput,
+  PipelinePatchWorkRevisionInput,
   PipelinePatchWorkSessionInput,
   PipelineSelectTaskInput,
   PipelineSelectTaskResult,
@@ -124,6 +133,9 @@ import type {
   PipelineStreamPayload,
   PipelineStreamCompletePayload,
   PipelineStreamErrorPayload,
+  PipelineSubmissionPlan,
+  PipelineSubmissionPlanInput,
+  PatchWorkDocumentRevision,
   PatchWorkManifest,
 } from '@codeinsights/shared'
 import type { UserProfile, AppSettings, QuickTaskSubmitInput, QuickTaskOpenSessionData } from '../types'
@@ -377,8 +389,26 @@ export interface ElectronAPI {
   /** 读取 Pipeline v2 patch-work manifest */
   getPipelinePatchWorkManifest: (input: PipelinePatchWorkSessionInput) => Promise<PatchWorkManifest>
 
+  /** 读取 Pipeline v2 ContributionTask Dashboard summary */
+  getContributionTaskSummary: (input: PipelineContributionTaskSummaryInput) => Promise<ContributionTaskSummary>
+
+  /** 读取 Pipeline v2 提交计划 */
+  getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => Promise<PipelineSubmissionPlan>
+
+  /** 导出 Pipeline v2 贡献报告 Markdown / HTML */
+  exportPipelineReport: (input: PipelineReportExportInput) => Promise<PipelineReportExport>
+
+  /** 保存 Pipeline v2 贡献报告 PDF */
+  savePipelineReportPdf: (input: PipelineReportPdfSaveInput) => Promise<PipelineReportPdfSaveResult>
+
   /** 读取 Pipeline v2 patch-work 文件 */
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<string>
+
+  /** 列出 Pipeline v2 patch-work 文件 revision */
+  listPipelinePatchWorkRevisions: (input: PipelinePatchWorkReadFileInput) => Promise<PatchWorkDocumentRevision[]>
+
+  /** 读取 Pipeline v2 patch-work 文件指定 revision */
+  readPipelinePatchWorkRevision: (input: PipelinePatchWorkRevisionInput) => Promise<PatchWorkDocumentRevision>
 
   /** 列出 Pipeline v2 Explorer 报告 */
   listPipelineExplorerReports: (input: PipelinePatchWorkSessionInput) => Promise<PipelineExplorerReportRef[]>
@@ -386,8 +416,17 @@ export interface ElectronAPI {
   /** 选择 Pipeline v2 Explorer report 作为任务 */
   selectPipelineTask: (input: PipelineSelectTaskInput) => Promise<PipelineSelectTaskResult>
 
+  /** 执行 Pipeline 启动前仓库检查 */
+  runPipelinePreflight: (input: PipelineRunPreflightInput) => Promise<PipelinePreflightResult>
+
   /** 打开 Pipeline 产物目录 */
   openPipelineArtifactsDir: (sessionId: string) => Promise<boolean>
+
+  /** 打开 Pipeline v2 仓库内 patch-work 目录 */
+  openPipelinePatchWorkDir: (sessionId: string) => Promise<boolean>
+
+  /** 打开 Pipeline v2 仓库内 patch-work 文件 */
+  openPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => Promise<boolean>
 
   /** 更新 Pipeline 标题 */
   updatePipelineTitle: (sessionId: string, title: string) => Promise<PipelineSessionMeta>
@@ -1187,8 +1226,32 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_PATCH_WORK_MANIFEST, input)
   },
 
+  getContributionTaskSummary: (input: PipelineContributionTaskSummaryInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_CONTRIBUTION_TASK_SUMMARY, input)
+  },
+
+  getPipelineSubmissionPlan: (input: PipelineSubmissionPlanInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.GET_SUBMISSION_PLAN, input)
+  },
+
+  exportPipelineReport: (input: PipelineReportExportInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.EXPORT_REPORT, input)
+  },
+
+  savePipelineReportPdf: (input: PipelineReportPdfSaveInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.SAVE_REPORT_PDF, input)
+  },
+
   readPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.READ_PATCH_WORK_FILE, input)
+  },
+
+  listPipelinePatchWorkRevisions: (input: PipelinePatchWorkReadFileInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.LIST_PATCH_WORK_REVISIONS, input)
+  },
+
+  readPipelinePatchWorkRevision: (input: PipelinePatchWorkRevisionInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.READ_PATCH_WORK_REVISION, input)
   },
 
   listPipelineExplorerReports: (input: PipelinePatchWorkSessionInput) => {
@@ -1199,8 +1262,20 @@ const electronAPI: ElectronAPI = {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.SELECT_TASK, input)
   },
 
+  runPipelinePreflight: (input: PipelineRunPreflightInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT, input)
+  },
+
   openPipelineArtifactsDir: (sessionId: string) => {
     return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_ARTIFACTS_DIR, sessionId)
+  },
+
+  openPipelinePatchWorkDir: (sessionId: string) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_DIR, sessionId)
+  },
+
+  openPipelinePatchWorkFile: (input: PipelinePatchWorkReadFileInput) => {
+    return ipcRenderer.invoke(PIPELINE_IPC_CHANNELS.OPEN_PATCH_WORK_FILE, input)
   },
 
   updatePipelineTitle: (sessionId: string, title: string) => {

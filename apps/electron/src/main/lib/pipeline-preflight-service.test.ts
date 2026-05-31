@@ -33,6 +33,13 @@ function createFakeCli(root: string, name: string): string {
   return cliPath
 }
 
+function createFailingCli(root: string, name: string, stderr: string): string {
+  const cliPath = join(root, name)
+  writeFileSync(cliPath, `#!/bin/sh\necho "${stderr}" >&2\nexit 1\n`, 'utf-8')
+  chmodSync(cliPath, 0o755)
+  return cliPath
+}
+
 describe('pipeline-preflight-service', () => {
   let tempRoot = ''
   let extraDirs: string[] = []
@@ -62,6 +69,22 @@ describe('pipeline-preflight-service', () => {
     expect(result.blockers.map((item) => item.code)).toContain('repository_not_git_root')
   })
 
+  test('仓库目录不存在时返回 repository_missing blocker 和稳定 fingerprint', async () => {
+    const missingRoot = join(tempRoot, 'missing-repo')
+
+    const result = await runPipelinePreflight({
+      repositoryRoot: missingRoot,
+      requireClaudeCli: false,
+      requireCodexCli: false,
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.repository.root).toBe(missingRoot)
+    expect(result.blockers.map((item) => item.code)).toContain('repository_missing')
+    expect(result.checkedAt).toBeGreaterThan(0)
+    expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/)
+  })
+
   test('干净 Git 仓库返回仓库信息、runtime 和包管理器', async () => {
     initRepo(tempRoot)
     const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
@@ -88,6 +111,92 @@ describe('pipeline-preflight-service', () => {
     expect(result.runtimes.find((runtime) => runtime.kind === 'codex-cli')?.available).toBe(true)
     expect(result.runtimes.find((runtime) => runtime.kind === 'git')?.available).toBe(true)
     expect(result.warnings.map((item) => item.code)).toContain('git_remote_missing')
+  })
+
+  test('工作区未提交变更返回 warning，且远端 URL 会脱敏', async () => {
+    initRepo(tempRoot)
+    runGit(tempRoot, ['remote', 'add', 'origin', 'https://token-123@example.com/org/repo.git'])
+    writeFileSync(join(tempRoot, 'src.ts'), 'export const dirty = true\n', 'utf-8')
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
+    extraDirs.push(cliRoot)
+    const claudePath = createFakeCli(cliRoot, 'claude')
+    const codexPath = createFakeCli(cliRoot, 'codex')
+
+    const result = await runPipelinePreflight({
+      repositoryRoot: tempRoot,
+    }, {
+      resolveClaudeCliPath: () => claudePath,
+      resolveCodexCliPath: () => codexPath,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.repository.hasUncommittedChanges).toBe(true)
+    expect(result.repository.remoteUrl).toBe('https://***@example.com/org/repo.git')
+    expect(JSON.stringify(result)).not.toContain('token-123')
+    expect(result.warnings.map((item) => item.code)).toContain('git_uncommitted_changes')
+    expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/)
+  })
+
+  test('远端 URL query/hash 和 runtime diagnostic 中的凭据会脱敏', async () => {
+    initRepo(tempRoot)
+    runGit(tempRoot, [
+      'remote',
+      'add',
+      'origin',
+      'https://github.com/org/repo.git?access_token=secret-token&plain=ok#secret-fragment',
+    ])
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
+    extraDirs.push(cliRoot)
+    const claudePath = createFailingCli(
+      cliRoot,
+      'claude',
+      'Authorization: Basic abc123 token=secret-token url=https://github.com/org/repo.git?api_key=secret-token',
+    )
+    const codexPath = createFakeCli(cliRoot, 'codex')
+
+    const result = await runPipelinePreflight({
+      repositoryRoot: tempRoot,
+    }, {
+      resolveClaudeCliPath: () => claudePath,
+      resolveCodexCliPath: () => codexPath,
+    })
+
+    const serialized = JSON.stringify(result)
+    expect(result.repository.remoteUrl).toContain('access_token=***')
+    expect(result.repository.remoteUrl).toContain('#***')
+    expect(serialized).not.toContain('secret-token')
+    expect(serialized).not.toContain('secret-fragment')
+    expect(serialized).not.toContain('abc123')
+    expect(serialized).toContain('Authorization: Basic ***')
+  })
+
+  test('dirty 文件集合变化会改变 preflight fingerprint', async () => {
+    initRepo(tempRoot)
+    const cliRoot = mkdtempSync(join(tmpdir(), 'codeinsights-preflight-cli-'))
+    extraDirs.push(cliRoot)
+    const claudePath = createFakeCli(cliRoot, 'claude')
+    const codexPath = createFakeCli(cliRoot, 'codex')
+
+    writeFileSync(join(tempRoot, 'first.ts'), 'export const first = true\n', 'utf-8')
+    const first = await runPipelinePreflight({
+      repositoryRoot: tempRoot,
+    }, {
+      resolveClaudeCliPath: () => claudePath,
+      resolveCodexCliPath: () => codexPath,
+    })
+
+    writeFileSync(join(tempRoot, 'second.ts'), 'export const second = true\n', 'utf-8')
+    const second = await runPipelinePreflight({
+      repositoryRoot: tempRoot,
+    }, {
+      resolveClaudeCliPath: () => claudePath,
+      resolveCodexCliPath: () => codexPath,
+    })
+
+    expect(first.repository.hasUncommittedChanges).toBe(true)
+    expect(second.repository.hasUncommittedChanges).toBe(true)
+    expect(first.repository.statusDigest).not.toBe(second.repository.statusDigest)
+    expect(first.fingerprint).not.toBe(second.fingerprint)
   })
 
   test('CLI 缺失时返回稳定 blocker code', async () => {

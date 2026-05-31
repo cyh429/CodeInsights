@@ -1,4 +1,9 @@
-import type { AgentWorkspace, Channel } from '@codeinsights/shared'
+import type {
+  AgentWorkspace,
+  Channel,
+  PipelinePreflightAcknowledgement,
+  PipelinePreflightResult,
+} from '@codeinsights/shared'
 import { isAgentCompatibleProvider } from '@codeinsights/shared'
 import type { SettingsTab } from '@/atoms/settings-tab'
 
@@ -11,6 +16,8 @@ export interface PipelinePreflightError {
   message: string
   settingsTab: SettingsTab
 }
+
+export const PIPELINE_PREFLIGHT_RESULT_TTL_MS = 60_000
 
 export interface ResolvePipelineRunConfigInput {
   sessionChannelId?: string
@@ -136,5 +143,97 @@ export function resolvePipelineRunConfig(
       channelId,
       workspaceId,
     },
+  }
+}
+
+export function createPipelinePreflightAcknowledgement(
+  result: PipelinePreflightResult,
+  acknowledgedAt = Date.now(),
+): PipelinePreflightAcknowledgement {
+  return {
+    fingerprint: result.fingerprint,
+    acceptedWarningCodes: result.warnings.map((warning) => warning.code),
+    acknowledgedAt,
+  }
+}
+
+export function isPipelinePreflightAcknowledged(
+  result: PipelinePreflightResult,
+  acknowledgement: PipelinePreflightAcknowledgement | null | undefined,
+): boolean {
+  if (result.warnings.length === 0) return true
+  if (!acknowledgement || acknowledgement.fingerprint !== result.fingerprint) return false
+
+  const acceptedCodes = new Set(acknowledgement.acceptedWarningCodes)
+  return result.warnings.every((warning) => acceptedCodes.has(warning.code))
+}
+
+export function shouldBlockPipelineStartForPreflight(
+  result: PipelinePreflightResult | null | undefined,
+  acknowledgement: PipelinePreflightAcknowledgement | null | undefined,
+): boolean {
+  if (!result) return false
+  if (result.blockers.length > 0) return true
+  return result.warnings.length > 0 && !isPipelinePreflightAcknowledged(result, acknowledgement)
+}
+
+export type PipelinePreflightRefreshReason = 'stale' | 'workspace_changed'
+
+export interface PipelinePreflightRefreshStateInput {
+  result: PipelinePreflightResult | null | undefined
+  acknowledgement: PipelinePreflightAcknowledgement | null | undefined
+  checkedWorkspaceId?: string
+  currentWorkspaceId?: string
+  now?: number
+  ttlMs?: number
+}
+
+export interface PipelinePreflightRefreshState {
+  refreshRequired: boolean
+  reason: PipelinePreflightRefreshReason | null
+  acknowledgement: PipelinePreflightAcknowledgement | null
+  message: string | null
+}
+
+export function getPipelinePreflightRefreshState({
+  result,
+  acknowledgement,
+  checkedWorkspaceId,
+  currentWorkspaceId,
+  now = Date.now(),
+  ttlMs = PIPELINE_PREFLIGHT_RESULT_TTL_MS,
+}: PipelinePreflightRefreshStateInput): PipelinePreflightRefreshState {
+  if (!result) {
+    return {
+      refreshRequired: false,
+      reason: null,
+      acknowledgement: acknowledgement ?? null,
+      message: null,
+    }
+  }
+
+  if (checkedWorkspaceId && currentWorkspaceId && checkedWorkspaceId !== currentWorkspaceId) {
+    return {
+      refreshRequired: true,
+      reason: 'workspace_changed',
+      acknowledgement: null,
+      message: '当前工作区已变化，请重新执行启动前检查。',
+    }
+  }
+
+  if (now - result.checkedAt > ttlMs) {
+    return {
+      refreshRequired: true,
+      reason: 'stale',
+      acknowledgement: null,
+      message: '启动前检查已超过 60 秒，请重新检查。',
+    }
+  }
+
+  return {
+    refreshRequired: false,
+    reason: null,
+    acknowledgement: acknowledgement ?? null,
+    message: null,
   }
 }

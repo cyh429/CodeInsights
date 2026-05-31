@@ -1,10 +1,12 @@
 import * as React from 'react'
+import { FolderOpen } from 'lucide-react'
 import type {
   PipelineGateKind,
   PipelinePatchWorkDocumentRef,
   PipelineTesterStageOutput,
   PipelineTestEvidence,
 } from '@codeinsights/shared'
+import { PatchWorkDocumentWorkbench } from './PatchWorkDocumentWorkbench'
 
 export interface TesterPatchWorkDocumentViewModel {
   displayName: string
@@ -209,6 +211,7 @@ function toneClass(tone: TesterResultBoardViewModel['statusTone']): string {
 }
 
 export function TesterResultBoard({
+  sessionId,
   output,
   contents,
   loadingPaths,
@@ -217,7 +220,9 @@ export function TesterResultBoard({
   onApprove,
   onReject,
   onRerun,
+  onOpenPatchWorkDir,
 }: {
+  sessionId: string
   output: PipelineTesterStageOutput | null | undefined
   contents: Map<string, string>
   loadingPaths: Set<string>
@@ -226,10 +231,12 @@ export function TesterResultBoard({
   onApprove: () => Promise<void>
   onReject: (feedback: string) => Promise<void>
   onRerun: () => Promise<void>
+  onOpenPatchWorkDir: () => Promise<void>
 }): React.ReactElement {
   const [feedback, setFeedback] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [openPatchWorkError, setOpenPatchWorkError] = React.useState<string | null>(null)
   const [feedbackError, setFeedbackError] = React.useState<string | null>(null)
   const viewModel = buildTesterResultBoardViewModel({
     output,
@@ -250,6 +257,16 @@ export function TesterResultBoard({
       setError(submitError instanceof Error ? submitError.message : '提交审核失败，请稍后重试。')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleOpenPatchWorkDir = async (): Promise<void> => {
+    setOpenPatchWorkError(null)
+    try {
+      await onOpenPatchWorkDir()
+    } catch (openError) {
+      console.error('[TesterResultBoard] 打开 patch-work 目录失败:', openError)
+      setOpenPatchWorkError(openError instanceof Error ? openError.message : '打开 patch-work 目录失败，请稍后重试。')
     }
   }
 
@@ -277,8 +294,20 @@ export function TesterResultBoard({
 
       <p className="mt-3 text-sm leading-6 text-text-primary">{viewModel.summary}</p>
       <div className="mt-3 rounded-card bg-background/80 px-3 py-2 text-xs text-text-secondary">
-        Patch-set：{viewModel.patchSetSummary}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <span>Patch-set：{viewModel.patchSetSummary}</span>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={() => void handleOpenPatchWorkDir()}
+            className="inline-flex items-center justify-center gap-2 rounded-control bg-background px-3 py-1.5 text-xs font-medium text-text-primary shadow-sm transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <FolderOpen size={14} aria-hidden="true" />
+            打开 patch-work
+          </button>
+        </div>
       </div>
+      {openPatchWorkError ? <div className="mt-2 text-xs text-rose-600 dark:text-rose-300">{openPatchWorkError}</div> : null}
 
       {viewModel.warning ? (
         <div className="mt-3 rounded-card border border-status-waiting-border bg-status-waiting-bg px-3 py-2 text-xs text-status-waiting-fg">
@@ -315,30 +344,15 @@ export function TesterResultBoard({
         </div>
       ) : null}
 
-      <div className="mt-4 space-y-3">
-        {viewModel.documents.map((document) => (
-          <article key={document.relativePath} className="rounded-card bg-background px-3 py-3 text-text-primary shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-sm font-medium">{document.displayName}</div>
-                <div className="mt-1 truncate font-mono text-[11px] text-text-tertiary">
-                  {document.relativePath}
-                </div>
-              </div>
-              <div className="flex flex-shrink-0 flex-col items-end gap-1 text-[11px] text-text-tertiary">
-                <span>{document.revisionLabel}</span>
-                <span>{document.checksumLabel}</span>
-              </div>
-            </div>
-            <pre className="mt-3 max-h-48 overflow-auto whitespace-pre-wrap rounded-card bg-surface-muted/70 px-3 py-3 text-xs leading-5 text-text-primary">
-              {document.loading
-                ? '正在读取 Tester 产物...'
-                : document.error
-                  ? `读取失败：${document.error}`
-                  : document.content}
-            </pre>
-          </article>
-        ))}
+      <div className="mt-4">
+        <PatchWorkDocumentWorkbench
+          sessionId={sessionId}
+          documents={collectTesterPatchWorkRefs(output)}
+          contents={contents}
+          loadingPaths={loadingPaths}
+          readErrors={readErrors}
+          onOpenPatchWorkDir={onOpenPatchWorkDir}
+        />
       </div>
 
       <label className="mt-4 block text-xs font-medium text-emerald-700 dark:text-emerald-200" htmlFor="pipeline-tester-feedback">

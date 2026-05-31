@@ -79,6 +79,7 @@ const EVENT_TYPES = new Set<ContributionTaskEventType>([
   'document_revision_created',
   'local_commit_created',
   'local_commit_failed',
+  'remote_write_confirmed',
   'remote_submission_created',
   'remote_submission_failed',
   'task_failed',

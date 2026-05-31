@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type { PipelineRecord } from '@codeinsights/shared'
 import {
   mergePipelineRecordsTail,
+  resetPipelineRecordsTailLoadState,
   shouldApplyPipelineRecordsTailLoad,
 } from './pipeline-record-tail-model'
 
@@ -47,5 +48,23 @@ describe('pipeline-record-tail-model', () => {
     ], 2)
 
     expect(merged.map((record) => record.id)).toEqual(['record-1', 'record-2', 'record-3'])
+  })
+
+  test('切换 session 后重置 cursor 并让旧 tail load 失效', () => {
+    const reset = resetPipelineRecordsTailLoadState({
+      cursor: 12,
+      latestLoadId: 4,
+    })
+
+    expect(reset).toEqual({
+      cursor: 0,
+      latestLoadId: 5,
+    })
+    expect(shouldApplyPipelineRecordsTailLoad({
+      loadId: 4,
+      latestLoadId: reset.latestLoadId,
+      afterIndex: 12,
+      currentCursor: reset.cursor,
+    })).toBe(false)
   })
 })

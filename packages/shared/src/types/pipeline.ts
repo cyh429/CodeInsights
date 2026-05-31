@@ -7,7 +7,7 @@
 /** Pipeline 工作流版本。缺省按 v1 处理，保证旧会话兼容。 */
 export type PipelineVersion = 1 | 2
 
-/** Pipeline 固定节点类型 */
+/** Pipeline 节点类型。v1 使用前五个节点，v2 额外启用 committer。 */
 export type PipelineNodeKind =
   | 'explorer'
   | 'planner'
@@ -69,8 +69,23 @@ export interface PipelineGateRequest {
   title?: string
   summary?: string
   feedbackHint?: string
+  remoteWritePlan?: PipelineRemoteWriteConfirmationPlan
   iteration: number
   createdAt: number
+}
+
+export interface PipelineRemoteWriteConfirmationPlan {
+  operationId: string
+  remoteName: string
+  baseBranch: string
+  headBranch: string
+  commitHash: string
+  prTitle: string
+  prBody: string
+  sanitizedRemoteUrl?: string
+  githubRepo?: string
+  pushedRef?: string
+  warnings: string[]
 }
 
 /** 人工审核响应 */
@@ -93,6 +108,21 @@ export interface PipelinePatchWorkDocumentRef {
   relativePath: string
   checksum?: string
   revision?: number
+}
+
+/** patch-work 文档单个 revision 的只读快照 */
+export interface PatchWorkDocumentRevision {
+  displayName: string
+  relativePath: string
+  revision: number
+  checksum: string
+  actualChecksum: string
+  content: string
+  createdByNode: PatchWorkNodeKind
+  updatedAt: number
+  accepted: boolean
+  current: boolean
+  checksumMatches: boolean
 }
 
 export interface PipelineExplorerReportRef extends PipelinePatchWorkDocumentRef {
@@ -270,6 +300,7 @@ export interface PipelineRemoteSubmissionSummary {
   commitHash?: string
   status: PipelineRemoteSubmissionStatus
   type?: PipelineRemoteSubmissionType
+  provider?: 'gh_cli' | 'github_api'
   remoteName?: string
   sanitizedRemoteUrl?: string
   githubRepo?: string
@@ -280,6 +311,7 @@ export interface PipelineRemoteSubmissionSummary {
   prBody?: string
   prUrl?: string
   prNumber?: number
+  existingPr?: boolean
   draft?: boolean
   error?: string
   pushedAt?: number
@@ -390,6 +422,7 @@ export type ContributionTaskEventType =
   | 'document_revision_created'
   | 'local_commit_created'
   | 'local_commit_failed'
+  | 'remote_write_confirmed'
   | 'remote_submission_created'
   | 'remote_submission_failed'
   | 'task_failed'
@@ -402,6 +435,76 @@ export interface ContributionTaskEvent {
   type: ContributionTaskEventType
   payload?: Record<string, unknown>
   createdAt: number
+}
+
+export interface ContributionTaskRepositorySummary {
+  root: string
+  url?: string
+  issueUrl?: string
+  baseBranch?: string
+  workingBranch?: string
+  baseCommit?: string
+}
+
+export interface ContributionTaskPatchWorkSummary {
+  dir: string
+  manifestFound: boolean
+  fileCount: number
+  acceptedFileCount: number
+  updatedAt?: number
+  error?: string
+}
+
+export interface ContributionTaskSummaryEvent {
+  id: string
+  type: ContributionTaskEventType
+  title: string
+  detail?: string
+  createdAt: number
+}
+
+export interface ContributionTaskSummary {
+  sessionId: string
+  task: ContributionTask | null
+  repository?: ContributionTaskRepositorySummary
+  mode?: ContributionMode
+  allowRemoteWrites?: boolean
+  patchWork?: ContributionTaskPatchWorkSummary
+  localCommit?: PipelineLocalCommitSummary
+  remoteSubmission?: PipelineRemoteSubmissionSummary
+  recentEvents: ContributionTaskSummaryEvent[]
+  updatedAt: number
+  error?: string
+}
+
+export interface PipelineSubmissionPlan {
+  sessionId: string
+  mode: ContributionMode
+  commitMessage: string
+  prTitle: string
+  prBody: string
+  baseBranch?: string
+  headBranch?: string
+  remoteName?: string
+  sanitizedRemoteUrl?: string
+  candidateFiles: string[]
+  excludedFiles: string[]
+  blockers: string[]
+  warnings: string[]
+  localCommit?: PipelineLocalCommitSummary
+  remoteSubmission?: PipelineRemoteSubmissionSummary
+  updatedAt: number
+}
+
+export interface PipelineReportExport {
+  sessionId: string
+  title: string
+  markdown: string
+  html: string
+  fileName: string
+  htmlFileName: string
+  pdfFileName: string
+  generatedAt: number
 }
 
 /** patch-work 文件归属节点。preflight 不是 Agent 阶段，但会写入检查产物。 */
@@ -487,6 +590,8 @@ export interface PipelinePreflightRepositoryStatus {
   currentBranch?: string
   baseBranch?: string
   remoteUrl?: string
+  headCommit?: string
+  statusDigest?: string
   hasUncommittedChanges: boolean
   hasConflicts: boolean
 }
@@ -498,6 +603,17 @@ export interface PipelinePreflightInput {
   requireGit?: boolean
 }
 
+export interface PipelineRunPreflightInput {
+  sessionId: string
+  workspaceId?: string
+}
+
+export interface PipelinePreflightAcknowledgement {
+  fingerprint: string
+  acceptedWarningCodes: PipelinePreflightIssueCode[]
+  acknowledgedAt: number
+}
+
 export interface PipelinePreflightResult {
   ok: boolean
   repository: PipelinePreflightRepositoryStatus
@@ -505,6 +621,8 @@ export interface PipelinePreflightResult {
   packageManager: PipelinePackageManager
   warnings: PipelinePreflightIssue[]
   blockers: PipelinePreflightIssue[]
+  checkedAt: number
+  fingerprint: string
 }
 
 /** 启动 Pipeline 输入 */
@@ -514,6 +632,7 @@ export interface PipelineStartInput {
   channelId?: string
   workspaceId?: string
   threadId?: string
+  preflightAcknowledgement?: PipelinePreflightAcknowledgement
 }
 
 /** 恢复 Pipeline 输入 */
@@ -580,8 +699,26 @@ export interface PipelinePatchWorkSessionInput {
   sessionId: string
 }
 
+export interface PipelineContributionTaskSummaryInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineSubmissionPlanInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportExportInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportPdfSaveInput extends PipelinePatchWorkSessionInput {}
+
+export interface PipelineReportPdfSaveResult {
+  canceled: boolean
+  fileName: string
+  filePath?: string
+}
+
 export interface PipelinePatchWorkReadFileInput extends PipelinePatchWorkSessionInput {
   relativePath: string
+}
+
+export interface PipelinePatchWorkRevisionInput extends PipelinePatchWorkReadFileInput {
+  revision: number
 }
 
 export interface PipelineSelectTaskInput extends PipelinePatchWorkSessionInput {
@@ -673,6 +810,7 @@ export interface PipelineGateRequestedRecord {
   title?: string
   summary?: string
   feedbackHint?: string
+  remoteWritePlan?: PipelineRemoteWriteConfirmationPlan
   iteration?: number
   createdAt: number
 }
@@ -799,9 +937,16 @@ export const PIPELINE_IPC_CHANNELS = {
   SEARCH_RECORDS: 'pipeline:search-records',
   READ_ARTIFACT_CONTENT: 'pipeline:read-artifact-content',
   GET_PATCH_WORK_MANIFEST: 'pipeline-v2:get-patch-work-manifest',
+  GET_CONTRIBUTION_TASK_SUMMARY: 'pipeline-v2:get-contribution-task-summary',
+  GET_SUBMISSION_PLAN: 'pipeline-v2:get-submission-plan',
+  EXPORT_REPORT: 'pipeline-v2:export-report',
+  SAVE_REPORT_PDF: 'pipeline-v2:save-report-pdf',
   READ_PATCH_WORK_FILE: 'pipeline-v2:read-patch-work-file',
+  LIST_PATCH_WORK_REVISIONS: 'pipeline-v2:list-patch-work-revisions',
+  READ_PATCH_WORK_REVISION: 'pipeline-v2:read-patch-work-revision',
   LIST_EXPLORER_REPORTS: 'pipeline-v2:list-explorer-reports',
   SELECT_TASK: 'pipeline-v2:select-task',
+  RUN_PREFLIGHT: 'pipeline:run-preflight',
   UPDATE_TITLE: 'pipeline:update-title',
   DELETE_SESSION: 'pipeline:delete-session',
   TOGGLE_PIN: 'pipeline:toggle-pin',
@@ -813,6 +958,8 @@ export const PIPELINE_IPC_CHANNELS = {
   GET_PENDING_GATES: 'pipeline:get-pending-gates',
   GET_SESSION_STATE: 'pipeline:get-session-state',
   OPEN_ARTIFACTS_DIR: 'pipeline:open-artifacts-dir',
+  OPEN_PATCH_WORK_DIR: 'pipeline-v2:open-patch-work-dir',
+  OPEN_PATCH_WORK_FILE: 'pipeline-v2:open-patch-work-file',
   SUBSCRIBE_STREAM: 'pipeline:stream:subscribe',
   UNSUBSCRIBE_STREAM: 'pipeline:stream:unsubscribe',
   STREAM_EVENT: 'pipeline:stream:event',

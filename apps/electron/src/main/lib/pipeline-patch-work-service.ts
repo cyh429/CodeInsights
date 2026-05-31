@@ -27,6 +27,7 @@ import {
   win32,
 } from 'node:path'
 import type {
+  PatchWorkDocumentRevision,
   PatchWorkFileKind,
   PatchWorkFileRef,
   PatchWorkManifest,
@@ -39,6 +40,10 @@ interface PatchWorkInitInput {
   contributionTaskId: string
   pipelineSessionId: string
   repositoryRoot: string
+}
+
+interface PatchWorkReadOptions {
+  create?: boolean
 }
 
 interface PatchWorkWriteInput extends PatchWorkInitInput {
@@ -168,12 +173,16 @@ export function resolvePatchWorkDir(
     throw new Error('patch-work 目录越界')
   }
 
-  if (options.create !== false && !existsSync(patchWorkDir)) {
+  if (!existsSync(patchWorkDir)) {
+    if (options.create === false) {
+      throw new Error('patch-work 目录不存在')
+    }
     mkdirSync(patchWorkDir, { recursive: true })
   }
 
   if (existsSync(patchWorkDir)) {
-    if (lstatSync(patchWorkDir).isSymbolicLink()) {
+    const stat = lstatSync(patchWorkDir)
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
       throw new Error('patch-work 目录越界')
     }
     const rootRealPath = realpathSync(root)
@@ -314,8 +323,8 @@ function resolvePatchWorkFilePath(
   return target
 }
 
-function getManifestPath(repositoryRoot: string): string {
-  const manifestPath = join(resolvePatchWorkDir(repositoryRoot), 'manifest.json')
+function getManifestPath(repositoryRoot: string, options: PatchWorkReadOptions = {}): string {
+  const manifestPath = join(resolvePatchWorkDir(repositoryRoot, options), 'manifest.json')
   assertManifestPathSafe(manifestPath)
   return manifestPath
 }
@@ -324,14 +333,14 @@ function checksum(content: string): string {
   return createHash('sha256').update(content, 'utf-8').digest('hex')
 }
 
-function createEmptyManifest(input: PatchWorkInitInput): PatchWorkManifest {
+function createEmptyManifest(input: PatchWorkInitInput, options: PatchWorkReadOptions = {}): PatchWorkManifest {
   const repositoryRoot = ensureRepositoryRoot(input.repositoryRoot)
   return {
     version: MANIFEST_VERSION,
     contributionTaskId: input.contributionTaskId,
     pipelineSessionId: input.pipelineSessionId,
     repositoryRoot,
-    patchWorkDir: resolvePatchWorkDir(repositoryRoot),
+    patchWorkDir: resolvePatchWorkDir(repositoryRoot, options),
     files: [],
     checksums: {},
     updatedAt: 0,
@@ -373,8 +382,9 @@ function normalizeFileRef(value: unknown): PatchWorkFileRef | null {
 function normalizeManifest(
   input: PatchWorkInitInput,
   manifest: PatchWorkManifest | null,
+  options: PatchWorkReadOptions = {},
 ): PatchWorkManifest {
-  const emptyManifest = createEmptyManifest(input)
+  const emptyManifest = createEmptyManifest(input, options)
   if (!isObject(manifest)) return emptyManifest
 
   const files = Array.isArray(manifest.files)
@@ -443,7 +453,10 @@ export function initializePatchWork(input: PatchWorkInitInput): PatchWorkManifes
   return manifest
 }
 
-export function readPatchWorkManifest(repositoryRoot: string): PatchWorkManifest {
+export function readPatchWorkManifest(
+  repositoryRoot: string,
+  options: PatchWorkReadOptions = {},
+): PatchWorkManifest {
   const input: PatchWorkInitInput = {
     contributionTaskId: '',
     pipelineSessionId: '',
@@ -451,7 +464,8 @@ export function readPatchWorkManifest(repositoryRoot: string): PatchWorkManifest
   }
   return normalizeManifest(
     input,
-    readJsonFileSafe<PatchWorkManifest>(getManifestPath(repositoryRoot)),
+    readJsonFileSafe<PatchWorkManifest>(getManifestPath(repositoryRoot, options)),
+    options,
   )
 }
 
@@ -532,6 +546,9 @@ export function writePatchWorkFile(input: PatchWorkWriteInput): PatchWorkFileRef
     revision,
     checksum: fileChecksum,
     updatedAt,
+    acceptedRevision: existing?.acceptedRevision,
+    acceptedAt: existing?.acceptedAt,
+    acceptedByGateId: existing?.acceptedByGateId,
   }
 
   const nextFiles = manifest.files.filter((file) => file.relativePath !== definition.relativePath)
@@ -599,6 +616,120 @@ export function readPatchWorkManifestFile(input: {
 
   assertManifestChecksumFresh(manifest, file)
   return readVerifiedPatchWorkFile(input.repositoryRoot, file)
+}
+
+function findManifestFileRef(
+  repositoryRoot: string,
+  relativePath: string,
+): PatchWorkFileRef {
+  const normalizedPath = normalizeRelativePath(relativePath)
+  assertWritablePatchWorkPath(normalizedPath)
+  const manifest = readPatchWorkManifest(repositoryRoot)
+  const file = manifest.files.find((item) => item.relativePath === normalizedPath)
+  if (!file) {
+    throw new Error(`patch-work 文件未登记，无法读取: ${relativePath}`)
+  }
+
+  return file
+}
+
+export function resolvePatchWorkManifestFilePath(input: {
+  repositoryRoot: string
+  relativePath: string
+}): string {
+  const file = findManifestFileRef(input.repositoryRoot, input.relativePath)
+  return resolvePatchWorkFilePath(input.repositoryRoot, file.relativePath, { mustExist: true })
+}
+
+function resolveRevisionFilePath(
+  repositoryRoot: string,
+  file: PatchWorkFileRef,
+  revision: number,
+): string {
+  if (revision === file.revision) {
+    return resolvePatchWorkManifestFilePath({
+      repositoryRoot,
+      relativePath: file.relativePath,
+    })
+  }
+
+  const revisionPath = [
+    'revisions',
+    file.createdByNode,
+    `${String(revision).padStart(3, '0')}-${basename(file.relativePath)}`,
+  ].join('/')
+  return resolvePatchWorkFilePath(repositoryRoot, revisionPath, { mustExist: true })
+}
+
+function assertRevisionNumber(revision: number): void {
+  if (!Number.isInteger(revision) || revision < 1) {
+    throw new Error('patch-work revision 无效')
+  }
+}
+
+export function readPatchWorkDocumentRevision(input: {
+  repositoryRoot: string
+  relativePath: string
+  revision: number
+}): PatchWorkDocumentRevision {
+  assertRevisionNumber(input.revision)
+  const file = findManifestFileRef(input.repositoryRoot, input.relativePath)
+  if (input.revision > file.revision) {
+    throw new Error(`patch-work revision 不存在: ${file.relativePath}#${input.revision}`)
+  }
+
+  let revisionFilePath = ''
+  try {
+    revisionFilePath = resolveRevisionFilePath(input.repositoryRoot, file, input.revision)
+  } catch (error) {
+    throw new Error(`patch-work revision 不存在: ${file.relativePath}#${input.revision}`, {
+      cause: error,
+    })
+  }
+
+  const content = readFileSync(revisionFilePath, 'utf-8')
+  const actualChecksum = checksum(content)
+  const current = input.revision === file.revision
+  const expectedChecksum = current ? file.checksum : actualChecksum
+  const stat = lstatSync(revisionFilePath)
+
+  return {
+    displayName: file.displayName,
+    relativePath: file.relativePath,
+    revision: input.revision,
+    checksum: expectedChecksum,
+    actualChecksum,
+    content,
+    createdByNode: file.createdByNode,
+    updatedAt: current ? file.updatedAt : stat.mtimeMs,
+    accepted: file.acceptedRevision === input.revision,
+    current,
+    checksumMatches: actualChecksum === expectedChecksum,
+  }
+}
+
+export function listPatchWorkDocumentRevisions(input: {
+  repositoryRoot: string
+  relativePath: string
+}): PatchWorkDocumentRevision[] {
+  const file = findManifestFileRef(input.repositoryRoot, input.relativePath)
+  const revisions: PatchWorkDocumentRevision[] = []
+
+  for (let revision = 1; revision <= file.revision; revision += 1) {
+    try {
+      revisions.push(readPatchWorkDocumentRevision({
+        repositoryRoot: input.repositoryRoot,
+        relativePath: file.relativePath,
+        revision,
+      }))
+    } catch (error) {
+      if (revision === file.revision) {
+        throw error
+      }
+    }
+  }
+
+  return revisions
 }
 
 function reportIdFromRelativePath(relativePath: string): string {

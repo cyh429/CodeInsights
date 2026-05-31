@@ -3,10 +3,11 @@ import type {
   PipelineNodeKind,
   PipelineRecord,
   PipelineStageOutput,
+  PipelineVersion,
 } from '@codeinsights/shared'
 import {
-  PIPELINE_NODE_ORDER,
   getPipelineNodeLabel,
+  getPipelineNodeOrder,
   getPipelineStatusDisplay,
 } from './pipeline-display-model'
 
@@ -196,16 +197,22 @@ function isArtifactRecord(
   return false
 }
 
-function sortGroups(groups: PipelineRecordGroup[]): PipelineRecordGroup[] {
+function sortGroups(
+  groups: PipelineRecordGroup[],
+  version?: PipelineVersion,
+): PipelineRecordGroup[] {
   const order = new Map<PipelineRecordGroup['id'], number>([
     ['task', -1],
-    ...PIPELINE_NODE_ORDER.map((node, index) => [node, index] as const),
+    ...getPipelineNodeOrder(version).map((node, index) => [node, index] as const),
   ])
 
   return [...groups].sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99))
 }
 
-export function buildPipelineRecordGroups(records: PipelineRecord[]): {
+export function buildPipelineRecordGroups(
+  records: PipelineRecord[],
+  options: { version?: PipelineVersion } = {},
+): {
   artifacts: PipelineRecordGroup[]
   logs: PipelineRecord[]
 } {
@@ -232,7 +239,7 @@ export function buildPipelineRecordGroups(records: PipelineRecord[]): {
   }
 
   return {
-    artifacts: sortGroups(artifactGroups),
+    artifacts: sortGroups(artifactGroups, options.version),
     logs,
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import type {
   PipelineCommitterStageOutput,
   PipelinePatchWorkDocumentRef,
+  PipelineSubmissionPlan,
   PipelineTesterStageOutput,
 } from '@codeinsights/shared'
 import {
@@ -98,6 +99,41 @@ function makeTesterOutput(): PipelineTesterStageOutput {
   }
 }
 
+function makeSubmissionPlan(patch: Partial<PipelineSubmissionPlan> = {}): PipelineSubmissionPlan {
+  return {
+    sessionId: 'session-committer-ui',
+    mode: 'local_patch',
+    commitMessage: 'feat(pipeline): read model plan',
+    prTitle: 'Expose read model plan',
+    prBody: '## Summary\n- Use read model',
+    baseBranch: 'main',
+    headBranch: 'feature/read-model-plan',
+    remoteName: 'origin',
+    sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+    candidateFiles: ['src/from-read-model.ts'],
+    excludedFiles: ['patch-work/**', 'patch-work/commit.md'],
+    blockers: [],
+    warnings: ['当前计划来自只读 read model'],
+    localCommit: {
+      attempted: false,
+      status: 'not_requested',
+    },
+    remoteSubmission: {
+      attempted: false,
+      status: 'not_requested',
+      type: 'pull_request',
+      remoteName: 'origin',
+      baseBranch: 'main',
+      headBranch: 'feature/read-model-plan',
+      prTitle: 'Expose read model plan',
+      prBody: '## Summary\n- Use read model',
+      draft: true,
+    },
+    updatedAt: 1,
+    ...patch,
+  }
+}
+
 describe('CommitterPanel', () => {
   test('从 committer stage output 收集 commit.md 和 pr.md 文件引用', () => {
     const refs = collectCommitterPatchWorkRefs(makeCommitterOutput())
@@ -139,6 +175,35 @@ describe('CommitterPanel', () => {
       }),
     ])
     expect(viewModel.documents.map((document) => document.relativePath)).toEqual(['commit.md', 'pr.md'])
+  })
+
+  test('三段式提交计划优先使用 SubmissionPlan read model', () => {
+    const viewModel = buildCommitterPanelViewModel({
+      output: makeCommitterOutput(),
+      testerOutput: makeTesterOutput(),
+      submissionPlan: makeSubmissionPlan(),
+      contents: new Map([
+        ['commit.md', '# Commit 准备'],
+        ['pr.md', '# PR 草稿'],
+      ]),
+      loadingPaths: new Set(),
+      readErrors: new Map(),
+      submitting: false,
+    })
+
+    expect(viewModel.sections.map((section) => section.title)).toEqual([
+      '保存提交材料',
+      '本地 commit',
+      'Draft PR',
+    ])
+    expect(viewModel.commitMessage).toBe('feat(pipeline): read model plan')
+    expect(viewModel.prTitle).toBe('Expose read model plan')
+    expect(viewModel.branchSummary).toBe('main -> feature/read-model-plan')
+    expect(viewModel.commitCandidateItems).toEqual(['src/from-read-model.ts'])
+    expect(viewModel.excludedItems).toEqual(['patch-work/**', 'patch-work/commit.md'])
+    expect(viewModel.remoteTargetSummary).toContain('origin')
+    expect(viewModel.remoteTargetSummary).toContain('feature/read-model-plan')
+    expect(viewModel.planWarnings).toContain('当前计划来自只读 read model')
   })
 
   test('缺少提交材料正文时禁止完成 submission review', () => {
@@ -257,7 +322,6 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: true,
     })
 
     expect(viewModel.statusLabel).toBe('远端 PR 已创建')
@@ -266,7 +330,37 @@ describe('CommitterPanel', () => {
     expect(viewModel.remoteSubmitResult).toContain('https://github.com/example/repo/pull/42')
   })
 
-  test('远端提交必须单独二次确认且依赖已创建的本地 commit', () => {
+  test('远端提交可从草稿进入受控本地 commit 与独立确认态', () => {
+    const draftViewModel = buildCommitterPanelViewModel({
+      output: makeCommitterOutput({
+        submissionStatus: 'draft_only',
+        localCommit: undefined,
+        remoteSubmission: {
+          attempted: false,
+          status: 'not_requested',
+          operationId: 'op-remote-draft-ui',
+          type: 'pull_request',
+          remoteName: 'origin',
+          sanitizedRemoteUrl: 'https://github.com/example/repo.git',
+          baseBranch: 'main',
+          prTitle: 'Add draft submission materials',
+          prBody: '## Summary\n- Add draft submission',
+          draft: true,
+        },
+      }),
+      testerOutput: makeTesterOutput(),
+      contents: new Map([
+        ['commit.md', '# Commit 准备'],
+        ['pr.md', '# PR 草稿'],
+      ]),
+      loadingPaths: new Set(),
+      readErrors: new Map(),
+      submitting: false,
+    })
+
+    expect(draftViewModel.remoteSubmitDisabled).toBe(false)
+    expect(draftViewModel.remoteSubmitWarning).toContain('先创建受控本地 commit')
+
     const baseOutput = makeCommitterOutput({
       submissionStatus: 'local_commit_created',
       localCommit: {
@@ -300,30 +394,14 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: false,
     })
 
-    expect(unconfirmed.remoteSubmitDisabled).toBe(true)
-    expect(unconfirmed.remoteSubmitWarning).toContain('二次确认')
+    expect(unconfirmed.remoteSubmitDisabled).toBe(false)
+    expect(unconfirmed.remoteSubmitWarning).toContain('独立远端写确认')
     expect(unconfirmed.remoteTargetSummary).toContain('origin')
     expect(unconfirmed.remoteTargetSummary).toContain('feature/pipeline-v2')
     expect(unconfirmed.remoteTargetSummary).toContain('abc123def456')
-
-    const confirmed = buildCommitterPanelViewModel({
-      output: baseOutput,
-      testerOutput: makeTesterOutput(),
-      contents: new Map([
-        ['commit.md', '# Commit 准备'],
-        ['pr.md', '# PR 草稿'],
-      ]),
-      loadingPaths: new Set(),
-      readErrors: new Map(),
-      submitting: false,
-      remoteConfirmed: true,
-    })
-
-    expect(confirmed.remoteSubmitDisabled).toBe(false)
-    expect(confirmed.remoteSubmitLabel).toBe('推送并创建 Draft PR')
+    expect(unconfirmed.remoteSubmitLabel).toBe('进入远端写确认')
   })
 
   test('push 已成功但 PR 失败时展示可恢复远端状态', () => {
@@ -363,7 +441,6 @@ describe('CommitterPanel', () => {
       loadingPaths: new Set(),
       readErrors: new Map(),
       submitting: false,
-      remoteConfirmed: true,
     })
 
     expect(viewModel.statusLabel).toBe('远端提交失败')

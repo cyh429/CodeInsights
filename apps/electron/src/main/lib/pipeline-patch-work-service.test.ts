@@ -15,7 +15,9 @@ import {
   acceptPatchWorkDocuments,
   assertPatchWorkDocumentsAcceptable,
   initializePatchWork,
+  listPatchWorkDocumentRevisions,
   listPatchWorkExplorerReports,
+  readPatchWorkDocumentRevision,
   readPatchWorkFile,
   readPatchWorkManifestFile,
   readPatchWorkManifest,
@@ -104,6 +106,103 @@ describe('pipeline-patch-work-service', () => {
     })).toContain('第二版')
     expect(readFileSync(join(repoRoot, 'patch-work', 'revisions', 'planner', '001-plan.md'), 'utf-8')).toContain('第一版')
     expect(readFileSync(join(repoRoot, 'patch-work', 'revisions', 'planner', '002-plan.md'), 'utf-8')).toContain('第二版')
+  })
+
+  test('列出文档 revision 并保留 accepted / current 状态', () => {
+    const first = writePatchWorkFile({
+      contributionTaskId: 'task-1',
+      pipelineSessionId: 'session-1',
+      repositoryRoot: repoRoot,
+      kind: 'dev_doc',
+      createdByNode: 'developer',
+      content: '# 开发文档\n\n第一版\n',
+    })
+    acceptPatchWorkDocuments({
+      repositoryRoot: repoRoot,
+      gateId: 'gate-dev',
+      kinds: ['dev_doc'],
+    })
+    const second = writePatchWorkFile({
+      contributionTaskId: 'task-1',
+      pipelineSessionId: 'session-1',
+      repositoryRoot: repoRoot,
+      kind: 'dev_doc',
+      createdByNode: 'developer',
+      content: '# 开发文档\n\n第二版\n',
+    })
+
+    const revisions = listPatchWorkDocumentRevisions({
+      repositoryRoot: repoRoot,
+      relativePath: 'dev.md',
+    })
+
+    expect(revisions.map((revision) => revision.revision)).toEqual([1, 2])
+    expect(revisions[0]).toMatchObject({
+      relativePath: 'dev.md',
+      revision: first.revision,
+      accepted: true,
+      current: false,
+      checksumMatches: true,
+    })
+    expect(revisions[0]?.content).toContain('第一版')
+    expect(revisions[1]).toMatchObject({
+      relativePath: 'dev.md',
+      revision: second.revision,
+      accepted: false,
+      current: true,
+      checksum: second.checksum,
+      checksumMatches: true,
+    })
+    expect(revisions[1]?.content).toContain('第二版')
+  })
+
+  test('读取当前 revision 时标记 checksum mismatch', () => {
+    const ref = writePatchWorkFile({
+      contributionTaskId: 'task-1',
+      pipelineSessionId: 'session-1',
+      repositoryRoot: repoRoot,
+      kind: 'implementation_plan',
+      createdByNode: 'planner',
+      content: '# 开发方案\n\n原始内容\n',
+    })
+    writeFileSync(join(repoRoot, 'patch-work', 'plan.md'), '# 开发方案\n\n外部修改\n', 'utf-8')
+
+    const revision = readPatchWorkDocumentRevision({
+      repositoryRoot: repoRoot,
+      relativePath: 'plan.md',
+      revision: ref.revision,
+    })
+
+    expect(revision).toMatchObject({
+      relativePath: 'plan.md',
+      revision: ref.revision,
+      checksum: ref.checksum,
+      checksumMatches: false,
+      current: true,
+    })
+    expect(revision.actualChecksum).toBe(sha256('# 开发方案\n\n外部修改\n'))
+    expect(revision.content).toContain('外部修改')
+  })
+
+  test('revision 读取拒绝 unsafe relativePath 和不存在的版本', () => {
+    writePatchWorkFile({
+      contributionTaskId: 'task-1',
+      pipelineSessionId: 'session-1',
+      repositoryRoot: repoRoot,
+      kind: 'implementation_plan',
+      createdByNode: 'planner',
+      content: '# 开发方案\n',
+    })
+
+    expect(() => listPatchWorkDocumentRevisions({
+      repositoryRoot: repoRoot,
+      relativePath: '../secret.md',
+    })).toThrow('patch-work 文件路径越界')
+    expect(() => readPatchWorkDocumentRevision({
+      repositoryRoot: repoRoot,
+      relativePath: 'plan.md',
+      revision: 99,
+    })).toThrow('patch-work revision 不存在')
   })
 
   test('支持所有 Phase 1 固定 Markdown 文件', () => {

@@ -300,7 +300,7 @@ describe('Agent runtime event contract', () => {
       sequence: 1,
       createdAt,
       source: 'opencode_server',
-      event: { type: 'run_completed', resultSubtype: 'success', terminalReason: 'completed' },
+      event: { type: 'run_completed', resultSubtype: 'success', terminalReason: 'completed', usage: {} },
     })
     const secondRunPermission = createAgentStreamEnvelope({
       sessionId,

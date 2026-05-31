@@ -1,0 +1,1027 @@
+# Pipeline 模式 v1 优化开发跟踪清单
+
+> 日期：2026-05-28
+> 依据方案：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`
+> 适用范围：当前 Pipeline v2 六阶段贡献工作流的可靠性、可见性、审核体验、提交安全和可维护性优化。
+> 说明：本文中的 v1 指“优化方案版本”，不是旧 `PipelineVersion = 1` 会话协议。
+
+## 最新开发状态
+
+> 更新时间：2026-05-30
+> 当前分支：`pipeline-improve`
+> 最新开发基线：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`；上一稳定基线：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
+> 最新已确认恢复入口：`81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`；Phase 8 开发基线为 `fb864d6a`，上一恢复入口为 `ab34910c`。
+> 当前结论：Phase 0 清理与对齐、Phase 1 Preflight 主路径、Phase 2 PipelineView 拆分、Phase 3 Patch-work Document Workbench、Phase 4 Contribution Dashboard 与 Submission Plan、Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备、Phase 7 Report Export Markdown MVP、Phase 8 Report Export HTML / PDF 增强已完成并通过本地验收。本轮完整客户端验证已通过全量测试、类型检查、锁文件 dry-run、Electron 构建、当前平台 unpacked 打包、Pipeline fixture packaged smoke、Agent history reload UI smoke 和 opencode 非模型 smoke；真实 GitHub remote PR smoke 因未获得用户明确授权仍为 `[!]` 未验证，真实模型、DMG / installer 和非 macOS arm64 packaged smoke 仍不在本机验收结论内；根 `README.md` / 根 `AGENTS.md` 仍需用户允许后再同步。
+
+### 当前阶段完成状态
+
+- [x] 完成 Pipeline v1 优化方案文档：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-optimization-plan.md`。
+- [x] 完成 Pipeline v1 开发跟踪清单：`docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`。
+- [x] 完成阶段提交习惯同步：`tasks/lessons.md` 已记录“重新启动 Codex 会话后也要主动检查已完成但未提交阶段成果”。
+- [x] 已按阶段提交成果：
+  - `ae5c85ba docs(pipeline): 完善 Pipeline v1 优化方案`
+  - `3c754ac6 docs(pipeline): 新增 Pipeline v1 开发跟踪清单`
+  - `3ce1402e docs(tasks): 同步阶段提交长期习惯`
+  - `ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`
+  - `ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`
+  - `0102ed09 docs(pipeline): 同步 Phase 1 后续开发状态`
+  - `dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`
+  - `6c54f71b docs(pipeline): 同步 Phase 2 后续开发状态`
+  - `24562792 docs(pipeline): 补齐 Phase 2 最新恢复状态`
+  - `4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`
+  - `009ba970 docs(pipeline): 同步 Phase 3 后续开发状态`
+  - `420da2b2 docs(pipeline): 补齐 Phase 3 状态同步入口`
+  - `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`
+  - `9b4c8837 docs(pipeline): 同步 Phase 4 后续开发状态`
+  - `a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`
+  - `07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
+  - `d71e13af docs(pipeline): 同步 Phase 6 后续开发状态`
+  - `d007eb84 docs(pipeline): 回填 Phase 6 最新恢复状态`
+  - `70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`
+  - `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`
+  - `b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态`
+  - `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`
+  - `c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`
+  - `7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`
+  - `e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`
+  - `b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`
+  - `c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`
+  - `f687166c docs(pipeline): 同步 c75e132f 最新开发状态`
+  - `da6961de docs(pipeline): 校正 f687166c 恢复入口状态`
+  - `ab34910c docs(pipeline): 同步 da6961de 最新开发状态`
+  - `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`
+- [x] 已确认根 `README.md` / 根 `AGENTS.md` 不在本阶段修改范围内。
+- [x] Phase 0：清理与对齐。
+  - Records 阶段过滤已按 `PipelineVersion` 区分，v2 显示 `committer` / “提交”，v1 和缺失 version 的旧会话保持五节点。
+  - `pipeline-record-view-model` artifact group 排序已显式使用 `getPipelineNodeOrder(version)`，v2 `committer` 稳定排在 `tester` 后。
+  - 已新增 `openPipelinePatchWorkDir(sessionId)` shared IPC / preload / main handler / service / Tester / Committer UI 入口；Renderer 只传 `sessionId`，main 端重新解析 repo 内 `patch-work/`。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.50`、`@codeinsights/electron` 到 `0.0.122`，并同步 `bun.lock`。
+- [x] Phase 1：Preflight 主路径。
+  - 已新增 repository preflight shared 契约 / IPC / preload API：`PipelineRunPreflightInput`、`PipelinePreflightAcknowledgement`、`RUN_PREFLIGHT`、`window.electronAPI.runPipelinePreflight()`。
+  - `runPipelinePreflight()` 已返回 `checkedAt` / `fingerprint`，fingerprint 纳入 HEAD / dirty status digest，并对 credentialed remote URL、query/hash token、Authorization 和 runtime diagnostic 做脱敏。
+  - `PipelineService.start()` 已对 v2 会话服务端复验 preflight；blocker 和未确认 / 过期 warning acknowledgement 都会阻断 Graph invoke。
+  - Renderer 启动前展示 `PipelinePreflightPanel`，blocker 禁止启动但可重新检查，warning 需用户明确点击“记录风险继续”。
+  - warning acknowledgement 匹配服务端最新 fingerprint / warning code 后，会由服务端重写审计时间并写入 `preflight_completed` ContributionTask event。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.51`、`@codeinsights/electron` 到 `0.0.123`，并同步 `bun.lock`。
+- [x] Phase 2：PipelineView 拆分。
+  - 已新增 `pipeline-gate-panel-model.ts`、`PipelineGateSidePanel.tsx`、`usePipelineRecordsTail.ts`、`usePipelineSessionSnapshot.ts`、`usePipelinePatchWorkDocuments.ts`、`usePipelineExplorerReports.ts`、`usePipelineGateActions.ts`，将 records tail、session snapshot、patch-work 文档读取、explorer reports、gate action 和 gate 面板选择从 `PipelineView` 拆出。
+  - 已收敛 Phase 1 遗留项：preflight result 超过 60 秒或 workspace 变化后显示“启动前检查需要刷新”，清空旧 acknowledgement 复用路径，并禁用 Composer 直接启动。
+  - 已按规则递增 `@codeinsights/electron` 到 `0.0.124`，并同步 `bun.lock`。
+- [x] Phase 3：Patch-work Document Workbench。
+  - 已新增 patch-work revision read model、`LIST_PATCH_WORK_REVISIONS` / `READ_PATCH_WORK_REVISION` IPC 和受控 `OPEN_PATCH_WORK_FILE` 入口，Renderer 只传 `sessionId`、`relativePath`、`revision`。
+  - 已新增统一只读 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text、revision selector、current / accepted badge、checksum mismatch / read error、current vs accepted 对比。
+  - 已接入 `ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel`，并保留既有审核 / 提交流程的保守阻断条件。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.52`、`@codeinsights/electron` 到 `0.0.125`，并同步 `bun.lock`。
+- [x] Phase 4：Contribution Dashboard 与 Submission Plan。
+  - 已新增 `ContributionTaskSummary` / `PipelineSubmissionPlan` shared 契约、`GET_CONTRIBUTION_TASK_SUMMARY` / `GET_SUBMISSION_PLAN` IPC、preload API 和 `pipeline-read-model-service.ts`。
+  - read model 只接受 `sessionId`，从 ContributionTask、events、stage outputs、patch-work manifest 和本地 Git 只读状态重建 summary / submission plan；不调用远端 preflight，不执行 `git commit` / `git push` / `gh`。
+  - summary 读取缺失 `patch-work/` 时不会创建目录；repository URL、PR URL、error、blocker、warning 等新 IPC 返回面已统一脱敏。
+  - 已新增 `ContributionTaskDashboard` 和 summary / submission plan hooks，并在 `PipelineView` 中展示 task、repo、branch、mode、patch-work、commit、PR 与最近事件。
+  - `CommitterPanel` 已改为“保存提交材料 / 本地 commit / Draft PR”三段式展示，优先使用 `PipelineSubmissionPlan`，并明确展示 candidate files、excluded files、blockers、warnings 和远端恢复状态。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.53`、`@codeinsights/electron` 到 `0.0.126`，并同步 `bun.lock`。
+- [x] Phase 5：远端写确认与 GitHub 增强。
+  - 已将 remote PR 路径从 `submission_review` 内的 checkbox 提升为独立 `remote_write_confirmation` gate；`submission_review(remote_pr)` 只创建确认状态，不执行 `git push` 或创建 PR。
+  - Service 端按 pending gate kind 记录决策并拒绝 `response.kind` 不匹配；远端确认会复验 operation id、commit hash、remote/base/head、`patch-work/**` tree/range 防护和风险确认。
+  - 远端提交结果支持 created / pushed / failed 可回放；push 成功但 PR 创建失败后可用同一 operation id 走 `skipPush` 只重试 PR 创建，并在复用前重新校验 commit 与分支上下文。
+  - GitHub API 路径已接入 production service 默认 runner，token 只从 `CODEINSIGHTS_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN` 环境变量读取，不持久化。
+  - existing PR 检测在 push 前执行，按 repo、head owner/head branch、base branch 校验；命中时不静默覆盖、不执行 push，并返回脱敏可恢复状态。
+  - `RemoteWriteConfirmationPanel` 已接入独立风险确认 UI；`CommitterPanel` Draft PR 动作只进入确认态，恢复路径展示 pushed / existing PR 状态。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.54`、`@codeinsights/electron` 到 `0.0.127`，并同步 `bun.lock`。
+- [x] Phase 6：真实端到端验收与交付准备。
+  - 新增 deterministic fixture runner 和显式 `CODEINSIGHTS_PIPELINE_FIXTURE_RUNNER=1` 门禁，fixture 模式跳过真实 Claude / Codex CLI preflight，但继续复用真实 Pipeline service / graph / checkpointer / patch-work / Git submission 路径。
+  - 新增 `pipeline-smoke.test.ts`，覆盖 draft-only、local commit 和 mock remote confirmation；draft-only 不产生 commit，local commit 只提交候选源码并排除 `patch-work/**`，mock remote path 必须经过独立 `remote_write_confirmation`。
+  - 新增 `smoke:pipeline-fixture` packaged smoke，通过 CDP + preload IPC 验证当前平台 unpacked app 的 draft-only / local commit 主路径。
+  - 已按规则递增 `@codeinsights/electron` 到 `0.0.128`，并同步 `bun.lock`；`packages/shared` 未改动。
+- [x] Phase 7：Report Export Markdown MVP。
+  - 已新增 `PipelineReportExport` / `PipelineReportExportInput` shared 契约、`EXPORT_REPORT` IPC、preload API 和 `PipelineService.exportPipelineReport()`。
+  - 报告导出只从 ContributionTask、events、Pipeline records、stage artifacts 和 patch-work manifest 读取事实源；不触发 graph、Git precondition、真实远端写、token / GitHub 凭证读取。
+  - Markdown 报告覆盖任务、仓库与分支、阶段摘要、Patch-set、提交 / PR、patch-work 和人工审核审计；draft-only 不伪造 commit 或 PR，local commit / mock remote confirmation 从已持久化 events 汇总。
+  - Renderer 已新增 `PipelineReportExportPanel`，支持生成、复制 Markdown 和保存 `.md`，并接入 `PipelineView` 的 v2 Contribution Dashboard 区域。
+  - 报告 Markdown、顶层 `title` 和 `fileName` 均复用脱敏策略，覆盖 credentialed URL、token、Authorization / Bearer 片段。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.55`、`@codeinsights/electron` 到 `0.0.129`，并同步 `bun.lock`。
+- [x] Phase 8：Report Export HTML / PDF 增强。
+  - 在 Phase 7 Markdown MVP 之上新增同源安全 HTML、`.html` 保存、main 端 PDF 保存 IPC 和 `printToPDF` 服务。
+  - PDF 保存只接受 `sessionId`，main 端重新生成报告，不信任 Renderer 传入任意 HTML 或本地路径。
+  - 报告脱敏已覆盖 Markdown、HTML、title、`.md` / `.html` / `.pdf` 文件名、Authorization、短 Bearer token、JWT-like token 和 credentialed URL。
+  - patch-work manifest 读取增加只读 `create:false` 路径，报告导出和 PDF 保存不会因为缺失 `patch-work/` 创建目录。
+  - PDF 渲染窗口关闭 nodeIntegration / webview / JavaScript，阻断导航和 http / https / file / ftp / ws / wss 子资源。
+  - 已按规则递增 `@codeinsights/shared` 到 `0.1.56`、`@codeinsights/electron` 到 `0.0.130`，并同步 `bun.lock`。
+- [x] 2026-05-30 完整客户端验证。
+  - 全量 `bun run test` 已切换到 `bun test --isolate` 并通过 768 pass / 0 fail，避免跨文件 mock / module state 污染；`packages/shared/src/agent/runtime-events.test.ts` 已补齐 `run_completed` fixture 的 `usage` 字段。
+  - 已通过 `bun run typecheck`、`bun install --frozen-lockfile --dry-run`、`bun run electron:build`、`bun run --filter='@codeinsights/electron' pack`。
+  - 当前平台 macOS arm64 unpacked app 已通过 `smoke:pipeline-fixture` 的 draft-only / local-commit 主路径，以及 `smoke:agent-history-reload-ui` 的 first-open / reopen。
+  - opencode 已通过非模型 smoke：`binary`、`server`、`config`、`permission`、`abort`、`resume`、`mcp`；未把 `readonly`、`channel`、`native`、`packaged` 伪装为已验证。
+  - 已按规则递增根 package 到 `0.1.2`、`@codeinsights/shared` 到 `0.1.57`，并同步 `bun.lock`。
+
+### 已完成
+
+- [x] Phase 6：真实端到端验收与交付准备。
+- [x] Phase 7：Report Export Markdown MVP。
+- [x] Phase 8：Report Export HTML / PDF 增强。
+- [x] 2026-05-30 完整客户端验证。
+
+### 当前未完成的关键能力
+
+- [ ] [!] 真实 GitHub remote PR smoke 未授权未验证；真实模型 Agent / runtime smoke、DMG / installer 和非 macOS arm64 平台 packaged smoke 未在本机验证。
+- [ ] 根 `README.md` / 根 `AGENTS.md` 公开文档同步需用户明确允许后再修改。
+
+### 下次启动入口
+
+下次启动 Codex 后先执行以下动作：
+
+1. 读取 `tasks/lessons.md`，特别是阶段提交、Pipeline patch-work 路径安全、Git 防护、stop 后副作用、Codex secret 注入、测试隔离和状态同步习惯。
+2. 读取本文和优化方案文档，确认当前状态是“Phase 0、Phase 1、Phase 2、Phase 3、Phase 4、Phase 5、Phase 6、Phase 7、Phase 8 已完成；2026-05-30 完整客户端验证已通过本机自动化范围；真实 GitHub remote PR smoke gated 且未授权未验证”。
+3. 运行 `git status --short --branch` 和 `git log -12 --oneline`，确认没有未提交改动，并确认最近历史包含 `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`、`ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态`、`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`、`b4ed7b1e docs(pipeline): 回填 Phase 7 最新恢复状态` 和 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`。
+4. 如果用户明确授权真实 GitHub remote smoke，先确认授权范围和凭证条件，再运行；授权前不读取 token、不 push、不创建真实 PR。
+5. 如果用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；否则只在 docs/improve 和任务记录中维护状态。
+
+## 使用规则
+
+后续 Pipeline 优化开发必须以本文为执行入口。每次开始新阶段时，先在 `tasks/todo.md` 写本阶段计划；阶段完成后在本文对应阶段勾选、追加阶段 Review，并单独提交该阶段相关文件。
+
+### 强制规则
+
+- [ ] 每个阶段开始前，先确认上一阶段已满足完成定义。
+- [ ] 每个阶段开始前，在 `tasks/todo.md` 写清本轮范围、文件边界、验证命令和不做事项。
+- [ ] 每个阶段必须先补或更新测试，再实现功能；确实无法测试的 UI 行为必须写明验证替代方案。
+- [ ] 每个阶段完成后，必须运行本阶段验证命令和 `git diff --check`。
+- [ ] 每个阶段完成后，必须在 `tasks/todo.md` 追加 Review，并在本文对应阶段记录验证结果。
+- [ ] 每个阶段完成后必须单独提交，提交范围只包含本阶段相关文件。
+- [ ] 未经用户明确要求，不 push、不创建 PR、不执行真实远端写。
+- [ ] 不默认纳入 `patch-work/**`、`.DS_Store`、临时产物、截图大文件或无关改动。
+- [ ] 修改功能代码时，受影响 package 的 patch version 必须递增，并同步 `bun.lock`。
+- [ ] 根 `README.md` 和根 `AGENTS.md` 只有在用户明确允许后才同步。
+- [ ] 状态管理继续使用 Jotai；不引入 localStorage 作为主状态源，不引入本地数据库。
+- [ ] 注释、日志和用户可见错误优先中文，保留必要英文技术术语。
+
+### 状态标记
+
+| 标记 | 含义 |
+|------|------|
+| `[ ]` | 未开始 |
+| `[x]` | 已完成并通过该项验证 |
+| `[!]` | 阻塞，需要在阶段 Review 写明 blocker |
+
+### 全局不变量
+
+- [ ] 旧会话兼容：缺失 `version` 的历史 Pipeline 会话仍按 v1 五节点处理。
+- [ ] 新建 Pipeline 入口仍默认创建 `PipelineVersion = 2`。
+- [ ] v2 StageRail / Records / Gate 面板对 `committer` 可见。
+- [ ] Agent / Codex runner 不直接执行真实 `git commit`、`git push`、`gh pr create`。
+- [ ] 本地 commit 和远端 PR 只能由 `PipelineService` 在人工确认后执行。
+- [ ] `patch-work/**` 默认永远不进入 patch-set、commit、push 或 PR。
+- [ ] patch-work 路径安全必须使用 realpath / lstat / symlink 检查，不只做词法路径判断。
+- [ ] Stop / abort 后，runner 在写本地文件或发送 `node_complete` 前必须再次检查 signal。
+- [ ] Tester 证据保守处理：缺失、空 evidence、failed、skipped 不能被 `passed: true` 覆盖。
+- [ ] 错误、records、diagnostics、task events 不得泄露 token、Authorization header、credentialed remote URL。
+
+## 里程碑总览
+
+| 里程碑 | 阶段 | 目标 | 初始状态 |
+|--------|------|------|----------|
+| M0 | Phase 0 | 清理与对齐：Records v2 committer、patch-work 入口、shared 注释 | [x] |
+| M1 | Phase 1 | Preflight 主路径：IPC / UI / start guard | [x] |
+| M2 | Phase 2 | PipelineView 拆分：hook / view model / 行为不变 | [x] |
+| M3 | Phase 3 | Patch-work Document Workbench：revision / diff / 统一文档查看 | [x] |
+| M4 | Phase 4 | Contribution Dashboard + Submission Plan | [x] |
+| M5 | Phase 5 | 远端写确认 + GitHub 增强 | [x] |
+| M6 | Phase 6 | 端到端验收、打包 smoke、公开文档准备 | [x] |
+| M7 | Phase 7 | Report Export Markdown MVP | [x] |
+| M8 | Phase 8 | Report Export HTML / PDF 增强 | [x] |
+
+## Phase 0：清理与对齐
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] 实现完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+关闭低风险但高可见性的 v2 漂移问题，不改变 Graph、runner 和提交逻辑。
+
+### 入口条件
+
+- [x] 已阅读 v1 优化方案的“最小可交付切片”。
+- [x] 当前工作树无无关未提交改动，或已确认只会 stage 本阶段文件。
+- [x] 明确本阶段不接入完整 Preflight Center，不拆 PipelineView 主体。
+
+### 测试任务
+
+- [x] 在 `PipelineRecords.test.ts` 增加 v2 阶段过滤包含 `committer` 的测试。
+- [x] 在 `pipeline-record-view-model.test.ts` 增加 v2 artifact group 中 `committer` 排在 `tester` 后的测试。
+- [x] 增加 v1 兼容测试：旧会话或 `version=1` 不显示 `committer` filter。
+- [x] 为 `openPipelinePatchWorkDir` 增加 main IPC 或 service 聚焦测试。
+
+### 实现任务
+
+- [x] `PipelineRecords.tsx`：把 `STAGE_FILTERS` 改成 version-aware builder。
+- [x] `PipelineRecords.tsx`：新增 `version?: PipelineVersion` prop。
+- [x] `PipelineView.tsx`：向 `PipelineRecords` 传 `session?.version ?? state?.version`。
+- [x] `pipeline-record-view-model.ts`：`buildPipelineRecordGroups(records, { version })` 使用 `getPipelineNodeOrder(version)`。
+- [x] `pipeline-record-experience-model.ts`：检查 stage focus / external filter 对 `committer` 的支持。
+- [x] `packages/shared/src/types/pipeline.ts`：检查 Pipeline 相关历史注释，清理明显过期说明；不改行为。
+- [x] `PIPELINE_IPC_CHANNELS`：新增 `OPEN_PATCH_WORK_DIR`。
+- [x] `pipeline-handlers.ts`：新增打开仓库内 `patch-work/` 的 handler，路径来自 `PipelineService`，不能由 Renderer 传任意路径。
+- [x] `preload/index.ts`：暴露 `openPipelinePatchWorkDir(sessionId)`。
+- [x] `TesterResultBoard.tsx` / `CommitterPanel.tsx`：增加“打开 patch-work 目录”入口。
+
+### 触达文件
+
+- [x] `packages/shared/src/types/pipeline.ts`
+- [x] `apps/electron/src/main/ipc/pipeline-handlers.ts`
+- [x] `apps/electron/src/preload/index.ts`
+- [x] `apps/electron/src/main/lib/pipeline-service.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineRecords.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/TesterResultBoard.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/CommitterPanel.tsx`
+- [x] 相关测试文件
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts
+```
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] v2 Records filter 显示 explorer / planner / developer / reviewer / tester / committer。
+- [x] v1 Records filter 不显示 committer。
+- [x] committer artifact group 排序稳定在 tester 之后。
+- [x] Tester / Committer 面板可以打开 repo 内 `patch-work/`。
+- [x] 没有改动 Graph、runner、Git submission 行为。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不引入新的 Preflight UI。
+- [x] 不新增真实 Git 写操作。
+- [x] 不改远端 PR 行为。
+- [x] 不把 `patch-work/**` 纳入提交候选。
+
+### 阶段 Review 模板
+
+```markdown
+## Phase 0 Review
+
+- 主要变更：
+- 验证命令：
+- 兼容性确认：
+- 未完成项：
+- 提交：
+```
+
+## 2026-05-29 Pipeline v1 Phase 0 Review
+
+- 阶段范围：清理与对齐；仅修复 Records v2 committer 可见性 / 排序、新增打开 repo 内 `patch-work/` 的受控入口、清理 shared 类型注释。
+- 主要变更：`PipelineRecords` 阶段过滤改为 version-aware；`PipelineView` 向 Records 传入版本；record group / stage focus / Markdown report 支持 version-aware 分组；新增 `OPEN_PATCH_WORK_DIR`、`openPipelinePatchWorkDir(sessionId)`、`PipelineService.getPatchWorkDir(sessionId)` 和 Tester / Committer 面板入口。
+- 触达文件：`packages/shared/src/types/pipeline.ts`、`apps/electron/src/main/ipc/pipeline-handlers.ts`、`apps/electron/src/preload/index.ts`、`apps/electron/src/main/lib/pipeline-service.ts`、`apps/electron/src/main/lib/pipeline-patch-work-service.ts`、Pipeline Records / Tester / Committer 组件与测试、workspace package versions、`bun.lock`、本文和 next-session prompt。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-view-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-experience-model.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`。
+- 兼容性确认：缺失 `version` 或 `version=1` 的旧会话仍只显示五阶段 filter；已存在的 committer 记录不被丢弃；Graph、runner、Git submission 和远端 PR 行为未修改。
+- 安全确认：Renderer 只传 `sessionId`；main 端通过 ContributionTask 的 `repositoryRoot` 重新解析 `repoRoot/patch-work`；`resolvePatchWorkDir` 继续做 realpath / lstat / symlink 检查，并拒绝非目录路径。
+- 未完成项 / [!]：Preflight 主路径、PipelineView 拆分、Patch-work Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
+- 阶段提交：`ca1bcf77 feat(pipeline): 完成 Pipeline v1 Phase 0 清理与对齐`。
+
+## Phase 1：Preflight 主路径
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] shared / IPC / preload 完成
+- [x] main service 完成
+- [x] renderer UI 完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+把已有 `runPipelinePreflight()` 接入产品主路径：Renderer 启动前可见，`PipelineService.start()` 服务端复验 blocker。
+
+### 入口条件
+
+- [x] Phase 0 已完成并提交。
+- [x] 已确认 Codex SDK 模式和 CLI 模式的 runtime 检查语义。
+- [x] 已明确 warning acknowledgement 只对当前 preflight fingerprint 有效。
+
+### 契约任务
+
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PipelineRunPreflightInput`。
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PipelinePreflightAcknowledgement` 或等价字段。
+- [x] `packages/shared/src/types/pipeline.ts`：新增 `PIPELINE_IPC_CHANNELS.RUN_PREFLIGHT`。
+- [x] 明确 `PipelinePreflightRuntimeKind` 是否需要拆分 `codex-sdk-auth` / `codex-cli`。
+- [x] 明确 warning code 白名单，拒绝前端传入未知 warning code。
+- [x] `PipelineRunPreflightInput` 只暴露 `sessionId` / `workspaceId`，不允许 Renderer 传入任意 repository path 或 require override。
+
+### 后端任务
+
+- [x] `pipeline-service.ts`：新增 `runPreflight(input)`。
+- [x] `pipeline-service.ts`：`start()` 解析 workspace session path 后执行服务端 preflight。
+- [x] `pipeline-service.ts`：blocker 阻断 Graph invoke。
+- [x] `pipeline-service.ts`：warning acknowledgement 与 fingerprint 不匹配时要求重新确认。
+- [x] `pipeline-service.ts`：重复 / 未知 warning code 会阻断启动；服务端重写 acknowledgement 审计时间。
+- [x] `pipeline-service.ts`：写入 Pipeline record 或 status/error record，便于审计。
+- [x] `contribution-task-service.ts`：写入 `preflight_completed` event。
+- [x] `pipeline-preflight-service.ts`：补齐 runtime 检查缺口和错误脱敏。
+- [x] `pipeline-handlers.ts`：注册 `RUN_PREFLIGHT`。
+- [x] `preload/index.ts`：暴露 `runPipelinePreflight()`。
+
+### 前端任务
+
+- [x] `pipeline-atoms.ts`：新增 `pipelinePreflightResultAtom`。
+- [x] `pipeline-atoms.ts`：新增 warning acknowledgement atom。
+- [x] 新增 `PipelinePreflightPanel.tsx`。
+- [x] `PipelinePreflightPanel` 展示 Repository / Runtime / Package Manager / Blockers / Warnings。
+- [x] `PipelineView.tsx` 或 `usePipelinePreflight()`：启动前自动运行 preflight。
+- [x] blocker 禁用启动按钮。
+- [x] blocker 修复后可通过 `PipelinePreflightPanel` 重新检查。
+- [x] warning 需要用户明确“记录风险继续”。
+- [x] preflight 早退不会清空用户输入。
+- [x] 渠道 / 工作区错误仍能跳转设置页。
+- [ ] preflight result 超过 60 秒或 workspace 变化后标记“需要刷新”。
+
+### 测试任务
+
+- [x] `pipeline-preflight-service.test.ts`：Git root 不存在。
+- [x] `pipeline-preflight-service.test.ts`：非 Git root。
+- [x] `pipeline-preflight-service.test.ts`：Git conflict blocker。
+- [x] `pipeline-preflight-service.test.ts`：dirty worktree warning。
+- [x] `pipeline-preflight-service.test.ts`：dirty 文件集合变化会改变 fingerprint。
+- [x] `pipeline-preflight-service.test.ts`：remote URL query/hash token、Authorization / token diagnostic 脱敏。
+- [x] `pipeline-preflight-service.test.ts`：Claude / Codex runtime 缺失。
+- [x] `pipeline-service.test.ts`：start 遇 blocker 不调用 Graph。
+- [x] `pipeline-service.test.ts`：warning acknowledgement 通过后可启动。
+- [x] `pipeline-service.test.ts`：过期 fingerprint、重复 / 未知 warning code 不调用 Graph。
+- [x] `pipeline-service.test.ts`：RUN_PREFLIGHT 忽略 renderer 传入的 repositoryRoot / require override。
+- [x] `pipeline-service.test.ts`：`preflight_completed` event 二次脱敏且服务端生成审计时间。
+- [x] `pipeline-preflight.test.ts`：渠道 / 工作区错误保持原行为。
+- [x] `PipelinePreflightPanel.test.tsx`：blocker / warning / runtime status 展示。
+- [x] `PipelineComposer.test.ts`：preflight 阻断或等待风险确认时不清空输入。
+
+### 触达文件
+
+- [x] `packages/shared/src/types/pipeline.ts`
+- [x] `apps/electron/src/main/lib/pipeline-preflight-service.ts`
+- [x] `apps/electron/src/main/lib/pipeline-service.ts`
+- [x] `apps/electron/src/main/ipc/pipeline-handlers.ts`
+- [x] `apps/electron/src/preload/index.ts`
+- [x] `apps/electron/src/renderer/atoms/pipeline-atoms.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] 相关测试文件
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+git diff --check -- packages/shared apps/electron tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] Renderer 启动前能显示 repository / runtime preflight 结果。
+- [x] blocker 禁止启动，Service start 也会阻断。
+- [x] warning 可以人工接受，接受记录可审计。
+- [x] 服务端不会信任前端传回的旧 preflight result。
+- [x] Renderer 不能通过 preflight IPC 探测任意本地路径。
+- [x] preflight 错误不泄露 secret。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不绕过服务端 preflight。
+- [x] 不把 warning 当 blocker 一概阻断。
+- [x] 不在 Renderer 直接运行 shell 检查。
+- [x] 不把真实 token、auth header、credentialed remote URL 写入 records。
+
+## 2026-05-29 Pipeline v1 Phase 1 Review
+
+- 阶段范围：Preflight 主路径；仅接入 repository preflight IPC / preload / Renderer / `PipelineService.start()` 守卫与 warning acknowledgement 审计。
+- 主要变更：shared 新增 `PipelineRunPreflightInput`、`PipelinePreflightAcknowledgement`、`PipelinePreflightResult.checkedAt/fingerprint` 和 `RUN_PREFLIGHT`；main handler / preload 暴露 `runPipelinePreflight()`；`PipelineService.start()` 在 v2 会话进入 Graph 前服务端复验 preflight，blocker、未确认 warning 与过期 warning acknowledgement 均阻断；Renderer 新增 `PipelinePreflightPanel`、重新检查入口和 Jotai preflight state。
+- 审计与安全：warning acknowledgement 只对最新 fingerprint 和 warning code 有效；匹配后由服务端重写 `acknowledgedAt` 并写入 `preflight_completed` ContributionTask event；fingerprint 纳入 HEAD / dirty status digest；RUN_PREFLIGHT IPC 不接受 renderer 路径 / require override；credentialed remote URL、query/hash token、Authorization / token / api key 形态诊断已脱敏。
+- 兼容性确认：渠道 / 工作区配置错误仍走原 `resolvePipelineRunConfig()` 和设置跳转；旧 v1 会话不强制 repository preflight；未修改 Graph、runner、Git submission 或真实远端写路径。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：Phase 1 当时遗留的 preflight result 超过 60 秒或 workspace 变化后的“需要刷新”显式标记已在 Phase 2 收敛；Phase 3-6 仍未开始。
+- 阶段提交：`ff515a01 feat(pipeline): 完成 Pipeline v1 Phase 1 Preflight 主路径`。
+
+## Phase 2：PipelineView 拆分
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] 测试先行完成
+- [x] hooks 拆分完成
+- [x] UI 行为回归完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+在保持行为不变的前提下，把 `PipelineView.tsx` 从全能组件拆成布局层 + hooks + side panel，降低后续功能叠加风险。
+
+### 入口条件
+
+- [x] Phase 1 已完成并提交。
+- [x] 已列出现有 `PipelineView` 行为快照：records loading、document loading、gate respond、stop/restart、settings jump。
+- [x] 明确本阶段不引入 Document Workbench 主体验。
+
+### 拆分任务
+
+- [x] 新增 `usePipelineSessionState(sessionId)` 的等价实现：`usePipelineSessionSnapshot.ts`。
+- [x] 新增 `usePipelineRecords(sessionId)` 的等价实现：`usePipelineRecordsTail.ts`。
+- [x] 新增 `usePatchWorkDocuments(sessionId, refs)` 的等价实现：`usePipelinePatchWorkDocuments.ts`。
+- [x] 新增 `usePipelineGateActions(sessionId, pendingGate)` 的等价实现：`usePipelineGateActions.ts`。
+- [x] 新增 `usePipelinePreflight(sessionId, workspaceId)` 的等价 freshness helper：`getPipelinePreflightRefreshState()` + `PipelinePreflightPanel`。
+- [x] 新增 `PipelineGateSidePanel.tsx`。
+- [x] `PipelineView.tsx` 只保留布局组合、状态传递和少量事件 wiring。
+- [x] 保留现有 error display、failure card、live output、settings jump 行为。
+- [x] 保留 stop 乐观状态和失败回滚行为。
+
+### 测试任务
+
+- [x] `usePipelineRecords`：session 切换不串数据。
+- [x] `usePipelineRecords`：refresh 后按 cursor 追赶 records。
+- [x] `usePatchWorkDocuments`：同 checksum 缓存、不重复读取。
+- [x] `usePatchWorkDocuments`：session 切换清空旧 loading / error。
+- [x] `usePipelineGateActions`：approve / reject / rerun / select task 参数正确。
+- [x] `PipelineGateSidePanel`：按 gate kind 选择正确面板。
+- [x] 现有 panel 测试全部通过。
+
+### 触达文件
+
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineView.tsx`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineSessionSnapshot.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineRecordsTail.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelinePatchWorkDocuments.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/usePipelineGateActions.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/pipeline-preflight.ts`
+- [x] `apps/electron/src/renderer/components/pipeline/PipelineGateSidePanel.tsx`
+- [x] 相关测试文件
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] `PipelineView.tsx` 不再直接包含 records tail loading 主体逻辑。
+- [x] `PipelineView.tsx` 不再直接管理 patch-work document loading maps。
+- [x] 所有现有 gate 面板行为保持。
+- [x] stop/restart/gate respond 关键路径无回归。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不重做视觉设计。
+- [x] 不改变 Graph / service / runner 行为。
+- [x] 不把局部 textarea feedback 放入全局 atom，除非明确要跨页面恢复草稿。
+
+## 2026-05-29 Pipeline v1 Phase 2 Review
+
+- 阶段范围：PipelineView 拆分与 Phase 1 preflight freshness 收敛；未修改 Graph、runner、Git submission、main IPC / preload、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：`PipelineView` 迁出 records tail、session snapshot、patch-work 文档读取、explorer reports、gate actions 和 gate 面板选择；新增 `PipelineGateSidePanel` 作为右侧 gate / composer 组合层。
+- Preflight 收敛：preflight result 超过 60 秒或 workspace 变化后会显示“启动前检查需要刷新”，隐藏风险确认入口，并阻止直接复用旧 acknowledgement。
+- 版本同步：`@codeinsights/electron` 从 `0.0.123` 提升到 `0.0.124`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/pipeline-preflight.test.ts apps/electron/src/renderer/components/pipeline/pipeline-record-tail-model.test.ts apps/electron/src/renderer/components/pipeline/PipelineComposer.test.ts apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewerIssueBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Patch-work Document Workbench、Contribution Dashboard / SubmissionPlan、远端写确认增强和真实端到端验收仍未开始。
+- 阶段提交：`dbd980c2 feat(pipeline): 完成 Pipeline v1 Phase 2 PipelineView 拆分`。
+
+## Phase 3：Patch-work Document Workbench
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] read model 完成
+- [x] Workbench MVP 完成
+- [x] 面板接入完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+把 `plan.md`、`dev.md`、`review.md`、`result.md`、`patch-set/*`、`commit.md`、`pr.md` 从各面板内联 `<pre>` 升级为统一、可审计、可对比的 Document Workbench。
+
+### 入口条件
+
+- [x] Phase 2 已完成并提交。
+- [x] 已确认本阶段 MVP 只读，不做用户编辑。
+- [x] 已确认 revision 数据从现有 manifest / revision 存储读取，不破坏旧 manifest。
+
+### 契约与后端任务
+
+- [x] 新增 `PatchWorkDocumentRevision` 类型。
+- [x] 新增 `LIST_PATCH_WORK_REVISIONS` IPC。
+- [x] 新增 `READ_PATCH_WORK_REVISION` IPC。
+- [x] `pipeline-patch-work-service.ts`：提供 list/read revision API。
+- [x] 路径校验复用现有 patch-work 安全规则。
+- [x] 读取 revision 时校验 checksum。
+- [x] 读取当前文件时能标记是否与 manifest checksum 匹配。
+
+### 前端任务
+
+- [x] 新增 `PatchWorkDocumentWorkbench.tsx`。
+- [x] 新增 `PatchWorkDocumentTree.tsx` 或等价文件分组 view model。
+- [x] `.md` 使用 Markdown 渲染。
+- [x] `.patch` 使用 diff 渲染。
+- [x] `.json` 格式化展示，解析失败时显示原文和错误。
+- [x] 展示 revision selector。
+- [x] 展示 current / accepted badge。
+- [x] 支持 compare current vs accepted。
+- [x] 支持打开 patch-work 目录和打开当前文件。
+- [x] `ReviewDocumentBoard` 接入 Workbench。
+- [x] `TesterResultBoard` 接入 Workbench。
+- [x] `CommitterPanel` 接入 Workbench。
+
+### 测试任务
+
+- [x] `pipeline-patch-work-service.test.ts`：list revisions。
+- [x] `pipeline-patch-work-service.test.ts`：read revision checksum。
+- [x] `pipeline-patch-work-service.test.ts`：拒绝 unsafe relativePath。
+- [x] Workbench 测试：Markdown / patch / JSON 渲染分支。
+- [x] Workbench 测试：revision selector 和 accepted badge。
+- [x] 面板测试：缺 checksum / 读取失败仍阻止 approve。
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun run --filter='@codeinsights/electron' build:renderer
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] 所有 patch-work 文档读取通过统一 Workbench。
+- [x] 用户能查看 revision 列表。
+- [x] 用户能对比 current 和 accepted revision。
+- [x] `changes.patch` 有可读 diff 视图。
+- [x] checksum mismatch 有明确提示。
+- [x] 旧 manifest 仍可读。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不在 Renderer 直接读取本地文件。
+- [x] 不提供编辑保存。
+- [x] 不改变 patch-work manifest 结构，除非有迁移测试。
+
+## 2026-05-29 Pipeline v1 Phase 3 Review
+
+- 阶段范围：只完成 Phase 3，只读 Patch-work Document Workbench MVP；未修改 Graph、Claude / Codex runner、Git submission 真实写逻辑、远端写确认语义、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增 `PatchWorkDocumentRevision`、`LIST_PATCH_WORK_REVISIONS`、`READ_PATCH_WORK_REVISION` 和受控 `OPEN_PATCH_WORK_FILE`；main 端通过 `sessionId + relativePath + revision` 读取 patch-work revision，复用 realpath / lstat / symlink 路径安全；当前文件 checksum 与 manifest 不一致时返回 `checksumMatches=false`。
+- Workbench：新增 `PatchWorkDocumentWorkbench`，支持 markdown、patch/diff、json/text 展示、revision selector、current / accepted / checksum mismatch / read error badge、current vs accepted 对比、打开 patch-work 目录和打开当前文件。
+- 面板接入：`ReviewDocumentBoard`、`TesterResultBoard`、`CommitterPanel` 已用统一 Workbench 替换重复内联 `<pre>` 文档展示；既有 approve 阻断逻辑仍使用 checksum、loading、read error、空正文等保守条件。
+- 兼容性确认：不改变 `PatchWorkManifest.version` 和 manifest 结构；写新 revision 时保留已有 accepted revision 元数据，便于 Workbench 对比旧 accepted 与当前 revision。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.52`，`@codeinsights/electron` 提升到 `0.0.125`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/PatchWorkDocumentWorkbench.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 4 Contribution Dashboard / SubmissionPlan、Phase 5 远端写确认增强、Phase 6 真实端到端验收仍未开始。
+- 阶段提交：`4cdcc128 feat(pipeline): 完成 Pipeline v1 Phase 3 Patch-work Workbench`。
+
+## Phase 4：Contribution Dashboard 与 Submission Plan
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] read model 完成
+- [x] Dashboard 完成
+- [x] CommitterPanel 三段式改造完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+让 ContributionTask 成为一等 UI，并把提交前信息收敛为 `PipelineSubmissionPlan`，避免 CommitterPanel 从多个 stage output 零散拼状态。
+
+### 入口条件
+
+- [x] Phase 3 已完成并提交。
+- [x] 已确认本阶段不改变真实 commit / remote PR 执行服务。
+- [x] 已确认 Dashboard 使用 read model，不从 records 文本反推状态。
+
+### 契约与后端任务
+
+- [x] 新增 `ContributionTaskSummary` 类型。
+- [x] 新增 `PipelineSubmissionPlan` 类型。
+- [x] 新增 `GET_CONTRIBUTION_TASK_SUMMARY` IPC。
+- [x] 新增 `GET_SUBMISSION_PLAN` IPC。
+- [x] 新增 `pipeline-read-model-service.ts`。
+- [x] Summary 包含 task、repo、branch、mode、patch-work、commit、PR、最近事件。
+- [x] SubmissionPlan 包含 commit message、PR title/body、candidate files、excluded files、blockers、warnings、local commit、remote submission。
+- [x] service 读取失败时返回可解释错误，不让 UI 静默空白。
+
+### 前端任务
+
+- [x] 新增 `ContributionTaskDashboard.tsx`。
+- [x] 新增 `useContributionTaskSummary(sessionId)`。
+- [x] 新增 `usePipelineSubmissionPlan(sessionId)`。
+- [x] Dashboard 展示 selected task、repository、branch、mode、patch-work 状态、commit hash、PR URL、最近事件。
+- [x] CommitterPanel 改为三段：保存材料、本地 commit、Draft PR。
+- [x] 本地 commit 前展示 candidate files / excluded files / branch。
+- [x] Draft PR 前展示 remote / base/head / PR preview。
+- [x] push 成功但 PR 失败时展示恢复入口。
+
+### 测试任务
+
+- [x] `pipeline-read-model-service.test.ts`：summary 缺 task。
+- [x] `pipeline-read-model-service.test.ts`：summary 从 events 汇总 commit / PR。
+- [x] `pipeline-read-model-service.test.ts`：submission plan 排除 `patch-work/**`。
+- [x] `pipeline-read-model-service.test.ts`：summary 读取缺失 `patch-work/` 时不创建目录，并脱敏 repository URL。
+- [x] `CommitterPanel.test.tsx`：三段按钮禁用条件。
+- [x] `CommitterPanel.test.tsx`：没有 local commit 时不能进入 Draft PR。
+- [x] `ContributionTaskDashboard.test.tsx`：summary 正常 / 空态 / 错误态。
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] Dashboard 可见 task / repo / branch / mode / patch-work / commit / PR。
+- [x] CommitterPanel 不再零散拼提交计划。
+- [x] local patch / local commit / remote PR 三个动作清晰分区。
+- [x] `patch-work/**` 明确显示在 excluded files。
+- [x] read model 错误可见且不阻断 records。
+- [x] read model 缺失 `patch-work/` 时保持只读，不创建目录。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不引入真实远端写新路径。
+- [x] 不把 Dashboard 状态写入 localStorage。
+- [x] 不让 UI 直接计算提交候选文件作为事实源。
+
+## 2026-05-29 Pipeline v1 Phase 4 Review
+
+- 阶段范围：只完成 Contribution Dashboard 与 Submission Plan read model / UI；未修改 Graph、runner、Git submission 真实写逻辑、远端写确认模型、GitHub API、根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增 `ContributionTaskSummary`、`PipelineSubmissionPlan`、summary / submission plan IPC 与 preload API；新增 `pipeline-read-model-service.ts`，从 ContributionTask、events、stage outputs、patch-work manifest 和本地 Git 只读状态重建提交前视图。
+- 前端接入：新增 `ContributionTaskDashboard`、`useContributionTaskSummary`、`usePipelineSubmissionPlan`；`PipelineView` 在 v2 会话展示贡献任务 dashboard；`CommitterPanel` 改为保存提交材料、本地 commit、Draft PR 三段式，并优先使用服务端 `PipelineSubmissionPlan`。
+- 安全确认：Renderer 只传 `sessionId`；read model 不调用远端 preflight，不执行真实 `git commit` / `git push` / `gh`；summary 读取缺失 `patch-work/` 时不创建目录；`patch-work/**` 永远进入 excluded files；URL、error、blocker、warning 等新 IPC 返回字段已脱敏。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.53`，`@codeinsights/electron` 提升到 `0.0.126`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun run --filter='@codeinsights/electron' build:renderer`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项：Phase 5 远端写确认与 GitHub 增强、Phase 6 真实端到端验收与交付准备仍未开始。
+- 阶段提交：`1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+
+## Phase 5：远端写确认与 GitHub 增强
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] 独立远端确认模型完成
+- [x] GitHub API / existing PR 策略完成
+- [x] UI 恢复路径完成
+- [x] 验证完成
+- [x] 阶段提交完成
+
+### 目标
+
+收敛远端写语义：把 remote PR 从 CommitterPanel checkbox 提升为独立确认状态，并补充 GitHub API / existing PR / PR 创建失败恢复能力。
+
+### 入口条件
+
+- [x] Phase 4 已完成并提交。
+- [x] 已完成安全评审：远端写必须显式二次确认。
+- [x] 已确认真实 remote PR smoke 需要用户凭证或 CI secret；本阶段未执行真实远端写。
+
+### 契约与后端任务
+
+- [x] 明确 `remote_write_confirmation` 是独立 gate。
+- [x] 已更新 `pipeline-graph.ts` / `pipeline-state.ts` / tests。
+- [x] 远端确认 payload 包含 operationId、remote、base/head、commitHash、PR title、sanitized URL、warnings。
+- [x] Service 复验 operation id、commit hash、remote base、head branch safety。
+- [x] Service 复验待推送 tree / range 不包含 `patch-work/**`。
+- [x] 支持 push 成功 PR 失败后 `skipPush = true` 重试。
+- [x] `skipPush` 重试前通过 `git ls-remote --heads` 复验远端 head ref SHA 等于本地 commit。
+- [x] GitHub API path 不泄露 token。
+- [x] existing PR 检测依据 head owner / head branch / base branch / repo。
+- [x] CLI fallback 使用 `gh pr list --repo ... --head ... --base ...` 检测 existing PR，避免无效 `gh pr view --head`。
+- [x] existing PR update 保持未实现，不静默覆盖；命中 existing PR 时返回打开/显式处理入口。
+
+### 前端任务
+
+- [x] 新增 `RemoteWriteConfirmationPanel.tsx`。
+- [x] CommitterPanel 的 Draft PR 按钮进入远端确认，不直接执行 push。
+- [x] 展示 remote、base/head、commit hash、PR title/body、warnings。
+- [x] 用户必须明确确认远端写风险。
+- [x] push 成功 PR 失败时展示“重试创建 PR”语义。
+- [x] PR 已存在时展示打开 PR / 显式处理提示；不提供静默更新。
+
+### 测试任务
+
+- [x] `pipeline-graph.test.ts`：remote confirmation gate 顺序。
+- [x] `pipeline-state.test.ts`：remote gate replay。
+- [x] `pipeline-service.test.ts`：remote confirmation 未确认不执行。
+- [x] `pipeline-git-submission-service.test.ts`：push success / PR failure / retry skipPush。
+- [x] `pipeline-git-submission-service.test.ts`：existing PR 分支检测。
+- [x] `pipeline-git-submission-service.test.ts`：`skipPush` 远端 ref SHA 复验、GitHub API push 成功但 PR 失败状态保留、CLI existing PR fallback。
+- [x] `RemoteWriteConfirmationPanel.test.tsx`：风险确认和按钮状态。
+- [x] 脱敏测试：token、credentialed URL、Authorization header 不出现在输出。
+
+### 验证命令
+
+```bash
+bun test packages/shared/src/utils/pipeline-state.test.ts apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1
+```
+
+### 完成定义
+
+- [x] 远端写有独立、可审计、可恢复的确认状态。
+- [x] 未二次确认时不会执行 `git push` 或创建 PR。
+- [x] push / PR 任一失败都能脱敏展示并判断是否可重试。
+- [x] existing PR 不会被静默覆盖。
+- [x] `patch-work/**` 不会进入待推送 commit tree 或 push range。
+- [x] 受影响 package patch version 已递增。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不默认执行远端写。
+- [x] 不把 GitHub token 写入 config、records、events、diagnostics。
+- [x] 不把 `gh` CLI 失败包装成成功。
+- [x] 不跳过 remote base/head 安全检查。
+
+## 2026-05-29 Pipeline v1 Phase 5 Review
+
+- 阶段范围：只完成远端写确认与 GitHub 增强；未执行真实远端写，未 push，未创建真实 PR，未修改根 `README.md` 或根 `AGENTS.md`。
+- 主要变更：新增独立 `remote_write_confirmation` gate 与 replay / recovery 支持；`submission_review(remote_pr)` 只进入远端确认，不直接写远端；`draft_only` 远端 PR 路径会先执行受控本地 commit，再进入独立远端确认；Service 复验 pending gate kind、operation id、commit hash、remote/base/head、patch-work 防护和风险确认。
+- GitHub 与恢复：production service 默认使用 GitHub API runner；token 仅从环境变量读取且不持久化；existing PR 在 push 前检测并阻断静默覆盖，CLI fallback 改用 `gh pr list --repo ... --head ... --base ...`；push 成功但 PR 创建失败会持久化 `pushed` 状态，并支持同 operation id `skipPush` 重试，重试前复验远端 head ref SHA 等于本地 commit。
+- UI 接入：新增 `RemoteWriteConfirmationPanel`；`CommitterPanel` Draft PR 动作只请求确认态；side panel 对远端确认使用独立 payload，恢复路径展示 pushed / existing PR 状态。
+- 安全确认：remote URL query / fragment / Basic auth、Authorization header、token/key/password 形式错误已脱敏；远端结果幂等复用会复验 commit 与分支上下文；`patch-work/**` tree / range 防护保持在 git submission service。
+- 审计与边界：远端副作用前会写入 `remote_write_confirmed` ContributionTask event；GitHub API push 成功但 PR 创建和 existing PR lookup 都失败时仍保留 `pushed` 状态；远端 PR 已创建但 graph resume 失败时，Service 会保留已完成的 `remote_pr_created` 状态。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.54`，`@codeinsights/electron` 提升到 `0.0.127`，`bun.lock` 已同步。
+- 验证命令：`bun test packages/shared/src/utils/pipeline-state.test.ts apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts`；`bun test apps/electron/src/renderer/components/pipeline/pipeline-gate-panel-model.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx`；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：Phase 6 真实端到端验收、packaged smoke 和公开文档准备尚未开始。
+- 阶段提交：`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
+
+## Phase 6：真实端到端验收与交付准备
+
+### 阶段状态
+
+- [x] 阶段开始
+- [x] fixture repo 完成
+- [x] smoke 完成
+- [x] 打包验证完成
+- [x] 文档同步准备完成
+- [x] 阶段提交完成：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`
+
+### 目标
+
+在不伪装未验证能力的前提下，完成从 preflight 到 draft-only、local commit、remote PR 的端到端验证，并准备公开文档同步。
+
+### 入口条件
+
+- [x] Phase 5 已完成并提交：`a6c558b1 feat(pipeline): 完成 Pipeline v1 Phase 5 远端写确认与 GitHub 增强`。
+- [x] 已确认哪些 smoke 不需要真实模型，哪些需要真实凭证。
+- [x] 已确认 README / AGENTS 仍需用户允许后再修改。
+
+### Fixture repo 任务
+
+- [x] clean repo fixture：可完成 happy path。
+- [x] dirty repo fixture：验证 warning acknowledgement。
+- [x] conflict repo fixture：验证 blocker。
+- [x] local bare remote fixture：验证 push 前置逻辑。
+- [x] Git author、default branch、remote URL 在测试内显式设置。
+- [x] fixture 不依赖开发机全局 Git 配置。
+
+### Smoke 任务
+
+- [x] preflight IPC smoke，不需要真实模型。
+- [x] draft-only fake runner smoke。
+- [x] local commit fake runner smoke。
+- [x] packaged app draft-only smoke。
+- [x] packaged app local commit smoke。
+- [x] remote PR smoke gated：未获授权时未运行真实 GitHub remote smoke；mock remote path 已覆盖独立远端确认与审计。
+- [x] 记录未覆盖平台：macOS x64、Windows x64、Linux 等不在本机验证的项已标 `[!]`。
+
+### 文档准备任务
+
+- [x] 整理实际已落地功能和未落地功能。
+- [x] 准备 README 更新草案，但不直接修改根 README，除非用户确认。
+- [x] 准备 AGENTS 更新草案，但不直接修改根 AGENTS，除非用户确认。
+- [x] 更新 v1 方案和 checklist 的最终状态。
+- [x] 准备下一轮真实使用验收 prompt。
+
+### 验证命令
+
+```bash
+bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-smoke.test.ts
+```
+
+```bash
+bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx
+```
+
+```bash
+bun run --filter='@codeinsights/electron' typecheck
+bun install --frozen-lockfile --dry-run
+bun run --filter='@codeinsights/electron' build
+bun run --filter='@codeinsights/electron' pack
+bun run --filter='@codeinsights/electron' smoke:pipeline-fixture
+git diff --check -- packages/shared apps/electron bun.lock docs/improve/pipeline/v1 tasks/todo.md
+```
+
+### 完成定义
+
+- [x] draft-only 不产生 commit。
+- [x] local commit 只提交候选文件且不包含 `patch-work/**`。
+- [x] remote PR 只在显式确认和凭证可用时创建 Draft PR；真实 GitHub remote PR smoke 未获授权未执行，mock path 已验证独立确认。
+- [x] packaged app 至少通过 draft-only 和 local commit smoke。
+- [x] 所有未验证平台和未验证真实远端能力明确标 `[!]`。
+- [x] 根 README / AGENTS 是否同步已得到用户决定：本轮未获直接修改授权，因此不改根文档。
+- [x] 阶段 Review 已写入 `tasks/todo.md`。
+- [x] 阶段提交完成。
+
+### 禁止事项
+
+- [x] 不把 fake runner smoke 伪装成真实模型验收。
+- [x] 不把 app bundle 通过伪装成 DMG / installer 通过。
+- [x] 不在无用户确认情况下运行真实远端 PR smoke。
+- [x] 不修改根 README / AGENTS，除非用户明确允许。
+
+## 2026-05-29 Pipeline v1 Phase 6 Review
+
+- 阶段范围：完成 Phase 6 本地 deterministic E2E、mock remote path、当前平台 unpacked packaged smoke 和交付准备记录；未修改根 `README.md` / 根 `AGENTS.md`，未 push，未创建真实 PR，未执行真实 GitHub remote smoke。
+- 主要变更：新增 `PipelineFixtureNodeRunner`、`CODEINSIGHTS_PIPELINE_FIXTURE_RUNNER=1` 显式门禁、`pipeline-smoke.test.ts` 和 `smoke:pipeline-fixture`；fixture 模式复用真实 `PipelineService`、LangGraph checkpoint、ContributionTask、patch-work、preload IPC 和 Git submission 路径。
+- 验收结果：draft-only 不产生 Git commit；local commit 只提交 `src/index.ts` 且排除 `patch-work/**`；mock remote path 先走受控本地 commit，再进入独立 `remote_write_confirmation`，并记录 `remote_write_confirmed` / `remote_submission_created` 审计事件。
+- Packaged smoke：`bun run --filter='@codeinsights/electron' pack` 生成 macOS arm64 unpacked app；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture` 通过 CDP + preload IPC 验证 draft-only 与 local-commit 主路径。此结果不代表 DMG / installer 或多平台通过。
+- [!] 未验证项：真实 GitHub remote PR smoke 未执行，因为用户未明确授权；macOS x64、Windows x64、Linux packaged smoke 和 installer smoke 未在本机验证。
+- 根文档草案：后续若用户授权修改根 `README.md` / 根 `AGENTS.md`，建议同步说明 Pipeline 已具备 deterministic fixture smoke、真实 remote smoke 需要显式授权、unpacked app smoke 不等于 installer / 多平台验收。
+- 版本同步：`@codeinsights/electron` 提升到 `0.0.128`，`bun.lock` 已同步；`packages/shared` 未改动。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-graph.test.ts apps/electron/src/main/lib/pipeline-preflight-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts apps/electron/src/main/lib/codex-pipeline-node-runner.test.ts apps/electron/src/main/lib/pipeline-git-submission-service.test.ts apps/electron/src/main/lib/pipeline-patch-work-service.test.ts apps/electron/src/main/lib/contribution-task-service.test.ts apps/electron/src/main/lib/pipeline-smoke.test.ts`，162 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineRecords.test.ts apps/electron/src/renderer/components/pipeline/CommitterPanel.test.tsx apps/electron/src/renderer/components/pipeline/RemoteWriteConfirmationPanel.test.tsx apps/electron/src/renderer/components/pipeline/TesterResultBoard.test.tsx apps/electron/src/renderer/components/pipeline/ReviewDocumentBoard.test.tsx apps/electron/src/renderer/components/pipeline/PipelinePreflightPanel.test.tsx`，32 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build`；`bun run --filter='@codeinsights/electron' pack`；`bun run --filter='@codeinsights/electron' smoke:pipeline-fixture`。
+- 阶段提交：`07243a01 feat(pipeline): 完成 Pipeline v1 Phase 6 本地验收准备`。
+
+## 2026-05-30 Pipeline v1 Phase 7 Review
+
+- 阶段范围：完成 Report Export Markdown MVP；未执行真实模型验收、真实远端写、token / GitHub 凭证读取、push 或真实 PR 创建；未修改根 `README.md` / 根 `AGENTS.md`。
+- 主要变更：新增 `PipelineReportExport` / `PipelineReportExportInput`、`EXPORT_REPORT` IPC、preload API、`PipelineService.exportPipelineReport()` 和 `PipelineReportExportPanel`，用户可在 Pipeline v2 Dashboard 区域生成、复制并保存 `.md` 报告。
+- Read model 边界：报告导出只读取 ContributionTask、ContributionTask events、Pipeline records、stage artifacts 和 patch-work manifest；不复用会触发 `validateCommitPreconditions()` 的 live submission plan，不调用 graph，不执行 Git precondition，不读取远端凭证。
+- 安全确认：Markdown、顶层 `title` 和 `fileName` 均做脱敏；测试覆盖 credentialed URL、token、Authorization / Bearer 片段、draft-only 不伪造 commit / PR、local commit、mock remote confirmation、缺失 ContributionTask 和 fake `git` 不被调用。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.55`，`@codeinsights/electron` 提升到 `0.0.129`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`，61 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineReportExportPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx`，6 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`；`bun run --filter='@codeinsights/electron' build:renderer`。
+- Phase 7 当时未完成项：Report Export HTML / PDF 仍为后续增强，已在 Phase 8 完成；真实 GitHub remote PR smoke、DMG / installer 和多平台 packaged smoke 仍未授权或未在本机验证。
+- 阶段提交：`70b30ea3 feat(pipeline): 完成 Pipeline v1 Phase 7 报告导出 MVP`。
+
+## 2026-05-30 Pipeline v1 Phase 8 Review
+
+- 阶段范围：完成 Report Export HTML / PDF 增强；未重新实现 Markdown MVP，未执行真实 GitHub remote smoke，未 push，未创建真实 PR，未读取或输出 token，未修改根 `README.md` / 根 `AGENTS.md`。
+- 主要变更：`PipelineReportExport` 新增 `html`、`htmlFileName`、`pdfFileName`；新增 `PipelineReportPdfSaveInput` / `PipelineReportPdfSaveResult` 和 `SAVE_REPORT_PDF` IPC；Renderer 新增保存 `.html` 和保存 PDF 操作。
+- Read model 边界：HTML 从同一份只读 Markdown 报告派生，事实源仍限于 ContributionTask、events、records、stage artifacts 和 patch-work manifest；不触发 graph、Git precondition、远端写或凭证读取。
+- PDF 边界：Renderer 只传 `sessionId`；main 端重新生成报告后通过 Electron `printToPDF` 保存，取消保存返回结构化结果，不信任 Renderer 传入任意 HTML 或本地路径。
+- 安全确认：HTML 输出转义用户 / 模型内容并中和 `on*=` 片段；PDF 渲染窗口关闭 nodeIntegration / webview / JavaScript，阻断导航和 http / https / file / ftp / ws / wss 子资源；报告脱敏覆盖 Markdown、HTML、title、`.md` / `.html` / `.pdf` 文件名、Authorization、短 Bearer token、JWT-like token 和 credentialed URL。
+- Code review 阻断修复：已修复短 Bearer token 因长度门槛泄露的问题；已修复 `appendPatchWorkSummary()` 读取缺失 patch-work 时可能创建目录的问题，`readPatchWorkManifest()` 增加只读 `create:false` 路径，并补回归测试。
+- 版本同步：`@codeinsights/shared` 提升到 `0.1.56`，`@codeinsights/electron` 提升到 `0.0.130`，`bun.lock` 已同步。
+- 验证命令：`bun test apps/electron/src/main/lib/pipeline-read-model-service.test.ts apps/electron/src/main/lib/pipeline-service.test.ts`，64 pass；`bun test apps/electron/src/main/lib/pipeline-patch-work-service.test.ts`，25 pass；`bun test apps/electron/src/renderer/components/pipeline/PipelineReportExportPanel.test.tsx apps/electron/src/renderer/components/pipeline/ContributionTaskDashboard.test.tsx`，6 pass；`bun run --filter='@codeinsights/electron' typecheck`；`bun install --frozen-lockfile --dry-run`；`bun run --filter='@codeinsights/electron' build:main`；`bun run --filter='@codeinsights/electron' build:preload`；`bun run --filter='@codeinsights/electron' build:renderer`；`git diff --check -- packages/shared apps/electron bun.lock tasks/todo.md docs/improve/pipeline/v1`。
+- 未完成项 / [!]：真实 GitHub remote PR smoke 未授权未验证；DMG / installer、macOS x64、Windows x64、Linux packaged smoke 未在本机验证；根 `README.md` / 根 `AGENTS.md` 仍需用户明确允许后再同步。
+- 阶段提交：`fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。
+
+## 横向工作流
+
+### 安全审查清单
+
+- [ ] 新增 IPC handler 均校验输入。
+- [ ] Renderer 不能传任意本地路径让 main 打开或读取。
+- [ ] patch-work 相对路径拒绝绝对路径、`..`、reserved path、symlink。
+- [ ] Git 写操作只能在 service 受控路径执行。
+- [ ] Codex workspace-write 节点继续阻断 commit/push/tag/reset/rebase/fetch/pull/gh/hub。
+- [ ] 事后 Git 校验覆盖 HEAD、refs、index、local config 和 patch 丢失。
+- [ ] 远端 URL、token、Authorization header 全部脱敏。
+
+### 可用性检查清单
+
+- [ ] 新功能必须能从默认 v2 新建会话入口到达。
+- [ ] 运行中无文本输出时仍有静默运行反馈。
+- [ ] stop 按钮有“正在停止”和“已停止”反馈。
+- [ ] blocker / warning 有清晰解释和下一步动作。
+- [ ] 长路径、长 commit message、长 PR title 不撑破 UI。
+- [ ] 按钮 disabled 时能看出原因。
+- [ ] 错误态不吞掉 records 和历史产物。
+
+### 测试纪律清单
+
+- [ ] 优先写单测或 BDD 场景。
+- [ ] Main service 测试覆盖成功、失败、幂等、恢复。
+- [ ] Renderer 测试覆盖空态、错误态、loading、disabled、用户确认。
+- [ ] Git 相关测试不依赖开发机全局 Git 配置。
+- [ ] Codex auth 相关测试不依赖开发机已有登录。
+- [ ] 真实 remote smoke 必须 gated。
+
+### 版本与提交清单
+
+- [ ] 修改 `packages/shared` 运行时契约时递增 shared patch version。
+- [ ] 修改 `apps/electron` 业务逻辑或 UI 时递增 electron patch version。
+- [ ] 修改 lockfile 后确认只包含预期 workspace version 变化。
+- [ ] 每阶段独立提交。
+- [ ] 提交信息使用详细中文，说明主要变更、验证、未做事项。
+- [ ] 提交前 `git status --short` 确认无无关文件。
+
+## 后续积压池
+
+这些事项不阻塞 Phase 0-8，但后续可以单独排期：
+
+- [ ] Patch-work 文档内评论和锚点反馈。
+- [ ] 用户编辑 `plan.md` / `pr.md` 后保存为新 revision。
+- [ ] Workflow Profile 设置页。
+- [x] Pipeline Report Export HTML / PDF（Phase 8 已完成）。
+- [ ] GitHub labels / reviewers / linked issue。
+- [ ] 现有 PR 更新的冲突预览。
+- [ ] Pipeline run policy per session 固化。
+- [ ] 更细的 node rerun impact preview。
+- [ ] packaged app 多平台 smoke 自动化。
+
+## 阶段 Review 统一模板
+
+每个阶段完成后，在 `tasks/todo.md` 和本文对应阶段填写：
+
+```markdown
+## YYYY-MM-DD Pipeline v1 Phase N Review
+
+- 阶段范围：
+- 主要变更：
+- 触达文件：
+- 验证命令：
+- 兼容性确认：
+- 安全确认：
+- 未完成项 / [!]：
+- 阶段提交：
+```
+
+## 下一轮启动入口
+
+下一轮不再从 Phase 6、Phase 7 或 Phase 8 功能开发开始；Phase 0-8 已完成。推荐入口按用户目标选择：
+
+1. 若用户明确授权真实 GitHub remote smoke，先确认授权范围、测试仓库、token / `gh` / API 条件和允许的远端副作用，再运行；授权前不读取 token、不 push、不创建真实 PR。
+2. 若用户允许公开文档同步，再修改根 `README.md` / 根 `AGENTS.md`；建议同步 deterministic fixture smoke、真实 remote smoke gated、unpacked app smoke 不等于 DMG / installer / 多平台验收。
+3. 若用户要求继续产品能力开发，从“后续积压池”单独开新阶段，先在 `tasks/todo.md` 写计划并遵循 TDD / BDD；不要重复实现 Markdown、HTML 或 PDF 报告导出。
+4. 每次开始前仍需读取 `tasks/lessons.md`、本文和 `next-session-prompt.md`，并确认历史包含 `81c72e30 docs(pipeline): 校正 ab34910c 恢复入口状态`、`ab34910c docs(pipeline): 同步 da6961de 最新开发状态`、`da6961de docs(pipeline): 校正 f687166c 恢复入口状态`、`f687166c docs(pipeline): 同步 c75e132f 最新开发状态`、`c75e132f docs(pipeline): 校正 b1163b1f 恢复入口状态`、`b1163b1f docs(pipeline): 同步最新开发状态和下次启动提示词`、`e77139fd docs(pipeline): 校正 Phase 8 最新恢复入口`、`7d309cc0 docs(pipeline): 回填 Phase 8 最新恢复状态`、`c79f6b48 docs(pipeline): 同步 Phase 8 后续开发状态` 和 `fb864d6a feat(pipeline): 完成 Pipeline v1 Phase 8 报告 HTML 与 PDF 导出`。

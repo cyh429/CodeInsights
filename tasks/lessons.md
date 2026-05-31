@@ -1,5 +1,44 @@
 # Lessons
 
+## 2026-05-30 客户端完整验证与 Bun 测试隔离
+
+- 仓库级 `bun test` 在默认非隔离模式下会受到跨文件 mock / module state 污染影响；完整客户端验证应使用根脚本 `bun run test`，并保持其映射到 `bun test --isolate`，避免把测试顺序污染误判为产品回归。
+- 即使失败集中表现为跨文件污染，也要先分离真实契约问题；本轮 `run_completed` fixture 缺失 `usage` 字段属于真实类型契约偏差，必须补测试数据而不是用隔离模式掩盖。
+- packaged smoke 结论必须按脚本边界描述：`smoke:pipeline-fixture` 是 deterministic fixture runner，不是真实模型验收；`smoke:agent-history-reload-ui` 是本地 seeded history reload，不是模型调用；opencode `binary/server/config/permission/abort/resume/mcp` 是非模型 smoke，不能替代 `readonly/channel/native/packaged`。
+- 客户端完整验证报告里必须明确区分“当前平台 unpacked app 通过”和“DMG / installer、多平台 packaged、真实 GitHub remote、真实模型”仍未验证；未授权时不读取 token、不 push、不创建真实 PR。
+
+## 2026-05-30 Pipeline Report Export HTML / PDF 安全边界
+
+- 报告脱敏不能给 Bearer token 设置长度门槛；`Bearer secret` 这类短 token 同样必须在 Markdown、HTML、顶层 title 和所有导出文件名中被替换，脱敏规则应按空白、引号、反引号和尖括号截断。
+- 报告导出、HTML 生成和 PDF 保存必须保持严格只读；读取 patch-work manifest 时要显式使用 `create:false` 路径，缺失 `patch-work/` 或 manifest 只能返回可解释状态，不能为了展示报告创建目录或写入工作区。
+- 使用 Electron `BrowserWindow.printToPDF()` 渲染报告时，窗口必须关闭 nodeIntegration、webview 和 JavaScript，并阻断导航与 http / https / file / ftp / ws / wss 子资源；Renderer 只能传 `sessionId`，main 端重新生成报告，不接受任意 HTML 或文件路径。
+
+## 2026-05-30 Pipeline Report Export 只读与脱敏边界
+
+- Pipeline 报告导出不能复用会触发 live Git 检查的 submission plan；导出类 IPC 必须只从已持久化的 records、stage artifacts、ContributionTask events 和 patch-work manifest 组装事实，避免 `git status` / `git diff` 刷新 index 或把当前工作树误当成已验收结果。
+- 报告脱敏不能只覆盖 Markdown 正文；IPC 返回的顶层 `title`、`fileName`、preview 入口和错误信息也必须复用同一套 secret / credentialed URL / Authorization / Bearer 脱敏策略。
+- 为“只读导出”写测试时，要用 fake `git` marker 或持久化 artifact 与当前工作树不一致的场景锁住边界，防止以后无意中重新调用 Git read model。
+
+## 2026-05-29 Pipeline v1 状态同步默认动作
+
+- Pipeline v1 每个 Phase 完成并提交后，必须立即同步 `docs/improve/pipeline/v1/2026-05-28-pipeline-mode-development-checklist.md`、`docs/improve/pipeline/v1/next-session-prompt.md` 和 `tasks/todo.md` Review，写清真实开发基线提交、已完成项、未完成项、下一阶段入口和验证结果。
+- 阶段实现提交完成后，持久文档里不能继续留下“本次提交”“本轮提交”“feat(...)”这类占位；必须用 `git log` / `git rev-parse --short HEAD` 回填真实提交号，例如 `1ff8416a feat(pipeline): 完成 Pipeline v1 Phase 4 Contribution Dashboard`。
+- 用户要求“更新文档最新开发状态 / 标清完成未完成 / 给下次启动提示词”时，直接执行上述同步并提交文档状态更新；最终回复必须给一份可直接复制的下一次启动提示词。
+- 每个阶段性任务完成后，不需要用户再次提醒，默认执行“development checklist + next-session prompt + `tasks/todo.md` Review + 最终可复制提示词”的状态同步；如用户再次强调“记住这个习惯”，要在本文件更新更具体的执行规则。
+- 用户再次强调“我希望你能记住这个习惯，在每个阶段性任务完成后自动去做”时，立即复核当前文档是否包含最新状态同步提交、完成/未完成清单和下一阶段启动提示词；若缺少最新恢复入口，即使代码阶段已提交，也要补一次文档状态同步提交，并在最终回复给可直接复制的提示词。
+- 当用户再次要求“更新文档最新开发状态、标清完成/未完成、给下次启动提示词”并强调要记住习惯时，必须把这视为阶段收尾的默认动作：先写 `tasks/todo.md` 状态同步计划，再更新 checklist、next-session prompt、`tasks/todo.md` Review 和本文件，验证后单独提交，并在最终回复直接给可复制提示词。
+- 仓库内 next-session prompt 无法写入自身提交 hash 时，至少写清最近真实 Phase 开发基线，例如 `ff515a01`，并要求下次启动确认该提交或其后的状态同步提交在历史中。
+- 同步文档时必须明确区分开发基线和状态同步提交：Phase 实现提交（如 `ff515a01`）代表功能完成，后续 `docs(pipeline): 同步 Phase N 后续开发状态` 代表恢复入口更新。
+- 收到子代理或人工 review 提醒“文档提前标记提交完成”时，若提交已真实完成，要立刻回填真实提交号；若尚未提交，不能把阶段提交 checkbox 标记为完成。
+- 阶段完成后的状态同步提交落地后，下一次用户要求更新最新状态或再次强调“记住这个习惯”时，必须把上一轮真实状态同步提交号回填到 development checklist 和 next-session prompt；若本轮又产生新的同步提交，最终回复给出新 HEAD，避免在文档中留下“本轮提交”这类不可恢复占位。
+- 当 `git log` 已能确认具体状态同步提交号时，例如 `1cbe1de7 docs(pipeline): 同步 Phase 7 后续开发状态`，不能继续在 checklist 或 next-session prompt 中写“开发提交或其后的 docs 提交”；必须把真实恢复入口写入文档，下一次启动才不会误从功能提交恢复。
+- 用户再次要求“请更新文档的最新开发状态、标注完成/未完成、给下次启动提示词”并强调“每个阶段性任务完成后自动去做”时，即使刚完成过恢复入口校正，也要新建 `tasks/todo.md` 状态同步计划，回填当前 `git log` 可确认的最新恢复入口，更新 next-session prompt 和 lessons，验证后单独提交；最终回复里的提示词再补上本轮提交后的实际 HEAD。
+- 启动检查若发现当前 HEAD 已是新的状态同步提交，但 checklist / next-session prompt 仍把上一提交写成最新恢复入口，应先按一个小阶段写 `tasks/todo.md` 计划并校正文档，再进入后续 gated smoke、根文档同步或产品功能开发。
+- 启动提示或用户上下文明确给出最新状态同步提交（例如 `f687166c`），而仓库文档仍停留在上一恢复入口（例如 `c75e132f`）时，要以 `git log` 确认后的 HEAD 为准，先校正 checklist、next-session prompt 和 `tasks/todo.md` Review；不要继续沿用旧提示词导致恢复入口倒退。
+- 只要用户明确要求“更新文档最新开发状态 / 标注完成未完成 / 给下次启动提示词”，即使没有业务代码变化，也要执行完整状态同步闭环：`tasks/todo.md` 计划、development checklist、next-session prompt、`tasks/lessons.md`、Review、验证、单独提交和最终可复制提示词。
+- 用户再次重复要求“更新文档最新状态、完成/未完成、下次启动提示词”并强调“记住这个习惯”时，不要认为上一轮已做完即可口头回复；仍要新建本轮 `tasks/todo.md` 计划，回填当前 `git log` 可确认的最新恢复入口，更新 checklist / next-session prompt / lessons，写 Review，验证后单独提交。
+- Pipeline v1 状态同步或启动入口校正不能顺手修改根 `README.md` / 根 `AGENTS.md`；只有用户明确允许“公开文档同步”后才能触达根文档，否则只更新 `docs/improve/pipeline/v1/`、`tasks/todo.md` 和 `tasks/lessons.md`。
+
 ## 2026-05-28 README 架构图视觉验收
 
 - README 架构图不能只通过 SVG XML、碰撞脚本和缩略 contact sheet 就算验收；必须打开最终 PNG 的实际显示尺寸，逐张检查节点文字是否被边框压住、箭头标签是否遮挡节点、长虚线/总线是否割裂画面、图例是否挤占内容。
@@ -199,6 +238,13 @@
 - 提交信息必须用详细中文说明本阶段完成内容、验证结果和未包含的无关改动；提交前先用 `git status --short` 确认不会纳入 `.DS_Store` 等无关文件。
 - 对 Agent Codex Runtime 这类按 Phase/PR 推进的任务，每完成文档阶段、契约阶段、runtime core 阶段、UI 阶段或真实验证阶段，都要先运行该阶段清单里的验证命令，再立即提交该阶段相关文件；重新启动会话后也要主动延续这个节奏。
 - 对已在开发清单中确认过门禁和范围的阶段，用户明确要求“不需要询问我，直接开发即可”后，后续启动计划写入 `tasks/todo.md` 即可继续执行，不要再停下来等待确认；仍需保持范围边界、验证和阶段提交纪律。
+
+## 2026-05-29 阶段提交习惯再确认
+
+- 用户再次要求“每完成一阶段任务，就提交一次”时，要视为长期工作契约；即使重新启动 Codex 会话，也要在读取 lessons / checklist 后主动检查是否存在已完成但未提交的阶段成果。
+- 如果用户要求“提交当前代码变更”而工作树已经干净，应明确报告最近阶段提交和 ahead 状态；如果同时有习惯同步或 lessons 更新，则只提交该同步改动，不制造无关业务修改。
+- 每次阶段提交前都要用 `git status --short` 和 `git diff --cached --stat` 核对范围；提交信息必须用详细中文写清主要变更、验证命令、未做事项和未纳入的无关范围。
+- 每个阶段完成后，除了提交代码，还要同步对应开发清单的最新状态、更新 next-session prompt，并在 `tasks/todo.md` Review 中写明完成项、未完成项、验证结果和下一阶段入口。
 
 ## 2026-05-16 UI 阶段可见性表达
 
