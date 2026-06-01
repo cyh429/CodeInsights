@@ -27,6 +27,9 @@ export * from './agent'
 // Pipeline 相关类型
 export * from './pipeline'
 
+// 扫描工作台相关类型
+export * from './scan'
+
 // Agent Provider 适配器接口
 export * from './agent-provider'
 

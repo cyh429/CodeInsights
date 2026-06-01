@@ -30,6 +30,7 @@ const MODE_CONFIG: Record<AppMode, { icon: React.ReactNode; label: string }> = {
   pipeline: { icon: <GitBranch size={15} />, label: 'Pipeline' },
   chat: { icon: <MessageSquare size={15} />, label: 'Chat' },
   agent: { icon: <Bot size={15} />, label: 'Agent' },
+  scan: { icon: <Settings size={15} />, label: '扫描' },
 }
 
 export function WelcomeEmptyState(): React.ReactElement {

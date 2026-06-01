@@ -66,6 +66,7 @@ import { feishuBotStatesAtom } from './atoms/feishu-atoms'
 import { dingtalkBotStatesAtom } from './atoms/dingtalk-atoms'
 import { currentConversationIdAtom, channelsAtom, channelsLoadedAtom, selectedModelAtom } from './atoms/chat-atoms'
 import { currentPipelineSessionIdAtom, pipelineCodexChannelIdAtom, pipelinePendingGatesAtom, pipelineSessionStateMapAtom, pipelineSessionsAtom } from './atoms/pipeline-atoms'
+import { scanSessionsAtom, currentScanSessionIdAtom } from './atoms/scan-atoms'
 import { appModeAtom } from './atoms/app-mode'
 import type { FeishuBotBridgeState, FeishuBridgeState, FeishuNotificationSentPayload, DingTalkBotBridgeState, DingTalkBridgeState } from '@codeinsights/shared'
 import { Toaster } from './components/ui/sonner'
@@ -484,6 +485,18 @@ function PipelineSessionsInitializer(): null {
   return null
 }
 
+function ScanSessionsInitializer(): null {
+  const setSessions = useSetAtom(scanSessionsAtom)
+
+  useEffect(() => {
+    window.electronAPI.listScanSessions().then((sessions) => {
+      setSessions(sessions)
+    }).catch((err: unknown) => console.error('[ScanSessionsInitializer] 加载失败:', err))
+  }, [setSessions])
+
+  return null
+}
+
 /**
  * Chat 工具初始化组件
  *
@@ -673,7 +686,8 @@ function TabStatePersistenceInitializer(): null {
       window.electronAPI.listPipelineSessions(),
       window.electronAPI.listConversations(),
       window.electronAPI.listAgentSessions(),
-    ]).then(([settings, pipelineSessions, conversations, agentSessions]) => {
+      window.electronAPI.listScanSessions(),
+    ]).then(([settings, pipelineSessions, conversations, agentSessions, scanSessions]) => {
       const tabState = settings.tabState
       if (!tabState?.tabs?.length) {
         restoredRef.current = true
@@ -685,6 +699,7 @@ function TabStatePersistenceInitializer(): null {
         ...pipelineSessions.map((s) => s.id),
         ...conversations.map((c) => c.id),
         ...agentSessions.map((s) => s.id),
+        ...scanSessions.map((s) => s.id),
       ])
 
       // 过滤掉已被删除的会话，同时校验数据结构
@@ -730,6 +745,8 @@ function TabStatePersistenceInitializer(): null {
           store.set(currentPipelineSessionIdAtom, activeTab.sessionId)
         } else if (activeTab.type === 'chat') {
           store.set(currentConversationIdAtom, activeTab.sessionId)
+        } else if (activeTab.type === 'scan') {
+          store.set(currentScanSessionIdAtom, activeTab.sessionId)
         } else {
           store.set(currentAgentSessionIdAtom, activeTab.sessionId)
         }
@@ -807,6 +824,7 @@ if (isQuickTaskWindow) {
       <ThemeInitializer />
       <AgentSettingsInitializer />
       <PipelineSessionsInitializer />
+      <ScanSessionsInitializer />
       <NotificationsInitializer />
       <UiPreferencesInitializer />
       <ChatListenersInitializer />

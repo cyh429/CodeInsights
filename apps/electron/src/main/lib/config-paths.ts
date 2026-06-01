@@ -726,6 +726,41 @@ export function getAgentChannelBindingEventsPath(): string {
 }
 
 /**
+ * 获取扫描会话索引文件路径
+ *
+ * @returns ~/.codeinsights/scan-sessions.json
+ */
+export function getScanSessionsIndexPath(): string {
+  return join(getConfigDir(), 'scan-sessions.json')
+}
+
+/**
+ * 获取扫描会话记录目录
+ *
+ * @returns ~/.codeinsights/scan-sessions/
+ */
+export function getScanSessionsDir(): string {
+  const dir = join(getConfigDir(), 'scan-sessions')
+
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+    console.log(`[配置] 已创建扫描会话目录: ${dir}`)
+  }
+
+  return dir
+}
+
+/**
+ * 获取指定扫描会话的发现项文件路径
+ *
+ * @param id 会话 ID
+ * @returns ~/.codeinsights/scan-sessions/{id}.jsonl
+ */
+export function getScanSessionFindingsPath(id: string): string {
+  return join(getScanSessionsDir(), `${id}.jsonl`)
+}
+
+/**
  * 获取指定 Agent 会话的工作路径
  *
  * 在工作区目录下创建以 sessionId 命名的子文件夹，
@@ -782,3 +817,4 @@ export function getSdkConfigDir(): string {
 
   return dir
 }
+

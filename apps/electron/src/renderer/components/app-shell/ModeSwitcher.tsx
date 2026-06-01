@@ -14,14 +14,16 @@ import { appModeAtom, type AppMode } from '@/atoms/app-mode'
 import { conversationsAtom, currentConversationIdAtom } from '@/atoms/chat-atoms'
 import { pipelineSessionsAtom, currentPipelineSessionIdAtom } from '@/atoms/pipeline-atoms'
 import { agentSessionsAtom, currentAgentSessionIdAtom } from '@/atoms/agent-atoms'
+import { scanSessionsAtom, currentScanSessionIdAtom } from '@/atoms/scan-atoms'
 import { tabsAtom } from '@/atoms/tab-atoms'
 import { useOpenSession } from '@/hooks/useOpenSession'
-import { Bot, GitBranch } from 'lucide-react'
+import { Bot, GitBranch, ShieldAlert } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const modes: { value: AppMode; label: string; icon: React.ReactNode }[] = [
   { value: 'agent', label: 'Agent', icon: <Bot size={15} /> },
   { value: 'pipeline', label: 'Pipeline', icon: <GitBranch size={15} /> },
+  { value: 'scan', label: 'Scan', icon: <ShieldAlert size={15} /> },
 ]
 
 export function ModeSwitcher(): React.ReactElement {
@@ -30,9 +32,11 @@ export function ModeSwitcher(): React.ReactElement {
   const pipelineSessions = useAtomValue(pipelineSessionsAtom)
   const conversations = useAtomValue(conversationsAtom)
   const agentSessions = useAtomValue(agentSessionsAtom)
+  const scanSessions = useAtomValue(scanSessionsAtom)
   const currentPipelineSessionId = useAtomValue(currentPipelineSessionIdAtom)
   const currentConversationId = useAtomValue(currentConversationIdAtom)
   const currentAgentSessionId = useAtomValue(currentAgentSessionIdAtom)
+  const currentScanSessionId = useAtomValue(currentScanSessionIdAtom)
   const tabs = useAtomValue(tabsAtom)
 
   /** 尝试恢复目标模式下的上一个对话/会话，按优先级 fallback */
@@ -41,12 +45,16 @@ export function ModeSwitcher(): React.ReactElement {
       ? pipelineSessions
       : targetMode === 'chat'
         ? conversations
-        : agentSessions
+        : targetMode === 'agent'
+          ? agentSessions
+          : scanSessions
     const lastId = targetMode === 'pipeline'
       ? currentPipelineSessionId
       : targetMode === 'chat'
         ? currentConversationId
-        : currentAgentSessionId
+        : targetMode === 'agent'
+          ? currentAgentSessionId
+          : currentScanSessionId
 
     // 1. 上次选中的对话仍存在 → 恢复
     if (lastId) {
@@ -70,7 +78,7 @@ export function ModeSwitcher(): React.ReactElement {
     }
     // 4. 无任何对话，仅切换模式
     setMode(targetMode)
-  }, [openSession, conversations, agentSessions, currentConversationId, currentAgentSessionId, tabs, setMode])
+  }, [openSession, conversations, agentSessions, scanSessions, currentConversationId, currentAgentSessionId, currentPipelineSessionId, currentScanSessionId, tabs, setMode])
 
   const handleModeSwitch = React.useCallback((targetMode: AppMode) => {
     if (targetMode === mode) return
@@ -83,8 +91,8 @@ export function ModeSwitcher(): React.ReactElement {
         {/* 滑动背景指示器 */}
         <div
           className={cn(
-            'mode-slider absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-[14px] shadow-[0_10px_22px_-16px_rgba(15,23,42,0.75)] transition-transform duration-normal ease-out',
-            mode === 'agent' ? 'translate-x-0' : 'translate-x-full'
+            'mode-slider absolute top-1 bottom-1 w-[calc(33.33%-4px)] rounded-[14px] shadow-[0_10px_22px_-16px_rgba(15,23,42,0.75)] transition-transform duration-normal ease-out',
+            mode === 'agent' ? 'translate-x-0' : mode === 'pipeline' ? 'translate-x-[100%]' : 'translate-x-[200%]'
           )}
         />
         {modes.map(({ value, label, icon }) => (

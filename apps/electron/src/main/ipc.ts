@@ -7,7 +7,7 @@
 import { ipcMain, shell, dialog, BrowserWindow, app } from 'electron'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
-import { IPC_CHANNELS, CHAT_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS } from '@codeinsights/shared'
+import { IPC_CHANNELS, CHAT_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, SCAN_IPC_CHANNELS } from '@codeinsights/shared'
 import type {
   RuntimeStatus,
   GitRepoStatus,
@@ -92,6 +92,7 @@ import { registerBotHubIpcHandlers } from './ipc/bot-hub-handlers'
 import { registerChannelIpcHandlers } from './ipc/channel-handlers'
 import { registerPipelineIpcHandlers } from './ipc/pipeline-handlers'
 import { registerQuickTaskIpcHandlers } from './ipc/quick-task-handlers'
+import { registerScanIpcHandlers } from './ipc/scan-handlers'
 import { registerSettingsIpcHandlers } from './ipc/settings-handlers'
 
 /**
@@ -801,6 +802,9 @@ export function registerIpcHandlers(): void {
 
   // ===== 机器人集成 =====
   registerBotHubIpcHandlers()
+
+  // ===== 扫描工作台 =====
+  registerScanIpcHandlers()
 
   console.log('[IPC] IPC 处理器注册完成')
 

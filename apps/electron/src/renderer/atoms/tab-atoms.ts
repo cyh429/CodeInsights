@@ -25,7 +25,7 @@ import type { SessionIndicatorStatus } from './agent-atoms'
 // ===== 类型定义 =====
 
 /** 标签页类型（Settings 不作为 Tab，保留独立视图） */
-export type TabType = 'pipeline' | 'chat' | 'agent'
+export type TabType = 'pipeline' | 'chat' | 'agent' | 'scan'
 
 /** 标签页数据 */
 export interface TabItem {
@@ -33,7 +33,7 @@ export interface TabItem {
   id: string
   /** 标签页类型 */
   type: TabType
-  /** Pipeline/Chat/Agent sessionId */
+  /** Pipeline/Chat/Agent/Scan sessionId */
   sessionId: string
   /** 标签页显示标题 */
   title: string
@@ -95,6 +95,8 @@ export const tabStreamingMapAtom = atom<Map<string, boolean>>((get) => {
       map.set(tab.id, chatStreaming.has(tab.sessionId))
     } else if (tab.type === 'agent') {
       map.set(tab.id, agentRunning.has(tab.sessionId))
+    } else if (tab.type === 'scan') {
+      map.set(tab.id, false) // Scan 目前没有流式状态
     }
   }
   return map
@@ -117,6 +119,8 @@ export const tabIndicatorMapAtom = atom<Map<string, SessionIndicatorStatus>>((ge
       const status = agentIndicator.get(tab.sessionId)
         ?? (workingDoneIds.has(tab.sessionId) ? 'completed' : 'idle')
       map.set(tab.id, status)
+    } else if (tab.type === 'scan') {
+      map.set(tab.id, 'idle') // Scan 目前用 idle 状态
     }
   }
   return map

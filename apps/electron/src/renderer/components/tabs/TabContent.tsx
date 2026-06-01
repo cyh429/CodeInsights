@@ -11,6 +11,7 @@ import { tabsAtom } from '@/atoms/tab-atoms'
 import { ChatView } from '@/components/chat'
 import { AgentView } from '@/components/agent'
 import { PipelineView } from '@/components/pipeline'
+import { ScanView } from '@/components/scan'
 import { TabErrorBoundary } from './TabErrorBoundary'
 
 export interface TabContentProps {
@@ -42,6 +43,14 @@ export function TabContent({ tabId }: TabContentProps): React.ReactElement {
     return (
       <TabErrorBoundary key={tab.sessionId} sessionId={tab.sessionId}>
         <PipelineView sessionId={tab.sessionId} />
+      </TabErrorBoundary>
+    )
+  }
+
+  if (tab.type === 'scan') {
+    return (
+      <TabErrorBoundary key={tab.sessionId} sessionId={tab.sessionId}>
+        <ScanView sessionId={tab.sessionId} />
       </TabErrorBoundary>
     )
   }

@@ -6,7 +6,7 @@
  */
 
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, PIPELINE_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS } from '@codeinsights/shared'
+import { IPC_CHANNELS, CHANNEL_IPC_CHANNELS, CHAT_IPC_CHANNELS, AGENT_IPC_CHANNELS, PIPELINE_IPC_CHANNELS, ENVIRONMENT_IPC_CHANNELS, INSTALLER_IPC_CHANNELS, PROXY_IPC_CHANNELS, GITHUB_RELEASE_IPC_CHANNELS, SYSTEM_PROMPT_IPC_CHANNELS, MEMORY_IPC_CHANNELS, CHAT_TOOL_IPC_CHANNELS, FEISHU_IPC_CHANNELS, DINGTALK_IPC_CHANNELS, WECHAT_IPC_CHANNELS, SCAN_IPC_CHANNELS } from '@codeinsights/shared'
 import { USER_PROFILE_IPC_CHANNELS, SETTINGS_IPC_CHANNELS, APP_ICON_IPC_CHANNELS } from '../types'
 import type {
   RuntimeStatus,
@@ -137,6 +137,11 @@ import type {
   PipelineSubmissionPlanInput,
   PatchWorkDocumentRevision,
   PatchWorkManifest,
+  ScanSessionMeta,
+  ScanFinding,
+  CreateScanRequest,
+  UpdateFindingStatusRequest,
+  ScanStatistics,
 } from '@codeinsights/shared'
 import type { UserProfile, AppSettings, QuickTaskSubmitInput, QuickTaskOpenSessionData } from '../types'
 import { QUICK_TASK_IPC_CHANNELS } from '../types'
@@ -472,6 +477,38 @@ export interface ElectronAPI {
 
   /** 订阅 Pipeline 流式错误事件 */
   onPipelineStreamError: (callback: (payload: PipelineStreamErrorPayload) => void) => () => void
+
+  // ===== 扫描工作台相关 =====
+
+  /** 获取扫描会话列表 */
+  listScanSessions: () => Promise<ScanSessionMeta[]>
+
+  /** 获取扫描会话 */
+  getScanSession: (id: string) => Promise<ScanSessionMeta | undefined>
+
+  /** 创建扫描会话 */
+  createScanSession: (request: CreateScanRequest) => Promise<ScanSessionMeta>
+
+  /** 更新扫描会话 */
+  updateScanSession: (id: string, patch: Partial<Omit<ScanSessionMeta, 'id' | 'createdAt'>>) => Promise<ScanSessionMeta>
+
+  /** 删除扫描会话 */
+  deleteScanSession: (id: string) => Promise<void>
+
+  /** 获取扫描发现项列表 */
+  listScanFindings: (scanId: string) => Promise<ScanFinding[]>
+
+  /** 获取单个发现项 */
+  getScanFinding: (scanId: string, findingId: string) => Promise<ScanFinding | undefined>
+
+  /** 更新发现项状态 */
+  updateScanFindingStatus: (request: UpdateFindingStatusRequest) => Promise<ScanFinding | null>
+
+  /** 获取扫描统计信息 */
+  getScanStatistics: () => Promise<ScanStatistics>
+
+  /** 导出扫描结果 */
+  exportScanResults: (scanId: string) => Promise<boolean>
 
   // ===== Agent 会话管理相关 =====
 
@@ -1342,6 +1379,47 @@ const electronAPI: ElectronAPI = {
     const listener = (_: unknown, payload: PipelineStreamErrorPayload): void => callback(payload)
     ipcRenderer.on(PIPELINE_IPC_CHANNELS.STREAM_ERROR, listener)
     return () => { ipcRenderer.removeListener(PIPELINE_IPC_CHANNELS.STREAM_ERROR, listener) }
+  },
+
+  // 扫描工作台
+  listScanSessions: () => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.LIST_SCANS)
+  },
+
+  getScanSession: (id: string) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.GET_SCAN, id)
+  },
+
+  createScanSession: (request: CreateScanRequest) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.CREATE_SCAN, request)
+  },
+
+  updateScanSession: (id: string, patch: Partial<Omit<ScanSessionMeta, 'id' | 'createdAt'>>) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.UPDATE_SCAN, id, patch)
+  },
+
+  deleteScanSession: (id: string) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.DELETE_SCAN, id)
+  },
+
+  listScanFindings: (scanId: string) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.LIST_FINDINGS, scanId)
+  },
+
+  getScanFinding: (scanId: string, findingId: string) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.GET_FINDING, scanId, findingId)
+  },
+
+  updateScanFindingStatus: (request: UpdateFindingStatusRequest) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.UPDATE_FINDING_STATUS, request)
+  },
+
+  getScanStatistics: () => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.GET_STATISTICS)
+  },
+
+  exportScanResults: (scanId: string) => {
+    return ipcRenderer.invoke(SCAN_IPC_CHANNELS.EXPORT_SCAN, scanId)
   },
 
   // Agent 会话管理

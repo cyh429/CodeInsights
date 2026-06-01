@@ -11,6 +11,7 @@ import { tabsAtom, activeTabIdAtom, openTab, type TabType } from '@/atoms/tab-at
 import { appModeAtom } from '@/atoms/app-mode'
 import { currentConversationIdAtom } from '@/atoms/chat-atoms'
 import { currentPipelineSessionIdAtom } from '@/atoms/pipeline-atoms'
+import { currentScanSessionIdAtom } from '@/atoms/scan-atoms'
 import {
   currentAgentSessionIdAtom,
   agentSessionsAtom,
@@ -26,6 +27,7 @@ export function useOpenSession(): OpenSessionFn {
   const setAppMode = useSetAtom(appModeAtom)
   const setCurrentConversationId = useSetAtom(currentConversationIdAtom)
   const setCurrentPipelineSessionId = useSetAtom(currentPipelineSessionIdAtom)
+  const setCurrentScanSessionId = useSetAtom(currentScanSessionIdAtom)
   const setCurrentAgentSessionId = useSetAtom(currentAgentSessionIdAtom)
   const agentSessions = useAtomValue(agentSessionsAtom)
   const setCurrentAgentWorkspaceId = useSetAtom(currentAgentWorkspaceIdAtom)
@@ -42,12 +44,17 @@ export function useOpenSession(): OpenSessionFn {
         setCurrentPipelineSessionId(sessionId)
         setCurrentConversationId(null)
         setCurrentAgentSessionId(null)
+        setCurrentScanSessionId(null)
       } else if (type === 'chat') {
         setCurrentPipelineSessionId(null)
         setCurrentConversationId(sessionId)
-      } else {
+        setCurrentAgentSessionId(null)
+        setCurrentScanSessionId(null)
+      } else if (type === 'agent') {
         setCurrentPipelineSessionId(null)
+        setCurrentConversationId(null)
         setCurrentAgentSessionId(sessionId)
+        setCurrentScanSessionId(null)
 
         // 清除该会话的"已完成未查看"标记，与 TabBar.handleActivate 保持一致
         setUnviewedCompleted((prev) => {
@@ -65,8 +72,13 @@ export function useOpenSession(): OpenSessionFn {
             agentWorkspaceId: session.workspaceId,
           }).catch(console.error)
         }
+      } else if (type === 'scan') {
+        setCurrentPipelineSessionId(null)
+        setCurrentConversationId(null)
+        setCurrentAgentSessionId(null)
+        setCurrentScanSessionId(sessionId)
       }
     },
-    [tabs, setTabs, setActiveTabId, setAppMode, setCurrentConversationId, setCurrentPipelineSessionId, setCurrentAgentSessionId, agentSessions, setCurrentAgentWorkspaceId, setUnviewedCompleted],
+    [tabs, setTabs, setActiveTabId, setAppMode, setCurrentConversationId, setCurrentPipelineSessionId, setCurrentScanSessionId, setCurrentAgentSessionId, agentSessions, setCurrentAgentWorkspaceId, setUnviewedCompleted],
   )
 }

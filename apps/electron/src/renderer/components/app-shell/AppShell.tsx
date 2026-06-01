@@ -12,6 +12,7 @@ import { LeftSidebar } from './LeftSidebar'
 import { RightSidePanel } from './RightSidePanel'
 import { MainArea } from '@/components/tabs/MainArea'
 import { PipelineSidebar } from '@/components/pipeline'
+import { ScanSidebar } from '@/components/scan'
 import { AppShellProvider, type AppShellContextType } from '@/contexts/AppShellContext'
 import { appModeAtom } from '@/atoms/app-mode'
 import { currentAgentSessionIdAtom, currentSessionSidePanelOpenAtom } from '@/atoms/agent-atoms'
@@ -206,7 +207,11 @@ export function AppShell({ contextValue }: AppShellProps): React.ReactElement {
       >
         {/* 左侧边栏：可折叠，带圆角和内边距 */}
         <div className="p-2 pr-0 relative z-[60] shrink-0">
-          {appMode === 'pipeline' ? <PipelineSidebar width={leftSidebarWidth} /> : <LeftSidebar width={leftSidebarWidth} />}
+          {appMode === 'pipeline'
+            ? <PipelineSidebar width={leftSidebarWidth} />
+            : appMode === 'scan'
+            ? <ScanSidebar width={leftSidebarWidth} />
+            : <LeftSidebar width={leftSidebarWidth} />}
         </div>
 
         <ResizeHandle
